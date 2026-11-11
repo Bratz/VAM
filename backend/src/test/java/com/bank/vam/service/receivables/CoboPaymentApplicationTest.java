@@ -59,7 +59,7 @@ class CoboPaymentApplicationTest {
         mock(com.bank.vam.service.treasury.BalanceAggregationServiceEnhanced.class),
         new com.fasterxml.jackson.databind.ObjectMapper(),
         mock(com.bank.vam.repository.intercompany.IntercompanyTransactionRepository.class),
-        mock(com.bank.vam.repository.pobo.IntercompanyRechargeRepository.class),
+        new com.bank.vam.service.treasury.IhbMirrorService(vaRepo, txnRepo),
         mock(com.bank.vam.fx.deal.FxPaymentService.class));
 
     private final ReconciliationService reconciliation = new ReconciliationService(receivables, payments, unmatched,
@@ -187,6 +187,32 @@ class CoboPaymentApplicationTest {
             });
         assertThat(invoice.getStatus()).isEqualTo(ReceivableStatus.PAID);
         assertThat(invoice.getCoboRequestStatus()).isEqualTo(CoboRequestStatus.COLLECTED);
+    }
+
+    @Test
+    void onANegativePositionTheCreditLowersTreasurysIcReceivableInstead() {
+        // POBO spec R10: the subsidiary owes treasury 1,500 (IHB current -1,500, IC receivable 1,500).
+        VirtualAccount icReceivable = va(TREASURY, MirrorAccountType.IC_RECEIVABLE);
+        ihbCurrent.setIcReceivableVaId(icReceivable.getId());
+        ihbCurrent.setCurrentBalance(new BigDecimal("-1500"));
+        icReceivable.setCurrentBalance(new BigDecimal("1500"));
+        UUID bankTxn = cashArrivedOn(treasuryCollection);
+
+        reconciliation.applyPayment(invoice, new BigDecimal("1000"), new BigDecimal("1000"), bankTxn, "AUTO");
+
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-500");
+        assertThat(icReceivable.getCurrentBalance()).isEqualByComparingTo("500");
+        assertThat(icPayable.getCurrentBalance()).isEqualByComparingTo("0");
+        Transaction icr = postedAfterCash().stream().filter(t -> t.getVaId().equals(icReceivable.getId())).findFirst().orElseThrow();
+        assertThat(icr.getMovementType()).isEqualTo(Transaction.MovementType.IC_SETTLEMENT);
+        assertThat(icr.getAmount()).isEqualByComparingTo("1000");
+        assertThat(icr.getDescription()).contains("INV-0042");
+        assertThat(postedAfterCash()).hasSize(2);
+
+        // A return puts the position, and the receivable, back.
+        transactionService.reverseCoboInHouseCredit(bankTxn, "AM04");
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-1500");
+        assertThat(icReceivable.getCurrentBalance()).isEqualByComparingTo("1500");
     }
 
     @Test

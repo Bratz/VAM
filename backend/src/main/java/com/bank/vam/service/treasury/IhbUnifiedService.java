@@ -70,6 +70,7 @@ public class IhbUnifiedService {
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final ProgramRepository programRepository;
     private final PhysicalAccountRepository physicalAccountRepository;
+    private final IhbMirrorService ihbMirrors;
 
     // ========================================================================
     // IHB ENTITY MANAGEMENT
@@ -167,8 +168,11 @@ public class IhbUnifiedService {
             return;
         }
         
-        // Find entity's virtual accounts
-        List<VirtualAccount> entityVas = virtualAccountRepository.findByOwningEntityId(entity.getId());
+        // Find entity's virtual accounts: its cash, never an in-house account (IHB current / mirrors), which is a
+        // position with treasury -- sweeping one self-swept it into treasury's account (POBO spec R16).
+        List<VirtualAccount> entityVas = virtualAccountRepository.findByOwningEntityId(entity.getId()).stream()
+                .filter(va -> !SweepService.isInHouse(va))
+                .toList();
         if (entityVas.isEmpty()) {
             log.info("Entity {} has no virtual accounts. Sweep rules will be created when VAs are assigned.", 
                     entity.getEntityCode());
@@ -1509,13 +1513,11 @@ public class IhbUnifiedService {
             log.info("Set {} as primary IHB account for entity {}", va.getVaNumber(), participant.getEntityCode());
         }
 
-        // 16. Create Cash Concentration Sweep Rule if sweep is enabled
-        // Sweep target is Treasury's Settlement VA (ensured in step 7)
-        if (Boolean.TRUE.equals(request.getIhbSweepEnabled()) && treasurySettlementVa != null) {
-            createIhbSweepRule(va, participant, treasury, treasurySettlementVa, request);
-        } else if (Boolean.TRUE.equals(request.getIhbSweepEnabled())) {
-            log.warn("Sweep enabled but no Treasury Settlement VA found for IHB Current Account {} - sweep rule not created",
-                va.getVaNumber());
+        // 16. No cash concentration sweep rule on an IHB current account: its balance is the subsidiary's position with
+        // treasury, not cash. Swept, the intercompany leg credited it straight back and the sweep added the amount to
+        // treasury's settlement account on every run (POBO spec R16; SweepService skips in-house accounts).
+        if (Boolean.TRUE.equals(request.getIhbSweepEnabled())) {
+            log.info("IHB current account {} is not a sweep source (a position, not cash); no sweep rule created", va.getVaNumber());
         }
 
         // =====================================================================
@@ -1562,73 +1564,6 @@ public class IhbUnifiedService {
             va.getVaNumber(), va.isConfiguredFor6LegPobo());
 
         return va;
-    }
-
-    /**
-     * Create Cash Concentration Sweep Rule for IHB Current Account.
-     * Links the IHB participant account to Treasury's Settlement VA for automated sweeping.
-     *
-     * @param va The IHB current account (source)
-     * @param participant The participant entity
-     * @param treasury The treasury center entity
-     * @param treasurySettlementVa The treasury's settlement VA (target)
-     * @param request The creation request with sweep configuration
-     */
-    private void createIhbSweepRule(
-            VirtualAccount va,
-            LegalEntity participant,
-            LegalEntity treasury,
-            VirtualAccount treasurySettlementVa,
-            VirtualAccountDto.IhbCurrentAccountRequest request) {
-
-        BigDecimal targetBalance = request.getTargetCashBalance() != null ?
-            request.getTargetCashBalance() : BigDecimal.ZERO;
-
-        // Generate unique rule reference: IHB-{entityCode}-{currency}-{seq}
-        String ruleRef = "IHB-" + participant.getEntityCode() + "-" + va.getCurrencyCode();
-        if (ruleRef.length() > 20) {
-            // Truncate and add hash for uniqueness
-            String hash = String.valueOf(Math.abs(ruleRef.hashCode()) % 10000);
-            ruleRef = ruleRef.substring(0, 15) + hash;
-        }
-
-        // Check if rule already exists for this account
-        boolean ruleExists = sweepRuleRepository.existsByRuleReference(ruleRef);
-        if (ruleExists) {
-            log.info("Sweep rule {} already exists for IHB account {}", ruleRef, va.getVaNumber());
-            return;
-        }
-
-        // Create the sweep rule
-        SweepRule rule = new SweepRule();
-        rule.setRuleReference(ruleRef);
-        rule.setRuleName("IHB Sweep: " + participant.getEntityName() + " → Treasury (" + va.getCurrencyCode() + ")");
-        rule.setSweepType(targetBalance.compareTo(BigDecimal.ZERO) == 0 ?
-            SweepRule.SweepType.ZERO_BALANCE : SweepRule.SweepType.TARGET_BALANCE);
-        rule.setTargetAmount(targetBalance);
-        rule.setTargetAccountId(treasurySettlementVa.getId());
-        rule.setTargetAccountNumber(treasurySettlementVa.getVaNumber());
-        rule.setTargetEntityCode(treasury.getEntityCode());
-        rule.setFrequency(mapSweepFrequency(request.getIhbSweepFrequency()));
-        rule.setPriority(10);  // Default priority
-        rule.setStatus(SweepRule.SweepStatus.ACTIVE);
-        rule.setCurrencyCode(va.getCurrencyCode());
-
-        // Add source account
-        List<SweepRuleSource> sources = new ArrayList<>();
-        SweepRuleSource source = new SweepRuleSource();
-        source.setRule(rule);
-        source.setAccountId(va.getId());
-        source.setAccountNumber(va.getVaNumber());
-        source.setEntityCode(participant.getEntityCode());
-        source.setEntityName(participant.getEntityName());
-        source.setCurrencyCode(va.getCurrencyCode());
-        sources.add(source);
-        rule.setSourceAccounts(sources);
-
-        sweepRuleRepository.save(rule);
-        log.info("Created IHB Cash Concentration Sweep Rule: {} for account {} → Treasury {}",
-            ruleRef, va.getVaNumber(), treasurySettlementVa.getVaNumber());
     }
 
     // ========================================================================
@@ -2390,6 +2325,9 @@ public class IhbUnifiedService {
     private Transaction ledger(VirtualAccount va, Transaction.MovementType type, BigDecimal amount,
                                BigDecimal balanceBefore, UUID counterpartyVaId, String correlationId,
                                String channel, String description) {
+        // Every IHB movement here (deposit, withdrawal, transfer, interest) is written through this method:
+        // treasury's mirrors follow the account's position (POBO spec R10). No-op for an account without mirrors.
+        ihbMirrors.syncIhbMirrors(va, description, correlationId);
         return transactionRepository.save(Transaction.builder()
             .referenceNumber(Transaction.generateReference(type))
             .movementType(type)

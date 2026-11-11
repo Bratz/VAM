@@ -295,18 +295,14 @@ public class FundsAvailabilityService {
             va.getVaNumber(), va.getIhbParticipant(), va.getCreditLimitAvailable(), va.getEffectiveCreditLimit());
 
         if (Boolean.TRUE.equals(va.getIhbParticipant())) {
-            BigDecimal ihbCreditLimit = va.getCreditLimitAvailable();
-            if (ihbCreditLimit == null || ihbCreditLimit.compareTo(BigDecimal.ZERO) == 0) {
-                ihbCreditLimit = va.getEffectiveCreditLimit();
-                log.info("IHB Account {}: creditLimitAvailable was null/zero, using effectiveCreditLimit={}",
-                    va.getVaNumber(), ihbCreditLimit);
-            }
+            // The whole facility: the balance this is added to is already negative by what is drawn, so the headroom
+            // is balance + limit (POBO spec D7, PoboEnrolmentService.headroom). creditLimitAvailable (limit - drawn)
+            // added to that balance would count the drawn part twice.
+            BigDecimal ihbCreditLimit = va.getEffectiveCreditLimit();
             if (ihbCreditLimit != null && ihbCreditLimit.compareTo(BigDecimal.ZERO) > 0) {
-                log.info("IHB Current Account {} returning credit limit: {}", va.getVaNumber(), ihbCreditLimit);
                 return ihbCreditLimit;
             }
-            log.warn("IHB Account {} has NO credit limit! creditLimitAvailable={}, effectiveCreditLimit={}",
-                va.getVaNumber(), va.getCreditLimitAvailable(), va.getEffectiveCreditLimit());
+            log.warn("IHB Account {} has NO credit limit (effectiveCreditLimit={})", va.getVaNumber(), va.getEffectiveCreditLimit());
         }
 
         // Regular VAs: Check linked CreditLimit entity
@@ -341,31 +337,18 @@ public class FundsAvailabilityService {
         VirtualAccount va = vaRepository.findById(vaId)
             .orElseThrow(() -> new ResourceNotFoundException("VA not found: " + vaId));
 
+        // IHB current accounts: credit use follows the balance, down as well as up (it used to add the whole overdraft
+        // again on every debit and never come down).
+        if (Boolean.TRUE.equals(va.getIhbParticipant())) {
+            if (va.followIhbCreditUse()) vaRepository.save(va);
+            return;
+        }
+
         BigDecimal balance = va.getCurrentBalance() != null ? va.getCurrentBalance() : BigDecimal.ZERO;
 
         // If balance went negative, we used credit limit
         if (balance.compareTo(BigDecimal.ZERO) < 0) {
             BigDecimal overdraftUsed = balance.abs();
-
-            // IHB Current Accounts: Update VA-level credit limit fields directly
-            if (Boolean.TRUE.equals(va.getIhbParticipant())) {
-                BigDecimal effectiveLimit = va.getEffectiveCreditLimit() != null
-                    ? va.getEffectiveCreditLimit() : BigDecimal.ZERO;
-                BigDecimal currentUtilized = va.getCreditLimitUtilized() != null
-                    ? va.getCreditLimitUtilized() : BigDecimal.ZERO;
-
-                // Calculate new utilization (capped at effective limit)
-                BigDecimal newUtilized = currentUtilized.add(overdraftUsed).min(effectiveLimit);
-                BigDecimal newAvailable = effectiveLimit.subtract(newUtilized);
-
-                va.setCreditLimitUtilized(newUtilized);
-                va.setCreditLimitAvailable(newAvailable);
-                vaRepository.save(va);
-
-                log.info("Updated IHB limit utilization for {}: Utilized={}, Available={}, EffectiveLimit={}",
-                    va.getVaNumber(), newUtilized, newAvailable, effectiveLimit);
-                return;
-            }
 
             // Regular VAs: Use CreditLimit entities
             BigDecimal internalUsed = BigDecimal.ZERO;
@@ -415,28 +398,17 @@ public class FundsAvailabilityService {
         VirtualAccount va = vaRepository.findById(vaId)
             .orElseThrow(() -> new ResourceNotFoundException("VA not found: " + vaId));
 
+        if (Boolean.TRUE.equals(va.getIhbParticipant())) {
+            if (va.followIhbCreditUse()) vaRepository.save(va);
+            return;
+        }
+
         BigDecimal utilized = va.getCreditLimitUtilized();
         if (utilized == null || utilized.compareTo(BigDecimal.ZERO) == 0) {
             return; // Nothing to release
         }
 
         BigDecimal toRelease = amount.min(utilized);
-
-        // IHB Current Accounts: Update VA-level credit limit fields directly
-        if (Boolean.TRUE.equals(va.getIhbParticipant())) {
-            BigDecimal effectiveLimit = va.getEffectiveCreditLimit() != null
-                ? va.getEffectiveCreditLimit() : BigDecimal.ZERO;
-            BigDecimal newUtilized = utilized.subtract(toRelease).max(BigDecimal.ZERO);
-            BigDecimal newAvailable = effectiveLimit.subtract(newUtilized);
-
-            va.setCreditLimitUtilized(newUtilized);
-            va.setCreditLimitAvailable(newAvailable);
-            vaRepository.save(va);
-
-            log.info("Released IHB limit for {}: Released={}, NewUtilized={}, NewAvailable={}",
-                va.getVaNumber(), toRelease, newUtilized, newAvailable);
-            return;
-        }
 
         // Regular VAs: Release from external first (LIFO), then internal
         BigDecimal remaining = toRelease;

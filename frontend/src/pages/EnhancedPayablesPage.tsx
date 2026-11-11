@@ -8,7 +8,7 @@ import { Select, StatusIconBadge, StatTile } from '../components/ui';
  * - Corporate/Program filter bar (matches TreasuryHierarchyPage)
  * - Entity selector (subsidiary filtering)
  * - Real API integration (no mock data)
- * - POBO workflow with treasury approval
+ * - POBO by enrolment (In-House Bank): Pay Now shows who pays and the IHB headroom
  * - Intercompany payable indicators
  * - Netting status and quick-add
  * - Payment route visualization
@@ -35,7 +35,7 @@ import {
   LegalEntity,
   PayablePhase2,
   PayableStatsPhase2,
-  PoboPreviewResponse,
+  PaymentRoutePreview,
 } from '../services/api';
 
 // ============================================================================
@@ -217,244 +217,6 @@ const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
 };
 
 // ============================================================================
-// POBO REQUEST MODAL
-// ============================================================================
-
-interface PoboModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  payables: PayablePhase2[];
-  entities: LegalEntity[];
-  onSubmit: (payingEntityId: string, payableIds: string[]) => Promise<void>;
-  loading?: boolean;
-}
-
-const PoboRequestModal: React.FC<PoboModalProps> = ({ 
-  isOpen, onClose, payables, entities, onSubmit, loading: submitLoading 
-}) => {
-  const [payingEntityId, setPayingEntityId] = useState('');
-  const [preview, setPreview] = useState<PoboPreviewResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Defensive: ensure arrays
-  const entitiesList = Array.isArray(entities) ? entities : [];
-  const payablesList = Array.isArray(payables) ? payables : [];
-  const treasuryEntities = entitiesList.filter(e => (e as any).isTreasuryCenter || e.entityType === 'TREASURY_CENTER' || e.entityType === 'HOLDING');
-
-  // Start from the paying entity chosen when the payable was created (POBO on Create Payable).
-  const chosenPayerId = payablesList[0]?.paymentViaEntityId;
-  useEffect(() => {
-    if (treasuryEntities.length > 0 && !payingEntityId) {
-      setPayingEntityId(treasuryEntities.find(e => e.id === chosenPayerId)?.id ?? treasuryEntities[0].id);
-    }
-  }, [treasuryEntities, payingEntityId, chosenPayerId]);
-
-  // Keyed on WHICH payables are selected, not how many. The preview is priced from
-  // payablesList.map(p => p.id), so keying on .length left the amounts, fees and IHB loan
-  // projection showing the previous selection whenever the set changed at the same count.
-  const payableIdsKey = payablesList.map(p => p.id).join(',');
-
-  useEffect(() => {
-    if (payablesList.length > 0 && payingEntityId && isOpen) {
-      loadPreview();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPreview closes over payablesList/entitiesList, which are re-derived on every render; depending on it would refetch the preview on every render. payableIdsKey stands in for the payables themselves.
-  }, [payableIdsKey, payingEntityId, isOpen]);
-
-  const loadPreview = async () => {
-    if (!payablesList.length || !payingEntityId) return;
-    
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await payablesApiPhase2.previewPobo({
-        payableIds: payablesList.map(p => p.id),
-        payingEntityId,
-        behalfEntityId: payablesList[0]?.owningEntityId || '',
-      });
-      setPreview(result);
-    } catch (err: any) {
-      // No invented preview: show why the real one could not be priced.
-      setPreview(null);
-      setError(err?.response?.data?.message || err?.message || 'Failed to load preview');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!payingEntityId || payablesList.length === 0) return;
-    await onSubmit(payingEntityId, payablesList.map(p => p.id));
-    onClose();
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Request POBO Payment" size="lg">
-      <div className="space-y-6">
-        {/* Selected Payables */}
-        <div>
-          <h4 className="field-label mb-2">Selected Payables ({payablesList.length})</h4>
-          <div className="max-h-40 overflow-y-auto border border-edge rounded-lg">
-            {payablesList.map(p => (
-              <div key={p.id} className="flex justify-between items-center px-3 py-2 border-b border-edge-subtle last:border-0">
-                <div>
-                  <p className="font-medium text-body-sm">{p.invoiceNumber}</p>
-                  <p className="caption">{p.vendorName}</p>
-                </div>
-                <p className="font-semibold">{formatCurrency(p.netAmount, p.currencyCode)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Treasury Entity Selection */}
-        <div>
-          <label className="field-label mb-2 block">Paying Entity (Treasury)</label>
-          <select
-            value={payingEntityId}
-            onChange={(e) => setPayingEntityId(e.target.value)}
-            className="w-full px-3 py-2 border border-edge rounded-lg focus:ring-2 focus:ring-primary-500"
-          >
-            {treasuryEntities.length === 0 ? (
-              <option value="">No treasury entities available</option>
-            ) : (
-              treasuryEntities.map(entity => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.entityCode} - {entity.entityName}
-                </option>
-              ))
-            )}
-          </select>
-        </div>
-
-        {/* Preview Section */}
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-8 h-8 text-primary-600 dark:text-primary-200 animate-spin" />
-          </div>
-        ) : preview ? (
-          <div className="bg-surface-page rounded-lg p-4 space-y-4">
-            <h4 className="font-medium text-neutral-900 dark:text-neutral-50">Payment Preview</h4>
-            
-            <div className="grid grid-cols-2 gap-4 text-body-sm">
-              <div>
-                <p className="text-neutral-500 dark:text-neutral-400">Paying Entity</p>
-                <p className="font-medium">{preview.payingEntityCode ?? '-'} - {preview.payingEntityName ?? '-'}</p>
-                {preview.payingVaNumber && (
-                  <p className="caption">VA: {preview.payingVaNumber}</p>
-                )}
-              </div>
-              <div>
-                <p className="text-neutral-500 dark:text-neutral-400">On Behalf Of</p>
-                <p className="font-medium">{preview.behalfEntityCode} - {preview.behalfEntityName}</p>
-                {preview.behalfVaNumber && (
-                  <p className="caption">VA: {preview.behalfVaNumber}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Balance & Credit Limit Info */}
-            {(preview.payingVaBalance !== undefined || preview.behalfVaBalance !== undefined) && (
-              <div className="grid grid-cols-2 gap-4 text-caption bg-surface-muted rounded-lg p-3 mt-2">
-                {/* Paying Entity Balance */}
-                <div className="space-y-1">
-                  <p className="font-medium text-neutral-700 dark:text-neutral-200">Treasury Balance</p>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Current</span>
-                    <span>{formatCurrency(preview.payingVaBalance || 0, preview.currencyCode)}</span>
-                  </div>
-                  {preview.payingVaCreditLimitAvailable !== undefined && preview.payingVaCreditLimitAvailable > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500 dark:text-neutral-400">Credit Available</span>
-                      <span className="text-success-600 dark:text-success-300">+{formatCurrency(preview.payingVaCreditLimitAvailable, preview.currencyCode)}</span>
-                    </div>
-                  )}
-                  {preview.payingVaEffectiveAvailableBalance !== undefined && (
-                    <div className="flex justify-between font-medium">
-                      <span className="text-neutral-600 dark:text-neutral-300">Effective</span>
-                      <span className="text-primary-700 dark:text-neutral-200">{formatCurrency(preview.payingVaEffectiveAvailableBalance, preview.currencyCode)}</span>
-                    </div>
-                  )}
-                </div>
-                {/* Behalf Entity Balance */}
-                <div className="space-y-1">
-                  <p className="font-medium text-neutral-700 dark:text-neutral-200">Subsidiary Balance</p>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Current</span>
-                    <span>{formatCurrency(preview.behalfVaBalance || 0, preview.currencyCode)}</span>
-                  </div>
-                  {preview.behalfVaCreditLimitAvailable !== undefined && preview.behalfVaCreditLimitAvailable > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500 dark:text-neutral-400">Credit Available</span>
-                      <span className="text-success-600 dark:text-success-300">+{formatCurrency(preview.behalfVaCreditLimitAvailable, preview.currencyCode)}</span>
-                    </div>
-                  )}
-                  {preview.behalfVaEffectiveAvailableBalance !== undefined && (
-                    <div className="flex justify-between font-medium">
-                      <span className="text-neutral-600 dark:text-neutral-300">Effective</span>
-                      <span className="text-primary-700 dark:text-neutral-200">{formatCurrency(preview.behalfVaEffectiveAvailableBalance, preview.currencyCode)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="border-t border-edge pt-4 space-y-2">
-              <div className="flex justify-between text-body-sm">
-                <span>Total Payment Amount</span>
-                <span className="font-medium">{formatCurrency(preview.totalPaymentAmount, preview.currencyCode)}</span>
-              </div>
-              {preview.charges?.map((charge, idx) => (
-                <div key={idx} className="flex justify-between body-sm">
-                  <span>{charge.chargeName}</span>
-                  <span>{charge.waived ? <span className="text-success-600 dark:text-success-300">Waived</span> : formatCurrency(charge.calculatedAmount, preview.currencyCode)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-body-sm font-semibold border-t border-edge pt-2">
-                <span>Net Payment Amount</span>
-                <span>{formatCurrency(preview.netPaymentAmount, preview.currencyCode)}</span>
-              </div>
-            </div>
-
-            {preview.ihbLoanPreview && (
-              <div className="bg-info-50 dark:bg-info-500/10 rounded-lg p-3 mt-4">
-                <h5 className="text-body-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Details</h5>
-                <div className="grid grid-cols-2 gap-2 text-caption">
-                  <div><span className="text-info-600 dark:text-info-300">Principal:</span> {formatCurrency(preview.ihbLoanPreview.principalAmount, preview.currencyCode)}</div>
-                  <div><span className="text-info-600 dark:text-info-300">Rate:</span> {preview.ihbLoanPreview.interestRate}%{preview.ihbLoanPreview.rateSource === 'DEFAULT' && <span className="ml-1 text-warning-700 dark:text-warning-300" title="A built-in rate, not the in-house bank's priced rate">(default)</span>}</div>
-                  <div><span className="text-info-600 dark:text-info-300">Tenor:</span> {preview.ihbLoanPreview.tenor}</div>
-                  <div><span className="text-info-600 dark:text-info-300">Est. Monthly Interest:</span> {formatCurrency(preview.ihbLoanPreview.estimatedMonthlyInterest || 0, preview.currencyCode)}</div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : error ? (
-          <p className="caption-warning flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" /> {error}
-          </p>
-        ) : null}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-edge">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button 
-            variant="primary" 
-            onClick={handleSubmit}
-            disabled={!payingEntityId || payablesList.length === 0 || submitLoading}
-          >
-            {submitLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-            Submit POBO Request
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-// ============================================================================
 // APPROVAL MODAL
 // ============================================================================
 
@@ -605,14 +367,28 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
   // The paying account: a payable in another currency than it must be converted (see PaymentFxPanel).
   const [account, setAccount] = useState<VirtualAccount | null>(null);
   const [fx, setFx] = useState<PaymentFx | null>(null);
+  // Who pays: the treasury centre on behalf (enrolment) or the payable's own account, and why (spec R4-R6, D7).
+  const [route, setRoute] = useState<PaymentRoutePreview | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
   useEffect(() => {
     setAccount(null);
     setFx(null);
-    if (!isOpen || !payable?.virtualAccountId) return;
-    virtualAccountsApi.getById(payable.virtualAccountId).then((r) => setAccount(r.data ?? null)).catch(() => undefined);
-  }, [isOpen, payable?.virtualAccountId]);
+    setRoute(null);
+    setRouteError(null);
+    if (!isOpen || !payable) return;
+    let live = true;
+    payablesApiPhase2.previewPobo({ payableIds: [payable.id] })
+      .then((list) => { if (live) setRoute(Array.isArray(list) ? list[0] ?? null : null); })
+      .catch((err: any) => { if (live) setRouteError(err?.response?.data?.message || err?.message || 'Could not tell how this payable is paid'); });
+    if (payable.virtualAccountId) {
+      virtualAccountsApi.getById(payable.virtualAccountId).then((r) => { if (live) setAccount(r.data ?? null); }).catch(() => undefined);
+    }
+    return () => { live = false; };
+  }, [isOpen, payable]);
   if (!isOpen || !payable) return null;
-  const needsFx = !!account && account.currencyCode !== payable.currencyCode;
+  const pobo = route?.route === 'POBO';
+  // POBO pays in the payable currency from the IHB current account: no conversion.
+  const needsFx = !pobo && !!account && account.currencyCode !== payable.currencyCode;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
@@ -640,7 +416,30 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
           </div>
         </div>
 
-        {account && (
+        {pobo && route && (
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-success-200 bg-success-50 dark:bg-success-500/10 dark:border-success-500/30">
+            <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
+            <div className="text-body-sm">
+              <p className="body-strong">
+                Paid by {route.payerEntityName ?? route.payerEntityCode} from {route.paymentVaNumber} on behalf of {payable.owningEntityName ?? payable.owningEntityCode}
+              </p>
+              <p className="caption">
+                Booked to IHB current account {route.ihbCurrentVaNumber}
+                {route.headroom != null && <>; headroom {formatCurrency(route.headroom, route.currencyCode)}</>}. No fee.
+              </p>
+            </div>
+          </div>
+        )}
+        {!pobo && route?.reason && (
+          <p className="body-sm">{route.reason}</p>
+        )}
+        {(route?.refusal || routeError) && (
+          <p className="flex items-start gap-2 text-body-sm text-error-600 dark:text-error-300">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />{route?.refusal ?? routeError}
+          </p>
+        )}
+
+        {account && !pobo && (
           <PaymentFxPanel
             accountId={account.id}
             corporateId={account.corporateId}
@@ -658,7 +457,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
 
         <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={() => onConfirm(fx)} disabled={loading || (needsFx && !fx)}>
+          <Button variant="primary" onClick={() => onConfirm(fx)} disabled={loading || !!route?.refusal || (needsFx && !fx)}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Execute Payment
           </Button>
@@ -675,7 +474,6 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
 interface PayableActionsCellProps {
   payable: PayablePhase2;
   onViewDetails: (payable: PayablePhase2) => void;
-  onRequestPobo: (payable: PayablePhase2) => void;
   onApprove: (payable: PayablePhase2) => void;
   onReject: (payable: PayablePhase2) => void;
   onSubmit: (payable: PayablePhase2) => void;
@@ -685,7 +483,7 @@ interface PayableActionsCellProps {
 }
 
 const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
-  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onEdit, onPayNow, onAddToNetting
+  payable, onViewDetails, onApprove, onReject, onSubmit, onEdit, onPayNow, onAddToNetting
 }) => {
   const canSubmit = payable.status === 'DRAFT';
   const canApprove = payable.status === 'PENDING_APPROVAL';
@@ -750,15 +548,6 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           <PlayCircle className="w-4 h-4" />
         </button>
       )}
-      {payable.canRequestPobo && (
-        <button
-          onClick={() => onRequestPobo(payable)}
-          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
-          title="Request POBO"
-        >
-          <Landmark className="w-4 h-4" />
-        </button>
-      )}
       {payable.nettingEligible && payable.nettingStatus === 'NOT_INCLUDED' && payable.status === 'APPROVED' && (
         <button
           onClick={() => onAddToNetting(payable)}
@@ -795,14 +584,10 @@ const EnhancedPayablesPage: React.FC = () => {
   const [corporatesLoading, setCorporatesLoading] = useState(true);
 
   // UI state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [showPoboModal, setShowPoboModal] = useState(false);
-  const [poboPayables, setPoboPayables] = useState<PayablePhase2[]>([]);
-  const [submitting, setSubmitting] = useState(false);
   const [viewPayable, setViewPayable] = useState<PayablePhase2 | null>(null);
 
   // Netting Cycle Picker Modal state
@@ -999,38 +784,6 @@ const EnhancedPayablesPage: React.FC = () => {
   }, [payables, activeTab]);
 
   // Handlers
-  const handleRequestPobo = (payable: PayablePhase2) => {
-    setPoboPayables([payable]);
-    setShowPoboModal(true);
-  };
-
-  const handleBulkPobo = () => {
-    const selected = filteredPayables.filter(p => selectedIds.has(p.id) && p.canRequestPobo);
-    if (selected.length > 0) {
-      setPoboPayables(selected);
-      setShowPoboModal(true);
-    }
-  };
-
-  const handleSubmitPobo = async (payingEntityId: string, payableIds: string[]) => {
-    setSubmitting(true);
-    try {
-      await payablesApiPhase2.requestPobo({
-        payableIds,
-        payingEntityId,
-        requestedBy: 'current-user', // TODO: Get from auth
-      });
-      setShowPoboModal(false);
-      setSelectedIds(new Set());
-      loadPayables();
-      loadStats();
-    } catch (error) {
-      console.error('Failed to submit POBO request:', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleCorporateChange = (id: string) => {
     setSelectedCorporateId(id);
     setSelectedProgramId('');
@@ -1247,11 +1000,6 @@ const EnhancedPayablesPage: React.FC = () => {
                 className="pl-9 pr-4 py-2 border border-edge rounded-lg text-body-sm bg-surface-card focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all w-64"
               />
             </div>
-            {selectedIds.size > 0 && (
-              <Button variant="outline" size="sm" onClick={handleBulkPobo} leftIcon={<Landmark className="w-4 h-4" />}>
-                Request POBO ({selectedIds.size})
-              </Button>
-            )}
           </div>
         </div>
 
@@ -1260,9 +1008,6 @@ const EnhancedPayablesPage: React.FC = () => {
           data={filteredPayables}
           keyExtractor={(payable) => payable.id}
           loading={loading}
-          selectable
-          selectedKeys={selectedIds}
-          onSelectionChange={(keys) => setSelectedIds(keys as Set<string>)}
           onRowClick={(payable) => setViewPayable(payable)}
           pagination={totalPages > 1}
           pageSize={20}
@@ -1336,7 +1081,6 @@ const EnhancedPayablesPage: React.FC = () => {
                 <PayableActionsCell
                   payable={payable}
                   onViewDetails={(p) => setViewPayable(p)}
-                  onRequestPobo={handleRequestPobo}
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onSubmit={handleSubmitForApproval}
@@ -1349,16 +1093,6 @@ const EnhancedPayablesPage: React.FC = () => {
           ]}
         />
       </Card>
-
-      {/* POBO Modal */}
-      <PoboRequestModal
-        isOpen={showPoboModal}
-        onClose={() => setShowPoboModal(false)}
-        payables={poboPayables}
-        entities={entities}
-        onSubmit={handleSubmitPobo}
-        loading={submitting}
-      />
 
       {/* Approval Modal */}
       <ApprovalModal
@@ -1446,6 +1180,12 @@ const EnhancedPayablesPage: React.FC = () => {
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">POBO Status</p>
                   <p className="font-medium">{viewPayable.poboRequestStatus}</p>
+                </div>
+              )}
+              {viewPayable.paymentRouteNote && (
+                <div className="col-span-2">
+                  <p className="text-neutral-500 dark:text-neutral-400">Payment route</p>
+                  <p className="font-medium">{viewPayable.paymentRouteNote}</p>
                 </div>
               )}
               {viewPayable.rejectionReason && (

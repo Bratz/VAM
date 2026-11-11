@@ -131,80 +131,14 @@ public class PayablesController {
     }
 
     // ========================================================================
-    // PHASE 2: POBO WORKFLOW ENDPOINTS
+    // POBO: decided by enrolment (In-House Bank), not requested per payable (spec R7)
     // ========================================================================
 
-    @PostMapping("/pobo/request")
-    @Operation(summary = "Request POBO for payables", 
-               description = "Subsidiary requests treasury to pay on their behalf")
-    public ResponseEntity<PoboBatchRequestResponse> requestPobo(
-            @RequestBody PoboRequestRequest request
-    ) {
-        return ResponseEntity.ok(payablesService.requestPobo(request));
-    }
-
-    @GetMapping("/pobo/pending-approval")
-    @Operation(summary = "Get POBO requests pending treasury approval", 
-               description = "Returns all payables awaiting treasury POBO approval")
-    public ResponseEntity<List<PayableResponse>> getPoboPendingApproval() {
-        return ResponseEntity.ok(payablesService.getPoboPendingApproval());
-    }
-
-    @PostMapping("/pobo/approve")
-    @Operation(summary = "Approve or reject POBO request", 
-               description = "Treasury approves or rejects a POBO request")
-    public ResponseEntity<PayableResponse> actionPoboRequest(
-            @RequestBody PoboApprovalRequest request
-    ) {
-        return ResponseEntity.ok(payablesService.actionPoboRequest(request));
-    }
-
-    @PostMapping("/pobo/batch-approve")
-    @Operation(summary = "Batch approve/reject POBO requests", 
-               description = "Treasury batch approves or rejects multiple POBO requests")
-    public ResponseEntity<BatchOperationResponse> batchActionPoboRequests(
-            @RequestBody PoboBatchApprovalRequest request
-    ) {
-        return ResponseEntity.ok(payablesService.batchActionPoboRequests(request));
-    }
-
     @PostMapping("/pobo/preview")
-    @Operation(summary = "Preview POBO execution", 
-               description = "Calculate charges, IHB loan preview, and total for POBO execution")
-    public ResponseEntity<PoboPreviewResponse> getPoboPreview(
-            @RequestBody PoboPreviewRequest request
-    ) {
+    @Operation(summary = "How the payables would be paid today",
+               description = "Per payable: POBO (payer, payment account, IHB current headroom, refusal if over) or direct (and why)")
+    public ResponseEntity<List<PaymentRoutePreview>> getPoboPreview(@RequestBody PoboPreviewRequest request) {
         return ResponseEntity.ok(payablesService.getPoboPreview(request));
-    }
-
-    @PostMapping("/pobo/execute")
-    @Operation(summary = "Execute POBO payments", 
-               description = "Execute approved POBO payments, create IHB loan and recharge")
-    public ResponseEntity<PoboExecuteResponse> executePobo(
-            @RequestBody PoboExecuteRequest request
-    ) {
-        return ResponseEntity.ok(payablesService.executePobo(request));
-    }
-
-    @GetMapping("/pobo/eligible")
-    @Operation(summary = "Get POBO-eligible payables", 
-               description = "Returns approved payables that can be submitted for POBO")
-    public ResponseEntity<PayableListResponse> getPoboEligiblePayables(
-            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
-            @RequestParam(required = false) UUID owningEntityId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-        PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(requireCorporate(corporateId))
-            .owningEntityId(owningEntityId)
-            .status("APPROVED")
-            .paymentRoute("DIRECT")
-            .page(page)
-            .size(size)
-            .build();
-        
-        return ResponseEntity.ok(payablesService.searchPayables(request));
     }
 
     @GetMapping("/pobo/history")

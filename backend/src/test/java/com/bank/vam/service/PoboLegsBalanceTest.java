@@ -7,8 +7,12 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
+import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.tax.ChargeConfigurationRepository;
 import com.bank.vam.service.treasury.FundsAvailabilityService;
+import com.bank.vam.service.treasury.IhbMirrorService;
+import com.bank.vam.service.treasury.SettlementVaResolverService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
@@ -27,18 +31,21 @@ import static org.mockito.Mockito.when;
 
 /**
  * A POBO payment moves real money out of the group: the bank account (its shadow) goes down by the
- * amount, and nothing else should be left over. The intercompany pair (the subsidiary's IHB current
- * account and Treasury's IC receivable) mirrors one position and nets to zero; the settlement
- * accounts are only stops on the way, so they must end where they started.
- *
- * Today they don't: Treasury Settlement is credited (leg 4) and never debited, so it keeps the
- * amount and every converted total that excludes shadows grows by a payment that actually left.
+ * amount, and nothing else should be left over. The settlement accounts are only stops on the way, so
+ * they must end where they started -- Treasury Settlement is credited (leg 4) and pays the amount out,
+ * each with its own ledger row (spec R9). Treasury's IC receivable / IC payable follow the subsidiary's
+ * IHB current position (R10), whatever moved it: the POBO posting, a later collection, an old drift.
  */
 class PoboLegsBalanceTest {
 
     private final Map<Class<?>, Object> deps = new HashMap<>();
     private final UUID programId = UUID.randomUUID();
     private final UUID corporateId = UUID.randomUUID();
+    private final List<Transaction> ledger = new ArrayList<>();
+
+    private TransactionService service;
+    private VirtualAccount ihbCurrent, ihbSettlement, treasurySettlement, icReceivable, icPayable, shadow, collectionSettlement;
+    private List<VirtualAccount> all;
 
     private VirtualAccount account(String number, AccountCategory category, String balance) {
         VirtualAccount va = VirtualAccount.builder()
@@ -60,37 +67,44 @@ class PoboLegsBalanceTest {
         return (T) deps.get(type);
     }
 
+    /** Every dependency mocked except the mirror sync, which is real over the mocked repositories. */
     private TransactionService serviceWithMocks() throws Exception {
         Constructor<?> constructor = TransactionService.class.getDeclaredConstructors()[0];
         Object[] args = new Object[constructor.getParameterCount()];
         Class<?>[] types = constructor.getParameterTypes();
         for (int i = 0; i < types.length; i++) {
-            args[i] = mock(types[i]);
+            args[i] = types[i] == IhbMirrorService.class
+                ? new IhbMirrorService(dep(VirtualAccountRepository.class), dep(TransactionRepository.class))
+                : mock(types[i]);
             deps.put(types[i], args[i]);
         }
         constructor.setAccessible(true);
         return (TransactionService) constructor.newInstance(args);
     }
 
-    @Test
-    void theSixLegsOfAPoboPaymentNetToTheMoneyThatLeftTheBank() throws Exception {
-        TransactionService service = serviceWithMocks();
+    @BeforeEach
+    void setUp() throws Exception {
+        service = serviceWithMocks();
         VirtualAccountRepository vas = dep(VirtualAccountRepository.class);
         TransactionRepository txns = dep(TransactionRepository.class);
 
-        VirtualAccount ihbCurrent = account("IHB-UK-EUR", AccountCategory.TRANSACTION, "0");
-        VirtualAccount ihbSettlement = account("IHBS-UK-EUR", AccountCategory.TRANSACTION, "0");
-        VirtualAccount treasurySettlement = account("TSETT-EUR", AccountCategory.SETTLEMENT, "0");
-        VirtualAccount icReceivable = account("IC-REC-UK-EUR", AccountCategory.TRANSACTION, "0");
-        VirtualAccount shadow = account("SHADOW-EUR", AccountCategory.PHYSICAL_MIRROR, "1000000");
+        ihbCurrent = account("IHB-UK-EUR", AccountCategory.TRANSACTION, "0");
+        ihbSettlement = account("IHBS-UK-EUR", AccountCategory.TRANSACTION, "0");
+        treasurySettlement = account("TSETT-EUR", AccountCategory.SETTLEMENT, "0");
+        icReceivable = account("IC-REC-UK-EUR", AccountCategory.TRANSACTION, "0");
+        icPayable = account("IC-PAY-UK-EUR", AccountCategory.TRANSACTION, "0");
+        collectionSettlement = account("SETT-EUR", AccountCategory.SETTLEMENT, "0");
+        shadow = account("SHADOW-EUR", AccountCategory.PHYSICAL_MIRROR, "1000000");
         shadow.setLinkedPhysicalAccountId(UUID.randomUUID());
         shadow.setBankBalance(new BigDecimal("1000000"));
 
+        ihbCurrent.setOwningEntityCode("MNC-UK");
         ihbCurrent.setIhbSettlementVaId(ihbSettlement.getId());
         ihbCurrent.setTreasuryPoolVaId(treasurySettlement.getId());
         ihbCurrent.setIcReceivableVaId(icReceivable.getId());
+        ihbCurrent.setIcPayableVaId(icPayable.getId());
 
-        List<VirtualAccount> all = List.of(ihbCurrent, ihbSettlement, treasurySettlement, icReceivable, shadow);
+        all = List.of(ihbCurrent, ihbSettlement, treasurySettlement, icReceivable, icPayable, shadow, collectionSettlement);
         for (VirtualAccount va : all) {
             when(vas.findById(va.getId())).thenReturn(Optional.of(va));
         }
@@ -100,6 +114,7 @@ class PoboLegsBalanceTest {
         when(txns.save(any(Transaction.class))).thenAnswer(i -> {
             Transaction t = i.getArgument(0);
             if (t.getId() == null) t.setId(UUID.randomUUID());
+            ledger.add(t);
             return t;
         });
         when(dep(LegalEntityRepository.class).findById(any())).thenReturn(Optional.empty());
@@ -107,18 +122,52 @@ class PoboLegsBalanceTest {
         FundsAvailabilityService.FundsCheckResult approved = new FundsAvailabilityService.FundsCheckResult();
         approved.setApproved(true);
         when(dep(FundsAvailabilityService.class).checkFundsAvailability(any(), any(), any())).thenReturn(approved);
+        when(dep(SettlementVaResolverService.class).resolveSettlementVaWithResult(any(), any(), any()))
+            .thenReturn(SettlementVaResolverService.SettlementVaResolutionResult.success(collectionSettlement));
+    }
 
-        BigDecimal amount = new BigDecimal("20000");
-        Map<VirtualAccount, BigDecimal> before = new HashMap<>();
-        all.forEach(va -> before.put(va, va.getCurrentBalance()));
-
+    private void pobo(String amount) {
         TransactionDto.PoboPaymentRequest request = new TransactionDto.PoboPaymentRequest();
         request.setOwnerVaId(ihbCurrent.getId());
         request.setPayerVaId(treasurySettlement.getId());
-        request.setAmount(amount);
+        request.setAmount(new BigDecimal(amount));
         request.setBeneficiaryName("Supplier Ltd");
-
         service.makeIhb6LegPoboPayment(request);
+    }
+
+    private Map<VirtualAccount, BigDecimal> balances() {
+        Map<VirtualAccount, BigDecimal> m = new HashMap<>();
+        all.forEach(va -> m.put(va, va.getCurrentBalance()));
+        return m;
+    }
+
+    /** Every balance change has its rows: per account, the rows' after - before add up to the change, and each row's amount is its own movement. */
+    private void assertEveryMovementHasALedgerRow(Map<VirtualAccount, BigDecimal> before) {
+        for (VirtualAccount va : all) {
+            List<Transaction> rows = ledger.stream().filter(t -> va.getId().equals(t.getVaId())).toList();
+            BigDecimal recorded = rows.stream().map(t -> t.getBalanceAfter().subtract(t.getBalanceBefore()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            assertThat(recorded).as("ledger rows of %s", va.getVaNumber())
+                .isEqualByComparingTo(va.getCurrentBalance().subtract(before.get(va)));
+            rows.forEach(t -> assertThat(t.getBalanceAfter().subtract(t.getBalanceBefore()).abs())
+                .as("row amount on %s", va.getVaNumber()).isEqualByComparingTo(t.getAmount()));
+        }
+    }
+
+    private void assertMirrorsFollowThePosition() {
+        BigDecimal p = ihbCurrent.getCurrentBalance();
+        assertThat(icReceivable.getCurrentBalance()).as("IC receivable at position %s", p)
+            .isEqualByComparingTo(p.negate().max(BigDecimal.ZERO));
+        assertThat(icPayable.getCurrentBalance()).as("IC payable at position %s", p)
+            .isEqualByComparingTo(p.max(BigDecimal.ZERO));
+    }
+
+    @Test
+    void theSixLegsOfAPoboPaymentNetToTheMoneyThatLeftTheBankAndEachMovementHasARow() {
+        BigDecimal amount = new BigDecimal("20000");
+        Map<VirtualAccount, BigDecimal> before = balances();
+
+        pobo("20000");
 
         List<String> moved = new ArrayList<>();
         BigDecimal everything = BigDecimal.ZERO;
@@ -137,10 +186,115 @@ class PoboLegsBalanceTest {
         // The virtual side is a redistribution among the group's own accounts: it nets to zero.
         assertThat(exceptShadow).as("virtual accounts only, moved: %s", moved).isEqualByComparingTo(BigDecimal.ZERO);
         // The intercompany pair mirrors one position.
-        assertThat(ihbCurrent.getCurrentBalance().add(icReceivable.getCurrentBalance()))
-            .as("IHB current + IC receivable").isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-20000");
+        assertMirrorsFollowThePosition();
         // Settlement accounts are stops on the way, not destinations.
         assertThat(ihbSettlement.getCurrentBalance()).as("IHB settlement VA").isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(treasurySettlement.getCurrentBalance()).as("Treasury settlement VA").isEqualByComparingTo(BigDecimal.ZERO);
+        // R9: including Treasury Settlement's payout.
+        assertEveryMovementHasALedgerRow(before);
+        assertThat(ledger).allSatisfy(t -> assertThat(t.getCorrelationId()).startsWith("IHBPOBO-"));
+        Transaction icrRow = ledger.stream().filter(t -> t.getVaId().equals(icReceivable.getId())).findFirst().orElseThrow();
+        assertThat(icrRow.getMovementType()).isEqualTo(Transaction.MovementType.IC_RECEIVABLE);
+        assertThat(icrRow.getDescription()).contains("MNC-UK").contains("Supplier Ltd");
+    }
+
+    @Test
+    void aCollectionCreditedAfterAPoboPaymentMovesTheMirrorsToThePosition() {
+        Map<VirtualAccount, BigDecimal> before = balances();
+        pobo("20000");
+
+        TransactionDto.CollectionRequest collection = TransactionDto.CollectionRequest.builder()
+            .targetVaId(ihbCurrent.getId()).amount(new BigDecimal("25000")).currencyCode("EUR").remitterName("Customer plc").build();
+        service.processCollection(collection);
+
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("5000");
+        assertMirrorsFollowThePosition();   // IC receivable 20000 -> 0, IC payable 0 -> 5000
+        assertEveryMovementHasALedgerRow(before);
+        Transaction down = ledger.stream().filter(t -> t.getVaId().equals(icReceivable.getId())
+            && t.getMovementType() == Transaction.MovementType.IC_SETTLEMENT).findFirst().orElseThrow();
+        assertThat(down.getAmount()).isEqualByComparingTo("20000");
+        assertThat(down.getDescription()).contains("Customer plc");
+    }
+
+    @Test
+    void driftedMirrorsAreSetFromThePositionOnTheNextMovement() {
+        // MNC-UK locally: IHB current +100 against an IC payable of 706.
+        ihbCurrent.setCurrentBalance(new BigDecimal("100"));
+        icPayable.setCurrentBalance(new BigDecimal("706"));
+        Map<VirtualAccount, BigDecimal> before = balances();
+
+        pobo("300");
+
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-200");
+        assertMirrorsFollowThePosition();   // IC receivable 200, IC payable 0
+        assertEveryMovementHasALedgerRow(before);
+    }
+
+    @Test
+    void aPoboPaymentCreatesNoRechargeButKeepsItsIntercompanyRecords() {
+        pobo("20000");
+
+        // TransactionService no longer has a recharge repository at all; the IC records for the Intercompany page remain.
+        assertThat(TransactionService.class.getDeclaredConstructors()[0].getParameterTypes())
+            .doesNotContain(com.bank.vam.repository.pobo.IntercompanyRechargeRepository.class);
+        org.mockito.ArgumentCaptor<com.bank.vam.entity.intercompany.IntercompanyTransaction> ic =
+            org.mockito.ArgumentCaptor.forClass(com.bank.vam.entity.intercompany.IntercompanyTransaction.class);
+        org.mockito.Mockito.verify(dep(IntercompanyTransactionRepository.class), org.mockito.Mockito.times(2)).save(ic.capture());
+        // Born settled by the IHB position: information only, never counted again in bilateral positions.
+        ic.getAllValues().forEach(r -> {
+            org.junit.jupiter.api.Assertions.assertEquals(
+                com.bank.vam.entity.intercompany.IntercompanyTransaction.TransactionStatus.SETTLED, r.getStatus());
+            org.junit.jupiter.api.Assertions.assertEquals("IHB-POSITION", r.getSettlementRef());
+        });
+    }
+
+    @Test
+    void theEnrolmentsPaymentAccountPaysWhenTheRequestNamesItNotTheAccountsTreasuryLink() {
+        VirtualAccount paymentAccount = account("TC-PAY-EUR", AccountCategory.TRANSACTION, "0");
+        when(dep(VirtualAccountRepository.class).findById(paymentAccount.getId())).thenReturn(Optional.of(paymentAccount));
+
+        TransactionDto.PoboPaymentRequest request = new TransactionDto.PoboPaymentRequest();
+        request.setOwnerVaId(ihbCurrent.getId());
+        request.setPayerVaId(paymentAccount.getId());
+        request.setAmount(new BigDecimal("300"));
+        request.setBeneficiaryName("Supplier Ltd");
+        service.makeIhb6LegPoboPayment(request);
+
+        List<Transaction> payerRows = ledger.stream().filter(t -> paymentAccount.getId().equals(t.getVaId())).toList();
+        assertThat(payerRows).hasSize(2);                                       // credited, then pays out
+        assertThat(paymentAccount.getCurrentBalance()).isEqualByComparingTo("0");
+        assertThat(ledger).noneMatch(t -> treasurySettlement.getId().equals(t.getVaId()));
+        assertThat(shadow.getCurrentBalance()).isEqualByComparingTo("999700");
+    }
+
+    @Test
+    void noPoboFeeIsTakenEvenWhenOneIsConfigured() {
+        com.bank.vam.entity.tax.ChargeConfiguration fee = mock(com.bank.vam.entity.tax.ChargeConfiguration.class);
+        when(fee.calculateCharge(any())).thenReturn(new BigDecimal("25"));
+        when(dep(ChargeConfigurationRepository.class).findActiveByCode("POBO_FEE")).thenReturn(Optional.of(fee));
+
+        pobo("1000");
+
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-1000");
+        assertThat(ledger).noneMatch(t -> t.getMovementType() == Transaction.MovementType.FEE);
+        assertThat(ledger).allSatisfy(t -> assertThat(t.getFeeAmount() == null || t.getFeeAmount().signum() == 0).isTrue());
+    }
+
+    @Test
+    void aPaymentOverTheIhbCreditHeadroomIsRefusedBeforeAnyMoneyMoves() {
+        ihbCurrent.setIhbParticipant(true);
+        ihbCurrent.setCurrentBalance(new BigDecimal("-200"));
+        ihbCurrent.setEffectiveCreditLimit(new BigDecimal("1000"));
+        Map<VirtualAccount, BigDecimal> before = balances();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> pobo("800.01"))
+            .isInstanceOf(com.bank.vam.exception.BusinessException.class)
+            .hasMessageContaining("over MNC-UK's IHB credit headroom of 800");
+
+        assertThat(ledger).isEmpty();
+        assertThat(balances()).isEqualTo(before);
+        pobo("800");                                                            // exactly the headroom is fine
+        assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-1000");
     }
 }

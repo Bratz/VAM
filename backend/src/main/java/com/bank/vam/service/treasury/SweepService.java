@@ -639,6 +639,19 @@ public class SweepService {
                 return executionRepository.save(execution);
             }
 
+            // An in-house account is never swept (spec R16): its balance is the subsidiary's position with treasury,
+            // not cash. Swept, the intercompany leg below credited the same amount straight back to that same IHB
+            // current account, so each scheduler run swept it again, added that much to treasury's account and
+            // charged the sweep fee (seen as AED 5 every 5 minutes on IHB-MNC-UAE-DUBAI-AED-0001).
+            if (isInHouse(sourceVa)) {
+                execution.setSweepAmount(BigDecimal.ZERO);
+                execution.setBalanceAfter(sourceVa.getCurrentBalance());
+                execution.setStatus(SweepExecution.ExecutionStatus.SKIPPED);
+                execution.setErrorMessage(sourceVa.getVaNumber() + " is an in-house account (its balance is a position "
+                    + "with treasury, not cash); it is not swept");
+                return executionRepository.save(execution);
+            }
+
             // Sweep the account's own CASH, never its borrowing line.
             //
             // availableBalance is not cash on an IHB participant: IhbUnifiedService persists
@@ -859,6 +872,12 @@ public class SweepService {
             VirtualAccount sourceVa = sourceVaById.get(source.getAccountId());
             if (sourceVa == null || targetVa == null) {
                 result.setMessage("Source or target VA not found");
+                return result;
+            }
+            // Same as executeSweep: funding an in-house account and then debiting it the same amount by the
+            // intercompany leg leaves it in deficit, so every run would fund it again out of treasury's cash.
+            if (isInHouse(sourceVa)) {
+                result.setMessage(sourceVa.getVaNumber() + " is an in-house account; it is not funded by cash concentration");
                 return result;
             }
 
@@ -1220,9 +1239,16 @@ public class SweepService {
     // FEE & CALCULATION METHODS
     // ========================================================================
     
+    /** An IHB current account or an in-house mirror (IC receivable / payable, IHB settlement): a position, not cash. */
+    public static boolean isInHouse(VirtualAccount va) {
+        return va.isIhbParticipant()
+            || (va.getMirrorAccountType() != null && va.getMirrorAccountType() != VirtualAccount.MirrorAccountType.NONE);
+    }
+
+    /** The fee of one execution that moved money; nothing for a sweep of zero (the minimum fee applies only to a sweep). */
     private void postSweepFee(SweepRuleSource source, SweepExecution execution, BigDecimal sweepAmount) {
-        if (source.getAccountId() == null) return;
-        
+        if (source.getAccountId() == null || sweepAmount == null || sweepAmount.signum() <= 0) return;
+
         BigDecimal sweepFee = calculateSweepFee(sweepAmount);
         if (sweepFee.compareTo(BigDecimal.ZERO) <= 0) return;
         

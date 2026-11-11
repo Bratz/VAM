@@ -1,5 +1,100 @@
 # Active Work / Status Tracker
 
+## ✅ POBO through the In-House Bank (spec: docs/specs/pobo-in-house-bank.md, decisions D1–D10)
+Same shape as the COBO work. Phases are applied in order; nothing is committed or pushed until the user says so.
+
+Facts the plan rests on (verified 2026-11-11):
+- Money moves only on path B: paying from an account with `ihbParticipant=true` runs
+  `TransactionService.makeIhb6LegPoboPayment` (4-leg `makePoboPayment` fallback). Entry points:
+  `PayablesService.executePayment` (~679, payer = `sourceVa.treasuryPoolVaId`), `Iso20022OutwardPaymentService`
+  (single ~130, bulk ~455), `/transactions/pobo`, `/iso20022/outward/pobo`, file ingest via those.
+- Path A (Request POBO -> treasury approval -> `PoboExecutionService`) never moves money; no screen approves; 2 local
+  payables stuck in PENDING_POBO.
+- 6-leg debits treasury's settlement VA without a ledger row (~1523). The IC receivable mirror moves only on POBO legs
+  (Dubai: ICR 3,369 vs IHB current +14.48). COBO's `postCoboInHouseCredit` adds to IC payable regardless of sign.
+- `createIntercompanyTransactionRecord` (~2253) writes a per-payment POBO recharge (errors only logged); netting PAY
+  settlement debits the IHB current account again (`NettingService` ~924).
+- pain.001 (`PayablesService` ~917-1033; `Iso20022XmlBuilder` outward ~85-91): Dbtr = subsidiary, DbtrAcct = VA UUID,
+  no `UltmtDbtr` anywhere.
+- Funds check on the owner VA already allows a negative IHB balance down to its credit limit (`FundsAvailabilityService`).
+- Payables ingest passes `paymentChannel("BANK_TRANSFER")`; `Payable.PaymentChannel` has DIRECT/BATCH/SCHEDULED/IMMEDIATE.
+
+### Phase 1 — ledger integrity (money risks)
+- [x] 1.1 Every movement of the POBO posting has a ledger row (the treasury settlement debit).
+- [x] 1.2 Mirrors follow positions (R10): one `syncMirrors(subsidiary IHB current VA)` sets IC receivable / IC payable
+      from the position (P<0: ICR=-P, ICP=0; P>=0: ICP=P, ICR=0) with a ledger row for each mirror change; called
+      wherever an IHB current account's balance changes (find the chokepoint, e.g. `propagateBalanceChanges`; else every
+      posting method: POBO, COBO in-house credit, collections, sweeps, fees, interest). POBO/COBO stop moving the mirrors
+      by fixed amounts.
+- [x] 1.3 No per-payment POBO recharge; netting never debits an IHB current account for a payment already posted there.
+- [x] 1.4 Tests: POBO then a collection -> mirrors equal position; COBO credit on a negative position reduces ICR;
+      every balance change has a row; netting with POBO payments debits once.
+
+Phase 1 done (587 tests): treasury settlement debit has its row; `IhbMirrorService.syncIhbMirrors` (ICR=max(0,-P),
+ICP=max(0,P)) runs from `propagateBalanceChanges` + fees, IHB ledger, netting, IC settlement; POBO/COBO/sweep fixed mirror
+legs removed; no POBO recharge per payment; netting refuses POBO recharges/records. Drifted mirrors self-correct on the
+next movement. For Phase 4: netting RECEIVE leg still debits treasury's ICR directly; IntercompanyTransactionService
+bilateral settlement / positions still count old POBO recharges.
+
+### Phase 2 — one POBO path, by enrolment
+- [x] 2.1 `PoboEnrolment` (as `CoboEnrolment`): subsidiary + currency -> treasury centre + payment account (backed by a
+      physical account with an IBAN); validation R1–R2.
+- [x] 2.2 API + In-House Bank tab "Payments on behalf (POBO)" beside COBO.
+- [x] 2.3 Payment routing: an approved payable / ISO outward payment of an enrolled subsidiary in that currency runs the
+      in-house posting with the payer from the enrolment (not `treasuryPoolVaId`); opt-out pays directly (D4); other
+      currency pays directly with the reason (D5); IHB credit limit checked before money moves, refusal names the
+      headroom (D7). No POBO fee (D10).
+- [x] 2.4 Create Payable: enrolled owner + currency shows "Paid by <T> from <account>" with a "pay directly instead"
+      opt-out; POBO toggle and paying-entity picker removed.
+- [x] 2.5 Retire Request POBO / treasury approval / `PoboExecutionService` execution / POBO authorisation limits and their
+      dead UI and endpoints (grep callers); previews show headroom and no invented fees.
+
+Phase 2 done (605 tests): PoboEnrolment + /api/v1/pobo/enrolments + In-House Bank tab; executePayment and ISO outward
+route by the enrolment active on the payment date (payer = enrolment's payment account, headroom check, no fee);
+Payable.payDirectly / paymentRouteNote; path A deleted (PoboExecutionService, PoboPreviewService, PoboAuthorization).
+Unenrolled payments from IHB current accounts still run the old way (payer = treasuryPoolVaId). ISO path has no opt-out.
+For Phase 4: creditLimitAvailable only ever increases (may refuse within headroom) — repair it; IntercompanyTransactionService
+injects PoboService unused.
+
+### Phase 3 — payment message (D6)
+- [x] 3.1 pain.001 for a POBO payment (payables builder and ISO outward builder): Dbtr = treasury centre, DbtrAcct =
+      the payment account's real IBAN (never a VA UUID), UltmtDbtr = subsidiary; invoice number in remittance.
+
+Phases 3+5 done (615 tests): pain.001 POBO = treasury Dbtr + payment IBAN + UltmtDbtr (PmtInf level; bulk splits PmtInf
+per debtor, fixes row/instruction mismatch); no VA UUID as DbtrAcct; payables ingest channel BATCH / method BANK_TRANSFER;
+sweep: IHB current accounts no longer swept (they self-swept: debit + IC credit back + cash added to treasury settlement + AED 5).
+Found: unenrolled IHB-current payments now need an IBAN on the IHB current account (none) -> fix in Phase 4 (debtor = the
+physical account the posting debits). TransactionController pain.001 hardcodes BIC TEABORGG / VA number; payables pain.001
+"UNKNOWN"/"Vendor"/"Unknown Bank"/SEPA placeholders; createIhbSweepRule(s) still create self-sweep rules; past self-sweeps
+added cash to treasury settlement (report only).
+
+### Phase 4 — cut-over and repair (D8, D9)
+- [x] 4.1 One action on the POBO tab with a preview: PENDING_POBO / POBO_APPROVED payables -> APPROVED (pay normally);
+      mirrors repaired to the R10 rule; existing POBO_PAYMENT recharges closed as settled-by-IHB (out of netting).
+      Report per item; re-running changes nothing.
+Done: PoboCutoverService + POST /api/v1/pobo/cutover?dryRun= + modal on the POBO tab. Also: funds check uses balance +
+credit limit; netting RECEIVE leg no longer touches mirrors; unenrolled in-house payments use the treasury physical IBAN
+with the subsidiary as UltmtDbtr; payables pain.001 creditor from the party bank account (refused without one); IHB
+setup no longer creates self-sweep rules.
+
+### Phase 5 — fixes along the way
+- [x] 5.1 Payables file ingest: channel/method mapping so ingested payables pay.
+- [x] 5.2 Find why a cash-concentration sweep fee (AED 5) hits MNC Dubai's IHB current account about every 5 minutes;
+      charge only when a sweep moves money.
+
+### Phase 6 — verification
+- [x] 6.1 Acceptance 1–8 of the spec as tests + an end-to-end run on localhost (enrol MNC-UAE-DUBAI/AED, approve a
+      payable, Pay Now, check ledger rows, mirrors, pain.001, limit refusal, cut-over/repair); clean up incl. physical
+      accounts (see lessons).
+- [x] 6.2 Full suite, typecheck, live check; demo walkthrough step 10 (POBO).
+Phase 6 (localhost, 11 Nov): cut-over dry run = 2 payables, 3 mirrors, 36 recharges/IC records, 2 credit limits, 1 sweep
+rule, 1 past self-sweep (MNC-UK 500, report only); applied; re-run finds 0. Enrolled Dubai/AED; AED 300 payable paid:
+IHB −300, ICR follows, treasury physical/shadow −300, no recharge; pain.001 Dbtr treasury + IBAN, UltmtDbtr Dubai.
+AED 2,000,000 refused over headroom, nothing moved. Found: POBO IC records were born PROCESSED, so the cut-over kept
+counting them -> now born SETTLED ("IHB-POSITION"). 627 tests pass. Local data restored from backups.
+Data prerequisite: no treasury VA was linked to a physical account with an IBAN (localhost or vam-five), so enrolment
+needs that set up first.
+
 ## ✅ COBO through the In-House Bank (spec: docs/specs/cobo-in-house-bank.md, decisions D1–D8)
 Ship in phases; each phase is one commit, pushed only when the user says so. Money risks first.
 

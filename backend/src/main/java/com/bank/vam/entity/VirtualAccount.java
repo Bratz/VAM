@@ -1828,6 +1828,22 @@ public class VirtualAccount extends BaseEntity {
     }
 
     /**
+     * IHB credit use follows the balance (POBO spec D7): utilised = min(limit, max(0, -balance)), available = limit -
+     * utilised -- down as well as up. Returns whether either field changed. For an IHB current account only.
+     */
+    public boolean followIhbCreditUse() {
+        BigDecimal limit = effectiveCreditLimit != null ? effectiveCreditLimit : BigDecimal.ZERO;
+        BigDecimal balance = currentBalance != null ? currentBalance : BigDecimal.ZERO;
+        BigDecimal utilised = balance.negate().max(BigDecimal.ZERO).min(limit.max(BigDecimal.ZERO));
+        BigDecimal available = limit.subtract(utilised);
+        boolean changed = creditLimitUtilized == null || creditLimitUtilized.compareTo(utilised) != 0
+            || creditLimitAvailable == null || creditLimitAvailable.compareTo(available) != 0;
+        creditLimitUtilized = utilised;
+        creditLimitAvailable = available;
+        return changed;
+    }
+
+    /**
      * Check if withdrawal amount is within available funds + credit limit.
      */
     public boolean canWithdrawIhb(BigDecimal amount) {

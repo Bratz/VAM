@@ -248,24 +248,6 @@ public class IntercompanyController {
 
     // --- POBO Operations ---
 
-    @PostMapping("/pobo/preview")
-    @Operation(summary = "Preview POBO transaction")
-    public ResponseEntity<ApiResponse<PoboPreviewResponse>> previewPobo(
-            @RequestBody PoboRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.previewPobo(request)));
-    }
-
-    @PostMapping("/pobo/execute")
-    @Operation(summary = "Execute POBO payment")
-    public ResponseEntity<ApiResponse<PoboResultResponse>> executePobo(
-            @RequestBody PoboRequest request) {
-        log.info("Executing POBO: {} pays for {}", 
-            request.getPayingEntityId(), request.getBehalfEntityId());
-        return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.executePobo(request)));
-    }
-
     @GetMapping("/pobo")
     @Operation(summary = "Get POBO transactions")
     public ResponseEntity<ApiResponse<List<IntercompanyTransactionResponse>>> getPoboTransactions(

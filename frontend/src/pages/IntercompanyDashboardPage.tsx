@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ArrowLeftRight, Building2, Plus, CheckCircle, Clock, Loader2, RefreshCw, TrendingUp, Eye, ArrowRight, ArrowLeft, GitMerge, Download, Wallet, CreditCard, Scale, BarChart3, Activity, Zap, Receipt, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeftRight, Building2, Plus, CheckCircle, Clock, Loader2, RefreshCw, TrendingUp, Eye, ArrowRight, ArrowLeft, GitMerge, Download, Wallet, CreditCard, Scale, BarChart3, Activity, Zap, Receipt, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -127,22 +127,6 @@ interface PositionSummary {
   asOfDate: string;
 }
 
-interface PoboPreview {
-  payingEntityId: string;
-  payingEntityCode: string;
-  payingEntityName: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName: string;
-  amount: number;
-  currencyCode: string;
-  charges: number;
-  totalAmount: number;
-  withinCreditLimit: boolean;
-  availableLimit: number;
-  warnings: string[];
-}
-
 // ============================================================================
 // API SERVICES
 // ============================================================================
@@ -195,17 +179,6 @@ const intercompanyApi = {
   // Transactions
   getTransactions: async (params: { corporateId?: string; entityId?: string; type?: string; status?: string; page?: number; size?: number }) => {
     const response = await apiClient.get('/intercompany/transactions', { params });
-    return response.data.data;
-  },
-
-  // POBO
-  previewPobo: async (data: { payingEntityId: string; behalfEntityId: string; amount: number; currencyCode?: string }): Promise<PoboPreview> => {
-    const response = await apiClient.post('/intercompany/pobo/preview', data);
-    return response.data.data;
-  },
-
-  executePobo: async (data: { payingEntityId: string; behalfEntityId: string; amount: number; currencyCode?: string; description?: string }) => {
-    const response = await apiClient.post('/intercompany/pobo/execute', data);
     return response.data.data;
   },
 
@@ -293,22 +266,21 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
 // The inline `CorporateEntityFilterBar` that lived here is removed.
 
 // ============================================================================
-// POBO/COBO MODAL
+// COBO MODAL
 // ============================================================================
+// Ad-hoc POBO is gone: payables are paid on behalf by enrolment (In-House Bank, POBO tab).
 
-interface PoboCoboModalProps {
+interface CoboModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mode: 'POBO' | 'COBO';
   entities: LegalEntity[];
   corporateId: string;
   onSuccess: () => void;
 }
 
-const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, entities, onSuccess }) => {
-  const [step, setStep] = useState<'form' | 'preview' | 'result'>('form');
+const CoboModal: React.FC<CoboModalProps> = ({ isOpen, onClose, entities, onSuccess }) => {
+  const [step, setStep] = useState<'form' | 'result'>('form');
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<PoboPreview | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -321,62 +293,29 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
     generateViban: false,
   });
 
-  const isPOBO = mode === 'POBO';
-  const title = isPOBO ? 'Pay On Behalf Of (POBO)' : 'Collect On Behalf Of (COBO)';
-  const primaryEntity = isPOBO ? 'Treasury (Payer)' : 'Treasury (Collector)';
+  const title = 'Collect On Behalf Of (COBO)';
+  const primaryEntity = 'Treasury (Collector)';
   const secondaryEntity = 'Subsidiary (Behalf Of)';
 
   // Filter entities - treasury centers for primary, others for secondary
   const treasuryEntities = entities.filter(e => e.isTreasuryCenter && e.status === 'ACTIVE');
   const subsidiaryEntities = entities.filter(e => !e.isTreasuryCenter && e.status === 'ACTIVE');
 
-  const handlePreview = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const previewData = await intercompanyApi.previewPobo({
-        payingEntityId: formData.payingEntityId,
-        behalfEntityId: formData.behalfEntityId,
-        amount: parseFloat(formData.amount),
-        currencyCode: formData.currencyCode,
-      });
-      setPreview(previewData);
-      setStep('preview');
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to preview';
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleExecute = async () => {
     setLoading(true);
     setError(null);
     try {
-      let response;
-      if (isPOBO) {
-        response = await intercompanyApi.executePobo({
-          payingEntityId: formData.payingEntityId,
-          behalfEntityId: formData.behalfEntityId,
-          amount: parseFloat(formData.amount),
-          currencyCode: formData.currencyCode,
-          description: formData.description,
-        });
-      } else {
-        response = await intercompanyApi.setupCobo({
-          collectingEntityId: formData.payingEntityId,
-          behalfEntityId: formData.behalfEntityId,
-          amount: parseFloat(formData.amount),
-          currencyCode: formData.currencyCode,
-          description: formData.description,
-          generateViban: formData.generateViban,
-        });
-      }
+      const response = await intercompanyApi.setupCobo({
+        collectingEntityId: formData.payingEntityId,
+        behalfEntityId: formData.behalfEntityId,
+        amount: parseFloat(formData.amount),
+        currencyCode: formData.currencyCode,
+        description: formData.description,
+        generateViban: formData.generateViban,
+      });
       setResult(response);
       setStep('result');
-      toast.success(`${mode} transaction executed successfully`);
+      toast.success('COBO transaction executed successfully');
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.message || 'Failed to execute';
       setError(errorMsg);
@@ -396,7 +335,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       description: '',
       generateViban: false,
     });
-    setPreview(null);
     setResult(null);
     setError(null);
     onClose();
@@ -407,18 +345,18 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
     <Modal isOpen={isOpen} onClose={resetAndClose} title={title} size="md">
       {/* Step Indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        {['form', 'preview', 'result'].map((s, i) => (
+        {['form', 'result'].map((s, i) => (
           <React.Fragment key={s}>
             <div className={cn(
               'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium',
               step === s ? 'bg-primary-600 text-white' : 
-              ['form', 'preview', 'result'].indexOf(step) > i ? 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300' : 
+              ['form', 'result'].indexOf(step) > i ? 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300' : 
               'bg-surface-muted text-neutral-400 dark:text-neutral-400'
             )}>
               {i + 1}
             </div>
-            {i < 2 && <div className={cn('w-8 h-0.5', 
-              ['form', 'preview', 'result'].indexOf(step) > i ? 'bg-success-400' : 'bg-neutral-200 dark:bg-primary-800'
+            {i < 1 && <div className={cn('w-8 h-0.5',
+              ['form', 'result'].indexOf(step) > i ? 'bg-success-400' : 'bg-neutral-200 dark:bg-primary-800'
             )} />}
           </React.Fragment>
         ))}
@@ -436,9 +374,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       {step === 'form' && (
         <div className="space-y-4">
           <div className="p-3 rounded-lg bg-info-50 text-body-sm text-info-800 dark:bg-info-500/10 dark:text-info-300">
-            {isPOBO 
-              ? 'Treasury will pay the vendor on behalf of a subsidiary. The subsidiary will owe treasury for reimbursement.'
-              : 'Treasury will collect payment from a customer on behalf of a subsidiary. Treasury will owe the subsidiary.'}
+            Treasury will collect payment from a customer on behalf of a subsidiary. Treasury will owe the subsidiary.
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -497,78 +433,15 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           <div>
             <label className="field-label block mb-1">Description</label>
             <Input 
-              placeholder={isPOBO ? "e.g., Vendor payment for supplies" : "e.g., Customer invoice collection"}
+              placeholder="e.g., Customer invoice collection"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            {!isPOBO && (
-              <Checkbox size="sm" label="Generate VIBAN for collection" checked={formData.generateViban} onChange={(checked) => setFormData({ ...formData, generateViban: checked })} />
-            )}
+            <Checkbox size="sm" label="Generate VIBAN for collection" checked={formData.generateViban} onChange={(checked) => setFormData({ ...formData, generateViban: checked })} />
           </div>
-        </div>
-      )}
-
-      {/* Preview Step */}
-      {step === 'preview' && preview && (
-        <div className="space-y-4">
-          <div className="p-4 bg-surface-page rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-center">
-                <p className="body-sm">{isPOBO ? 'Payer' : 'Collector'}</p>
-                <p className="font-medium">{preview.payingEntityCode}</p>
-                <p className="caption">{preview.payingEntityName}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isPOBO ? <ArrowRight className="w-6 h-6 text-primary-400" /> : <ArrowLeft className="w-6 h-6 text-primary-400" />}
-                <div className="text-center">
-                  <p className="text-body-lg font-bold text-primary-600 dark:text-primary-200">
-                    {formatCurrency(preview.amount, formData.currencyCode)}
-                  </p>
-                </div>
-                {isPOBO ? <ArrowRight className="w-6 h-6 text-primary-400" /> : <ArrowLeft className="w-6 h-6 text-primary-400" />}
-              </div>
-              <div className="text-center">
-                <p className="body-sm">On Behalf Of</p>
-                <p className="font-medium">{preview.behalfEntityCode}</p>
-                <p className="caption">{preview.behalfEntityName}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Principal Amount</span>
-              <span>{formatCurrency(preview.amount, formData.currencyCode)}</span>
-            </div>
-            <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Service Charges</span>
-              <span>{formatCurrency(preview.charges, formData.currencyCode)}</span>
-            </div>
-            <div className="flex justify-between font-medium border-t pt-2">
-              <span>Total Amount</span>
-              <span>{formatCurrency(preview.totalAmount, formData.currencyCode)}</span>
-            </div>
-          </div>
-
-          {!preview.withinCreditLimit && (
-            <div className="p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
-              <p className="text-body-sm text-error-700 dark:text-error-300">
-                <AlertTriangle className="w-4 h-4 inline align-text-bottom mr-1" />Amount exceeds available credit limit ({formatCurrency(preview.availableLimit, formData.currencyCode)})
-              </p>
-            </div>
-          )}
-
-          {preview.warnings?.length > 0 && (
-            <div className="p-3 bg-warning-50 rounded-lg dark:bg-warning-500/10">
-              {preview.warnings.map((w, i) => (
-                <p key={i} className="text-body-sm text-warning-800 dark:text-warning-300">{w}</p>
-              ))}
-            </div>
-          )}
-
         </div>
       )}
 
@@ -577,7 +450,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
         <div className="text-center py-6">
           <StatusIconBadge tone="success" icon={CheckCircle} size="xl" rounded="full" className="mx-auto mb-4" />
           <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Transaction Successful</h3>
-          <p className="text-neutral-600 mb-4 dark:text-neutral-300">{mode} transaction executed successfully</p>
+          <p className="text-neutral-600 mb-4 dark:text-neutral-300">COBO transaction executed successfully</p>
           <div className="p-3 bg-surface-page rounded-lg inline-block">
             <p className="body-sm">Reference</p>
             <p className="font-mono font-medium text-primary-600 dark:text-primary-200">{result.transactionRef}</p>
@@ -596,21 +469,12 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
         {step === 'form' && (
           <>
             <Button variant="ghost" onClick={resetAndClose}>Cancel</Button>
-            <Button 
-              onClick={handlePreview} 
+            <Button
+              onClick={handleExecute}
               disabled={loading || !formData.payingEntityId || !formData.behalfEntityId || !formData.amount}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Preview
-            </Button>
-          </>
-        )}
-        {step === 'preview' && (
-          <>
-            <Button variant="ghost" onClick={() => setStep('form')}>Back</Button>
-            <Button onClick={handleExecute} disabled={loading || preview?.withinCreditLimit === false}>
-              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Execute {mode}
+              Execute COBO
             </Button>
           </>
         )}
@@ -815,7 +679,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
   const [rechargeProcessing, setRechargeProcessing] = useState<string | null>(null);
   
   // Modal states
-  const [showPoboModal, setShowPoboModal] = useState(false);
   const [showCoboModal, setShowCoboModal] = useState(false);
   const [, setSelectedPair] = useState<EntityPairSummary | null>(null);
 
@@ -993,9 +856,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         </Button>
         <Button variant="outline" size="sm" leftIcon={<Wallet className="w-4 h-4" />} onClick={() => setShowCoboModal(true)} disabled={!selectedCorporateId}>
           COBO
-        </Button>
-        <Button size="sm" leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowPoboModal(true)} disabled={!selectedCorporateId}>
-          POBO
         </Button>
       </>
     ),
@@ -1193,9 +1053,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <div className="p-4">
                 <h4 className="body-strong font-semibold mb-4">Quick Actions</h4>
                 <div className="space-y-2">
-                  <Button className="w-full justify-start" variant="outline" leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowPoboModal(true)}>
-                    New POBO Payment
-                  </Button>
                   <Button className="w-full justify-start" variant="outline" leftIcon={<Wallet className="w-4 h-4" />} onClick={() => setShowCoboModal(true)}>
                     Setup COBO Collection
                   </Button>
@@ -1232,12 +1089,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       {/* POBO Tab */}
       {activeTab === 'pobo' && (
         <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="flex items-center justify-end">
-            <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowPoboModal(true)}>
-              New POBO Payment
-            </Button>
-          </div>
-
           {/* Was 4 hand-rolled <Card> tiles (one with a one-off gradient
               tint the other 3 didn't have) using formatCompactCurrency
               (full precision despite the name) instead of the compact
@@ -1284,11 +1135,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               emptyTitle="No POBO transactions found"
               emptyDescription=""
               emptyIcon={<StatusIconBadge tone="neutral" icon={CreditCard} size="xl" />}
-              emptyAction={
-                <Button size="sm" variant="outline" onClick={() => setShowPoboModal(true)}>
-                  Create First POBO
-                </Button>
-              }
               columns={[
                 { key: 'transactionRef', header: 'Reference', render: (_, tx) => (
                   <>
@@ -1856,18 +1702,9 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       )}
 
       {/* Modals */}
-      <PoboCoboModal 
-        isOpen={showPoboModal} 
-        onClose={() => setShowPoboModal(false)} 
-        mode="POBO"
-        entities={legalEntities}
-        corporateId={selectedCorporateId}
-        onSuccess={fetchData}
-      />
-      <PoboCoboModal 
-        isOpen={showCoboModal} 
-        onClose={() => setShowCoboModal(false)} 
-        mode="COBO"
+      <CoboModal
+        isOpen={showCoboModal}
+        onClose={() => setShowCoboModal(false)}
         entities={legalEntities}
         corporateId={selectedCorporateId}
         onSuccess={fetchData}

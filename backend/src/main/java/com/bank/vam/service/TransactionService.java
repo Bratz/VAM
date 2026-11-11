@@ -11,7 +11,6 @@ import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.tax.ChargeConfiguration;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
 import com.bank.vam.entity.intercompany.IntercompanyTransaction;
-import com.bank.vam.entity.pobo.IntercompanyRecharge;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.exception.ResourceNotFoundException;
@@ -23,7 +22,8 @@ import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.tax.ChargeConfigurationRepository;
 import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
-import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
+import com.bank.vam.service.treasury.IhbMirrorService;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.bank.vam.service.treasury.BalanceAggregationServiceEnhanced;
 import com.bank.vam.service.treasury.FeePostingService;
 import com.bank.vam.service.treasury.FundsAvailabilityService;
@@ -185,7 +185,7 @@ public class TransactionService {
     private final BalanceAggregationServiceEnhanced balanceAggregationService;
     private final ObjectMapper objectMapper;
     private final IntercompanyTransactionRepository intercompanyTransactionRepository;
-    private final IntercompanyRechargeRepository intercompanyRechargeRepository;
+    private final IhbMirrorService ihbMirrors;
     private final FxPaymentService fxPayments;
 
     // ========================================================================
@@ -206,9 +206,6 @@ public class TransactionService {
     private static final String CHARGE_RTGS_PAYMENT = "RTGS_PAYMENT_FEE";
     private static final String CHARGE_SEPA_PAYMENT = "SEPA_PAYMENT_FEE";
     
-    // POBO fees
-    private static final String CHARGE_POBO_FEE = "POBO_FEE";
-
     // Collection fees (inbound)
     private static final String CHARGE_INBOUND_COLLECTION = "INBOUND_COLLECTION_FEE";
     private static final String CHARGE_VIBAN_COLLECTION = "VIBAN_COLLECTION_FEE";
@@ -398,6 +395,7 @@ public class TransactionService {
                 .build();
 
         txn = transactionRepository.save(txn);
+        ihbMirrors.syncIhbMirrors(va, "credit " + txn.getReferenceNumber(), null); // R10: no-op unless an IHB current account
 
         releaseLimitUtilizationSafe(va.getId(), request.getAmount());
 
@@ -459,6 +457,7 @@ public class TransactionService {
                 .build();
 
         txn = transactionRepository.save(txn);
+        ihbMirrors.syncIhbMirrors(va, "debit " + txn.getReferenceNumber(), null); // R10: no-op unless an IHB current account
 
         updateLimitUtilizationSafe(va.getId(), request.getAmount());
 
@@ -711,8 +710,8 @@ public class TransactionService {
 
         // Propagate balance changes through hierarchy (only for transaction/operating VAs)
         // Settlement VA is a system account - its balance doesn't propagate to hierarchy
-        propagateBalanceChanges(fromVa.getId(), request.getAmount().negate());  // Source VA decreased (transaction VA)
-        propagateBalanceChanges(toVa.getId(), request.getAmount());             // Destination VA increased (transaction VA)
+        propagateBalanceChanges(fromVa, request.getAmount().negate(), correlationId, "transfer to " + toVa.getVaNumber());  // Source VA decreased (transaction VA)
+        propagateBalanceChanges(toVa, request.getAmount(), correlationId, "transfer from " + fromVa.getVaNumber()); // Destination VA increased (transaction VA)
 
         log.info("Transfer completed: {} → {} → {}, amount={}, fees={}",
             fromVa.getVaNumber(), settlementVa.getVaNumber(), toVa.getVaNumber(),
@@ -992,7 +991,7 @@ public class TransactionService {
 
         // Propagate balance changes through hierarchy (only for transaction/operating VAs)
         // Shadow VA and Settlement VA are system accounts - their balances don't propagate to hierarchy
-        propagateBalanceChanges(fromVa.getId(), request.getAmount().negate());    // Source VA decreased (transaction VA)
+        propagateBalanceChanges(fromVa, request.getAmount().negate(), correlationId, "payment to " + request.getBeneficiaryName()); // Source VA decreased (transaction VA)
 
         log.info("Payment completed: {} → {} → {} → CBS, amount={}, fee={}",
             fromVa.getVaNumber(), settlementVa.getVaNumber(), shadowVa.getVaNumber(),
@@ -1042,9 +1041,9 @@ public class TransactionService {
         LegalEntity payerEntity = payerVa.getOwningEntityId() != null ?
             legalEntityRepository.findById(payerVa.getOwningEntityId()).orElse(null) : null;
 
-        // Calculate POBO fee from configuration
-        BigDecimal poboFee = calculatePoboFee(request.getAmount(), ownerVa.getCurrencyCode());
-        BigDecimal totalDebit = request.getAmount().add(poboFee);
+        // No POBO fee (spec D10)
+        BigDecimal poboFee = BigDecimal.ZERO;
+        BigDecimal totalDebit = request.getAmount();
 
         // Funds check on OWNER VA (they bear the cost)
         FundsCheckResult fundsCheck = fundsAvailabilityService.checkFundsAvailability(
@@ -1209,17 +1208,6 @@ public class TransactionService {
         txn4_shadowOut = transactionRepository.save(txn4_shadowOut);
         allTransactions.add(txn4_shadowOut);
 
-        // =====================================================================
-        // FEE FLOW: Owner VA → Settlement VA
-        // =====================================================================
-        if (poboFee.compareTo(BigDecimal.ZERO) > 0) {
-            // Note: postSingleFee handles Settlement VA resolution internally
-            // and will gracefully handle missing Settlement VA
-            postSingleFee(ownerVa, poboFee, CHARGE_POBO_FEE,
-                "POBO Fee for payment to " + request.getBeneficiaryName(),
-                txn1_ownerOut.getId(), correlationId);
-        }
-
         // Update payable if linked
         if (request.getPayableId() != null) {
             updatePayableStatus(request.getPayableId(), txn1_ownerOut.getReferenceNumber());
@@ -1229,7 +1217,7 @@ public class TransactionService {
 
         // Propagate balance changes through hierarchy (only for transaction/operating VAs)
         // Payer VA (Treasury) nets to zero, Shadow VA is a system account - don't propagate
-        propagateBalanceChanges(ownerVa.getId(), request.getAmount().negate());   // Owner VA decreased (transaction VA)
+        propagateBalanceChanges(ownerVa, request.getAmount().negate(), correlationId, "POBO payment to " + request.getBeneficiaryName()); // Owner VA decreased (transaction VA)
 
         log.info("POBO payment completed: {} → {} → {} → CBS, amount={}, fee={}, behalfOf={}",
             ownerVa.getVaNumber(), payerVa.getVaNumber(), shadowVa.getVaNumber(),
@@ -1241,7 +1229,7 @@ public class TransactionService {
         createIntercompanyTransactionRecord(
             ownerVa, payerVa, ownerEntity, payerEntity,
             request.getAmount(), poboFee, correlationId,
-            txn1_ownerOut.getReferenceNumber(), "POBO_4LEG", request.getPayableId());
+            txn1_ownerOut.getReferenceNumber(), "POBO_4LEG");
 
         return txn1_ownerOut;
     }
@@ -1262,14 +1250,15 @@ public class TransactionService {
      * | 2   | IHB Settlement VA     |       | X      | TRANSFER_IN      | Per-subsidiary routing |
      * | 3   | IHB Settlement VA     | X     |        | TRANSFER_OUT     | Route to Treasury |
      * | 4   | Treasury Settlement VA|       | X      | TRANSFER_IN      | Treasury receives |
-     * | 5   | IC Receivable VA      |       | X      | IC_RECEIVABLE    | Treasury's claim on subsidiary |
+     * | 5   | Treasury Settlement VA| X     |        | POBO_DEBIT       | Treasury pays out |
      * | 6   | Shadow VA             | X     |        | DEBIT            | CBS external payment |
+     * | +   | IC Receivable / Payable mirrors follow the IHB current position (IhbMirrorService, R10) |
      *
      * BALANCE EFFECTS:
      * - IHB Current Account: DECREASES by amount (subsidiary used credit)
      * - IHB Settlement VA: Nets to ZERO (pass-through)
-     * - Treasury Settlement VA: INCREASES then CBS pays out
-     * - IC Receivable VA: INCREASES (Treasury is owed more by subsidiary)
+     * - Treasury Settlement VA: Nets to ZERO (credited, then pays out)
+     * - IC Receivable / IC Payable: set from the IHB current position (P<0: ICR=-P; P>=0: ICP=P)
      * - Shadow VA: DECREASES (physical account funds outbound)
      *
      * FALLS BACK TO 4-LEG: If IHB Settlement VA or IC Receivable VA not configured.
@@ -1286,12 +1275,21 @@ public class TransactionService {
         VirtualAccount ownerVa = virtualAccountRepository.findById(request.getOwnerVaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Owner VA (IHB Current Account) not found"));
 
+        // One limit (spec D7): the subsidiary's IHB credit headroom, checked before any money moves.
+        if (ownerVa.isIhbParticipant()) {
+            String refusal = PoboEnrolmentService.headroomRefusal(ownerVa, request.getAmount());
+            if (refusal != null) throw new BusinessException(refusal);
+        }
+
+        // The payer: the enrolment's payment account when the caller names it, else the account's treasury link
+        UUID payerVaId = request.getPayerVaId() != null ? request.getPayerVaId() : ownerVa.getTreasuryPoolVaId();
+
         // Validate this is an IHB Current Account configured for 6-leg
-        if (!ownerVa.isConfiguredFor6LegPobo()) {
+        if (!ownerVa.hasIhbSettlementVa() || !ownerVa.hasIcReceivable() || payerVaId == null) {
             log.warn("IHB Current Account {} not configured for 6-leg POBO. " +
-                "IhbSettlementVaId={}, IcReceivableVaId={}, TreasuryPoolVaId={}. Falling back to 4-leg flow.",
+                "IhbSettlementVaId={}, IcReceivableVaId={}, payer={}. Falling back to 4-leg flow.",
                 ownerVa.getVaNumber(), ownerVa.getIhbSettlementVaId(),
-                ownerVa.getIcReceivableVaId(), ownerVa.getTreasuryPoolVaId());
+                ownerVa.getIcReceivableVaId(), payerVaId);
             return makePoboPayment(request);
         }
 
@@ -1299,9 +1297,9 @@ public class TransactionService {
         VirtualAccount ihbSettlementVa = virtualAccountRepository.findById(ownerVa.getIhbSettlementVaId())
                 .orElseThrow(() -> new ResourceNotFoundException("IHB Settlement VA not found: " + ownerVa.getIhbSettlementVaId()));
 
-        // Load Treasury Settlement VA (payer)
-        VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(ownerVa.getTreasuryPoolVaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Treasury Settlement VA not found: " + ownerVa.getTreasuryPoolVaId()));
+        // Load the treasury account that pays (passes the amount through to the bank)
+        VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(payerVaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Treasury paying account not found: " + payerVaId));
 
         // Load IC Receivable VA
         VirtualAccount icReceivableVa = virtualAccountRepository.findById(ownerVa.getIcReceivableVaId())
@@ -1318,9 +1316,9 @@ public class TransactionService {
         LegalEntity treasuryEntity = treasurySettlementVa.getOwningEntityId() != null ?
             legalEntityRepository.findById(treasurySettlementVa.getOwningEntityId()).orElse(null) : null;
 
-        // Calculate POBO fee from configuration
-        BigDecimal poboFee = calculatePoboFee(request.getAmount(), ownerVa.getCurrencyCode());
-        BigDecimal totalDebit = request.getAmount().add(poboFee);
+        // No POBO fee (spec D10)
+        BigDecimal poboFee = BigDecimal.ZERO;
+        BigDecimal totalDebit = request.getAmount();
 
         // Funds check on OWNER VA (they bear the cost) - uses IHB credit limit
         FundsCheckResult fundsCheck = fundsAvailabilityService.checkFundsAvailability(
@@ -1480,38 +1478,8 @@ public class TransactionService {
         txn4_treasuryCredit = transactionRepository.save(txn4_treasuryCredit);
         allTransactions.add(txn4_treasuryCredit);
 
-        // LEG 5: IC Receivable VA (Treasury's claim on subsidiary INCREASES)
-        // This is an accounting entry - Treasury now has a larger receivable from subsidiary
-        BigDecimal icReceivableBalanceBefore = icReceivableVa.getCurrentBalance();
-        icReceivableVa.setCurrentBalance(icReceivableBalanceBefore.add(request.getAmount()));
-        virtualAccountRepository.save(icReceivableVa);
-
-        Transaction txn5_icReceivable = Transaction.builder()
-                .movementType(Transaction.MovementType.IC_RECEIVABLE)
-                .transactionCategory(TransactionCategory.INTERNAL)  // Internal IC accounting entry
-                .corporateId(icReceivableVa.getCorporateId())
-                .legalEntityId(icReceivableVa.getOwningEntityId())
-                .vaId(icReceivableVa.getId())
-                .programId(icReceivableVa.getProgramId())
-                .amount(request.getAmount())
-                .currencyCode(ownerVa.getCurrencyCode())
-                .balanceBefore(icReceivableBalanceBefore)
-                .balanceAfter(icReceivableVa.getCurrentBalance())
-                .transactionDate(LocalDateTime.now())
-                .valueDate(valueDate)
-                .referenceNumber(generateReferenceNumber("IHBPOBO"))
-                .description("IC Receivable: Treasury claim on " + behalfOfEntity + " for POBO to " + request.getBeneficiaryName())
-                .channel("IHB_POBO")
-                .counterpartyVaId(ownerVa.getId())
-                .correlationId(correlationId)
-                .isPobo(true)
-                .behalfOfEntity(behalfOfEntity)
-                .behalfOfVaId(ownerVa.getId())
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("IHB POBO - leg 5 of 6 (IC Receivable increase - Treasury's claim on subsidiary)")
-                .build();
-        txn5_icReceivable = transactionRepository.save(txn5_icReceivable);
-        allTransactions.add(txn5_icReceivable);
+        // LEG 5: IC Receivable -- not moved here. Treasury's mirrors follow the IHB current account's position
+        // (spec R10): propagateBalanceChanges below syncs them and posts the IC receivable / IC payable rows.
 
         // LEG 6: DEBIT Shadow VA (CBS trigger - money leaves physical account)
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
@@ -1519,10 +1487,37 @@ public class TransactionService {
         virtualAccountRepository.save(shadowVa);
         CoreBankingBalance.follow(physicalAccountRepository, shadowVa, request.getAmount().negate());
 
-        // Also debit Treasury Settlement VA for the external payment
+        // Treasury Settlement VA pays the amount out (it received it in leg 4 and is a pass-through, like the 4-leg
+        // payer): debited by the amount the shadow sends to the bank, with its own ledger row (spec R9).
         BigDecimal treasuryBalanceBefore2 = treasurySettlementVa.getCurrentBalance();
         treasurySettlementVa.setCurrentBalance(treasuryBalanceBefore2.subtract(request.getAmount()));
         virtualAccountRepository.save(treasurySettlementVa);
+        allTransactions.add(transactionRepository.save(Transaction.builder()
+                .movementType(Transaction.MovementType.POBO_DEBIT)
+                .transactionCategory(TransactionCategory.EXTERNAL)
+                .corporateId(treasurySettlementVa.getCorporateId())
+                .legalEntityId(treasurySettlementVa.getOwningEntityId())
+                .vaId(treasurySettlementVa.getId())
+                .programId(treasurySettlementVa.getProgramId())
+                .amount(request.getAmount())
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(treasuryBalanceBefore2)
+                .balanceAfter(treasurySettlementVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBPOBO"))
+                .description("Treasury pays out IHB POBO on behalf of " + behalfOfEntity + " to " + request.getBeneficiaryName())
+                .channel("IHB_POBO")
+                .beneficiaryName(request.getBeneficiaryName())
+                .beneficiaryAccount(request.getBeneficiaryAccount())
+                .counterpartyVaId(shadowVa.getId())
+                .correlationId(correlationId)
+                .isPobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB POBO - Treasury Settlement debit (payout via the shadow account)")
+                .build()));
 
         Transaction txn6_shadowDebit = Transaction.builder()
                 .movementType(Transaction.MovementType.POBO_DEBIT)
@@ -1554,15 +1549,6 @@ public class TransactionService {
         txn6_shadowDebit = transactionRepository.save(txn6_shadowDebit);
         allTransactions.add(txn6_shadowDebit);
 
-        // =====================================================================
-        // FEE FLOW: Owner VA → Settlement VA
-        // =====================================================================
-        if (poboFee.compareTo(BigDecimal.ZERO) > 0) {
-            postSingleFee(ownerVa, poboFee, CHARGE_POBO_FEE,
-                "IHB POBO Fee for payment to " + request.getBeneficiaryName(),
-                txn1_ownerDebit.getId(), correlationId);
-        }
-
         // Update payable if linked
         if (request.getPayableId() != null) {
             updatePayableStatus(request.getPayableId(), txn1_ownerDebit.getReferenceNumber());
@@ -1571,7 +1557,7 @@ public class TransactionService {
         updateLimitUtilizationSafe(ownerVa.getId(), totalDebit);
 
         // Propagate balance changes through hierarchy
-        propagateBalanceChanges(ownerVa.getId(), request.getAmount().negate());
+        propagateBalanceChanges(ownerVa, request.getAmount().negate(), correlationId, "IHB POBO payment to " + request.getBeneficiaryName());
 
         log.info("IHB 6-leg POBO completed: {} → {} → {} → {} (IC:{}) → {} → CBS, amount={}, fee={}, behalfOf={}",
             ownerVa.getVaNumber(), ihbSettlementVa.getVaNumber(), treasurySettlementVa.getVaNumber(),
@@ -1584,7 +1570,7 @@ public class TransactionService {
         createIntercompanyTransactionRecord(
             ownerVa, treasurySettlementVa, ownerEntity, treasuryEntity,
             request.getAmount(), poboFee, correlationId,
-            txn1_ownerDebit.getReferenceNumber(), "POBO_6LEG", request.getPayableId());
+            txn1_ownerDebit.getReferenceNumber(), "POBO_6LEG");
 
         return txn1_ownerDebit;
     }
@@ -1858,7 +1844,7 @@ public class TransactionService {
                 .build();
         txn6_ownerCredit = transactionRepository.save(txn6_ownerCredit);
 
-        propagateBalanceChanges(ownerVa.getId(), netAmount);
+        propagateBalanceChanges(ownerVa, netAmount, correlationId, "COBO collection from " + remitterName);
 
         log.info("IHB 6-leg COBO completed: CBS → {} → {} (IC Payable:{}) → {} → {}, amount={}, behalfOf={}",
             shadowVa.getVaNumber(), treasurySettlementVa.getVaNumber(), icPayableVa.getCurrentBalance(),
@@ -1869,8 +1855,8 @@ public class TransactionService {
 
     /**
      * The in-house half of a COBO collection whose cash is already on treasury's account (posted when the bank
-     * credit arrived): treasury's IC payable to the subsidiary +amount, the subsidiary's IHB current account
-     * +amount. Unlike {@link #makeIhb6LegCoboCollection} no cash leg is booked again. Gross, no fee (spec D4).
+     * credit arrived): the subsidiary's IHB current account +amount, treasury's mirrors following its position
+     * (IC payable up, or IC receivable down while it is negative). Unlike {@link #makeIhb6LegCoboCollection} no cash leg is booked again. Gross, no fee (spec D4).
      * Idempotent per bank transaction: a second call for the same one posts nothing and returns null.
      *
      * @param ihbCurrentVa the subsidiary's IHB current account; its icPayableVaId must be set
@@ -1894,36 +1880,8 @@ public class TransactionService {
         String collector = collectorName != null ? collectorName : "Treasury";
         String what = "COBO " + invoiceNumber + " from " + customerName;
 
-        BigDecimal icBefore = icPayableVa.getCurrentBalance();
-        icPayableVa.setCurrentBalance(icBefore.add(amount));
-        virtualAccountRepository.save(icPayableVa);
-        transactionRepository.save(Transaction.builder()
-                .movementType(Transaction.MovementType.IC_PAYABLE)
-                .transactionCategory(TransactionCategory.INTERNAL)
-                .corporateId(icPayableVa.getCorporateId())
-                .legalEntityId(icPayableVa.getOwningEntityId())
-                .vaId(icPayableVa.getId())
-                .programId(icPayableVa.getProgramId())
-                .amount(amount)
-                .currencyCode(ihbCurrentVa.getCurrencyCode())
-                .balanceBefore(icBefore)
-                .balanceAfter(icPayableVa.getCurrentBalance())
-                .transactionDate(LocalDateTime.now())
-                .valueDate(LocalDate.now())
-                .referenceNumber(generateReferenceNumber("IHBCOBO"))
-                .description("IC Payable: " + collector + " owes " + behalfOf + " for " + what)
-                .channel("IHB_COBO")
-                .remitterName(customerName)
-                .externalReference(invoiceNumber)
-                .counterpartyVaId(ihbCurrentVa.getId())
-                .correlationId(correlationId)
-                .isRobo(true)
-                .behalfOfEntity(behalfOf)
-                .behalfOfVaId(ihbCurrentVa.getId())
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("IHB COBO in-house credit (" + source + ") - IC Payable increase; bank transaction " + bankTransactionId)
-                .build());
-
+        // Treasury's IC payable / IC receivable are not moved here: they follow the IHB current position (R10),
+        // synced in propagateBalanceChanges -- on a negative position this credit lowers the IC receivable.
         BigDecimal ownerBefore = ihbCurrentVa.getCurrentBalance();
         ihbCurrentVa.setCurrentBalance(ownerBefore.add(amount));
         ihbCurrentVa.setAvailableBalance(ihbCurrentVa.getCurrentBalance().add(
@@ -1956,16 +1914,16 @@ public class TransactionService {
                 .processingNotes("IHB COBO in-house credit (" + source + ") - IHB Current Account credit; bank transaction " + bankTransactionId)
                 .build());
 
-        propagateBalanceChanges(ihbCurrentVa.getId(), amount);
-        log.info("COBO in-house credit {} {} for {}: IHB current {} and IC payable {} +{}",
-            amount, ihbCurrentVa.getCurrencyCode(), invoiceNumber, ihbCurrentVa.getVaNumber(), icPayableVa.getVaNumber(), amount);
+        propagateBalanceChanges(ihbCurrentVa, amount, correlationId, what + ", collected by " + collector);
+        log.info("COBO in-house credit {} {} for {}: IHB current {} +{}",
+            amount, ihbCurrentVa.getCurrencyCode(), invoiceNumber, ihbCurrentVa.getVaNumber(), amount);
         return ownerTxn;
     }
 
     /**
-     * Undoes {@link #postCoboInHouseCredit} for a bank credit that came back (a returned direct debit): each of its
-     * legs is posted again the other way -- IC payable -amount, the subsidiary's IHB current account -amount -- under
-     * correlation {@code COBO-REV-<bankTransactionId>}. Idempotent; nothing to do (null) when no in-house credit was
+     * Undoes {@link #postCoboInHouseCredit} for a bank credit that came back (a returned direct debit): the
+     * subsidiary's IHB current account credit is posted again the other way (-amount) and treasury's mirrors follow
+     * the position (R10), under correlation {@code COBO-REV-<bankTransactionId>}. Idempotent; nothing to do (null) when no in-house credit was
      * posted for that bank transaction. The IHB current account may go below zero: a return is not optional.
      *
      * @return the IHB current account's debit, or null
@@ -1979,18 +1937,18 @@ public class TransactionService {
         }
         Transaction ownerDebit = null;
         for (Transaction leg : transactionRepository.findAllByCorrelationId("COBO-" + bankTransactionId)) {
+            // Only the IHB current account's credit is reversed; mirror rows (and the IC payable leg older credits
+            // posted) are not -- the mirrors are re-synced from the position below.
+            if (leg.getMovementType() != Transaction.MovementType.TRANSFER_IN) continue;
             VirtualAccount va = virtualAccountRepository.findById(leg.getVaId())
                     .orElseThrow(() -> new ResourceNotFoundException("VA not found: " + leg.getVaId()));
-            boolean owner = leg.getMovementType() == Transaction.MovementType.TRANSFER_IN;
             BigDecimal before = va.getCurrentBalance();
             va.setCurrentBalance(before.subtract(leg.getAmount()));
-            if (owner) {
-                va.setAvailableBalance(va.getCurrentBalance().add(
-                    va.getEffectiveCreditLimit() != null ? va.getEffectiveCreditLimit() : BigDecimal.ZERO));
-            }
+            va.setAvailableBalance(va.getCurrentBalance().add(
+                va.getEffectiveCreditLimit() != null ? va.getEffectiveCreditLimit() : BigDecimal.ZERO));
             virtualAccountRepository.save(va);
-            Transaction out = transactionRepository.save(Transaction.builder()
-                    .movementType(owner ? Transaction.MovementType.TRANSFER_OUT : Transaction.MovementType.REVERSAL)
+            ownerDebit = transactionRepository.save(Transaction.builder()
+                    .movementType(Transaction.MovementType.TRANSFER_OUT)
                     .transactionCategory(TransactionCategory.INTERNAL)
                     .corporateId(leg.getCorporateId())
                     .legalEntityId(leg.getLegalEntityId())
@@ -2015,10 +1973,7 @@ public class TransactionService {
                     .status(Transaction.TransactionStatus.COMPLETED)
                     .processingNotes("IHB COBO in-house credit reversed (" + leg.getReferenceNumber() + "); bank transaction " + bankTransactionId)
                     .build());
-            if (owner) {
-                propagateBalanceChanges(va.getId(), leg.getAmount().negate());
-                ownerDebit = out;
-            }
+            propagateBalanceChanges(va, leg.getAmount().negate(), correlationId, "returned: " + leg.getDescription() + " (" + reason + ")");
         }
         if (ownerDebit != null) log.info("COBO in-house credit for bank transaction {} reversed: {}", bankTransactionId, reason);
         return ownerDebit;
@@ -2036,8 +1991,8 @@ public class TransactionService {
      * isn't its own) without the Shadow-VA/CBS legs that don't apply here.
      *
      * Subsidiary's IHB Current Account INCREASES (they still have a claim on
-     * the cash, now via their Treasury position). Treasury's IC Payable VA
-     * for that subsidiary INCREASES by the same amount.
+     * the cash, now via their Treasury position). Treasury's IC mirrors
+     * follow the new position (R10).
      *
      * @param ihbCurrentVa IHB Current Account of the subsidiary whose surplus was swept
      * @param amount Amount swept, in ihbCurrentVa's own currency
@@ -2091,39 +2046,12 @@ public class TransactionService {
                 .build();
         ownerTxn = transactionRepository.save(ownerTxn);
 
-        BigDecimal icPayableBalanceBefore = icPayableVa.getCurrentBalance();
-        icPayableVa.setCurrentBalance(icPayableBalanceBefore.add(amount));
-        virtualAccountRepository.save(icPayableVa);
+        // Treasury's mirror follows the position (R10), synced in propagateBalanceChanges.
 
-        Transaction icPayableTxn = Transaction.builder()
-                .movementType(Transaction.MovementType.IC_PAYABLE)
-                .transactionCategory(TransactionCategory.INTERNAL)
-                .corporateId(icPayableVa.getCorporateId())
-                .legalEntityId(icPayableVa.getOwningEntityId())
-                .vaId(icPayableVa.getId())
-                .programId(icPayableVa.getProgramId())
-                .amount(amount)
-                .currencyCode(ihbCurrentVa.getCurrencyCode())
-                .balanceBefore(icPayableBalanceBefore)
-                .balanceAfter(icPayableVa.getCurrentBalance())
-                .transactionDate(LocalDateTime.now())
-                .valueDate(valueDate)
-                .referenceNumber(generateReferenceNumber("SWEEPIC"))
-                .description("IC Payable: Treasury owes " + ihbCurrentVa.getOwningEntityCode() + " for swept surplus")
-                .channel("SWEEP")
-                .externalReference(executionReference)
-                .counterpartyVaId(ihbCurrentVa.getId())
-                .correlationId(correlationId)
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("Sweep surplus - IC Payable increase (Treasury's obligation to subsidiary)")
-                .build();
-        transactionRepository.save(icPayableTxn);
+        propagateBalanceChanges(ihbCurrentVa, amount, correlationId, "surplus swept to Treasury (" + executionReference + ")");
 
-        propagateBalanceChanges(ihbCurrentVa.getId(), amount);
-
-        log.info("Sweep surplus IC leg posted: IHB Current {} -> {}, IC Payable {} -> {}, execution={}",
-            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(),
-            icPayableBalanceBefore, icPayableVa.getCurrentBalance(), executionReference);
+        log.info("Sweep surplus IC leg posted: IHB Current {} -> {}, execution={}",
+            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(), executionReference);
 
         return ownerTxn;
     }
@@ -2135,7 +2063,7 @@ public class TransactionService {
      * same internal-transfer-only scope, opposite direction.
      *
      * Subsidiary's IHB Current Account DECREASES (they now owe Treasury).
-     * Treasury's IC Receivable VA for that subsidiary INCREASES by the same amount.
+     * Treasury's IC mirrors follow the new position (R10).
      *
      * @param ihbCurrentVa IHB Current Account of the subsidiary that was funded
      * @param amount Amount funded, in ihbCurrentVa's own currency
@@ -2189,39 +2117,12 @@ public class TransactionService {
                 .build();
         ownerTxn = transactionRepository.save(ownerTxn);
 
-        BigDecimal icReceivableBalanceBefore = icReceivableVa.getCurrentBalance();
-        icReceivableVa.setCurrentBalance(icReceivableBalanceBefore.add(amount));
-        virtualAccountRepository.save(icReceivableVa);
+        // Treasury's mirror follows the position (R10), synced in propagateBalanceChanges.
 
-        Transaction icReceivableTxn = Transaction.builder()
-                .movementType(Transaction.MovementType.IC_RECEIVABLE)
-                .transactionCategory(TransactionCategory.INTERNAL)
-                .corporateId(icReceivableVa.getCorporateId())
-                .legalEntityId(icReceivableVa.getOwningEntityId())
-                .vaId(icReceivableVa.getId())
-                .programId(icReceivableVa.getProgramId())
-                .amount(amount)
-                .currencyCode(ihbCurrentVa.getCurrencyCode())
-                .balanceBefore(icReceivableBalanceBefore)
-                .balanceAfter(icReceivableVa.getCurrentBalance())
-                .transactionDate(LocalDateTime.now())
-                .valueDate(valueDate)
-                .referenceNumber(generateReferenceNumber("SWEEPIC"))
-                .description("IC Receivable: Treasury claim on " + ihbCurrentVa.getOwningEntityCode() + " for deficit funding")
-                .channel("SWEEP")
-                .externalReference(executionReference)
-                .counterpartyVaId(ihbCurrentVa.getId())
-                .correlationId(correlationId)
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("Sweep deficit funding - IC Receivable increase (Treasury's claim on subsidiary)")
-                .build();
-        transactionRepository.save(icReceivableTxn);
+        propagateBalanceChanges(ihbCurrentVa, amount.negate(), correlationId, "deficit funded by Treasury (" + executionReference + ")");
 
-        propagateBalanceChanges(ihbCurrentVa.getId(), amount.negate());
-
-        log.info("Sweep deficit IC leg posted: IHB Current {} -> {}, IC Receivable {} -> {}, execution={}",
-            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(),
-            icReceivableBalanceBefore, icReceivableVa.getCurrentBalance(), executionReference);
+        log.info("Sweep deficit IC leg posted: IHB Current {} -> {}, execution={}",
+            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(), executionReference);
 
         return ownerTxn;
     }
@@ -2259,8 +2160,7 @@ public class TransactionService {
             BigDecimal charges,
             String correlationId,
             String txnReference,
-            String flowType,
-            UUID payableId) {
+            String flowType) {
 
         try {
             // Extract entity details
@@ -2285,7 +2185,13 @@ public class TransactionService {
                 IntercompanyTransaction treasuryRecord = IntercompanyTransaction.builder()
                     .transactionRef(icReceivableRef)
                     .transactionType(IntercompanyTransaction.TransactionType.IC_RECEIVABLE)
-                    .status(IntercompanyTransaction.TransactionStatus.PROCESSED)
+                    // Settled by the IHB position at once: the payment is already on the subsidiary's IHB current account
+                    // (and the mirrors follow it), so the record is information only and never counted again in
+                    // bilateral positions or settlement (as the POBO cut-over does for older records).
+                    .status(IntercompanyTransaction.TransactionStatus.SETTLED)
+                    .settlementRef("IHB-POSITION")
+                    .settledAt(LocalDateTime.now())
+                    .settledBy("SYSTEM")
 
                     // For IC_RECEIVABLE: Entity that owns the receivable (Treasury)
                     .payingEntityId(treasuryEntityId)
@@ -2328,7 +2234,13 @@ public class TransactionService {
                 IntercompanyTransaction subsidiaryRecord = IntercompanyTransaction.builder()
                     .transactionRef(icPayableRef)
                     .transactionType(IntercompanyTransaction.TransactionType.IC_PAYABLE)
-                    .status(IntercompanyTransaction.TransactionStatus.PROCESSED)
+                    // Settled by the IHB position at once: the payment is already on the subsidiary's IHB current account
+                    // (and the mirrors follow it), so the record is information only and never counted again in
+                    // bilateral positions or settlement (as the POBO cut-over does for older records).
+                    .status(IntercompanyTransaction.TransactionStatus.SETTLED)
+                    .settlementRef("IHB-POSITION")
+                    .settledAt(LocalDateTime.now())
+                    .settledBy("SYSTEM")
 
                     // For IC_PAYABLE: Entity that owes (Subsidiary)
                     .payingEntityId(subsidiaryEntityId)
@@ -2364,48 +2276,8 @@ public class TransactionService {
             log.info("Created dual IC records for POBO {}: ICR-{} (Treasury), ICP-{} (Subsidiary)",
                 txnReference, correlationId, correlationId);
 
-            // =====================================================================
-            // RECORD 3: IntercompanyRecharge - For Recharges tab display
-            // Creates recharge record to track settlement obligation
-            // =====================================================================
-            String rechargeRef = "RCH-" + correlationId;
-
-            if (intercompanyRechargeRepository.findByRechargeReference(rechargeRef).isEmpty()) {
-                IntercompanyRecharge recharge = IntercompanyRecharge.builder()
-                    .rechargeReference(rechargeRef)
-                    // Payer = Treasury (who paid)
-                    .payerEntityId(treasuryEntityId)
-                    .payerEntityCode(treasuryEntityCode)
-                    .payerEntityName(treasuryEntityName)
-                    // Behalf = Subsidiary (on whose behalf)
-                    .behalfEntityId(subsidiaryEntityId)
-                    .behalfEntityCode(subsidiaryEntityCode)
-                    .behalfEntityName(subsidiaryEntityName)
-                    // Amounts
-                    .originalAmount(amount)
-                    .rechargeAmount(amount)
-                    .currencyCode(currencyCode)
-                    .serviceFee(charges != null ? charges : BigDecimal.ZERO)
-                    .adminFee(BigDecimal.ZERO)
-                    .fxMarkup(BigDecimal.ZERO)
-                    .totalRecharge(netAmount)
-                    // Status - APPROVED since payment already executed
-                    .status(IntercompanyRecharge.RechargeStatus.APPROVED)
-                    .approvalRequired(false)
-                    .approvedBy("SYSTEM_AUTO")
-                    .approvedAt(LocalDateTime.now())
-                    // Type and direction
-                    .rechargeType(IntercompanyRecharge.RechargeType.POBO_PAYMENT)
-                    .flowDirection(IntercompanyRecharge.FlowDirection.OUTBOUND)
-                    // The payable this paid, when there was one; a direct payment has none.
-                    .originalPayableId(payableId)
-                    .originalPaymentReference(txnReference)
-                    .build();
-
-                intercompanyRechargeRepository.save(recharge);
-                log.info("Created IntercompanyRecharge {} for POBO: Treasury {} paid {} {} on behalf of {}",
-                    rechargeRef, treasuryEntityCode, currencyCode, amount, subsidiaryEntityCode);
-            }
+            // No IntercompanyRecharge (POBO spec R11 / D8): the payment is already on the subsidiary's IHB current
+            // account, and its position is settled once, never recharged per payment.
 
         } catch (Exception e) {
             // Log but don't fail the main transaction - IC records are for reporting
@@ -2625,7 +2497,7 @@ public class TransactionService {
 
         // Propagate balance changes through hierarchy (only for transaction/operating VAs)
         // Shadow VA and Settlement VA are system accounts - their balances don't propagate to hierarchy
-        propagateBalanceChanges(targetVa.getId(), netAmount);             // Target VA increased (transaction VA)
+        propagateBalanceChanges(targetVa, netAmount, correlationId, "collection from " + request.getRemitterName()); // Target VA increased (transaction VA)
 
         // Build response
         return TransactionDto.CollectionResponse.builder()
@@ -2732,7 +2604,7 @@ public class TransactionService {
                 .status(Transaction.TransactionStatus.COMPLETED)
                 .processingNotes("Collection return - leg 2 of 2 (account debit)")
                 .build());
-        propagateBalanceChanges(targetVa.getId(), amount.negate());
+        propagateBalanceChanges(targetVa, amount.negate(), correlationId, "collection returned");
         log.info("Collection returned: {} {} out of {} via {}, reason {}", amount, currency, targetVa.getVaNumber(), shadowVa.getVaNumber(), reason);
         return out;
     }
@@ -2782,6 +2654,11 @@ public class TransactionService {
         VirtualAccount shadow = findProgramShadow(sourceVa);
         if (shadow == null) throw new BusinessException(noBankAccountMessage(sourceVa));
         return shadow;
+    }
+
+    /** The bank account (shadow) a payment paid by {@code payerVa} leaves through: a pain.001's debtor account. */
+    public VirtualAccount payoutShadow(VirtualAccount payerVa) {
+        return resolveShadowVa(payerVa);
     }
 
     /** {@link #resolveShadowVa} without the failure: null when the program has no such bank account. */
@@ -2968,10 +2845,6 @@ public class TransactionService {
     private BigDecimal calculatePaymentFee(VirtualAccount fromVa, TransactionDto.PaymentRequest request) {
         String feeCode = getPaymentFeeCode(request.getChannel());
         return calculateChargeFromConfig(feeCode, request.getAmount(), fromVa.getCurrencyCode());
-    }
-
-    private BigDecimal calculatePoboFee(BigDecimal amount, String currency) {
-        return calculateChargeFromConfig(CHARGE_POBO_FEE, amount, currency);
     }
 
     private String getPaymentFeeCode(String channel) {
@@ -3428,7 +3301,11 @@ public class TransactionService {
      * @param vaId The VA whose balance changed
      * @param delta The change amount (positive for increases, negative for decreases)
      */
-    private void propagateBalanceChanges(UUID vaId, BigDecimal delta) {
+    private void propagateBalanceChanges(VirtualAccount va, BigDecimal delta, String correlationId, String reason) {
+        // An IHB current account's mirrors follow its position on every movement (spec R10); a no-op for any other
+        // account. Outside the try below: a ledger row that fails must fail the posting.
+        ihbMirrors.syncIhbMirrors(va, reason, correlationId);
+        UUID vaId = va.getId();
         try {
             if (delta == null || delta.compareTo(BigDecimal.ZERO) == 0) {
                 log.debug("Skipping propagation for VA {}: delta is null or zero", vaId);

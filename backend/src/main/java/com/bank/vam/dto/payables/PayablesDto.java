@@ -86,6 +86,11 @@ public class PayablesDto {
         private UUID paymentViaEntityId;
         private String paymentViaEntityCode;
         private String paymentRouteDescription;
+        /** Opted out of POBO (D4); and why the payable is paid directly although its owner is enrolled (D4/D5). */
+        private Boolean payDirectly;
+        private String paymentRouteNote;
+        /** POBO: the owning entity's IHB current account the payment is booked to. */
+        private UUID behalfOfVaId;
         
         // Phase 2: POBO
         private UUID poboRequestId;
@@ -146,7 +151,6 @@ public class PayablesDto {
         
         // Computed flags
         private Boolean canBePaid;
-        private Boolean canRequestPobo;
         private Boolean canAddToNetting;
     }
 
@@ -220,10 +224,8 @@ public class PayablesDto {
         /** DRAFT (incomplete allowed) or PENDING_APPROVAL (validated). Absent means DRAFT. */
         private String status;
 
-        // POBO: the paying (treasury) entity pays on behalf of the owning entity
-        private Boolean isPobo;
-        private UUID paymentViaEntityId;
-        private String paymentViaEntityCode;
+        /** POBO is decided by the owning entity's enrolment; true pays directly instead (spec D4). */
+        private Boolean payDirectly;
         
         // Metadata
         private String description;
@@ -247,9 +249,8 @@ public class PayablesDto {
         private UUID owningEntityId;
         private String owningEntityCode;
         private String owningEntityName;
-        private Boolean isPobo;
-        private UUID paymentViaEntityId;
-        private String paymentViaEntityCode;
+        /** Opt out of (false: back into) payment on behalf by the owning entity's enrolment (spec D4). */
+        private Boolean payDirectly;
         
         // Phase 2: Party can be updated before approval
         private UUID partyId;
@@ -305,78 +306,8 @@ public class PayablesDto {
     }
 
     // ========================================================================
-    // PHASE 2: POBO WORKFLOW DTOs
+    // POBO: route preview (the enrolment decides; spec R4-R6, D7)
     // ========================================================================
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboRequestRequest {
-        /** Payable IDs to request POBO for */
-        private List<UUID> payableIds;
-        
-        /** Treasury entity that will execute payment */
-        private UUID payingEntityId;
-        private String payingEntityCode;
-        
-        /** User requesting POBO */
-        private String requestedBy;
-        
-        /** Optional notes for treasury */
-        private String notes;
-        
-        /** Whether to create batch or individual requests */
-        private Boolean createBatch;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboRequestResponse {
-        private UUID payableId;
-        private String payableNumber;
-        private String poboRequestStatus;
-        private LocalDateTime requestedAt;
-        private String message;
-        private Boolean success;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboBatchRequestResponse {
-        private List<PoboRequestResponse> results;
-        private int successCount;
-        private int failedCount;
-        private BigDecimal totalAmount;
-        private String currencyCode;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboApprovalRequest {
-        private UUID payableId;
-        private Boolean approved;
-        private String actionedBy;
-        private String rejectionReason;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboBatchApprovalRequest {
-        private List<UUID> payableIds;
-        private Boolean approved;
-        private String actionedBy;
-        private String rejectionReason;
-    }
 
     @Data
     @Builder
@@ -384,133 +315,31 @@ public class PayablesDto {
     @AllArgsConstructor
     public static class PoboPreviewRequest {
         private List<UUID> payableIds;
-        private UUID payingEntityId;
-        private UUID behalfEntityId;
     }
 
+    /** How one payable would be paid today: POBO (payer, account, headroom, refusal) or DIRECT (and why). */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class PoboPreviewResponse {
-        private UUID payingEntityId;
-        private String payingEntityCode;
-        private String payingEntityName;
-        private UUID behalfEntityId;
-        private String behalfEntityCode;
-        private String behalfEntityName;
-
-        private int payableCount;
-        private BigDecimal totalPaymentAmount;
-        private String currencyCode;
-
-        // Paying Entity Balance & Credit Limit
-        private UUID payingVaId;
-        private String payingVaNumber;
-        private BigDecimal payingVaBalance;
-        private BigDecimal payingVaCreditLimit;
-        private BigDecimal payingVaCreditLimitAvailable;
-        private BigDecimal payingVaEffectiveAvailableBalance;  // balance + creditLimitAvailable
-
-        // Behalf Entity Balance & Credit Limit (subsidiary being charged)
-        private UUID behalfVaId;
-        private String behalfVaNumber;
-        private BigDecimal behalfVaBalance;
-        private BigDecimal behalfVaCreditLimit;
-        private BigDecimal behalfVaCreditLimitAvailable;
-        private BigDecimal behalfVaEffectiveAvailableBalance;
-
-        private List<PoboChargeBreakdown> charges;
-        private BigDecimal totalCharges;
-        private BigDecimal netPaymentAmount;
-
-        private PoboIhbLoanPreview ihbLoanPreview;
-
-        private List<String> warnings;
-        private Boolean isValid;
-        private String validationMessage;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboChargeBreakdown {
-        private String chargeCode;
-        private String chargeName;
-        private String chargeType;
-        private BigDecimal calculatedAmount;
-        private Boolean waived;
-        private String waiverReason;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboIhbLoanPreview {
-        private BigDecimal principalAmount;
-        private BigDecimal interestRate;
-        private BigDecimal estimatedDailyInterest;
-        private BigDecimal estimatedMonthlyInterest;
-        private String tenor;
-        private LocalDate expectedSettlementDate;
-        /** DEFAULT: the rate is a built-in figure, not the IHB's priced rate. */
-        private String rateSource;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboExecuteRequest {
-        private List<UUID> payableIds;
-        private UUID payingEntityId;
-        private String executedBy;
-        private Boolean createIhbLoan;
-        private Boolean createRecharge;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboExecuteResponse {
-        private String batchTransactionRef;
-        private List<PoboExecutionResult> results;
-        private int successCount;
-        private int failedCount;
-        private BigDecimal totalExecutedAmount;
-        private String currencyCode;
-        private UUID ihbLoanId;
-        private UUID rechargeId;
-        private LocalDateTime executedAt;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboExecutionResult {
+    public static class PaymentRoutePreview {
         private UUID payableId;
         private String payableNumber;
-        private String transactionRef;
+        /** POBO or DIRECT */
+        private String route;
+        /** Why DIRECT although the owner is enrolled (opt-out, other currency); null otherwise. */
+        private String reason;
+        private String payerEntityCode;
+        private String payerEntityName;
+        private String paymentVaNumber;
+        private String paymentVaName;
+        private String ihbCurrentVaNumber;
         private BigDecimal amount;
-        private Boolean success;
-        private String errorMessage;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PoboPendingApprovalResponse {
-        private List<PayableResponse> payables;
-        private BigDecimal totalAmount;
         private String currencyCode;
-        private int count;
-        private java.util.Map<String, Integer> byOwningEntity;
+        /** POBO: the IHB current account's balance plus its credit limit. */
+        private BigDecimal headroom;
+        /** POBO: set when the amount is over the headroom; the payment would be refused. */
+        private String refusal;
     }
 
     // ========================================================================

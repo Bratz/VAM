@@ -7,6 +7,7 @@ import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.config.MarketProfileProperties;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,7 +16,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ISO 20022 XML Builder - Generates compliant XML messages without external libraries.
@@ -49,7 +53,13 @@ public class Iso20022XmlBuilder {
     // pain.001 - Customer Credit Transfer Initiation
     // ========================================================================
 
-    public String buildPain001(OutwardPaymentRequest request, VirtualAccount sourceVa, Transaction txn) {
+    /**
+     * pain.001.001.09, one transaction. {@code onBehalf} set (a POBO payment, D6): the treasury centre initiates and is
+     * the debtor with its payment account's IBAN and bank; the subsidiary is UltmtDbtr at PmtInf level (after DbtrAgt).
+     * Null: the request's debtor, else the source account's, as before.
+     */
+    public String buildPain001(OutwardPaymentRequest request, VirtualAccount sourceVa, Transaction txn,
+                               PoboEnrolmentService.PainDebtor onBehalf) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\">\n");
@@ -62,7 +72,7 @@ public class Iso20022XmlBuilder {
         xml.append("      <NbOfTxs>1</NbOfTxs>\n");
         xml.append("      <CtrlSum>").append(request.getAmount()).append("</CtrlSum>\n");
         xml.append("      <InitgPty>\n");
-        xml.append("        <Nm>").append(escape(sourceVa.getVaName())).append("</Nm>\n");
+        xml.append("        <Nm>").append(escape(onBehalf != null ? onBehalf.name() : sourceVa.getVaName())).append("</Nm>\n");
         xml.append("      </InitgPty>\n");
         xml.append("    </GrpHdr>\n");
 
@@ -80,24 +90,7 @@ public class Iso20022XmlBuilder {
         xml.append("        <Dt>").append(execDate.format(ISO_DATE)).append("</Dt>\n");
         xml.append("      </ReqdExctnDt>\n");
 
-        // Debtor
-        xml.append("      <Dbtr>\n");
-        xml.append("        <Nm>").append(escape(request.getDebtorName() != null ? request.getDebtorName() : sourceVa.getVaName())).append("</Nm>\n");
-        xml.append("      </Dbtr>\n");
-
-        // Debtor Account
-        xml.append("      <DbtrAcct>\n");
-        xml.append("        <Id>\n");
-        xml.append("          <IBAN>").append(escape(request.getDebtorAccount() != null ? request.getDebtorAccount() : sourceVa.getViban())).append("</IBAN>\n");
-        xml.append("        </Id>\n");
-        xml.append("      </DbtrAcct>\n");
-
-        // Debtor Agent
-        xml.append("      <DbtrAgt>\n");
-        xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(escape(debtorAgentBic(request.getDebtorBic()))).append("</BICFI>\n");
-        xml.append("        </FinInstnId>\n");
-        xml.append("      </DbtrAgt>\n");
+        appendDebtor(xml, request.getDebtorName(), request.getDebtorAccount(), request.getDebtorBic(), sourceVa, onBehalf);
 
         // Credit Transfer Transaction Information
         xml.append("      <CdtTrfTxInf>\n");
@@ -159,18 +152,24 @@ public class Iso20022XmlBuilder {
         return xml.toString();
     }
 
+    /** One paid instruction of a bulk payment, with its debtor on behalf (null: the request's / source account's). */
+    public record BulkLine(Transaction txn, PaymentInstruction instruction, PoboEnrolmentService.PainDebtor onBehalf) {
+    }
+
     /**
-     * Build bulk pain.001 with multiple credit transfers.
+     * Bulk pain.001: one PmtInf per debtor, since a PmtInf has one Dbtr / DbtrAcct. Rows paid on behalf (D6) go in their
+     * own PmtInf with the treasury as debtor and the subsidiary as UltmtDbtr; the others in one with the request's
+     * debtor, as before.
      */
-    public String buildBulkPain001(BulkPaymentRequest request, VirtualAccount sourceVa, List<Transaction> transactions) {
+    public String buildBulkPain001(BulkPaymentRequest request, VirtualAccount sourceVa, List<BulkLine> lines) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\">\n");
         xml.append("  <CstmrCdtTrfInitn>\n");
 
         // Calculate totals
-        BigDecimal totalAmount = transactions.stream()
-                .map(Transaction::getAmount)
+        BigDecimal totalAmount = lines.stream()
+                .map(l -> l.txn().getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String messageId = request.getMessageId() != null ? request.getMessageId() :
@@ -180,92 +179,109 @@ public class Iso20022XmlBuilder {
         xml.append("    <GrpHdr>\n");
         xml.append("      <MsgId>").append(escape(messageId)).append("</MsgId>\n");
         xml.append("      <CreDtTm>").append(LocalDateTime.now().format(ISO_DATETIME)).append("</CreDtTm>\n");
-        xml.append("      <NbOfTxs>").append(transactions.size()).append("</NbOfTxs>\n");
+        xml.append("      <NbOfTxs>").append(lines.size()).append("</NbOfTxs>\n");
         xml.append("      <CtrlSum>").append(totalAmount).append("</CtrlSum>\n");
         xml.append("      <InitgPty>\n");
         xml.append("        <Nm>").append(escape(request.getDebtorName() != null ? request.getDebtorName() : sourceVa.getVaName())).append("</Nm>\n");
         xml.append("      </InitgPty>\n");
         xml.append("    </GrpHdr>\n");
 
-        // Payment Information
-        xml.append("    <PmtInf>\n");
-        xml.append("      <PmtInfId>").append(escape(request.getPaymentInfoId() != null ? request.getPaymentInfoId() : messageId)).append("</PmtInfId>\n");
-        xml.append("      <PmtMtd>TRF</PmtMtd>\n");
-        xml.append("      <NbOfTxs>").append(transactions.size()).append("</NbOfTxs>\n");
-        xml.append("      <CtrlSum>").append(totalAmount).append("</CtrlSum>\n");
-
-        // Requested Execution Date
+        Map<PoboEnrolmentService.PainDebtor, List<BulkLine>> byDebtor = new LinkedHashMap<>(); // null key: not on behalf
+        for (BulkLine l : lines) byDebtor.computeIfAbsent(l.onBehalf(), k -> new ArrayList<>()).add(l);
+        if (byDebtor.isEmpty()) byDebtor.put(null, List.of());
+        String paymentInfoId = request.getPaymentInfoId() != null ? request.getPaymentInfoId() : messageId;
         LocalDate execDate = request.getRequestedExecutionDate() != null ?
                 request.getRequestedExecutionDate() : LocalDate.now();
-        xml.append("      <ReqdExctnDt>\n");
-        xml.append("        <Dt>").append(execDate.format(ISO_DATE)).append("</Dt>\n");
-        xml.append("      </ReqdExctnDt>\n");
+        int group = 0;
+        for (Map.Entry<PoboEnrolmentService.PainDebtor, List<BulkLine>> g : byDebtor.entrySet()) {
+            List<BulkLine> rows = g.getValue();
+            BigDecimal groupSum = rows.stream().map(l -> l.txn().getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+            group++;
+            xml.append("    <PmtInf>\n");
+            xml.append("      <PmtInfId>").append(escape(group == 1 ? paymentInfoId : paymentInfoId + "-" + group)).append("</PmtInfId>\n");
+            xml.append("      <PmtMtd>TRF</PmtMtd>\n");
+            xml.append("      <NbOfTxs>").append(rows.size()).append("</NbOfTxs>\n");
+            xml.append("      <CtrlSum>").append(groupSum).append("</CtrlSum>\n");
+            xml.append("      <ReqdExctnDt>\n");
+            xml.append("        <Dt>").append(execDate.format(ISO_DATE)).append("</Dt>\n");
+            xml.append("      </ReqdExctnDt>\n");
+            appendDebtor(xml, request.getDebtorName(), request.getDebtorAccount(), request.getDebtorBic(), sourceVa, g.getKey());
 
-        // Debtor
-        xml.append("      <Dbtr>\n");
-        xml.append("        <Nm>").append(escape(request.getDebtorName() != null ? request.getDebtorName() : sourceVa.getVaName())).append("</Nm>\n");
-        xml.append("      </Dbtr>\n");
+            for (BulkLine row : rows) {
+                Transaction txn = row.txn();
+                PaymentInstruction inst = row.instruction();
 
-        xml.append("      <DbtrAcct>\n");
-        xml.append("        <Id>\n");
-        xml.append("          <IBAN>").append(escape(request.getDebtorAccount() != null ? request.getDebtorAccount() : sourceVa.getViban())).append("</IBAN>\n");
-        xml.append("        </Id>\n");
-        xml.append("      </DbtrAcct>\n");
+                xml.append("      <CdtTrfTxInf>\n");
+                xml.append("        <PmtId>\n");
+                xml.append("          <InstrId>").append(escape(inst.getInstructionId() != null ? inst.getInstructionId() : txn.getReferenceNumber())).append("</InstrId>\n");
+                xml.append("          <EndToEndId>").append(escape(inst.getEndToEndId() != null ? inst.getEndToEndId() : txn.getCorrelationId())).append("</EndToEndId>\n");
+                xml.append("        </PmtId>\n");
 
-        xml.append("      <DbtrAgt>\n");
-        xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(escape(debtorAgentBic(request.getDebtorBic()))).append("</BICFI>\n");
-        xml.append("        </FinInstnId>\n");
-        xml.append("      </DbtrAgt>\n");
+                String currency = inst.getCurrency() != null ? inst.getCurrency() : sourceVa.getCurrencyCode();
+                xml.append("        <Amt>\n");
+                xml.append("          <InstdAmt Ccy=\"").append(currency).append("\">").append(inst.getAmount()).append("</InstdAmt>\n");
+                xml.append("        </Amt>\n");
 
-        // Add each credit transfer
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction txn = transactions.get(i);
-            PaymentInstruction inst = request.getInstructions().get(i);
+                if (inst.getCreditorBic() != null) {
+                    xml.append("        <CdtrAgt>\n");
+                    xml.append("          <FinInstnId>\n");
+                    xml.append("            <BICFI>").append(escape(inst.getCreditorBic())).append("</BICFI>\n");
+                    xml.append("          </FinInstnId>\n");
+                    xml.append("        </CdtrAgt>\n");
+                }
 
-            xml.append("      <CdtTrfTxInf>\n");
-            xml.append("        <PmtId>\n");
-            xml.append("          <InstrId>").append(escape(inst.getInstructionId() != null ? inst.getInstructionId() : txn.getReferenceNumber())).append("</InstrId>\n");
-            xml.append("          <EndToEndId>").append(escape(inst.getEndToEndId() != null ? inst.getEndToEndId() : txn.getCorrelationId())).append("</EndToEndId>\n");
-            xml.append("        </PmtId>\n");
+                xml.append("        <Cdtr>\n");
+                xml.append("          <Nm>").append(escape(inst.getCreditorName())).append("</Nm>\n");
+                xml.append("        </Cdtr>\n");
 
-            String currency = inst.getCurrency() != null ? inst.getCurrency() : sourceVa.getCurrencyCode();
-            xml.append("        <Amt>\n");
-            xml.append("          <InstdAmt Ccy=\"").append(currency).append("\">").append(inst.getAmount()).append("</InstdAmt>\n");
-            xml.append("        </Amt>\n");
+                xml.append("        <CdtrAcct>\n");
+                xml.append("          <Id>\n");
+                xml.append("            <IBAN>").append(escape(inst.getCreditorAccount())).append("</IBAN>\n");
+                xml.append("          </Id>\n");
+                xml.append("        </CdtrAcct>\n");
 
-            if (inst.getCreditorBic() != null) {
-                xml.append("        <CdtrAgt>\n");
-                xml.append("          <FinInstnId>\n");
-                xml.append("            <BICFI>").append(escape(inst.getCreditorBic())).append("</BICFI>\n");
-                xml.append("          </FinInstnId>\n");
-                xml.append("        </CdtrAgt>\n");
+                if (inst.getRemittanceInfo() != null) {
+                    xml.append("        <RmtInf>\n");
+                    xml.append("          <Ustrd>").append(escape(inst.getRemittanceInfo())).append("</Ustrd>\n");
+                    xml.append("        </RmtInf>\n");
+                }
+
+                xml.append("      </CdtTrfTxInf>\n");
             }
-
-            xml.append("        <Cdtr>\n");
-            xml.append("          <Nm>").append(escape(inst.getCreditorName())).append("</Nm>\n");
-            xml.append("        </Cdtr>\n");
-
-            xml.append("        <CdtrAcct>\n");
-            xml.append("          <Id>\n");
-            xml.append("            <IBAN>").append(escape(inst.getCreditorAccount())).append("</IBAN>\n");
-            xml.append("          </Id>\n");
-            xml.append("        </CdtrAcct>\n");
-
-            if (inst.getRemittanceInfo() != null) {
-                xml.append("        <RmtInf>\n");
-                xml.append("          <Ustrd>").append(escape(inst.getRemittanceInfo())).append("</Ustrd>\n");
-                xml.append("        </RmtInf>\n");
-            }
-
-            xml.append("      </CdtTrfTxInf>\n");
+            xml.append("    </PmtInf>\n");
         }
 
-        xml.append("    </PmtInf>\n");
         xml.append("  </CstmrCdtTrfInitn>\n");
         xml.append("</Document>");
 
         return xml.toString();
+    }
+
+    /**
+     * Dbtr, DbtrAcct, DbtrAgt and, on behalf, UltmtDbtr of a PmtInf (pain.001.001.09 order). On behalf: the treasury
+     * centre, its payment account's IBAN, that account's bank (else the home bank) and the subsidiary. Otherwise the
+     * requested debtor, else the source account's name and VIBAN, as before.
+     */
+    private void appendDebtor(StringBuilder xml, String name, String iban, String bic, VirtualAccount sourceVa,
+                              PoboEnrolmentService.PainDebtor onBehalf) {
+        xml.append("      <Dbtr>\n");
+        xml.append("        <Nm>").append(escape(onBehalf != null ? onBehalf.name() : name != null ? name : sourceVa.getVaName())).append("</Nm>\n");
+        xml.append("      </Dbtr>\n");
+        xml.append("      <DbtrAcct>\n");
+        xml.append("        <Id>\n");
+        xml.append("          <IBAN>").append(escape(onBehalf != null ? onBehalf.iban() : iban != null ? iban : sourceVa.getViban())).append("</IBAN>\n");
+        xml.append("        </Id>\n");
+        xml.append("      </DbtrAcct>\n");
+        xml.append("      <DbtrAgt>\n");
+        xml.append("        <FinInstnId>\n");
+        xml.append("          <BICFI>").append(escape(debtorAgentBic(onBehalf != null ? onBehalf.bic() : bic))).append("</BICFI>\n");
+        xml.append("        </FinInstnId>\n");
+        xml.append("      </DbtrAgt>\n");
+        if (onBehalf != null) {
+            xml.append("      <UltmtDbtr>\n");
+            xml.append("        <Nm>").append(escape(onBehalf.ultimateDebtor())).append("</Nm>\n");
+            xml.append("      </UltmtDbtr>\n");
+        }
     }
 
     // ========================================================================

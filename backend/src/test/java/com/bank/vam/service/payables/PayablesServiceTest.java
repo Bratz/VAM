@@ -16,7 +16,7 @@ import com.bank.vam.repository.party.PartyRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.treasury.PaymentRequestRepository;
 import com.bank.vam.service.TransactionService;
-import com.bank.vam.service.pobo.PoboExecutionService;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.bank.vam.service.treasury.NettingService;
 import org.junit.jupiter.api.Test;
 
@@ -44,15 +44,18 @@ class PayablesServiceTest {
     private final MarketProfileProperties marketProfile = mock(MarketProfileProperties.class);
     private final NettingService nettingService = mock(NettingService.class);
     private final LegalEntityRepository legalEntityRepository = mock(LegalEntityRepository.class);
-    private final PoboExecutionService poboExecutionService = mock(PoboExecutionService.class);
+    private final PoboEnrolmentService poboEnrolments = mock(PoboEnrolmentService.class);
     private final com.bank.vam.service.treasury.FxRateService fxRateService = mock(com.bank.vam.service.treasury.FxRateService.class);
+
+    private final com.bank.vam.repository.party.PartyBankAccountRepository partyBankAccounts =
+
+        mock(com.bank.vam.repository.party.PartyBankAccountRepository.class);
 
     private final PayablesService service = new PayablesService(
             payableRepository, partyRepository, virtualAccountRepository, transactionRepository,
             paymentRequestRepository, transactionService, marketProfile, nettingService,
-            legalEntityRepository, poboExecutionService, mock(com.bank.vam.fx.deal.FxPaymentService.class),
-            mock(com.bank.vam.repository.tax.ChargeConfigurationRepository.class),
-            mock(com.bank.vam.repository.receivables.ReceivableRepository.class), fxRateService);
+            legalEntityRepository, poboEnrolments, mock(com.bank.vam.fx.deal.FxPaymentService.class),
+            mock(com.bank.vam.repository.receivables.ReceivableRepository.class), fxRateService, partyBankAccounts);
 
     private static final UUID PAYABLE_ID = UUID.randomUUID();
 
@@ -146,6 +149,8 @@ class PayablesServiceTest {
         UUID sourceVaId = UUID.randomUUID();
         p.setVirtualAccountId(sourceVaId);
         p.setOwningEntityName("Test Entity Ltd"); // pain.001 debtor name
+        p.setVendorName("Acme"); // pain.001 creditor
+        p.setVendorAccount("AE070331234567890123456");
         when(payableRepository.findById(PAYABLE_ID)).thenReturn(Optional.of(p));
 
         VirtualAccount sourceVa = VirtualAccount.builder()
@@ -233,8 +238,7 @@ class PayablesServiceTest {
                 .paymentPriority("HIGH")
                 .externalReference("PO-1 / GRN-2")
                 .vendorReference("CON-3")
-                .notes("check the GRN")
-                .isPobo(true).paymentViaEntityId(TREASURY).paymentViaEntityCode("TC");
+                .notes("check the GRN");
     }
 
     @Test
@@ -279,22 +283,21 @@ class PayablesServiceTest {
         assertEquals(30, p.getPaymentTermsDays());
         assertEquals(LocalDate.of(2026, 11, 28), p.getScheduledDate());
         assertEquals(LocalDate.of(2026, 12, 1), p.getDueDate());
-        assertTrue(p.getIsPobo());
-        assertEquals(TREASURY, p.getPaymentViaEntityId());
-        assertEquals("TC", p.getPaymentViaEntityCode());
-        assertEquals("Sub One", p.getBehalfOfEntity());
-        // Stays DIRECT so the POBO request / treasury approval workflow can pick it up after approval.
+        // Owner not enrolled for POBO: paid directly from the chosen account, nothing to explain.
+        assertFalse(p.getIsPobo());
+        assertNull(p.getPaymentViaEntityId());
+        assertNull(p.getPaymentRouteNote());
+        assertEquals(request.getVirtualAccountId(), p.getVirtualAccountId());
         assertEquals(Payable.PaymentRoute.DIRECT, p.getPaymentRoute());
         assertFalse(p.getIsIntercompany());
     }
 
     @Test
     void submitRefusesAnIncompletePayable() {
-        var request = fullRequest().status("PENDING_APPROVAL").virtualAccountId(null).paymentViaEntityId(null).build();
+        var request = fullRequest().status("PENDING_APPROVAL").virtualAccountId(null).build();
 
         var e = assertThrows(com.bank.vam.exception.BusinessException.class, () -> service.createPayable(request));
         assertTrue(e.getMessage().contains("source account"));
-        assertTrue(e.getMessage().contains("paying entity"));
         verify(payableRepository, never()).save(any());
     }
 
@@ -321,7 +324,6 @@ class PayablesServiceTest {
                 .dueDate(LocalDate.of(2026, 12, 1))
                 .virtualAccountId(va)
                 .vendorReference("CON-3")
-                .isPobo(false)
                 .paymentChannel("DIRECT")
                 .build());
 

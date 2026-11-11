@@ -30,7 +30,7 @@ class IhbSweepTargetTest {
         mock(FeePostingService.class), rules,
         mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class), mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),
-        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class));
+        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class));
 
     @Test
     void treasuryCenterIsLookedUpInTheEntitysOwnCorporateOnly() {

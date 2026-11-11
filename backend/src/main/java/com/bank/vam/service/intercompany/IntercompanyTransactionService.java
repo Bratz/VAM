@@ -21,7 +21,7 @@ import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
 import com.bank.vam.repository.treasury.NettingCycleRepository;
 import com.bank.vam.repository.treasury.NettingEntryRepository;
-import com.bank.vam.service.pobo.PoboService;
+import com.bank.vam.service.treasury.IhbMirrorService;
 import com.bank.vam.service.treasury.NettingService;
 import lombok.Builder;
 import lombok.Data;
@@ -79,9 +79,9 @@ public class IntercompanyTransactionService {
     private final NettingEntryRepository nettingEntryRepository;
     private final VirtualAccountRepository virtualAccountRepository;
     private final TransactionRepository ledgerTransactionRepository;
-    private final PoboService poboService;
     private final NettingService nettingService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final IhbMirrorService ihbMirrors;
 
     private static final AtomicLong transactionSequence = new AtomicLong(1);
     private static final AtomicLong settlementSequence = new AtomicLong(1);
@@ -695,6 +695,7 @@ public class IntercompanyTransactionService {
                     .build();
                 leg2 = ledgerTransactionRepository.save(leg2);
                 settlementLedgerEntries.add(leg2);
+                ihbMirrors.syncIhbMirrors(ihbCurrentAccountVa, "IC settlement " + settlementRef, correlationId);
 
                 log.info("Settlement accounting completed: IC Receivable {} → {}, IHB Current {} → {}",
                     icReceivableBalanceBefore, icReceivableVa.getCurrentBalance(),
@@ -765,6 +766,7 @@ public class IntercompanyTransactionService {
                     .build();
                 leg2 = ledgerTransactionRepository.save(leg2);
                 settlementLedgerEntries.add(leg2);
+                ihbMirrors.syncIhbMirrors(ihbCurrentAccountVa, "IC settlement " + settlementRef, correlationId);
 
                 log.info("Settlement accounting completed (payable-side): IC Payable {} → {}, IHB Current {} → {}",
                     icPayableBalanceBefore, icPayableVa.getCurrentBalance(),

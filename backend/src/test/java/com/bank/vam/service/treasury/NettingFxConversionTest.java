@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 class NettingFxConversionTest {
 
     private final FxRateService fx = mock(FxRateService.class);
-    private final NettingService service = new NettingService(null, null, null, null, null, null, null, null, null, null, fx);
+    private final NettingService service = new NettingService(null, null, null, null, null, null, null, null, null, null, fx, null);
 
     private NettingEntry usdEntry() {
         return NettingEntry.builder().currencyCode("USD").grossAmount(new BigDecimal("100")).build();

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Send, Search, Building2, Calculator, ArrowLeftRight, Paperclip, Loader2, X, Check, Info, CreditCard, Landmark, Clock, RefreshCw, AlertTriangle, CheckCircle, Settings, Receipt, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, Button, Badge, StatusIconBadge, Toggle, Input, Select, TextArea } from '../components/ui';
+import { Checkbox } from '../components/ui/Checkbox';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi, type CreatePayableRequest } from '../services/api';
+import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi, poboEnrolmentApi, type CreatePayableRequest, type PoboEnrolment } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
 import { useMarket } from '../context/useMarket';
 import { formatCurrency } from '../utils';
@@ -40,8 +41,6 @@ interface Vendor extends VendorHit {
   taxId: string;
   email: string;
   bankAccounts: BankAccount[];
-  poboEligible: boolean;         // party.poboEligible -- the backend refuses POBO for anyone else
-  poboDefaultPayerId?: string;   // the vendor's configured default POBO payer
   groupEntity: boolean;          // vendor is another entity of the group: intercompany, not POBO
 }
 
@@ -49,8 +48,6 @@ interface Entity {
   id: string;
   code: string;
   name: string;
-  /** Can pay for others: the treasury centre, or a holding company. */
-  isPayer: boolean;
 }
 
 interface SourceAccount {
@@ -76,8 +73,8 @@ interface FormData {
   description: string;
   applyVat: boolean;
   vatRate: string;
-  poboEnabled: boolean;
-  payingEntityId: string;
+  /** Owning entity enrolled for POBO in this currency, but this payable is paid directly (spec D4). */
+  payDirectly: boolean;
   poGrnRef: string;       // -> externalReference
   contractRef: string;    // -> vendorReference
   internalNotes: string;  // -> notes
@@ -86,7 +83,7 @@ interface FormData {
   paymentPriority: string;
 }
 
-type TabId = 'tax' | 'pobo' | 'references';
+type TabId = 'tax' | 'references';
 
 // ============================================================================
 // CONSTANTS & HELPERS
@@ -113,7 +110,6 @@ const PRIORITIES = [
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'tax', label: 'VAT', icon: Calculator },
-  { id: 'pobo', label: 'POBO', icon: ArrowLeftRight },
   { id: 'references', label: 'References & Notes', icon: Paperclip },
 ];
 
@@ -158,7 +154,7 @@ const toVendorHit = (p: any): VendorHit => ({
   partyType: p.partyType || '',
 });
 
-/** Bank accounts and POBO / intercompany set-up live on the party detail: fetched for the chosen vendor only. */
+/** Bank accounts and intercompany set-up live on the party detail: fetched for the chosen vendor only. */
 const loadVendor = async (partyId: string): Promise<Vendor> => {
   const detail: any = await partiesApi.getDetail(partyId);
   const party = detail?.party || {};
@@ -167,8 +163,6 @@ const loadVendor = async (partyId: string): Promise<Vendor> => {
     taxId: party.taxId || '',
     email: party.contactEmail || '',
     bankAccounts: (detail?.bankAccounts || []).map(toBankAccount),
-    poboEligible: detail?.poboConfig?.poboEligible === true,
-    poboDefaultPayerId: detail?.poboConfig?.defaultPayerEntityId || undefined,
     groupEntity: !!(detail?.intercompanyConfig?.isIntercompany && detail?.intercompanyConfig?.linkedLegalEntityId),
   };
 };
@@ -274,7 +268,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     invoiceNumber: '', invoiceDate: today, paymentTerms: '30', dueDate: dueFrom(today, '30'),
     currencyCode: profile.defaultCurrency, amount: '', description: '',
     applyVat: false, vatRate: '',
-    poboEnabled: false, payingEntityId: '',
+    payDirectly: false,
     poGrnRef: '', contractRef: '', internalNotes: '',
     paymentChannel: '', scheduledDate: '', paymentPriority: 'NORMAL',
   });
@@ -290,6 +284,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   const [corporateName, setCorporateName] = useState('');
   const [entities, setEntities] = useState<Entity[]>([]);
   const [accounts, setAccounts] = useState<SourceAccount[]>([]);
+  const [enrolments, setEnrolments] = useState<PoboEnrolment[]>([]);
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -312,8 +307,11 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   }, [corporateId, corporatePickable]);
 
   useEffect(() => {
-    if (!corporateId) { setEntities([]); setAccounts([]); return; }
+    if (!corporateId) { setEntities([]); setAccounts([]); setEnrolments([]); return; }
     let live = true;
+    poboEnrolmentApi.list(corporateId)
+      .then((list) => { if (live) setEnrolments(list); })
+      .catch(() => { if (live) setEnrolments([]); });
     legalEntityApi.getByCorporate(corporateId)
       .then((r) => {
         if (!live) return;
@@ -321,8 +319,6 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           id: e.id,
           code: e.entityCode || '',
           name: e.entityName || '',
-          // Same rule as Create Invoice's collect-on-behalf picker.
-          isPayer: !!(e.isTreasuryCenter || e.treasuryCenter || e.entityType === 'TREASURY_CENTER' || e.entityType === 'HOLDING'),
         })));
       })
       .catch(() => { if (live) setEntities([]); });
@@ -372,8 +368,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           applyVat: tax > 0,
           // gross is VAT-inclusive: tax = gross * r / (100 + r)  =>  r = 100 * tax / (gross - tax)
           vatRate: tax > 0 && gross > tax ? String(round2((100 * tax) / (gross - tax))) : '',
-          poboEnabled: !!p.isPobo,
-          payingEntityId: p.paymentViaEntityId || '',
+          payDirectly: !!p.payDirectly,
           poGrnRef: p.externalReference || '',
           contractRef: p.vendorReference || '',
           internalNotes: p.notes || '',
@@ -409,23 +404,16 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   const taxAmount = formData.applyVat && vatRate > 0 ? round2((amount * vatRate) / (100 + vatRate)) : 0;
 
   const owningEntity = entities.find(e => e.id === formData.owningEntityId) || null;
-  const payers = entities.filter(e => e.isPayer && e.id !== formData.owningEntityId);
-  const payer = payers.find(e => e.id === formData.payingEntityId) || null;
+  // Paid on behalf (POBO): the owning entity's enrolment for the payable currency decides, unless opted out.
+  const ownerEnrolments = enrolments.filter(e => e.active && formData.owningEntityId && e.subsidiaryEntityId === formData.owningEntityId);
+  const enrolment = ownerEnrolments.find(e => e.currency === formData.currencyCode) ?? null;
+  const pobo = enrolment && !formData.payDirectly ? enrolment : null;
+  const ownerName = owningEntity?.name ?? enrolment?.subsidiaryName;
+  const overHeadroom = !!pobo && pobo.headroom != null && amount > pobo.headroom;
 
   const sourceAccounts = accounts.filter(a => a.currencyCode === formData.currencyCode);
   const selectedSource = sourceAccounts.find(a => a.id === formData.sourceVirtualAccountId) || null;
   const selectedBank = selectedVendor?.bankAccounts.find(b => b.id === formData.partyBankAccountId) || null;
-
-  // POBO: only rules backed by real data -- the vendor's POBO set-up, intercompany, and the group's entities.
-  const poboBlockers: string[] = [];
-  if (!selectedVendor) poboBlockers.push('Select a vendor first');
-  else {
-    if (selectedVendor.groupEntity) poboBlockers.push('The vendor is a group entity: this is an intercompany payable, not POBO');
-    if (!selectedVendor.poboEligible) poboBlockers.push('The vendor is not set up to receive POBO payments');
-  }
-  if (!owningEntity) poboBlockers.push('Choose the owning entity (the entity the payment is made on behalf of)');
-  else if (payers.length === 0) poboBlockers.push('No treasury centre or holding entity other than the owning entity can pay');
-  const poboActive = formData.poboEnabled && poboBlockers.length === 0;
 
   const missing: string[] = [];
   if (!corporateId) missing.push('Choose the corporate');
@@ -434,11 +422,10 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   if (amount <= 0) missing.push('Enter an amount above zero');
   if (!formData.dueDate) missing.push('Set the due date');
   if (formData.applyVat && vatRate <= 0) missing.push('Enter the VAT rate, or switch VAT off');
-  if (!selectedSource) missing.push(`Choose a ${formData.currencyCode} source account (Pay From)`);
+  if (!pobo && !selectedSource) missing.push(`Choose a ${formData.currencyCode} source account (Pay From)`);
   if (!selectedBank) missing.push('Choose the vendor bank account (Pay To)');
   if (!formData.paymentChannel) missing.push('Choose a payment channel');
   if (formData.paymentChannel === 'SCHEDULED' && !formData.scheduledDate) missing.push('Set the scheduled payment date');
-  if (poboActive && !payer) missing.push('Choose the paying entity (POBO tab)');
   const canSubmit = missing.length === 0;
 
   const termOptions = TERM_DAYS.map(String);
@@ -449,12 +436,12 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   const resetForCorporate = (id: string) => {
     setChosenCorporateId(id);
     setSelectedVendor(null);
-    setFormData(prev => ({ ...prev, owningEntityId: '', vendorId: '', vendorName: '', partyBankAccountId: '', sourceVirtualAccountId: '', poboEnabled: false, payingEntityId: '' }));
+    setFormData(prev => ({ ...prev, owningEntityId: '', vendorId: '', vendorName: '', partyBankAccountId: '', sourceVirtualAccountId: '', payDirectly: false }));
   };
 
   const handleVendorSelect = async (hit: VendorHit) => {
-    setFormData(prev => ({ ...prev, vendorId: hit.id, vendorName: hit.name, partyBankAccountId: '', poboEnabled: false, payingEntityId: '' }));
-    setSelectedVendor({ ...hit, taxId: '', email: '', bankAccounts: [], poboEligible: false, groupEntity: false });
+    setFormData(prev => ({ ...prev, vendorId: hit.id, vendorName: hit.name, partyBankAccountId: '' }));
+    setSelectedVendor({ ...hit, taxId: '', email: '', bankAccounts: [], groupEntity: false });
     setVendorLoading(true);
     try {
       const v = await loadVendor(hit.id);
@@ -471,18 +458,11 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
 
   const clearVendor = () => {
     setSelectedVendor(null);
-    setFormData(prev => ({ ...prev, vendorId: '', vendorName: '', partyBankAccountId: '', poboEnabled: false, payingEntityId: '' }));
+    setFormData(prev => ({ ...prev, vendorId: '', vendorName: '', partyBankAccountId: '' }));
   };
 
   const setInvoiceDate = (v: string) => setFormData(prev => ({ ...prev, invoiceDate: v, dueDate: dueFrom(v, prev.paymentTerms) || prev.dueDate }));
   const setTerms = (v: string) => setFormData(prev => ({ ...prev, paymentTerms: v, dueDate: dueFrom(prev.invoiceDate, v) || prev.dueDate }));
-
-  const setPobo = (on: boolean) => setFormData(prev => ({
-    ...prev,
-    poboEnabled: on,
-    // The vendor's configured default payer, when it is one of this group's payers.
-    payingEntityId: on && !prev.payingEntityId ? (payers.find(p => p.id === selectedVendor?.poboDefaultPayerId)?.id ?? '') : prev.payingEntityId,
-  }));
 
   const handleSubmit = async (isDraft: boolean) => {
     if (!corporateId) { toast.error('Choose the corporate first'); return; }
@@ -497,7 +477,8 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
         partyId: formData.vendorId || undefined,
         vendorName: formData.vendorName || undefined,
         partyBankAccountId: selectedBank?.id,
-        virtualAccountId: selectedSource?.id,
+        // Paid on behalf: the backend books it to the owning entity's IHB current account (the enrolment decides).
+        virtualAccountId: pobo ? undefined : selectedSource?.id,
         invoiceNumber: formData.invoiceNumber.trim(),
         invoiceDate: formData.invoiceDate || undefined,
         dueDate: formData.dueDate || undefined,
@@ -512,9 +493,8 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
         vendorReference: formData.contractRef.trim(),
         description: formData.description.trim(),
         notes: formData.internalNotes.trim(),
-        isPobo: poboActive,
-        paymentViaEntityId: poboActive ? payer?.id : undefined,
-        paymentViaEntityCode: poboActive ? payer?.code : undefined,
+        // POBO is decided by the backend from the enrolment; only the opt-out is ours to send
+        payDirectly: enrolment ? formData.payDirectly : undefined,
       };
       if (isEditMode && payableId) {
         await payablesApiPhase2.update(payableId, payload);
@@ -592,7 +572,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           <Select
             label="Owning entity"
             value={formData.owningEntityId}
-            onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value, payingEntityId: prev.payingEntityId === e.target.value ? '' : prev.payingEntityId }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value, payDirectly: false }))}
             options={[{ value: '', label: entities.length ? 'Not set' : 'No legal entities' }, ...entities.map(e => ({ value: e.id, label: `${e.code} - ${e.name}` }))]}
             disabled={!corporateId || entities.length === 0}
             selectSize="sm"
@@ -667,8 +647,26 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             <StepTitle n={3} title="Payment Method" />
 
             <div className="mb-6">
-              <label className="field-label block mb-2">Source Account (Pay From) <span className="text-error-500 dark:text-error-300">*</span></label>
-              {!corporateId ? (
+              <label className="field-label block mb-2">Source Account (Pay From) {!pobo && <span className="text-error-500 dark:text-error-300">*</span>}</label>
+              {pobo ? (
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-success-200 bg-success-50 dark:bg-success-500/10 dark:border-success-500/30">
+                  <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
+                  <div>
+                    <p className="body-strong">Paid by {pobo.payerName ?? pobo.payerCode} from {pobo.paymentVaNumber}{pobo.paymentIban ? ` (${pobo.paymentIban})` : ''}</p>
+                    <p className="caption">
+                      {ownerName} is enrolled for {pobo.currency}. Once approved, the treasury centre pays the vendor and the amount is
+                      booked to {ownerName}&apos;s IHB current account {pobo.ihbCurrentVaNumber ?? ''}
+                      {pobo.headroom != null && <> (headroom {formatCurrency(pobo.headroom, pobo.currency)})</>}. No fee.
+                    </p>
+                    {overHeadroom && (
+                      <p className="mt-1 flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        Would be refused at payment: over {ownerName}&apos;s IHB credit headroom of {formatCurrency(pobo.headroom ?? 0, pobo.currency)}.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : !corporateId ? (
                 <p className="body-sm">Choose the corporate first.</p>
               ) : sourceAccounts.length === 0 ? (
                 <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 flex items-center gap-3 dark:bg-warning-500/10 dark:border-warning-500/30">
@@ -699,6 +697,23 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                     );
                   })}
                 </div>
+              )}
+              {enrolment && (
+                <div className="mt-3">
+                  <Checkbox
+                    checked={formData.payDirectly}
+                    onChange={(v) => updateField('payDirectly', v)}
+                    label="Pay directly instead"
+                    description={`${ownerName} pays this payable from its own account, not through ${enrolment.payerName ?? enrolment.payerCode}.`}
+                  />
+                </div>
+              )}
+              {!enrolment && ownerEnrolments.length > 0 && (
+                <p className="mt-3 flex items-start gap-2 text-body-sm text-neutral-600 dark:text-neutral-300">
+                  <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  Not paid on behalf: {ownerName} is not enrolled for {formData.currencyCode} (only
+                  {' ' + ownerEnrolments.map(e => e.currency).join(', ')}), so it pays this payable directly.
+                </p>
               )}
             </div>
 
@@ -784,7 +799,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 {TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  const hasContent = tab.id === 'tax' ? formData.applyVat : tab.id === 'pobo' ? poboActive : !!(formData.poGrnRef || formData.contractRef || formData.internalNotes);
+                  const hasContent = tab.id === 'tax' ? formData.applyVat : !!(formData.poGrnRef || formData.contractRef || formData.internalNotes);
                   return (
                     <button key={tab.id} onClick={() => setActiveTab(isActive ? null : tab.id)}
                       className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive
@@ -798,7 +813,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 })}
               </div>
             </div>
-            {!activeTab && <div className="p-6 text-center text-neutral-500 dark:text-neutral-400 text-body-sm">VAT, pay on behalf of (POBO), references and internal notes</div>}
+            {!activeTab && <div className="p-6 text-center text-neutral-500 dark:text-neutral-400 text-body-sm">VAT, references and internal notes</div>}
 
             {activeTab === 'tax' && (
               <div className="p-6 space-y-4">
@@ -811,44 +826,6 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                       <p className="h-11 flex items-center font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(taxAmount, formData.currencyCode)}</p>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'pobo' && (
-              <div className="p-6 space-y-4">
-                {poboBlockers.length > 0 ? (
-                  <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 dark:bg-warning-500/10 dark:border-warning-500/30">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-warning-600 mt-0.5 flex-shrink-0 dark:text-warning-300" />
-                      <div>
-                        <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Pay on behalf of (POBO) is not available:</p>
-                        <ul className="mt-2 space-y-1">
-                          {poboBlockers.map((reason) => <li key={reason} className="text-body-sm text-warning-700 dark:text-warning-300">• {reason}</li>)}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <Toggle layout="split" label="Pay on behalf of (POBO)" description={`A treasury entity pays this vendor on behalf of ${owningEntity?.name}`} checked={formData.poboEnabled} onChange={setPobo} />
-                    {formData.poboEnabled && (
-                      <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
-                        <Select
-                          label="Paying entity (treasury) *"
-                          value={formData.payingEntityId}
-                          onChange={(e) => updateField('payingEntityId', e.target.value)}
-                          placeholder="Choose the paying entity..."
-                          options={payers.map(e => ({ value: e.id, label: `${e.code} - ${e.name}` }))}
-                        />
-                        <div>
-                          <p className="body-strong mb-2">On behalf of</p>
-                          <p className="h-11 flex items-center font-medium text-neutral-900 dark:text-neutral-50">{owningEntity?.code} - {owningEntity?.name}</p>
-                        </div>
-                      </div>
-                    )}
-                    <p className="caption">After approval, the treasury request is raised from the Payables list (Request POBO).</p>
-                  </>
                 )}
               </div>
             )}
@@ -889,10 +866,10 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   {daysUntilDue !== null && <p className={`inline-flex items-center gap-1 text-caption mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? <><AlertTriangle className="w-3 h-3" /> {Math.abs(daysUntilDue)} days overdue</> : daysUntilDue === 0 ? <><Clock className="w-3 h-3" /> Due today</> : <><Check className="w-3 h-3" /> {daysUntilDue} days remaining</>}</p>}
                 </div>
               )}
-              {poboActive && (
+              {pobo && (
                 <div className="bg-accent-50 border border-accent-200 rounded-lg p-3 dark:bg-accent-500/10 dark:border-accent-500/30">
-                  <div className="flex items-center gap-2 text-accent-700 dark:text-accent-300"><ArrowLeftRight className="w-4 h-4" /><span className="font-medium text-body-sm">Pay on behalf of</span></div>
-                  <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">{payer?.name || 'Paying entity not chosen'} → {owningEntity?.name}</p>
+                  <div className="flex items-center gap-2 text-accent-700 dark:text-accent-300"><ArrowLeftRight className="w-4 h-4" /><span className="font-medium text-body-sm">Paid on behalf (POBO)</span></div>
+                  <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">{pobo.payerName ?? pobo.payerCode} pays on behalf of {ownerName}</p>
                 </div>
               )}
               <div className="pt-3 border-t border-edge-subtle space-y-1 text-body-sm">

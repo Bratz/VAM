@@ -372,6 +372,48 @@ or Request to Pay."* The button then disappears; running the preview again finds
 
 ---
 
+## 10. Paid on behalf by the in-house bank (POBO) (≈4 min)
+
+Rehearsed on **localhost** on **11 Nov 2026**; not yet recorded on vam-five. Spec: `docs/specs/pobo-in-house-bank.md`.
+Treasury pays a subsidiary's suppliers from its own bank account and debits the subsidiary in-house; the
+subsidiary's own approval releases the payment — no second approval by treasury.
+
+**Prerequisite (data):** the treasury centre needs a payment account that is a treasury virtual account linked to a
+physical account **with an IBAN**, whose shadow account is in the same program. Without one, **Add enrolment** offers
+no account. (Localhost and vam-five had none; the rehearsal linked UAE TREASURY POOL ACC to a test physical account.)
+
+### 10.0 One-off cut-over (after deploy)
+**In-House Bank**, TestMNC → tab **Payments on behalf (POBO)** → **Move existing POBO payables and repair (n)** (shown
+only while there is something to change). The preview lists, per section: old-flow POBO payables returned to
+*Approved*, IC mirrors set to the IHB rule (IC receivable = what the subsidiary owes, IC payable = what it is owed),
+POBO recharges closed as settled by the IHB position, credit limits corrected, self-sweep rules switched off, and past
+self-sweeps (report only). **Apply n changes**; the button then disappears.
+
+### 10.1 Enrol the subsidiary (once)
+Same tab → **Add enrolment**: Subsidiary **MNC Dubai Branch (MNC-UAE-DUBAI)** → Currency **AED** → Paid by **MNC
+Treasury Center** → the payment account → **Enrol**. The row shows the IHB headroom (balance + credit limit).
+
+### 10.2 Raise and approve the payable
+1. **Payables → New Payable**, corporate **Test Multinational Corp**, Owning entity **MNC-UAE-DUBAI**, currency **AED**.
+   You see *"Paid by MNC Treasury Center from <account> (<IBAN>)"* and a **Pay directly instead** checkbox. (In GBP:
+   *"Not paid on behalf: MNC Dubai Branch is not enrolled for GBP (only AED), so it pays this payable directly."*)
+2. Vendor with a bank account, amount **300** → **Submit for Approval**; approve it from the Payables list.
+
+### 10.3 Pay Now
+| Account | Change |
+|---|---|
+| Treasury payment account (physical + shadow) | **−300** |
+| IHB current account — MNC Dubai Branch | **−300** |
+| IC receivable — MNC Dubai owes treasury | follows the IHB balance (rule R10) |
+
+The payable is **Paid**, with no recharge and no fee. Its pain.001: Dbtr **MNC Treasury Center**, DbtrAcct the
+treasury IBAN, **UltmtDbtr MNC Dubai Branch**, Cdtr the vendor's IBAN, remittance *Invoice: …*.
+
+A payable larger than the headroom is refused: *"over MNC-UAE-DUBAI's IHB credit headroom of … AED"* — nothing moves
+and it stays Approved.
+
+---
+
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
@@ -383,6 +425,7 @@ or Request to Pay."* The button then disappears; running the preview again finds
 | `POST /api/v1/collections/runs/lines` | ERP: lines naming invoices, or new invoices to raise and collect |
 | `GET /api/v1/collections/runs/{id}/pain008` | The run's pain.008 |
 | `GET/POST /api/v1/cobo/enrolments`, `POST /api/v1/cobo/cutover?dryRun=` | COBO enrolments; move old-flow COBO invoices |
+| `GET/POST /api/v1/pobo/enrolments`, `POST /api/v1/pobo/cutover?dryRun=` | POBO enrolments; repair IHB positions |
 | `POST /api/v1/receivables/{id}/request-to-pay/send` | Send a Request to Pay: pay link, VIBAN, pain.013, outbox email |
 | `GET /api/v1/receivables/{id}/request-to-pay/message` | The last pain.013 sent for the invoice |
 | `GET /api/v1/outbox?corporateId=` · `?relatedId=` | The simulated outbox, for a corporate or one invoice |

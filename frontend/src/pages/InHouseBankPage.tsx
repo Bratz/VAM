@@ -11,6 +11,7 @@ import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { StatStrip } from '../components/layout/StatStrip';
 import { CoboEnrolmentsPanel } from '../components/treasury/CoboEnrolmentsPanel';
+import { PoboEnrolmentsPanel } from '../components/treasury/PoboEnrolmentsPanel';
 
 // ============================================================================
 // API CONFIGURATION - UNIFIED ENDPOINTS
@@ -459,7 +460,7 @@ const EntityCard: React.FC<{
 
 const InHouseBankPage: React.FC = () => {
   // State
-  const [activeTab, setActiveTab] = useState<'overview' | 'entities' | 'current-accounts' | 'cobo'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'entities' | 'current-accounts' | 'cobo' | 'pobo'>('overview');
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
@@ -673,6 +674,7 @@ const InHouseBankPage: React.FC = () => {
     { id: 'entities', label: 'IHB Entities', count: entities.length },
     { id: 'current-accounts', label: 'Current Accounts', count: currentAccounts.length },
     { id: 'cobo', label: 'Collections on behalf (COBO)' },
+    { id: 'pobo', label: 'Payments on behalf (POBO)' },
   ];
 
   if (loadingSelectors && !corporates.length) {
@@ -864,6 +866,10 @@ const InHouseBankPage: React.FC = () => {
 
           {activeTab === 'cobo' && (
             <CoboEnrolmentsPanel corporateId={selectedCorporateId} currentAccounts={currentAccounts} />
+          )}
+
+          {activeTab === 'pobo' && (
+            <PoboEnrolmentsPanel corporateId={selectedCorporateId} currentAccounts={currentAccounts} />
           )}
 
           {/* Current Accounts Tab */}

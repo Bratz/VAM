@@ -486,6 +486,15 @@ public class Payable extends BaseEntity {
     @Column(name = "behalf_of_va_id")
     private UUID behalfOfVaId;
 
+    /** Opt-out (spec D4): paid directly from the owning entity's own account although it is enrolled for POBO. */
+    @Column(name = "pay_directly")
+    @Builder.Default
+    private Boolean payDirectly = false;
+
+    /** Why the payable is paid directly although its owner is enrolled for POBO (D4/D5); null otherwise. */
+    @Column(name = "payment_route_note", length = 300)
+    private String paymentRouteNote;
+
     // ========================================================================
     // PAYMENT CHANNEL
     // ========================================================================
@@ -746,69 +755,6 @@ public class Payable extends BaseEntity {
     // ========================================================================
     // PHASE 2: NEW HELPER METHODS
     // ========================================================================
-    
-    /**
-     * Check if this payable is eligible for POBO routing.
-     * Requires: approved status, not already POBO, party is POBO-eligible.
-     */
-    public boolean canRequestPobo() {
-        return status == PayableStatus.APPROVED
-            && paymentRoute == PaymentRoute.DIRECT
-            && (poboRequestStatus == null || poboRequestStatus == PoboRequestStatus.NOT_REQUESTED);
-    }
-    
-    /**
-     * Request POBO for this payable.
-     */
-    public void requestPobo(UUID payingEntityId, String payingEntityCode, String requestedBy) {
-        this.paymentRoute = PaymentRoute.POBO;
-        this.paymentViaEntityId = payingEntityId;
-        this.paymentViaEntityCode = payingEntityCode;
-        this.poboRequestStatus = PoboRequestStatus.PENDING_TREASURY_APPROVAL;
-        this.poboRequestedAt = LocalDateTime.now();
-        this.poboRequestedBy = requestedBy;
-        this.status = PayableStatus.PENDING_POBO;
-    }
-    
-    /**
-     * Treasury approves POBO request.
-     */
-    public void approvePobo(String approvedBy) {
-        this.poboRequestStatus = PoboRequestStatus.APPROVED;
-        this.poboActionedAt = LocalDateTime.now();
-        this.poboActionedBy = approvedBy;
-        this.status = PayableStatus.POBO_APPROVED;
-    }
-    
-    /**
-     * Treasury rejects POBO request.
-     */
-    public void rejectPobo(String rejectedBy, String reason) {
-        this.poboRequestStatus = PoboRequestStatus.REJECTED;
-        this.poboActionedAt = LocalDateTime.now();
-        this.poboActionedBy = rejectedBy;
-        this.rejectionReason = reason;
-        this.status = PayableStatus.POBO_REJECTED;
-        // Revert to direct payment route
-        this.paymentRoute = PaymentRoute.DIRECT;
-        this.paymentViaEntityId = null;
-        this.paymentViaEntityCode = null;
-    }
-    
-    /**
-     * Mark POBO as executed and record IHB loan.
-     */
-    public void markPoboExecuted(String transactionRef, UUID ihbLoanId, UUID rechargeId) {
-        this.poboRequestStatus = PoboRequestStatus.EXECUTED;
-        this.poboTransactionRef = transactionRef;
-        this.poboIhbLoanId = ihbLoanId;
-        this.poboRechargeId = rechargeId;
-        this.status = PayableStatus.PAID;
-        this.paymentStatus = PaymentStatus.PAID;
-        this.paidAmount = this.netAmount;
-        this.outstandingAmount = BigDecimal.ZERO;
-    }
-    
     /**
      * Check if this payable can be added to a netting cycle.
      */

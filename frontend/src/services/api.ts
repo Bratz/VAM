@@ -2017,6 +2017,79 @@ export const coboEnrolmentApi = {
     apiClient.post<ApiResponse<CoboCutoverReport>>('/cobo/cutover', null, { params: { corporateId, dryRun } }).then(r => r.data.data),
 };
 
+/** A subsidiary paid on behalf (POBO) in one currency by the treasury centre from one of its accounts (In-House Bank). */
+export interface PoboEnrolment {
+  id: string;
+  corporateId: string;
+  subsidiaryEntityId: string;
+  subsidiaryCode?: string;
+  subsidiaryName?: string;
+  currency: string;
+  payerEntityId: string;
+  payerCode?: string;
+  payerName?: string;
+  paymentVaId: string;
+  paymentVaNumber?: string;
+  paymentVaName?: string;
+  paymentIban?: string;
+  ihbCurrentVaId?: string;
+  ihbCurrentVaNumber?: string;
+  /** The subsidiary's IHB current account balance + credit limit: what POBO payments may still use. */
+  headroom?: number | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  /** In force today. */
+  active: boolean;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface PoboPaymentAccount {
+  id: string;
+  vaNumber: string;
+  vaName?: string;
+  currencyCode: string;
+  iban: string;
+}
+
+export const poboEnrolmentApi = {
+  list: (corporateId: string) =>
+    apiClient.get<ApiResponse<PoboEnrolment[]>>('/pobo/enrolments', { params: { corporateId } }).then(r => r.data.data ?? []),
+  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; payerEntityId: string; paymentVaId: string; effectiveFrom?: string }) =>
+    apiClient.post<ApiResponse<PoboEnrolment>>('/pobo/enrolments', data).then(r => r.data.data),
+  end: (id: string) =>
+    apiClient.post<ApiResponse<PoboEnrolment>>(`/pobo/enrolments/${id}/end`).then(r => r.data.data),
+  /** The treasury centre's bank-backed accounts an enrolment in this currency can pay from. */
+  paymentAccounts: (payerEntityId: string, currency: string) =>
+    apiClient.get<ApiResponse<PoboPaymentAccount[]>>('/pobo/enrolments/payment-accounts', { params: { payerEntityId, currency } })
+      .then(r => r.data.data ?? []),
+  /** Cut-over and repair (spec D8/D9); dryRun previews and changes nothing. */
+  cutover: (corporateId: string, dryRun: boolean) =>
+    apiClient.post<ApiResponse<PoboCutoverReport>>('/pobo/cutover', null, { params: { corporateId, dryRun } }).then(r => r.data.data),
+};
+
+export interface PoboCutoverItem {
+  key: string;
+  subject: string;
+  sub?: string;
+  amount?: number;
+  currency?: string;
+  /** What happens (dry run) or happened, and why. */
+  detail: string;
+}
+
+export interface PoboCutoverReport {
+  corporateId: string;
+  dryRun: boolean;
+  payables: PoboCutoverItem[];
+  mirrors: PoboCutoverItem[];
+  recharges: PoboCutoverItem[];
+  creditLimits: PoboCutoverItem[];
+  sweepRules: PoboCutoverItem[];
+  /** Information only: the cut-over never changes these. */
+  pastSelfSweeps: PoboCutoverItem[];
+}
+
 export interface CoboCutoverItem {
   invoiceId: string;
   invoiceNumber: string;
@@ -2505,6 +2578,12 @@ export interface PayablePhase2 {
   paymentViaEntityCode?: string;
   paymentRouteDescription?: string;
   isPobo?: boolean;
+  /** Paid directly although the owning entity is enrolled for POBO in this currency (spec D4). */
+  payDirectly?: boolean;
+  /** Why the payable is paid directly, when POBO might be expected (spec D4/D5). */
+  paymentRouteNote?: string;
+  /** The subsidiary's IHB current account a POBO payment is booked to. */
+  behalfOfVaId?: string;
   vendorReference?: string;
   
   // POBO
@@ -2566,7 +2645,6 @@ export interface PayablePhase2 {
   
   // Computed flags
   canBePaid: boolean;
-  canRequestPobo: boolean;
   canAddToNetting: boolean;
 }
 
@@ -2673,140 +2751,29 @@ export interface CreatePayableRequest {
   createdBy?: string;
   virtualAccountId?: string;
   vendorReference?: string;
-  isPobo?: boolean;
-  paymentViaEntityId?: string;
-  paymentViaEntityCode?: string;
+  /** Opt out of POBO when the owning entity is enrolled for this currency; the backend decides POBO from the enrolment. */
+  payDirectly?: boolean;
 }
 
 // POBO Types
-interface PoboRequestRequest {
-  payableIds: string[];
-  payingEntityId: string;
-  payingEntityCode?: string;
-  requestedBy: string;
-  notes?: string;
-  createBatch?: boolean;
-}
-
-interface PoboRequestResponse {
+/** How a payable will be paid: on behalf by the treasury centre (enrolment) or directly, and why. */
+export interface PaymentRoutePreview {
   payableId: string;
   payableNumber: string;
-  poboRequestStatus: string;
-  requestedAt: string;
-  success: boolean;
-  message: string;
-}
-
-interface PoboBatchRequestResponse {
-  results: PoboRequestResponse[];
-  successCount: number;
-  failedCount: number;
-  totalAmount: number;
-  currencyCode: string;
-}
-
-interface PoboApprovalRequest {
-  payableId: string;
-  approved: boolean;
-  actionedBy: string;
-  rejectionReason?: string;
-  notes?: string;
-}
-
-interface PoboBatchApprovalRequest {
-  payableIds: string[];
-  approved: boolean;
-  actionedBy: string;
-  rejectionReason?: string;
-}
-
-interface PoboPreviewRequest {
-  payableIds: string[];
-  payingEntityId: string;
-  behalfEntityId?: string;
-}
-
-interface PoboChargeBreakdown {
-  chargeCode: string;
-  chargeName: string;
-  chargeType: string;
-  calculatedAmount: number;
-  waived: boolean;
-  waiverReason?: string;
-}
-
-interface PoboIhbLoanPreview {
-  principalAmount: number;
-  interestRate: number;
-  estimatedDailyInterest: number;
-  estimatedMonthlyInterest: number;
-  tenor: string;
-  expectedSettlementDate?: string;
-  /** DEFAULT: the rate is a built-in figure, not the IHB's priced rate. */
-  rateSource?: string;
-}
-
-export interface PoboPreviewResponse {
-  payingEntityId: string;
-  payingEntityCode: string;
-  payingEntityName: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName: string;
-  payableCount: number;
-  totalPaymentAmount: number;
-  currencyCode: string;
-  // Paying Entity VA Balance & Credit Limit
-  payingVaId?: string;
-  payingVaNumber?: string;
-  payingVaBalance?: number;
-  payingVaCreditLimit?: number;
-  payingVaCreditLimitAvailable?: number;
-  payingVaEffectiveAvailableBalance?: number;  // balance + creditLimitAvailable
-  // Behalf Entity VA Balance & Credit Limit (subsidiary being charged)
-  behalfVaId?: string;
-  behalfVaNumber?: string;
-  behalfVaBalance?: number;
-  behalfVaCreditLimit?: number;
-  behalfVaCreditLimitAvailable?: number;
-  behalfVaEffectiveAvailableBalance?: number;
-  charges: PoboChargeBreakdown[];
-  totalCharges: number;
-  netPaymentAmount: number;
-  ihbLoanPreview: PoboIhbLoanPreview;
-  warnings: string[];
-  isValid: boolean;
-  validationMessage?: string;
-}
-
-interface PoboExecuteRequest {
-  payableIds: string[];
-  payingEntityId: string;
-  executedBy: string;
-  createIhbLoan?: boolean;
-  createRecharge?: boolean;
-  notes?: string;
-}
-
-interface PoboExecutionResult {
-  payableId: string;
-  payableNumber: string;
-  transactionRef: string;
+  route: 'POBO' | 'DIRECT';
+  /** Why it is paid directly (opt-out, currency not enrolled); may be empty. */
+  reason?: string | null;
+  payerEntityCode?: string;
+  payerEntityName?: string;
+  paymentVaNumber?: string;
+  paymentVaName?: string;
+  ihbCurrentVaNumber?: string;
   amount: number;
-  success: boolean;
-  errorMessage?: string;
-}
-
-interface PoboExecuteResponse {
-  batchTransactionRef: string;
-  results: PoboExecutionResult[];
-  successCount: number;
-  failedCount: number;
-  totalExecutedAmount: number;
   currencyCode: string;
-  ihbLoanId?: string;
-  rechargeId?: string;
-  executedAt: string;
+  /** The subsidiary's IHB current account balance + credit limit. */
+  headroom?: number | null;
+  /** Set when the amount is over the headroom: the payment would be refused. */
+  refusal?: string | null;
 }
 
 // Intercompany Types
@@ -2988,40 +2955,9 @@ export const payablesApiPhase2 = {
   // POBO WORKFLOW
   // =========================================================================
   
-  requestPobo: async (request: PoboRequestRequest): Promise<PoboBatchRequestResponse> => {
-    const response = await apiClient.post<ApiResponse<PoboBatchRequestResponse>>('/payables/pobo/request', request);
-    return extractPayableData(response.data);
-  },
-  
-  getPoboPendingApproval: async (): Promise<PayablePhase2[]> => {
-    const response = await apiClient.get<ApiResponse<PayablePhase2[]>>('/payables/pobo/pending-approval');
-    return extractPayableData(response.data);
-  },
-  
-  actionPoboRequest: async (request: PoboApprovalRequest): Promise<PayablePhase2> => {
-    const response = await apiClient.post<ApiResponse<PayablePhase2>>('/payables/pobo/approve', request);
-    return extractPayableData(response.data);
-  },
-  
-  batchApprovePobo: async (request: PoboBatchApprovalRequest): Promise<PayableBatchOperationResponse> => {
-    const response = await apiClient.post<ApiResponse<PayableBatchOperationResponse>>('/payables/pobo/batch-approve', request);
-    return extractPayableData(response.data);
-  },
-  
-  previewPobo: async (request: PoboPreviewRequest): Promise<PoboPreviewResponse> => {
-    const response = await apiClient.post<ApiResponse<PoboPreviewResponse>>('/payables/pobo/preview', request);
-    return extractPayableData(response.data);
-  },
-  
-  executePobo: async (request: PoboExecuteRequest): Promise<PoboExecuteResponse> => {
-    const response = await apiClient.post<ApiResponse<PoboExecuteResponse>>('/payables/pobo/execute', request);
-    return extractPayableData(response.data);
-  },
-  
-  getPoboEligible: async (owningEntityId?: string, page = 0, size = 20): Promise<PayableListResponse> => {
-    const params: Record<string, any> = { page, size };
-    if (owningEntityId) params.owningEntityId = owningEntityId;
-    const response = await apiClient.get<ApiResponse<PayableListResponse>>('/payables/pobo/eligible', { params });
+  /** How each payable will be paid (POBO by enrolment or direct), with the IHB headroom. */
+  previewPobo: async (request: { payableIds: string[] }): Promise<PaymentRoutePreview[]> => {
+    const response = await apiClient.post<ApiResponse<PaymentRoutePreview[]>>('/payables/pobo/preview', request);
     return extractPayableData(response.data);
   },
   
@@ -3974,7 +3910,6 @@ interface EntityValidationResponse {
   warnings: string[];
 }
 
-// Note: PoboPreviewResponse is defined earlier in this file (around line 2368)
 // NOTE: IntercompanyTransaction interface is defined later in this file (around line 7217)
 // with the complete set of fields. Do not duplicate here.
 
@@ -3987,10 +3922,6 @@ export const intercompanyApi = {
     apiClient.get<ApiResponse<any>>(`/intercompany/entities/${entityId}/position`).then(r => r.data),
   validateEntity: (entityId: string, request: { transactionType: string; amount: number; currencyCode?: string }) =>
     apiClient.post<ApiResponse<EntityValidationResponse>>(`/intercompany/entities/${entityId}/validate`, request).then(r => r.data),
-  previewPobo: (request: any) =>
-    apiClient.post<ApiResponse<PoboPreviewResponse>>('/intercompany/pobo/preview', request).then(r => r.data),
-  executePobo: (request: any) =>
-    apiClient.post<ApiResponse<any>>('/intercompany/pobo/execute', request).then(r => r.data),
   getPoboTransactions: (entityId?: string, role?: string, status?: string) =>
     apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/pobo', { params: { entityId, role, status } }).then(r => r.data),
   setupCobo: (request: any) =>
@@ -4536,57 +4467,6 @@ export const hierarchyApi = {
     apiClient.get<ApiResponse<HierarchyNode>>(`/hierarchy/nodes/${nodeId}`).then(r => r.data),
   getChildren: (nodeId: string) =>
     apiClient.get<ApiResponse<HierarchyNode[]>>(`/hierarchy/nodes/${nodeId}/children`).then(r => r.data),
-};
-
-// ============================================================================
-// POBO API (Direct POBO Controller endpoints)
-// ============================================================================
-
-interface PoboAuthorization {
-  id: string;
-  authorizationCode: string;
-  payerEntityId: string;
-  payerEntityCode: string;
-  payerEntityName: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName: string;
-  currencyCode: string;
-  singleTransactionLimit: number;
-  dailyLimit: number;
-  monthlyLimit: number;
-  dailyUtilized: number;
-  monthlyUtilized: number;
-  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
-  effectiveFrom: string;
-  effectiveTo?: string;
-}
-
-const poboApi = {
-  getAuthorizations: () =>
-    apiClient.get<ApiResponse<PoboAuthorization[]>>('/pobo/authorizations').then(r => r.data),
-  getAuthorization: (id: string) =>
-    apiClient.get<ApiResponse<PoboAuthorization>>(`/pobo/authorizations/${id}`).then(r => r.data),
-  getAuthorizationsForPayer: (payerEntityId: string) =>
-    apiClient.get<ApiResponse<PoboAuthorization[]>>(`/pobo/authorizations/payer/${payerEntityId}`).then(r => r.data),
-  createAuthorization: (data: any) =>
-    apiClient.post<ApiResponse<PoboAuthorization>>('/pobo/authorizations', data).then(r => r.data),
-  validatePayment: (request: { payerEntityId: string; behalfEntityId: string; amount: number; currencyCode: string }) =>
-    apiClient.post<ApiResponse<{ valid: boolean; reason?: string; warnings: string[] }>>('/pobo/validate', request).then(r => r.data),
-  processPayment: (request: any) =>
-    apiClient.post<ApiResponse<any>>('/pobo/payments', request).then(r => r.data),
-  getStats: () =>
-    apiClient.get<ApiResponse<any>>('/pobo/stats').then(r => r.data),
-  getRecharges: () =>
-    apiClient.get<ApiResponse<any[]>>('/pobo/recharges').then(r => r.data),
-  getPendingRecharges: () =>
-    apiClient.get<ApiResponse<any[]>>('/pobo/recharges/pending').then(r => r.data),
-  createRecharge: (data: any) =>
-    apiClient.post<ApiResponse<any>>('/pobo/recharges', data).then(r => r.data),
-  approveRecharge: (id: string, approver: string) =>
-    apiClient.post<ApiResponse<any>>(`/pobo/recharges/${id}/approve`, null, { params: { approver } }).then(r => r.data),
-  rejectRecharge: (id: string, rejector: string, reason?: string) =>
-    apiClient.post<ApiResponse<any>>(`/pobo/recharges/${id}/reject`, null, { params: { rejector, reason } }).then(r => r.data),
 };
 
 export type VaSpecialType = 'REGULAR' | 'SETTLEMENT' | 'EXCEPTION';
@@ -7641,61 +7521,6 @@ export interface IntercompanyStats {
   activeEntities: number;
 }
 
-export interface PoboPreview {
-  payingEntityId: string;
-  payingEntityCode: string;
-  payingEntityName: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName: string;
-  amount: number;
-  currencyCode: string;
-  charges: number;
-  totalAmount: number;
-  ihbLoanPreview?: {
-    lenderId: string;
-    borrowerId: string;
-    principalAmount: number;
-    interestRate: number;
-    estimatedInterest: number;
-  };
-  withinCreditLimit: boolean;
-  availableLimit: number;
-  warnings: string[];
-  chargeBreakdown: Array<{
-    chargeType: string;
-    description: string;
-    amount: number;
-  }>;
-}
-
-interface PoboRequest {
-  payingEntityId: string;
-  behalfEntityId: string;
-  amount: number;
-  currencyCode?: string;
-  description?: string;
-  originalReference?: string;
-  createIhbLoan?: boolean;
-}
-
-interface PoboResult {
-  transactionRef: string;
-  status: string;
-  message: string;
-  payingEntityId: string;
-  payingEntityCode: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  amount: number;
-  currencyCode: string;
-  charges: number;
-  totalAmount: number;
-  ihbLoanId?: string;
-  ihbLoanRef?: string;
-  processedAt: string;
-}
-
 export interface CoboRequest {
   collectingEntityId: string;
   behalfEntityId: string;
@@ -7886,12 +7711,6 @@ export const intercompanyApiEnhanced = {
 
   // POBO Operations
   pobo: {
-    preview: (data: PoboRequest) =>
-      apiClient.post<ApiResponse<PoboPreview>>('/intercompany/pobo/preview', data).then(r => r.data),
-    
-    execute: (data: PoboRequest) =>
-      apiClient.post<ApiResponse<PoboResult>>('/intercompany/pobo/execute', data).then(r => r.data),
-    
     getTransactions: (entityId?: string, role?: string, status?: string) =>
       apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/pobo', { params: { entityId, role, status } }).then(r => r.data),
   },
@@ -7968,7 +7787,6 @@ export default {
   parties: partiesApi,
   hierarchy: hierarchyApi,
   hierarchyVa: hierarchyVaApi,
-  pobo: poboApi,
   settlementVa: settlementVaApi,
   exception: exceptionApi,
   programs: programsApi,

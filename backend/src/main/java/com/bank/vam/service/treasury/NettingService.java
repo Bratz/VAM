@@ -64,6 +64,7 @@ public class NettingService {
     private final FeePostingService feePostingService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final FxRateService fxRateService;
+    private final IhbMirrorService ihbMirrors;
 
     private static final AtomicInteger cycleSequence = new AtomicInteger(1);
     private static final AtomicInteger entrySequence = new AtomicInteger(1);
@@ -375,6 +376,12 @@ public class NettingService {
      */
     @Transactional
     public NettingEntry addTransactionToCycle(UUID nettingCycleId, IntercompanyTransaction transaction) {
+        // The IC records TransactionService writes for a POBO posting (originalReferenceType POBO_4LEG_* / POBO_6LEG_*)
+        // describe a payment already on the subsidiary's IHB current account: never netted (POBO spec R11).
+        if (transaction.getOriginalReferenceType() != null && transaction.getOriginalReferenceType().startsWith("POBO_")) {
+            throw new BusinessException("Intercompany record " + transaction.getTransactionRef()
+                + " is a POBO payment already posted to the In-House Bank position; it is not netted");
+        }
         NettingCycle cycle = cycleRepository.findById(nettingCycleId)
             .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
 
@@ -425,6 +432,10 @@ public class NettingService {
      */
     @Transactional
     public NettingEntry addRechargeToCycle(UUID nettingCycleId, IntercompanyRecharge recharge) {
+        if (recharge.getRechargeType() == IntercompanyRecharge.RechargeType.POBO_PAYMENT) {
+            throw new BusinessException("Recharge " + recharge.getRechargeReference()
+                + " is a POBO payment already posted to the In-House Bank position; it is not netted");
+        }
         NettingCycle cycle = cycleRepository.findById(nettingCycleId)
             .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
 
@@ -546,10 +557,12 @@ public class NettingService {
      */
     @Transactional
     public int addPoboRecharges(NettingCycle cycle, UUID corporateId, boolean includePending) {
-        // Find eligible POBO recharges: APPROVED or RECHARGED status (and optionally PENDING), not yet settled
-        // Filter specifically for POBO_PAYMENT type or null type (backward compatibility)
+        // Eligible recharges: APPROVED or RECHARGED status (and optionally PENDING), not yet settled.
+        // Untyped (manually created) recharges only: a POBO_PAYMENT recharge is a payment already posted to the
+        // subsidiary's IHB current account, settled through that position -- netting it would debit the account
+        // a second time (POBO spec R11 / D8).
         List<IntercompanyRecharge> eligibleRecharges = rechargeRepository.findAll().stream()
-            .filter(r -> r.getRechargeType() == null || r.getRechargeType() == IntercompanyRecharge.RechargeType.POBO_PAYMENT)
+            .filter(r -> r.getRechargeType() == null)
             .filter(r -> {
                 if (includePending && r.getStatus() == IntercompanyRecharge.RechargeStatus.PENDING) {
                     return true;
@@ -879,7 +892,7 @@ public class NettingService {
      * | Leg | Account            | Debit | Credit | Description                     |
      * |-----|-------------------|-------|--------|---------------------------------|
      * | 1   | Netting Suspense  | X     |        | Draw from central clearing      |
-     * | 2   | IC Receivable VA  |       | X      | Reduce Treasury receivable pos  |
+     * | 2   | IHB Current Acct  |       | X      | Receiver's own account (else its settlement VA); the mirrors follow |
      *
      * The central Netting Suspense account should net to zero after all settlements.
      */
@@ -961,6 +974,7 @@ public class NettingService {
                             .build();
                         debitTx = ledgerTransactionRepository.save(debitTx);
                         settlementLedgerEntries.add(debitTx);
+                        ihbMirrors.syncIhbMirrors(payerVa, "netting settlement PAY " + cycle.getCycleReference(), correlationId);
 
                         settlement.setSettlementVaId(payerVa.getId());
                         settlement.setSettlementTransactionId(debitTx.getId());
@@ -981,20 +995,11 @@ public class NettingService {
                         log.info("Processing RECEIVE settlement for {}: amount={}, VA={}",
                             settlement.getEntityCode(), settlementAmount, receiverVa.getVaNumber());
 
-                        // For IC Receivable VA, we DEBIT (reduce the receivable position)
-                        // Because the receivable is being settled/collected
+                        // A credit to the receiver's own account (its IHB current account, else its settlement
+                        // account). Never treasury's IC receivable / payable: those mirrors follow the IHB current
+                        // positions (POBO spec R10) and are synced below, not moved by netting.
                         BigDecimal balanceBefore = receiverVa.getCurrentBalance();
-
-                        // Check if this is an IC Receivable VA (normally has credit balance)
-                        // Settlement reduces the receivable position
-                        if (VirtualAccount.AccountCategory.INTERCOMPANY == receiverVa.getAccountCategory() ||
-                            (receiverVa.getVaName() != null && receiverVa.getVaName().toLowerCase().contains("receivable"))) {
-                            // IC Receivable VA - debit to reduce receivable position
-                            receiverVa.setCurrentBalance(balanceBefore.subtract(settlementAmount));
-                        } else {
-                            // Regular settlement VA - credit to receive funds
-                            receiverVa.setCurrentBalance(balanceBefore.add(settlementAmount));
-                        }
+                        receiverVa.setCurrentBalance(balanceBefore.add(settlementAmount));
 
                         // Update available balance
                         if (receiverVa.getAvailableBalance() != null) {
@@ -1023,6 +1028,7 @@ public class NettingService {
                             .build();
                         creditTx = ledgerTransactionRepository.save(creditTx);
                         settlementLedgerEntries.add(creditTx);
+                        ihbMirrors.syncIhbMirrors(receiverVa, "netting settlement RECEIVE " + cycle.getCycleReference(), correlationId);
 
                         settlement.setSettlementVaId(receiverVa.getId());
                         settlement.setSettlementTransactionId(creditTx.getId());
@@ -1081,69 +1087,32 @@ public class NettingService {
     }
 
     /**
-     * Find the appropriate VA for settlement based on entity and direction.
-     *
-     * For PAYER: Look for IHB Current Account (ihbParticipant=true) or main operating VA
-     * For RECEIVER: Look for IC Receivable VA or Settlement VA
+     * The account a participant settles on, paying or receiving: its IHB current account, else its settlement or
+     * transaction account, else any other account of its own. Only real accounts: an in-house mirror (IC receivable /
+     * payable, IHB settlement) or a bank shadow is never moved by netting; the mirrors follow the IHB positions.
      */
     private VirtualAccount findSettlementVaForEntity(UUID entityId, String direction) {
         List<VirtualAccount> entityVas = virtualAccountRepository.findAll().stream()
             .filter(va -> entityId.equals(va.getOwningEntityId()))
             .filter(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE)
+            .filter(NettingService::isRealAccount)
             .collect(Collectors.toList());
 
         if (entityVas.isEmpty()) {
             log.debug("No VAs found for entity {} in {} direction", entityId, direction);
             return null;
         }
+        return entityVas.stream().filter(va -> Boolean.TRUE.equals(va.getIhbParticipant())).findFirst()
+            .or(() -> entityVas.stream().filter(va -> va.isSettlementVa()
+                || VirtualAccount.AccountCategory.TRANSACTION == va.getAccountCategory()).findFirst())
+            .orElse(entityVas.get(0));
+    }
 
-        if ("PAYER".equals(direction)) {
-            // Priority 1: IHB Current Account
-            Optional<VirtualAccount> ihbCurrentAccount = entityVas.stream()
-                .filter(va -> Boolean.TRUE.equals(va.getIhbParticipant()))
-                .findFirst();
-            if (ihbCurrentAccount.isPresent()) {
-                return ihbCurrentAccount.get();
-            }
-
-            // Priority 2: Main operating/settlement VA
-            Optional<VirtualAccount> operatingVa = entityVas.stream()
-                .filter(va -> va.isSettlementVa() ||
-                             VirtualAccount.AccountCategory.TRANSACTION == va.getAccountCategory())
-                .findFirst();
-            if (operatingVa.isPresent()) {
-                return operatingVa.get();
-            }
-
-            // Fallback: Any VA with sufficient balance
-            return entityVas.stream()
-                .filter(va -> va.getCurrentBalance() != null)
-                .findFirst()
-                .orElse(null);
-
-        } else if ("RECEIVER".equals(direction)) {
-            // Priority 1: IC Receivable VA
-            Optional<VirtualAccount> icReceivableVa = entityVas.stream()
-                .filter(va -> VirtualAccount.AccountCategory.INTERCOMPANY == va.getAccountCategory() ||
-                             (va.getVaName() != null && va.getVaName().toLowerCase().contains("receivable")))
-                .findFirst();
-            if (icReceivableVa.isPresent()) {
-                return icReceivableVa.get();
-            }
-
-            // Priority 2: Settlement VA
-            Optional<VirtualAccount> settlementVa = entityVas.stream()
-                .filter(VirtualAccount::isSettlementVa)
-                .findFirst();
-            if (settlementVa.isPresent()) {
-                return settlementVa.get();
-            }
-
-            // Fallback: Any active VA
-            return entityVas.stream().findFirst().orElse(null);
-        }
-
-        return null;
+    static boolean isRealAccount(VirtualAccount va) {
+        VirtualAccount.MirrorAccountType m = va.getMirrorAccountType();
+        boolean mirror = m == VirtualAccount.MirrorAccountType.IC_RECEIVABLE || m == VirtualAccount.MirrorAccountType.IC_PAYABLE
+            || m == VirtualAccount.MirrorAccountType.IHB_SETTLEMENT;
+        return !mirror && va.getAccountCategory() != VirtualAccount.AccountCategory.INTERCOMPANY && !va.isPhysicalMirror();
     }
 
     private String generateNettingSettlementRef(String cycleRef) {

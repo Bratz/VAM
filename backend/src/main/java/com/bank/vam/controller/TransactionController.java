@@ -39,6 +39,9 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.service.pobo.PoboEnrolmentService poboEnrolments;
+    private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final com.bank.vam.repository.hierarchy.LegalEntityRepository legalEntities;
 
     // ========================================================================
     // LIST & SEARCH
@@ -633,11 +636,54 @@ public class TransactionController {
             .build();
     }
 
+    /**
+     * The pain.001 debtor of an outbound transaction, as the payment paths resolve it (POBO spec D6): through the
+     * in-house posting (POBO_DEBIT) the treasury centre with the IBAN of the bank account the posting debited and the
+     * subsidiary as ultimate debtor; otherwise the paying account's owner and IBAN. Never a VA number; refused when
+     * there is no IBAN.
+     */
+    private com.bank.vam.service.pobo.PoboEnrolmentService.PainDebtor painDebtor(Transaction txn, VirtualAccount sourceVa) {
+        List<Transaction> group = new java.util.ArrayList<>(List.of(txn));
+        if (txn.getCorrelationId() != null && !txn.getCorrelationId().isEmpty()) {
+            group.addAll(transactionService.getByCorrelationId(txn.getCorrelationId()));
+        }
+        if (txn.getMovementType() == Transaction.MovementType.POBO_DEBIT) {
+            // The payout row: the shadow debit, naming the paying account (counterparty) and the subsidiary's account.
+            Transaction payout = group.stream()
+                .filter(t -> t.getMovementType() == Transaction.MovementType.POBO_DEBIT && t.getPhysicalAccountId() != null)
+                .findFirst()
+                .orElseThrow(() -> new com.bank.vam.exception.BusinessException(
+                    "Not available: no bank payout leg recorded for " + txn.getReferenceNumber()));
+            VirtualAccount shadow = account(payout.getVaId());
+            VirtualAccount payer = account(payout.getCounterpartyVaId());
+            VirtualAccount owner = account(payout.getBehalfOfVaId());
+            return poboEnrolments.inHouseDebtor(owner, payer, shadow);
+        }
+        VirtualAccount from = sourceVa != null && !sourceVa.isPhysicalMirror() ? sourceVa
+            : group.stream().filter(t -> t.getMovementType() == Transaction.MovementType.DEBIT && t.getPhysicalAccountId() == null
+                    && t.getVaId() != null).findFirst().map(t -> account(t.getVaId())).orElse(null);
+        if (from == null) {
+            throw new com.bank.vam.exception.BusinessException("Not available: no paying account recorded for " + txn.getReferenceNumber());
+        }
+        String name = java.util.Optional.ofNullable(from.getOwningEntityId()).flatMap(legalEntities::findById)
+            .map(com.bank.vam.entity.hierarchy.LegalEntity::getEntityName).orElse(from.getVaName());
+        return new com.bank.vam.service.pobo.PoboEnrolmentService.PainDebtor(name, null, poboEnrolments.debtorIban(from), null, null);
+    }
+
+    private VirtualAccount account(UUID id) {
+        if (id == null) throw new com.bank.vam.exception.BusinessException("Not available: the payment's accounts are not recorded");
+        return virtualAccountRepository.findById(id)
+            .orElseThrow(() -> new com.bank.vam.exception.BusinessException("Not available: account " + id + " not found"));
+    }
+
     private String generatePain001Xml(Transaction txn, VirtualAccount sourceVa) {
-        String debtorName = sourceVa != null ? sourceVa.getVaName() : "Unknown";
-        String debtorAccount = sourceVa != null ? sourceVa.getVaNumber() : "";
-        String debtorBic = "TEABORGG";
-        
+        com.bank.vam.service.pobo.PoboEnrolmentService.PainDebtor debtor = painDebtor(txn, sourceVa);
+        String debtorName = debtor.name();
+        String debtorBic = debtor.bic() != null ? debtor.bic() : marketProfile.getActiveHomeBankBic();
+        if (debtorBic == null || debtorBic.isBlank()) {
+            throw new com.bank.vam.exception.BusinessException("Not available: no home bank BIC configured for the debtor agent");
+        }
+
         String creditorName = txn.getBeneficiaryName() != null ? txn.getBeneficiaryName() : "Unknown";
         String creditorAccount = txn.getBeneficiaryAccount() != null ? txn.getBeneficiaryAccount() : "";
         
@@ -671,12 +717,17 @@ public class TransactionController {
         xml.append("        <Nm>").append(escapeXml(debtorName)).append("</Nm>\n");
         xml.append("      </Dbtr>\n");
         xml.append("      <DbtrAcct>\n");
-        xml.append("        <Id><Othr><Id>").append(escapeXml(debtorAccount)).append("</Id></Othr></Id>\n");
+        xml.append("        <Id><IBAN>").append(escapeXml(debtor.iban())).append("</IBAN></Id>\n");
         xml.append("        <Ccy>").append(txn.getCurrencyCode()).append("</Ccy>\n");
         xml.append("      </DbtrAcct>\n");
         xml.append("      <DbtrAgt>\n");
-        xml.append("        <FinInstnId><BIC>").append(debtorBic).append("</BIC></FinInstnId>\n");
+        xml.append("        <FinInstnId><BIC>").append(escapeXml(debtorBic)).append("</BIC></FinInstnId>\n");
         xml.append("      </DbtrAgt>\n");
+        if (debtor.ultimateDebtor() != null) {
+            xml.append("      <UltmtDbtr>\n");
+            xml.append("        <Nm>").append(escapeXml(debtor.ultimateDebtor())).append("</Nm>\n");
+            xml.append("      </UltmtDbtr>\n");
+        }
         xml.append("      <CdtTrfTxInf>\n");
         xml.append("        <PmtId>\n");
         xml.append("          <EndToEndId>").append(escapeXml(endToEndId)).append("</EndToEndId>\n");

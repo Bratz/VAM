@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
  * POBO Service - Pay On Behalf Of validation and management.
  * 
  * Phase 5 Enhanced Features:
- * - Authorization management between entities
- * - Payment validation against limits
  * - Intercompany recharge creation
  * - IHB integration for settlements (Phase 5)
  * - Transfer pricing compliance
@@ -48,246 +46,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PoboService {
 
-    private final PoboAuthorizationRepository authorizationRepository;
     private final IntercompanyRechargeRepository rechargeRepository;
     private final ChargeService chargeService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
-    private static final AtomicLong authSequence = new AtomicLong(1);
     private static final AtomicLong rechargeSequence = new AtomicLong(1);
-
-    // ========================================================================
-    // AUTHORIZATION MANAGEMENT
-    // ========================================================================
-
-    @Transactional(readOnly = true)
-    public List<AuthorizationResponse> getAllAuthorizations() {
-        return authorizationRepository.findAllActive().stream()
-            .map(this::toAuthorizationResponse)
-            .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public AuthorizationResponse getAuthorization(UUID id) {
-        PoboAuthorization auth = authorizationRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Authorization not found: " + id));
-        return toAuthorizationResponse(auth);
-    }
-
-    @Transactional(readOnly = true)
-    public AuthorizationResponse getAuthorizationByCode(String code) {
-        PoboAuthorization auth = authorizationRepository.findByAuthorizationCode(code)
-            .orElseThrow(() -> new ResourceNotFoundException("Authorization not found: " + code));
-        return toAuthorizationResponse(auth);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AuthorizationResponse> getAuthorizationsForPayer(UUID payerEntityId) {
-        return authorizationRepository.findActiveByPayer(payerEntityId).stream()
-            .map(this::toAuthorizationResponse)
-            .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<AuthorizationResponse> getAuthorizationsForBehalf(UUID behalfEntityId) {
-        return authorizationRepository.findActiveByBehalf(behalfEntityId).stream()
-            .map(this::toAuthorizationResponse)
-            .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public AuthorizationResponse createAuthorization(CreateAuthorizationRequest request) {
-        // Check for existing active authorization
-        Optional<PoboAuthorization> existing = authorizationRepository.findActiveAuthorization(
-            request.getPayerEntityId(), request.getBehalfEntityId());
-        if (existing.isPresent()) {
-            throw new BusinessException("Active authorization already exists for this entity pair");
-        }
-
-        String authCode = generateAuthorizationCode();
-
-        PoboAuthorization auth = PoboAuthorization.builder()
-            .authorizationCode(authCode)
-            .payerEntityId(request.getPayerEntityId())
-            .payerEntityCode(request.getPayerEntityCode())
-            .payerVaId(request.getPayerVaId())
-            .behalfEntityId(request.getBehalfEntityId())
-            .behalfEntityCode(request.getBehalfEntityCode())
-            .behalfVaId(request.getBehalfVaId())
-            .authorizationType(request.getAuthorizationType())
-            .singlePaymentLimit(request.getSinglePaymentLimit())
-            .dailyLimit(request.getDailyLimit())
-            .monthlyLimit(request.getMonthlyLimit())
-            .currencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : marketProfile.getDefaultCurrency())
-            .allowedPaymentTypes(request.getAllowedPaymentTypes())
-            .allowedVendorIds(request.getAllowedVendorIds())
-            .autoRecharge(request.getAutoRecharge())
-            .rechargeServiceFeeRate(request.getRechargeServiceFeeRate())
-            .requiresApproval(request.getRequiresApproval())
-            .effectiveFrom(request.getEffectiveFrom() != null ? request.getEffectiveFrom() : LocalDate.now())
-            .effectiveTo(request.getEffectiveTo())
-            .status(PoboAuthorization.AuthorizationStatus.ACTIVE)
-            .build();
-
-        auth = authorizationRepository.save(auth);
-        log.info("Created POBO authorization: {} - {} -> {}", 
-            authCode, request.getPayerEntityCode(), request.getBehalfEntityCode());
-        
-        return toAuthorizationResponse(auth);
-    }
-
-    @Transactional
-    public AuthorizationResponse updateLimits(UUID authId, UpdateLimitsRequest request) {
-        PoboAuthorization auth = authorizationRepository.findById(authId)
-            .orElseThrow(() -> new ResourceNotFoundException("Authorization not found: " + authId));
-
-        if (request.getSinglePaymentLimit() != null) {
-            auth.setSinglePaymentLimit(request.getSinglePaymentLimit());
-        }
-        if (request.getDailyLimit() != null) {
-            auth.setDailyLimit(request.getDailyLimit());
-        }
-        if (request.getMonthlyLimit() != null) {
-            auth.setMonthlyLimit(request.getMonthlyLimit());
-        }
-
-        auth = authorizationRepository.save(auth);
-        log.info("Updated limits for authorization: {}", auth.getAuthorizationCode());
-        
-        return toAuthorizationResponse(auth);
-    }
-
-    @Transactional
-    public void suspendAuthorization(UUID authId, String reason) {
-        PoboAuthorization auth = authorizationRepository.findById(authId)
-            .orElseThrow(() -> new ResourceNotFoundException("Authorization not found: " + authId));
-        
-        auth.suspend(reason);
-        authorizationRepository.save(auth);
-        log.info("Suspended authorization: {} - {}", auth.getAuthorizationCode(), reason);
-    }
-
-    @Transactional
-    public void reactivateAuthorization(UUID authId) {
-        PoboAuthorization auth = authorizationRepository.findById(authId)
-            .orElseThrow(() -> new ResourceNotFoundException("Authorization not found: " + authId));
-        
-        auth.reactivate();
-        authorizationRepository.save(auth);
-        log.info("Reactivated authorization: {}", auth.getAuthorizationCode());
-    }
-
-    // ========================================================================
-    // POBO VALIDATION
-    // ========================================================================
-
-    /**
-     * Validate if a POBO payment can be made.
-     */
-    @Transactional(readOnly = true)
-    public ValidatePoboResponse validatePoboPayment(ValidatePoboRequest request) {
-        List<String> warnings = new ArrayList<>();
-        
-        // Find authorization
-        Optional<PoboAuthorization> authOpt = authorizationRepository.findActiveAuthorization(
-            request.getPayerEntityId(), request.getBehalfEntityId());
-
-        if (authOpt.isEmpty()) {
-            return ValidatePoboResponse.builder()
-                .isAuthorized(false)
-                .rejectionReason("No active POBO authorization found for this entity pair")
-                .build();
-        }
-
-        PoboAuthorization auth = authOpt.get();
-
-        // Check if valid
-        if (!auth.isValid()) {
-            return ValidatePoboResponse.builder()
-                .isAuthorized(false)
-                .authorizationCode(auth.getAuthorizationCode())
-                .rejectionReason("Authorization is not valid (expired or suspended)")
-                .build();
-        }
-
-        // Check payment type
-        boolean paymentTypeAllowed = auth.isPaymentTypeAllowed(request.getPaymentType());
-        if (!paymentTypeAllowed) {
-            return ValidatePoboResponse.builder()
-                .isAuthorized(false)
-                .authorizationCode(auth.getAuthorizationCode())
-                .paymentTypeAllowed(false)
-                .rejectionReason("Payment type not allowed: " + request.getPaymentType())
-                .build();
-        }
-
-        // Check vendor
-        boolean vendorAllowed = request.getVendorId() == null || auth.isVendorAllowed(request.getVendorId());
-        if (!vendorAllowed) {
-            return ValidatePoboResponse.builder()
-                .isAuthorized(false)
-                .authorizationCode(auth.getAuthorizationCode())
-                .vendorAllowed(false)
-                .rejectionReason("Vendor not in allowed list")
-                .build();
-        }
-
-        // Check limits
-        boolean withinLimits = auth.canAuthorize(request.getAmount());
-        if (!withinLimits) {
-            BigDecimal maxAvailable = auth.getMaxAvailable();
-            return ValidatePoboResponse.builder()
-                .isAuthorized(false)
-                .authorizationCode(auth.getAuthorizationCode())
-                .withinLimits(false)
-                .maxAvailable(maxAvailable)
-                .remainingDailyLimit(auth.getRemainingDailyLimit())
-                .remainingMonthlyLimit(auth.getRemainingMonthlyLimit())
-                .rejectionReason(String.format("Amount %.2f exceeds available limit %.2f", 
-                    request.getAmount(), maxAvailable))
-                .build();
-        }
-
-        // Add warnings if approaching limits
-        BigDecimal remainingDaily = auth.getRemainingDailyLimit();
-        if (remainingDaily != null && request.getAmount().compareTo(remainingDaily.multiply(new BigDecimal("0.8"))) > 0) {
-            warnings.add("Approaching daily limit");
-        }
-        BigDecimal remainingMonthly = auth.getRemainingMonthlyLimit();
-        if (remainingMonthly != null && request.getAmount().compareTo(remainingMonthly.multiply(new BigDecimal("0.9"))) > 0) {
-            warnings.add("Approaching monthly limit");
-        }
-
-        return ValidatePoboResponse.builder()
-            .isAuthorized(true)
-            .authorizationCode(auth.getAuthorizationCode())
-            .withinLimits(true)
-            .paymentTypeAllowed(true)
-            .vendorAllowed(true)
-            .maxAvailable(auth.getMaxAvailable())
-            .remainingDailyLimit(remainingDaily)
-            .remainingMonthlyLimit(remainingMonthly)
-            .requiresApproval(auth.getRequiresApproval())
-            .autoRechargeEnabled(auth.getAutoRecharge())
-            .serviceFeeRate(auth.getRechargeServiceFeeRate())
-            .warnings(warnings)
-            .build();
-    }
-
-    /**
-     * Record POBO payment usage.
-     */
-    @Transactional
-    public void recordPoboUsage(UUID payerEntityId, UUID behalfEntityId, BigDecimal amount) {
-        PoboAuthorization auth = authorizationRepository.findActiveAuthorization(payerEntityId, behalfEntityId)
-            .orElseThrow(() -> new BusinessException("No active authorization for POBO payment"));
-        
-        auth.recordUsage(amount);
-        authorizationRepository.save(auth);
-        
-        log.info("Recorded POBO usage: {} -> {}, amount={}", 
-            auth.getPayerEntityCode(), auth.getBehalfEntityCode(), amount);
-    }
 
     // ========================================================================
     // INTERCOMPANY RECHARGE
@@ -447,89 +210,12 @@ public class PoboService {
     // POBO PAYMENT PROCESSING (Full Flow) - Phase 5 Enhanced
     // ========================================================================
 
-    /**
-     * Process POBO payment with automatic recharge and optional IHB loan creation.
-     * This is the main entry point for POBO payments.
-     * 
-     * Phase 5 Enhancement: Added IHB loan integration
-     */
-    @Transactional
-    public PoboPaymentResponse processPoboPayment(PoboPaymentRequest request) {
-        // 1. Validate authorization
-        ValidatePoboRequest validateRequest = ValidatePoboRequest.builder()
-            .payerEntityId(request.getPayerEntityId())
-            .payerEntityCode(request.getPayerEntityCode())
-            .behalfEntityId(request.getBehalfEntityId())
-            .behalfEntityCode(request.getBehalfEntityCode())
-            .amount(request.getAmount())
-            .currencyCode(request.getCurrencyCode())
-            .build();
-
-        ValidatePoboResponse validation = validatePoboPayment(validateRequest);
-        
-        if (!Boolean.TRUE.equals(validation.getIsAuthorized())) {
-            throw new BusinessException("POBO payment not authorized: " + validation.getRejectionReason());
-        }
-
-        // 2. Record usage
-        recordPoboUsage(request.getPayerEntityId(), request.getBehalfEntityId(), request.getAmount());
-
-        // 3. Create payment execution (this would normally call PayablesService)
-        String paymentRef = "POBO-" + System.currentTimeMillis();
-        UUID executionId = UUID.randomUUID();
-
-        // 4. Create intercompany recharge if enabled
-        RechargeResponse recharge = null;
-
-        if (Boolean.TRUE.equals(request.getCreateRecharge())) {
-            CreateRechargeRequest rechargeRequest = CreateRechargeRequest.builder()
-                .payerEntityId(request.getPayerEntityId())
-                .payerEntityCode(request.getPayerEntityCode())
-                .behalfEntityId(request.getBehalfEntityId())
-                .behalfEntityCode(request.getBehalfEntityCode())
-                .originalPayableId(request.getPayableId())
-                .originalPaymentExecutionId(executionId)
-                .originalPaymentReference(paymentRef)
-                .originalAmount(request.getAmount())
-                .currencyCode(request.getCurrencyCode())
-                .serviceFeeRate(validation.getServiceFeeRate())
-                .requiresApproval(validation.getRequiresApproval())
-                .build();
-
-            recharge = createRecharge(rechargeRequest);
-
-            // Auto-approve if not requiring approval
-            if (!Boolean.TRUE.equals(validation.getRequiresApproval())) {
-                recharge = approveRecharge(recharge.getId(), "SYSTEM_AUTO");
-            }
-        }
-
-        log.info("Processed POBO payment: {} -> {}, amount={}, recharge={}",
-            request.getPayerEntityCode(), request.getBehalfEntityCode(),
-            request.getAmount(),
-            recharge != null ? recharge.getRechargeReference() : "N/A");
-
-        return PoboPaymentResponse.builder()
-            .paymentExecutionId(executionId)
-            .paymentReference(paymentRef)
-            .status("PROCESSED")
-            .paidAmount(request.getAmount())
-            .rechargeId(recharge != null ? recharge.getId() : null)
-            .rechargeReference(recharge != null ? recharge.getRechargeReference() : null)
-            .rechargeAmount(recharge != null ? recharge.getRechargeAmount() : null)
-            .serviceFee(recharge != null ? recharge.getServiceFee() : null)
-            .totalRecharge(recharge != null ? recharge.getTotalRecharge() : null)
-            .processedAt(LocalDateTime.now())
-            .build();
-    }
-
     // ========================================================================
     // STATISTICS
     // ========================================================================
 
     @Transactional(readOnly = true)
     public PoboStatsResponse getStats() {
-        List<PoboAuthorization> activeAuths = authorizationRepository.findAllActive();
         List<IntercompanyRecharge> pendingRecharges = rechargeRepository.findPendingRecharges();
         List<IntercompanyRecharge> settledToday = rechargeRepository.findBySettlementDateRange(
             LocalDate.now(), LocalDate.now());
@@ -547,7 +233,6 @@ public class PoboService {
         int pendingArmLength = rechargeRepository.findPendingArmLengthValidation().size();
 
         return PoboStatsResponse.builder()
-            .activeAuthorizations(activeAuths.size())
             .pendingRecharges(pendingRecharges.size())
             .settledRecharges(settledToday.size())
             .totalRechargesOutstanding(totalOutstanding)
@@ -562,10 +247,6 @@ public class PoboService {
     // HELPER METHODS
     // ========================================================================
 
-    private String generateAuthorizationCode() {
-        return String.format("POBO-AUTH-%06d", authSequence.getAndIncrement());
-    }
-
     private String generateRechargeReference() {
         String date = LocalDate.now().toString().replace("-", "");
         return String.format("ICR-%s-%06d", date, rechargeSequence.getAndIncrement());
@@ -574,35 +255,6 @@ public class PoboService {
     // ========================================================================
     // MAPPERS
     // ========================================================================
-
-    private AuthorizationResponse toAuthorizationResponse(PoboAuthorization a) {
-        return AuthorizationResponse.builder()
-            .id(a.getId())
-            .authorizationCode(a.getAuthorizationCode())
-            .payerEntityId(a.getPayerEntityId())
-            .payerEntityCode(a.getPayerEntityCode())
-            .behalfEntityId(a.getBehalfEntityId())
-            .behalfEntityCode(a.getBehalfEntityCode())
-            .authorizationType(a.getAuthorizationType())
-            .singlePaymentLimit(a.getSinglePaymentLimit())
-            .dailyLimit(a.getDailyLimit())
-            .monthlyLimit(a.getMonthlyLimit())
-            .currencyCode(a.getCurrencyCode())
-            .usedToday(a.getUsedToday())
-            .usedThisMonth(a.getUsedThisMonth())
-            .remainingDailyLimit(a.getRemainingDailyLimit())
-            .remainingMonthlyLimit(a.getRemainingMonthlyLimit())
-            .autoRecharge(a.getAutoRecharge())
-            .rechargeServiceFeeRate(a.getRechargeServiceFeeRate())
-            .requiresApproval(a.getRequiresApproval())
-            .status(a.getStatus().name())
-            .effectiveFrom(a.getEffectiveFrom())
-            .effectiveTo(a.getEffectiveTo())
-            .approvedBy(a.getApprovedBy())
-            .approvedAt(a.getApprovedAt())
-            .createdAt(a.getCreatedAt())
-            .build();
-    }
 
     private RechargeResponse toRechargeResponse(IntercompanyRecharge r) {
         return RechargeResponse.builder()

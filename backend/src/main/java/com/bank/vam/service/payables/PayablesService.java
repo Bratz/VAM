@@ -9,6 +9,7 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.party.Party;
+import com.bank.vam.entity.party.PartyBankAccount;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.*;
 import com.bank.vam.entity.treasury.NettingEntry;
@@ -20,7 +21,7 @@ import com.bank.vam.repository.party.PartyRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.treasury.PaymentRequestRepository;
 import com.bank.vam.service.TransactionService;
-import com.bank.vam.service.pobo.PoboExecutionService;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.bank.vam.service.treasury.NettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +44,7 @@ import java.util.stream.Collectors;
  * 
  * Provides business logic for:
  * - Payable CRUD with entity context
- * - POBO workflow (request → treasury approval → execution)
+ * - POBO by enrolment: the owning entity's enrolment for the payable currency decides (no request/approval)
  * - Intercompany payable management
  * - Netting cycle integration
  * - Statistics and reporting
@@ -62,11 +63,11 @@ public class PayablesService {
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final NettingService nettingService;
     private final LegalEntityRepository legalEntityRepository;
-    private final PoboExecutionService poboExecutionService;
+    private final PoboEnrolmentService poboEnrolments;
     private final FxPaymentService fxPayments;
-    private final com.bank.vam.repository.tax.ChargeConfigurationRepository chargeConfigurationRepository;
     private final com.bank.vam.repository.receivables.ReceivableRepository receivableRepository;
     private final com.bank.vam.service.treasury.FxRateService fxRateService;
+    private final com.bank.vam.repository.party.PartyBankAccountRepository partyBankAccountRepository;
 
     // TODO: Inject these when available
     // private final IhbUnifiedService ihbService;
@@ -150,9 +151,8 @@ public class PayablesService {
             .description(request.getDescription())
             .notes(request.getNotes())
             .createdBy(request.getCreatedBy())
+            .payDirectly(Boolean.TRUE.equals(request.getPayDirectly()))
             .build();
-
-        applyPobo(payable, request.getIsPobo(), request.getPaymentViaEntityId(), request.getPaymentViaEntityCode());
 
         BigDecimal netAmount = netOf(payable);
         payable.setNetAmount(netAmount);
@@ -164,6 +164,7 @@ public class PayablesService {
             payable.setPaymentRoute(PaymentRoute.INTERCOMPANY);
             payable.setPayableType(PayableType.INTERCOMPANY);
         }
+        applyPoboRoute(payable, LocalDate.now());
 
         // Validate party if provided
         if (request.getPartyId() != null) {
@@ -212,9 +213,7 @@ public class PayablesService {
             payable.setOwningEntityCode(request.getOwningEntityCode());
             payable.setOwningEntityName(request.getOwningEntityName());
         }
-        if (request.getIsPobo() != null) {
-            applyPobo(payable, request.getIsPobo(), request.getPaymentViaEntityId(), request.getPaymentViaEntityCode());
-        }
+        if (request.getPayDirectly() != null) payable.setPayDirectly(request.getPayDirectly());
         if (request.getPartyId() != null) {
             payable.setPartyId(request.getPartyId());
             payable.setVendorId(request.getPartyId());
@@ -249,6 +248,8 @@ public class PayablesService {
         BigDecimal netAmount = netOf(payable);
         payable.setNetAmount(netAmount);
         payable.setOutstandingAmount(netAmount);
+
+        applyPoboRoute(payable, LocalDate.now());
 
         if (request.getStatus() != null) payable.setStatus(requestedStatus(request.getStatus(), payable.getStatus()));
         if (payable.getStatus() == PayableStatus.PENDING_APPROVAL) requireSubmittable(payable);
@@ -296,301 +297,39 @@ public class PayablesService {
     }
 
     // ========================================================================
-    // PHASE 2: POBO WORKFLOW
+    // POBO BY ENROLMENT (spec docs/specs/pobo-in-house-bank.md R4-R7, D3-D7)
     // ========================================================================
 
     /**
-     * Request POBO for one or more payables.
-     * Subsidiary requests treasury to pay on their behalf.
-     */
-    @Transactional
-    public PoboBatchRequestResponse requestPobo(PoboRequestRequest request) {
-        log.info("POBO request for {} payables, paying entity: {}", 
-            request.getPayableIds().size(), request.getPayingEntityId());
-
-        List<PoboRequestResponse> results = new ArrayList<>();
-        int successCount = 0;
-        int failedCount = 0;
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        String currencyCode = "AED";
-
-        for (UUID payableId : request.getPayableIds()) {
-            try {
-                Payable payable = payableRepository.findById(payableId)
-                    .orElseThrow(() -> new RuntimeException("Payable not found: " + payableId));
-
-                // Validate POBO eligibility
-                if (!payable.canRequestPobo()) {
-                    results.add(PoboRequestResponse.builder()
-                        .payableId(payableId)
-                        .payableNumber(payable.getPayableNumber())
-                        .success(false)
-                        .message("Payable not eligible for POBO: status=" + payable.getStatus())
-                        .build());
-                    failedCount++;
-                    continue;
-                }
-
-                // Validate party is POBO-eligible
-                if (payable.getPartyId() != null) {
-                    Party party = partyRepository.findById(payable.getPartyId()).orElse(null);
-                    if (party != null && !party.canReceivePoboPayment()) {
-                        results.add(PoboRequestResponse.builder()
-                            .payableId(payableId)
-                            .payableNumber(payable.getPayableNumber())
-                            .success(false)
-                            .message("Vendor not eligible for POBO payments")
-                            .build());
-                        failedCount++;
-                        continue;
-                    }
-                }
-
-                // Request POBO
-                payable.requestPobo(
-                    request.getPayingEntityId(),
-                    request.getPayingEntityCode(),
-                    request.getRequestedBy()
-                );
-
-                payableRepository.save(payable);
-
-                results.add(PoboRequestResponse.builder()
-                    .payableId(payableId)
-                    .payableNumber(payable.getPayableNumber())
-                    .poboRequestStatus(payable.getPoboRequestStatus().name())
-                    .requestedAt(payable.getPoboRequestedAt())
-                    .success(true)
-                    .message("POBO requested successfully")
-                    .build());
-
-                successCount++;
-                totalAmount = totalAmount.add(payable.getNetAmount());
-                currencyCode = payable.getCurrencyCode();
-
-            } catch (Exception e) {
-                log.error("Failed to request POBO for payable: {}", payableId, e);
-                results.add(PoboRequestResponse.builder()
-                    .payableId(payableId)
-                    .success(false)
-                    .message(e.getMessage())
-                    .build());
-                failedCount++;
-            }
-        }
-
-        log.info("POBO request completed: {} success, {} failed", successCount, failedCount);
-
-        return PoboBatchRequestResponse.builder()
-            .results(results)
-            .successCount(successCount)
-            .failedCount(failedCount)
-            .totalAmount(totalAmount)
-            .currencyCode(currencyCode)
-            .build();
-    }
-
-    /**
-     * Treasury approves or rejects POBO request.
-     */
-    @Transactional
-    public PayableResponse actionPoboRequest(PoboApprovalRequest request) {
-        Payable payable = payableRepository.findById(request.getPayableId())
-            .orElseThrow(() -> new RuntimeException("Payable not found: " + request.getPayableId()));
-
-        if (payable.getPoboRequestStatus() != PoboRequestStatus.PENDING_TREASURY_APPROVAL) {
-            throw new RuntimeException("Payable not pending POBO approval: " + payable.getPoboRequestStatus());
-        }
-
-        if (Boolean.TRUE.equals(request.getApproved())) {
-            payable.approvePobo(request.getActionedBy());
-            log.info("POBO approved for payable: {}", payable.getPayableNumber());
-        } else {
-            payable.rejectPobo(request.getActionedBy(), request.getRejectionReason());
-            log.info("POBO rejected for payable: {}", payable.getPayableNumber());
-        }
-
-        Payable saved = payableRepository.save(payable);
-        return mapToResponse(saved);
-    }
-
-    /**
-     * Batch approve/reject POBO requests.
-     */
-    @Transactional
-    public BatchOperationResponse batchActionPoboRequests(PoboBatchApprovalRequest request) {
-        List<UUID> successIds = new ArrayList<>();
-        List<BatchOperationError> errors = new ArrayList<>();
-
-        for (UUID payableId : request.getPayableIds()) {
-            try {
-                PoboApprovalRequest approvalRequest = PoboApprovalRequest.builder()
-                    .payableId(payableId)
-                    .approved(request.getApproved())
-                    .actionedBy(request.getActionedBy())
-                    .rejectionReason(request.getRejectionReason())
-                    .build();
-                
-                actionPoboRequest(approvalRequest);
-                successIds.add(payableId);
-            } catch (Exception e) {
-                errors.add(BatchOperationError.builder()
-                    .payableId(payableId)
-                    .errorCode("POBO_ACTION_FAILED")
-                    .errorMessage(e.getMessage())
-                    .build());
-            }
-        }
-
-        return BatchOperationResponse.builder()
-            .successIds(successIds)
-            .errors(errors)
-            .successCount(successIds.size())
-            .failedCount(errors.size())
-            .build();
-    }
-
-    /**
-     * Get POBO preview with charges and IHB loan estimate.
+     * How each payable would be paid today: POBO from its owner's enrolment (payer, payment account, the IHB current
+     * account's headroom and the refusal when the amount is over it), or directly with the reason. No fee (D10).
      */
     @Transactional(readOnly = true)
-    public PoboPreviewResponse getPoboPreview(PoboPreviewRequest request) {
-        List<Payable> payables = payableRepository.findAllById(request.getPayableIds());
-        
-        if (payables.isEmpty()) {
-            throw new RuntimeException("No payables found");
+    public List<PaymentRoutePreview> getPoboPreview(PoboPreviewRequest request) {
+        if (request.getPayableIds() == null || request.getPayableIds().isEmpty()) {
+            throw new BusinessException("Choose the payables to preview");
         }
-
-        BigDecimal totalAmount = payables.stream()
-            .map(Payable::getNetAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        String currencyCode = payables.get(0).getCurrencyCode();
-
-        // Charges come from the configured POBO fee; none configured means none charged.
-        List<PoboChargeBreakdown> charges = new ArrayList<>();
-        chargeConfigurationRepository.findActivePoboFee().ifPresent(config -> charges.add(PoboChargeBreakdown.builder()
-            .chargeCode(config.getChargeCode())
-            .chargeName(config.getChargeName())
-            .chargeType(config.getChargeCategory() != null ? config.getChargeCategory().name() : null)
-            .calculatedAmount(config.calculateCharge(totalAmount))
-            .waived(false)
-            .build()));
-
-        BigDecimal totalCharges = charges.stream()
-            .map(PoboChargeBreakdown::getCalculatedAmount)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal netPayment = totalAmount.add(totalCharges);
-
-        // No real IHB lending rate source exists for this preview, so no loan
-        // projection is shown rather than one priced on an invented rate.
-        PoboIhbLoanPreview ihbPreview = null;
-
-        // Validation
-        List<String> warnings = new ArrayList<>();
-        if (totalAmount.compareTo(new BigDecimal("1000000")) > 0) {
-            warnings.add("Large payment amount - additional approval may be required");
-        }
-
-        Optional<LegalEntity> payingEntity = request.getPayingEntityId() == null
-            ? Optional.empty()
-            : legalEntityRepository.findById(request.getPayingEntityId());
-
-        return PoboPreviewResponse.builder()
-            .payingEntityId(request.getPayingEntityId())
-            .payingEntityCode(payingEntity.map(LegalEntity::getEntityCode).orElse(null))
-            .payingEntityName(payingEntity.map(LegalEntity::getEntityName).orElse(null))
-            .behalfEntityId(request.getBehalfEntityId())
-            .behalfEntityCode(payables.get(0).getOwningEntityCode())
-            .behalfEntityName(payables.get(0).getOwningEntityName())
-            .payableCount(payables.size())
-            .totalPaymentAmount(totalAmount)
-            .currencyCode(currencyCode)
-            .charges(charges)
-            .totalCharges(totalCharges)
-            .netPaymentAmount(netPayment)
-            .ihbLoanPreview(ihbPreview)
-            .warnings(warnings)
-            .isValid(true)
-            .build();
-    }
-
-    /**
-     * Execute POBO payments. Delegates to {@link PoboExecutionService}, the
-     * canonical POBO pipeline (authorization checks, a real persisted
-     * {@code IntercompanyRecharge}, fee posting) — this method used to skip
-     * all of that and fabricate {@code ihbLoanId}/{@code rechargeId} as
-     * random UUIDs that were never backed by any created record.
-     *
-     * <p>There is no {@code IhbLoan} entity in this codebase (IHB accrues
-     * against a current-account rate, not a discrete loan), so {@code
-     * ihbLoanId} is never populated here or in the canonical pipeline — it
-     * stays {@code null} rather than a fabricated placeholder. Recharge ids
-     * are per-payable and already persisted on their {@code
-     * IntercompanyRecharge} rows; this response's single {@code rechargeId}
-     * field can't honestly represent a whole batch, so it's left {@code
-     * null} too rather than picking one arbitrarily.
-     */
-    @Transactional
-    public PoboExecuteResponse executePobo(PoboExecuteRequest request) {
-        log.info("Executing POBO for {} payables", request.getPayableIds().size());
-
-        UUID payingEntityId = request.getPayingEntityId();
-        LegalEntity payingEntity = legalEntityRepository.findById(payingEntityId)
-            .orElseThrow(() -> new RuntimeException("Paying entity not found: " + payingEntityId));
-
-        PoboExecutionService.BatchPoboExecuteRequest batchRequest = PoboExecutionService.BatchPoboExecuteRequest.builder()
-            .payableIds(request.getPayableIds())
-            .treasuryEntityId(payingEntityId)
-            .treasuryEntityCode(payingEntity.getEntityCode())
-            .treasuryEntityName(payingEntity.getEntityName())
-            .executedBy(request.getExecutedBy())
-            .build();
-
-        PoboExecutionService.BatchPoboResult batchResult = poboExecutionService.executeBatchPobo(batchRequest);
-
-        List<PoboExecutionResult> results = batchResult.getResults().stream()
-            .map(r -> PoboExecutionResult.builder()
-                .payableId(r.getPayableId())
-                .payableNumber(r.getPayableNumber())
-                .transactionRef(r.getPaymentTransactionRef())
-                .amount(r.getPaidAmount())
-                .success(r.isSuccess())
-                .errorMessage(r.getErrorMessage())
-                .build())
-            .collect(Collectors.toList());
-
-        String currencyCode = batchResult.getResults().stream()
-            .filter(PoboExecutionService.PoboExecutionResult::isSuccess)
-            .map(PoboExecutionService.PoboExecutionResult::getCurrency)
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElse(marketProfile.getDefaultCurrency());
-
-        log.info("POBO execution completed: {} success, {} failed",
-            batchResult.getSuccessCount(), batchResult.getFailedCount());
-
-        return PoboExecuteResponse.builder()
-            .batchTransactionRef("POBO-" + batchResult.getBatchId())
-            .results(results)
-            .successCount(batchResult.getSuccessCount())
-            .failedCount(batchResult.getFailedCount())
-            .totalExecutedAmount(batchResult.getTotalPaidAmount())
-            .currencyCode(currencyCode)
-            .ihbLoanId(null)
-            .rechargeId(null)
-            .executedAt(batchResult.getExecutedAt())
-            .build();
-    }
-
-    /**
-     * Get POBO requests pending treasury approval.
-     */
-    @Transactional(readOnly = true)
-    public List<PayableResponse> getPoboPendingApproval() {
-        List<Payable> payables = payableRepository.findPoboPendingTreasuryApproval();
-        return payables.stream().map(this::mapToResponse).collect(Collectors.toList());
+        LocalDate today = LocalDate.now();
+        return payableRepository.findAllById(request.getPayableIds()).stream().map(p -> {
+            PoboEnrolmentService.Route route = poboRoute(p, today);
+            PaymentRoutePreview.PaymentRoutePreviewBuilder b = PaymentRoutePreview.builder()
+                .payableId(p.getId())
+                .payableNumber(p.getPayableNumber())
+                .amount(p.getNetAmount())
+                .currencyCode(p.getCurrencyCode());
+            if (route == null) {
+                return b.route(PaymentRoute.DIRECT.name()).reason(directReason(p, today)).build();
+            }
+            return b.route(PaymentRoute.POBO.name())
+                .payerEntityCode(route.payer().getEntityCode())
+                .payerEntityName(route.payer().getEntityName())
+                .paymentVaNumber(route.paymentVa().getVaNumber())
+                .paymentVaName(route.paymentVa().getVaName())
+                .ihbCurrentVaNumber(route.ihbCurrent().getVaNumber())
+                .headroom(route.headroom())
+                .refusal(PoboEnrolmentService.headroomRefusal(route.ihbCurrent(), p.getNetAmount()))
+                .build();
+        }).collect(Collectors.toList());
     }
 
     // ========================================================================
@@ -630,15 +369,39 @@ public class PayablesService {
                 ", Payment Status: " + payable.getPaymentStatus());
         }
 
+        // The enrolment on the payment date decides (spec R4-R6): POBO from it, else the payable's own account.
+        PoboEnrolmentService.Route pobo = applyPoboRoute(payable, LocalDate.now());
+
         // Validate source VA exists
-        if (payable.getVirtualAccountId() == null) {
+        if (pobo == null && payable.getVirtualAccountId() == null) {
             throw new BusinessException("Payable has no source Virtual Account assigned. " +
                 "Please select a source account when creating the payable.");
         }
 
-        VirtualAccount sourceVa = virtualAccountRepository.findById(payable.getVirtualAccountId())
-            .orElseThrow(() -> new ResourceNotFoundException("Source VA not found: " + payable.getVirtualAccountId()));
-        debtorAgentBic(); // the pain.001 needs it: refuse before any money moves, not after
+        VirtualAccount sourceVa = pobo != null ? pobo.ihbCurrent()
+            : virtualAccountRepository.findById(payable.getVirtualAccountId())
+                .orElseThrow(() -> new ResourceNotFoundException("Source VA not found: " + payable.getVirtualAccountId()));
+        // Not enrolled but paying from an IHB current account: the in-house posting, paid by the account's treasury link.
+        boolean inHouse = pobo != null || Boolean.TRUE.equals(sourceVa.getIhbParticipant());
+        VirtualAccount legacyPayer = null;
+        if (pobo == null && inHouse) {
+            if (sourceVa.getTreasuryPoolVaId() == null) {
+                throw new BusinessException("IHB Current Account " + sourceVa.getVaNumber() +
+                    " has no Treasury Settlement VA configured. Cannot execute POBO payment.");
+            }
+            UUID treasuryLink = sourceVa.getTreasuryPoolVaId();
+            legacyPayer = virtualAccountRepository.findById(treasuryLink)
+                .orElseThrow(() -> new ResourceNotFoundException("Treasury paying account not found: " + treasuryLink));
+        }
+        // The pain.001 needs these: refuse before any money moves, not after. Through the in-house posting (D6) the
+        // treasury centre is the debtor with the IBAN of the bank account the posting debits and the subsidiary as
+        // ultimate debtor; otherwise the paying account's IBAN, never a VA id.
+        PoboEnrolmentService.PainDebtor onBehalf = pobo != null ? poboEnrolments.painDebtor(pobo)
+            : legacyPayer != null ? poboEnrolments.inHouseDebtor(sourceVa, legacyPayer, transactionService.payoutShadow(legacyPayer))
+            : null;
+        String debtorIban = onBehalf != null ? onBehalf.iban() : poboEnrolments.debtorIban(sourceVa);
+        String debtorBic = onBehalf != null && onBehalf.bic() != null ? onBehalf.bic() : debtorAgentBic();
+        Supplier supplier = supplier(payable);
 
         // Generate payment reference
         String paymentRef = "PMT-" + System.currentTimeMillis();
@@ -655,46 +418,34 @@ public class PayablesService {
 
         // 1. Create PaymentRequest record for tracking
         PaymentRequest paymentRequest = createPaymentRequest(payable, paymentRef, pain001MsgId, request);
+        if (pobo != null) paymentRequest.setSourceVaId(pobo.paymentVa().getId()); // the account the money leaves from
         PaymentRequest savedPaymentRequest = paymentRequestRepository.save(paymentRequest);
         log.info("Created PaymentRequest: {} for payable: {}", savedPaymentRequest.getId(), payable.getPayableNumber());
 
         // A payable in another currency than its account is converted first (a rate locked on screen, a booked deal,
         // or for files the live price); the legs then debit the converted amount in the account's currency.
-        FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(),
+        // POBO needs none: the enrolment's IHB current account is in the payable's currency.
+        FxPaymentService.Conversion fx = pobo != null ? null : fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(),
             FxPaymentService.Instruction.of(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
                 request.getFxDeals(), request.getFxAtMarket()));
         BigDecimal debit = fx == null ? payable.getNetAmount() : fx.debitAmount();
 
         // 2. Execute payment via TransactionService
         // =====================================================================
-        // ROUTING LOGIC:
-        // - If source VA is an IHB Current Account (ihbParticipant=true):
-        //   → Use POBO flow: IHB Current Account → Treasury Settlement VA → Shadow VA → CBS
-        //   → This is Pay-On-Behalf-Of: Treasury pays on behalf of subsidiary
-        // - Otherwise:
-        //   → Use regular payment flow: Source VA → Settlement VA → Shadow VA → CBS
+        // ROUTING:
+        // - Enrolled owner + currency, not opted out (POBO by enrolment): the subsidiary's IHB current account bears
+        //   the cost, the enrolment's payment account pays; IHB credit limit checked first (D7), no fee (D10).
+        // - Not enrolled, but paying from an IHB current account: the in-house posting as before, with the payer
+        //   from the account's treasury link (treasuryPoolVaId) -- how existing in-house payments run.
+        // - Otherwise: regular payment from the payable's own account.
         // =====================================================================
         Transaction debitTxn;
 
-        if (Boolean.TRUE.equals(sourceVa.getIhbParticipant())) {
-            // IHB Current Account: Route through POBO flow
-            log.info("Source VA {} is IHB participant - routing through POBO flow (6-leg: {})",
-                sourceVa.getVaNumber(), sourceVa.isConfiguredFor6LegPobo());
-
-            // Resolve Treasury's Settlement VA (the payer in POBO)
-            UUID treasurySettlementVaId = sourceVa.getTreasuryPoolVaId();
-            if (treasurySettlementVaId == null) {
-                throw new BusinessException("IHB Current Account " + sourceVa.getVaNumber() +
-                    " has no Treasury Settlement VA configured. Cannot execute POBO payment.");
-            }
-
-            VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(treasurySettlementVaId)
-                .orElseThrow(() -> new ResourceNotFoundException("Treasury Settlement VA not found: " + treasurySettlementVaId));
-
-            // Build POBO request
+        if (inHouse) {
+            UUID payerVaId = pobo != null ? pobo.paymentVa().getId() : legacyPayer.getId();
             TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                .ownerVaId(sourceVa.getId())           // IHB Current Account (subsidiary bears cost)
-                .payerVaId(treasurySettlementVa.getId()) // Treasury Settlement VA (makes payment)
+                .ownerVaId(sourceVa.getId())   // IHB Current Account (subsidiary bears cost)
+                .payerVaId(payerVaId)          // treasury account that makes the payment
                 .amount(debit)
                 .valueDate(payable.getScheduledDate() != null ? payable.getScheduledDate() : LocalDate.now())
                 .description("POBO Payment for " + (payable.getInvoiceNumber() != null ?
@@ -706,22 +457,13 @@ public class PayablesService {
                 .beneficiaryBankName(payable.getVendorBank())
                 .build();
 
-            // Use 6-leg flow if configured, otherwise fall back to 4-leg
-            if (sourceVa.isConfiguredFor6LegPobo()) {
-                log.info("Using IHB 6-leg POBO flow (Mirror Account Model) for {}", sourceVa.getVaNumber());
-                debitTxn = transactionService.makeIhb6LegPoboPayment(poboRequest);
-            } else {
-                log.info("Using standard 4-leg POBO flow for {} (6-leg not configured)", sourceVa.getVaNumber());
-                debitTxn = transactionService.makePoboPayment(poboRequest);
-            }
+            // 6-leg when the account has its in-house links; it falls back to 4-leg itself otherwise
+            debitTxn = transactionService.makeIhb6LegPoboPayment(poboRequest);
 
-            // Update payable with POBO tracking
             payable.setPaymentRoute(PaymentRoute.POBO);
             payable.setPoboTransactionRef(debitTxn.getReferenceNumber());
-
-            log.info("POBO payment executed: Owner={}, Payer={}, Amount={}, TxnRef={}, 6-leg={}",
-                sourceVa.getVaNumber(), treasurySettlementVa.getVaNumber(),
-                payable.getNetAmount(), debitTxn.getReferenceNumber(), sourceVa.isConfiguredFor6LegPobo());
+            log.info("POBO payment executed: Owner={}, Payer={}, Amount={}, TxnRef={}, byEnrolment={}",
+                sourceVa.getVaNumber(), payerVaId, payable.getNetAmount(), debitTxn.getReferenceNumber(), pobo != null);
         } else {
             // Regular payment flow
             TransactionDto.PaymentRequest paymentTxnRequest = TransactionDto.PaymentRequest.builder()
@@ -750,7 +492,7 @@ public class PayablesService {
         paymentRequestRepository.save(savedPaymentRequest);
 
         // 3. Generate pain.001 XML
-        String pain001Xml = generatePain001ForPayable(payable, pain001MsgId, request);
+        String pain001Xml = generatePain001ForPayable(payable, pain001MsgId, onBehalf, debtorIban, debtorBic, supplier);
 
         // Update PaymentRequest with XML
         savedPaymentRequest.setPain001Xml(pain001Xml);
@@ -906,6 +648,37 @@ public class PayablesService {
      * ISO 20022 pain.001.001.09 format.
      */
     /** This bank's BIC, the pain.001 debtor agent; refused rather than a placeholder when unset. */
+    /** The creditor side of a payable's pain.001: the supplier's real name and bank account. */
+    record Supplier(String name, String account, boolean iban, String bic, String bankName) {
+    }
+
+    private static final java.util.regex.Pattern IBAN = java.util.regex.Pattern.compile("[A-Z]{2}\\d{2}[A-Z0-9]{11,30}");
+
+    /**
+     * The supplier's bank account chosen on the payable ({@code partyBankAccountId}), else the account recorded on it
+     * (a file row's creditor account); refused before any money moves when there is none, never a placeholder.
+     */
+    private Supplier supplier(Payable p) {
+        PartyBankAccount a = p.getPartyBankAccountId() != null
+            ? partyBankAccountRepository.findById(p.getPartyBankAccountId()).orElse(null) : null;
+        String iban = a != null ? blankToNull(a.getIban()) : null;
+        String account = a != null ? (iban != null ? iban : blankToNull(a.getAccountNumber())) : blankToNull(p.getVendorAccount());
+        if (account == null) {
+            throw new BusinessException("Not available: " + p.getPayableNumber() + " has no supplier bank account");
+        }
+        account = account.replace(" ", "");
+        String name = blankToNull(p.getVendorName()) != null ? p.getVendorName().trim() : a != null ? blankToNull(a.getHolderName()) : null;
+        if (name == null) {
+            throw new BusinessException("Not available: " + p.getPayableNumber() + " has no supplier name");
+        }
+        return new Supplier(name, account, a != null ? iban != null : IBAN.matcher(account).matches(),
+            blankToNull(a != null ? a.getBankCode() : p.getVendorBankCode()), blankToNull(a != null ? a.getBankName() : p.getVendorBank()));
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
     private String debtorAgentBic() {
         String bic = marketProfile.getActiveHomeBankBic();
         if (bic == null || bic.isBlank()) {
@@ -914,13 +687,17 @@ public class PayablesService {
         return bic;
     }
 
-    private String generatePain001ForPayable(Payable payable, String msgId, PaymentExecutionRequest request) {
-        if (payable.getVirtualAccountId() == null) {
-            throw new BusinessException("Not available: payable " + payable.getPayableNumber() + " has no debtor account");
-        }
-        String debtorBic = debtorAgentBic();
-        // The debtor's real name: the payable's owning entity, else its legal entity record — never a placeholder.
-        String debtorName = payable.getOwningEntityName() != null && !payable.getOwningEntityName().isBlank()
+    /**
+     * pain.001.001.09 for a payable: one transaction in one PmtInf. Paid on behalf ({@code onBehalf} set, D6): the
+     * treasury centre is initiating party and debtor, and the subsidiary is UltmtDbtr at PmtInf level, after DbtrAgt
+     * (the schema's place there; it covers the PmtInf's one transaction). Remittance carries the invoice number.
+     */
+    private String generatePain001ForPayable(Payable payable, String msgId, PoboEnrolmentService.PainDebtor onBehalf,
+                                             String debtorIban, String debtorBic, Supplier supplier) {
+        // The debtor's real name: the treasury centre on behalf, else the payable's owning entity, else its legal
+        // entity record — never a placeholder.
+        String debtorName = onBehalf != null ? onBehalf.name()
+            : payable.getOwningEntityName() != null && !payable.getOwningEntityName().isBlank()
             ? payable.getOwningEntityName()
             : Optional.ofNullable(payable.getOwningEntityId()).flatMap(legalEntityRepository::findById)
                 .map(LegalEntity::getEntityName).filter(n -> !n.isBlank())
@@ -942,11 +719,12 @@ public class PayablesService {
         xml.append("      <CtrlSum>").append(payable.getNetAmount().setScale(2, RoundingMode.HALF_UP)).append("</CtrlSum>\n");
         xml.append("      <InitgPty>\n");
         xml.append("        <Nm>").append(escapeXml(debtorName)).append("</Nm>\n");
-        if (payable.getOwningEntityCode() != null) { // InitgPty/Id is optional: left out when no code is recorded
+        String initiatorCode = onBehalf != null ? onBehalf.code() : payable.getOwningEntityCode();
+        if (initiatorCode != null) { // InitgPty/Id is optional: left out when no code is recorded
             xml.append("        <Id>\n");
             xml.append("          <OrgId>\n");
             xml.append("            <Othr>\n");
-            xml.append("              <Id>").append(escapeXml(payable.getOwningEntityCode())).append("</Id>\n");
+            xml.append("              <Id>").append(escapeXml(initiatorCode)).append("</Id>\n");
             xml.append("            </Othr>\n");
             xml.append("          </OrgId>\n");
             xml.append("        </Id>\n");
@@ -966,9 +744,11 @@ public class PayablesService {
         xml.append("      <PmtTpInf>\n");
         xml.append("        <InstrPrty>").append(payable.getPaymentPriority() == PaymentPriority.HIGH ?
             "HIGH" : "NORM").append("</InstrPrty>\n");
-        xml.append("        <SvcLvl>\n");
-        xml.append("          <Cd>SEPA</Cd>\n");
-        xml.append("        </SvcLvl>\n");
+        if ("EUR".equals(payable.getCurrencyCode())) { // SEPA is a euro scheme; other currencies name no service level
+            xml.append("        <SvcLvl>\n");
+            xml.append("          <Cd>SEPA</Cd>\n");
+            xml.append("        </SvcLvl>\n");
+        }
         xml.append("      </PmtTpInf>\n");
 
         // Requested Execution Date
@@ -982,12 +762,10 @@ public class PayablesService {
         xml.append("        <Nm>").append(escapeXml(debtorName)).append("</Nm>\n");
         xml.append("      </Dbtr>\n");
 
-        // Debtor Account (Source VA)
+        // Debtor Account: a real IBAN, resolved before the money moved
         xml.append("      <DbtrAcct>\n");
         xml.append("        <Id>\n");
-        xml.append("          <Othr>\n");
-        xml.append("            <Id>").append(payable.getVirtualAccountId()).append("</Id>\n");
-        xml.append("          </Othr>\n");
+        xml.append("          <IBAN>").append(escapeXml(debtorIban)).append("</IBAN>\n");
         xml.append("        </Id>\n");
         xml.append("        <Ccy>").append(payable.getCurrencyCode()).append("</Ccy>\n");
         xml.append("      </DbtrAcct>\n");
@@ -998,6 +776,11 @@ public class PayablesService {
         xml.append("          <BICFI>").append(escapeXml(debtorBic)).append("</BICFI>\n");
         xml.append("        </FinInstnId>\n");
         xml.append("      </DbtrAgt>\n");
+        if (onBehalf != null) {
+            xml.append("      <UltmtDbtr>\n");
+            xml.append("        <Nm>").append(escapeXml(onBehalf.ultimateDebtor())).append("</Nm>\n");
+            xml.append("      </UltmtDbtr>\n");
+        }
 
         // Credit Transfer Transaction Information (CdtTrfTxInf)
         xml.append("      <CdtTrfTxInf>\n");
@@ -1014,33 +797,28 @@ public class PayablesService {
             .append(payable.getNetAmount().setScale(2, RoundingMode.HALF_UP)).append("</InstdAmt>\n");
         xml.append("        </Amt>\n");
 
-        // Creditor Agent (Vendor's Bank)
-        xml.append("        <CdtrAgt>\n");
-        xml.append("        <FinInstnId>\n");
-        if (payable.getVendorBankCode() != null && !payable.getVendorBankCode().isEmpty()) {
-            xml.append("            <BICFI>").append(payable.getVendorBankCode()).append("</BICFI>\n");
-        } else {
-            xml.append("            <Nm>").append(escapeXml(payable.getVendorBank() != null ?
-                payable.getVendorBank() : "Unknown Bank")).append("</Nm>\n");
+        // Creditor Agent (the supplier's bank): its BIC, else its name; left out when neither is recorded
+        if (supplier.bic() != null || supplier.bankName() != null) {
+            xml.append("        <CdtrAgt>\n");
+            xml.append("          <FinInstnId>\n");
+            xml.append(supplier.bic() != null
+                ? "            <BICFI>" + escapeXml(supplier.bic()) + "</BICFI>\n"
+                : "            <Nm>" + escapeXml(supplier.bankName()) + "</Nm>\n");
+            xml.append("          </FinInstnId>\n");
+            xml.append("        </CdtrAgt>\n");
         }
-        xml.append("          </FinInstnId>\n");
-        xml.append("        </CdtrAgt>\n");
 
-        // Creditor (Vendor)
+        // Creditor (the supplier) and its bank account
         xml.append("        <Cdtr>\n");
-        xml.append("          <Nm>").append(escapeXml(payable.getVendorName() != null ?
-            payable.getVendorName() : "Vendor")).append("</Nm>\n");
+        xml.append("          <Nm>").append(escapeXml(supplier.name())).append("</Nm>\n");
         xml.append("        </Cdtr>\n");
-
-        // Creditor Account (Vendor's Account)
         xml.append("        <CdtrAcct>\n");
         xml.append("          <Id>\n");
-        if (payable.getVendorAccount() != null && payable.getVendorAccount().length() > 15) {
-            xml.append("            <IBAN>").append(payable.getVendorAccount()).append("</IBAN>\n");
+        if (supplier.iban()) {
+            xml.append("            <IBAN>").append(escapeXml(supplier.account())).append("</IBAN>\n");
         } else {
             xml.append("            <Othr>\n");
-            xml.append("              <Id>").append(payable.getVendorAccount() != null ?
-                payable.getVendorAccount() : "UNKNOWN").append("</Id>\n");
+            xml.append("              <Id>").append(escapeXml(supplier.account())).append("</Id>\n");
             xml.append("            </Othr>\n");
         }
         xml.append("          </Id>\n");
@@ -1518,17 +1296,46 @@ public class PayablesService {
         return s;
     }
 
+    /** The POBO route for {@code p} on {@code day}: its owner's active enrolment for its currency, unless the payable
+     * is intercompany or opted out (spec R4-R6, D4). */
+    private PoboEnrolmentService.Route poboRoute(Payable p, LocalDate day) {
+        if (Boolean.TRUE.equals(p.getIsIntercompany()) || Boolean.TRUE.equals(p.getPayDirectly())) return null;
+        return poboEnrolments.route(p.getOwningEntityId(), p.getCurrencyCode(), day).orElse(null);
+    }
+
+    /** Why {@code p} is paid directly although its owner is enrolled for POBO (D4/D5), or null. */
+    private String directReason(Payable p, LocalDate day) {
+        if (Boolean.TRUE.equals(p.getIsIntercompany())) return null;
+        if (Boolean.TRUE.equals(p.getPayDirectly())) {
+            return poboEnrolments.route(p.getOwningEntityId(), p.getCurrencyCode(), day)
+                .map(r -> "Paid directly instead of through " + r.payer().getEntityCode() + " (chosen on the payable)")
+                .orElse(null);
+        }
+        return poboEnrolments.notEnrolledReason(p.getOwningEntityId(), p.getCurrencyCode(), day);
+    }
+
     /**
-     * POBO intent: the paying (treasury) entity pays on behalf of the owning entity. The route
-     * stays DIRECT -- the POBO request / treasury approval workflow (requestPobo) moves it to
-     * POBO, and that workflow only accepts DIRECT payables.
+     * Sets the payable's POBO fields from its owner's enrolment on {@code day} (spec R4-R7): POBO -> paid by the
+     * enrolment's treasury centre, booked to (and sourced from) the owner's IHB current account; otherwise direct, with
+     * the reason when the owner is enrolled elsewhere or opted out. Run at create, edit and payment: the enrolment on the
+     * payment date decides. Intercompany / netting routes are left alone.
      */
-    private static void applyPobo(Payable p, Boolean isPobo, UUID payingEntityId, String payingEntityCode) {
-        boolean pobo = Boolean.TRUE.equals(isPobo);
-        p.setIsPobo(pobo);
-        p.setPaymentViaEntityId(pobo ? payingEntityId : null);
-        p.setPaymentViaEntityCode(pobo ? payingEntityCode : null);
-        p.setBehalfOfEntity(pobo ? p.getOwningEntityName() : null);
+    private PoboEnrolmentService.Route applyPoboRoute(Payable p, LocalDate day) {
+        PoboEnrolmentService.Route route = poboRoute(p, day);
+        if (route == null && p.getBehalfOfVaId() != null && p.getBehalfOfVaId().equals(p.getVirtualAccountId())) {
+            p.setVirtualAccountId(null); // the IHB current account came from the enrolment; direct pays from the owner's own
+        }
+        p.setIsPobo(route != null);
+        p.setPaymentViaEntityId(route != null ? route.payer().getId() : null);
+        p.setPaymentViaEntityCode(route != null ? route.payer().getEntityCode() : null);
+        p.setBehalfOfEntity(route != null ? route.subsidiary().getEntityName() : null);
+        p.setBehalfOfVaId(route != null ? route.ihbCurrent().getId() : null);
+        if (route != null) p.setVirtualAccountId(route.ihbCurrent().getId());
+        if (p.getPaymentRoute() == null || p.getPaymentRoute() == PaymentRoute.DIRECT || p.getPaymentRoute() == PaymentRoute.POBO) {
+            p.setPaymentRoute(route != null ? PaymentRoute.POBO : PaymentRoute.DIRECT);
+        }
+        p.setPaymentRouteNote(route != null ? null : directReason(p, day));
+        return route;
     }
 
     /** What an approver needs before a payable can go for approval. Drafts may be incomplete. */
@@ -1539,11 +1346,6 @@ public class PayablesService {
         if (p.getDueDate() == null) missing.add("due date");
         if (p.getPartyId() == null && p.getVendorName() == null) missing.add("vendor");
         if (p.getVirtualAccountId() == null) missing.add("source account");
-        if (Boolean.TRUE.equals(p.getIsPobo())) {
-            if (p.getOwningEntityId() == null) missing.add("owning entity (POBO)");
-            if (p.getPaymentViaEntityId() == null) missing.add("paying entity (POBO)");
-            else if (p.getPaymentViaEntityId().equals(p.getOwningEntityId())) missing.add("a paying entity other than the owning entity (POBO)");
-        }
         if (!missing.isEmpty()) {
             throw new BusinessException("Cannot submit for approval: needs " + String.join(", ", missing));
         }
@@ -1668,6 +1470,9 @@ public class PayablesService {
             .notes(p.getNotes())
             .vendorReference(p.getVendorReference())
             .isPobo(p.getIsPobo())
+            .payDirectly(p.getPayDirectly())
+            .paymentRouteNote(p.getPaymentRouteNote())
+            .behalfOfVaId(p.getBehalfOfVaId())
             .hasInvoiceDocument(p.getHasInvoiceDocument())
             .documentCount(p.getDocumentCount())
             // Audit
@@ -1679,7 +1484,6 @@ public class PayablesService {
             // (Payable.canBePaid()) isn't enough to actually execute a payment; see
             // PayablesService.executePayment()'s own guard for the same requirement.
             .canBePaid(p.canBePaid() && p.getVirtualAccountId() != null)
-            .canRequestPobo(p.canRequestPobo())
             .canAddToNetting(p.canAddToNetting())
             .build();
     }

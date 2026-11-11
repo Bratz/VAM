@@ -10,6 +10,7 @@ import com.bank.vam.iso20022.util.Iso20022XmlBuilder;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.service.PaymentRoutingService;
 import com.bank.vam.service.TransactionService;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.*;
 
 /**
@@ -70,6 +72,7 @@ public class Iso20022OutwardPaymentService {
     private final Iso20022XmlBuilder xmlBuilder;
     private final FxPaymentService fxPayments;
     private final PlatformTransactionManager transactionManager;
+    private final PoboEnrolmentService poboEnrolments;
 
     // ========================================================================
     // PROCESS OUTWARD PAYMENT - Delegates to TransactionService
@@ -106,9 +109,18 @@ public class Iso20022OutwardPaymentService {
                 return buildErrorResponse(request, startTime, "AC04", "Source virtual account is not active");
             }
 
+            // POBO by enrolment (spec R4): the paying entity's enrolment for the currency decides, before any FX.
+            PoboEnrolmentService.Route pobo = poboRoute(sourceVa, request.isPobo(), request.getBehalfOfVaId(),
+                    request.getCurrency());
+            // Its pain.001 debtor (D6), refused here when the payment account has no IBAN: before any money moves.
+            // Not enrolled, from an IHB current account: the in-house posting too, so the same debtor shape (D6).
+            PoboEnrolmentService.PainDebtor onBehalf = pobo != null ? poboEnrolments.painDebtor(pobo)
+                    : Boolean.TRUE.equals(sourceVa.getIhbParticipant()) ? legacyDebtor(sourceVa) : null;
+
             // A payment in another currency is converted first; the legs below then move the debit amount, in the
             // account's currency. The request's amount goes back to the instructed one for the pain.001.
-            fx = fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), FxPaymentService.Instruction.of(request.getFxPriceId(),
+            // POBO needs none: the enrolment's IHB current account is in the payment's currency.
+            fx = pobo != null ? null : fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), FxPaymentService.Instruction.of(request.getFxPriceId(),
                     request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket()));
             if (fx != null) {
                 request.setAmount(fx.debitAmount());
@@ -119,21 +131,24 @@ public class Iso20022OutwardPaymentService {
             // Route to appropriate TransactionService method
             // =====================================================================
             // ROUTING LOGIC:
-            // 1. If source VA is IHB Current Account (ihbParticipant=true):
-            //    → Auto-route to POBO: IHB Current Account → Treasury Settlement VA → Shadow VA → CBS
-            //    → Treasury Settlement VA resolved from sourceVa.getTreasuryPoolVaId()
-            // 2. If explicit POBO request with behalfOfVaId:
-            //    → Use provided payer/owner VAs
-            // 3. Otherwise:
-            //    → Standard payment flow
+            // 1. Paying entity enrolled for POBO in the currency (an explicit POBO request names it by behalfOfVaId):
+            //    → the subsidiary's IHB current account bears it, the enrolment's payment account pays (D7 limit, no fee)
+            // 2. Source VA is an IHB Current Account (not enrolled): the in-house posting as before, payer from
+            //    sourceVa.getTreasuryPoolVaId()
+            // 3. Otherwise: standard payment flow
             // =====================================================================
-            if (Boolean.TRUE.equals(sourceVa.getIhbParticipant())) {
+            if (pobo != null) {
+                txn = postInHouse(pobo.ihbCurrent(), pobo.paymentVa().getId(), request.getAmount(), request.getCreditorName(),
+                        request.getCreditorAccount(), request.getCreditorBic(), request.getCreditorBankName(),
+                        request.getRemittanceInfo() != null ? request.getRemittanceInfo() : "POBO Payment to " + request.getCreditorName(),
+                        request.getRequestedExecutionDate(), "ISO20022_POBO");
+            } else if (Boolean.TRUE.equals(sourceVa.getIhbParticipant())) {
                 // IHB Current Account detected - auto-route through POBO flow
                 log.info("Source VA {} is IHB participant - auto-routing through POBO flow", sourceVa.getVaNumber());
-                txn = processIhbPoboPayment(sourceVa, request);
-            } else if (request.isPobo() && request.getBehalfOfVaId() != null) {
-                // Explicit POBO Payment - delegate to TransactionService.makePoboPayment()
-                txn = processPoboPaymentViaTransactionService(request);
+                txn = postInHouse(sourceVa, legacyPayer(sourceVa), request.getAmount(), request.getCreditorName(),
+                        request.getCreditorAccount(), request.getCreditorBic(), request.getCreditorBankName(),
+                        request.getRemittanceInfo() != null ? request.getRemittanceInfo() : "IHB POBO Payment to " + request.getCreditorName(),
+                        request.getRequestedExecutionDate(), "ISO20022_IHB_POBO");
             } else {
                 // Standard Payment - delegate to TransactionService.makePayment()
                 txn = processStandardPaymentViaTransactionService(request);
@@ -151,7 +166,7 @@ public class Iso20022OutwardPaymentService {
             }
 
             // Generate pain.001 XML
-            String pain001Xml = xmlBuilder.buildPain001(request, sourceVa, txn);
+            String pain001Xml = xmlBuilder.buildPain001(request, sourceVa, txn, onBehalf);
 
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("ISO 20022 outward payment completed via TransactionService: txn={}, time={}ms",
@@ -204,97 +219,64 @@ public class Iso20022OutwardPaymentService {
     }
 
     /**
-     * POBO payment via TransactionService.makePoboPayment()
-     * Creates 6 accounting legs: Owner VA → Treasury VA → Settlement VA → Shadow VA → CBS
+     * The POBO route of a payment by its paying entity's enrolment for {@code currency} (spec R4): the owner of
+     * {@code behalfOfVaId} for an explicit POBO request, else the source account's owner. An explicit POBO request for an
+     * entity that is not enrolled is refused: POBO is set up by enrolment.
      */
-    private Transaction processPoboPaymentViaTransactionService(OutwardPaymentRequest request) {
-        log.debug("Delegating POBO payment to TransactionService.makePoboPayment()");
+    private PoboEnrolmentService.Route poboRoute(VirtualAccount sourceVa, boolean explicitPobo, UUID behalfOfVaId, String currency) {
+        VirtualAccount owner = sourceVa;
+        if (explicitPobo) {
+            if (behalfOfVaId == null) throw new BusinessException("behalfOfVaId is required for POBO payments");
+            owner = virtualAccountRepository.findById(behalfOfVaId)
+                    .orElseThrow(() -> new BusinessException("Behalf-of account not found: " + behalfOfVaId));
+        }
+        String ccy = currency != null ? currency : sourceVa.getCurrencyCode();
+        PoboEnrolmentService.Route route = poboEnrolments.route(owner.getOwningEntityId(), ccy, LocalDate.now()).orElse(null);
+        if (route == null && explicitPobo) {
+            throw new BusinessException("Not available: " + (owner.getOwningEntityCode() != null ? owner.getOwningEntityCode()
+                    : owner.getVaNumber()) + " is not enrolled for payment on its behalf in " + ccy
+                    + "; POBO is set up by enrolment (In-House Bank)");
+        }
+        return route;
+    }
 
-        // Map ISO 20022 request to TransactionDto.PoboPaymentRequest
-        // Note: Field mapping from ISO 20022 to TransactionDto:
-        //   - creditorBic → beneficiaryBankSwift
-        //   - remittanceInfo → description
-        //   - sourceVaId → payerVaId (Treasury VA)
-        //   - behalfOfVaId → ownerVaId (Subsidiary VA)
-        TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                .ownerVaId(request.getBehalfOfVaId())      // Subsidiary VA that bears cost
-                .payerVaId(request.getSourceVaId())        // Treasury VA that makes payment
-                .amount(request.getAmount())
-                .beneficiaryName(request.getCreditorName())
-                .beneficiaryAccount(request.getCreditorAccount())
-                .beneficiaryBankSwift(request.getCreditorBic())      // ISO: creditorBic → beneficiaryBankSwift
-                .beneficiaryBankName(request.getCreditorBankName())
-                .description(request.getRemittanceInfo())
-                .valueDate(request.getRequestedExecutionDate())
-                .channel("ISO20022_POBO")
-                .build();
+    /** The treasury account an IHB current account that is not enrolled pays through (its treasury link). */
+    private static UUID legacyPayer(VirtualAccount ihbCurrentAccount) {
+        if (ihbCurrentAccount.getTreasuryPoolVaId() == null) {
+            throw new BusinessException("IHB Current Account " + ihbCurrentAccount.getVaNumber() +
+                " has no Treasury Settlement VA configured (treasuryPoolVaId is null). Cannot execute POBO payment.");
+        }
+        return ihbCurrentAccount.getTreasuryPoolVaId();
+    }
 
-        // Delegate to TransactionService - this creates proper 6-leg accounting
-        return transactionService.makePoboPayment(poboRequest);
+    /** The pain.001 debtor of an in-house payment not paid by an enrolment: the treasury account it pays through. */
+    private PoboEnrolmentService.PainDebtor legacyDebtor(VirtualAccount ihbCurrentAccount) {
+        UUID payerId = legacyPayer(ihbCurrentAccount);
+        VirtualAccount payer = virtualAccountRepository.findById(payerId)
+                .orElseThrow(() -> new BusinessException("Treasury paying account not found: " + payerId));
+        return poboEnrolments.inHouseDebtor(ihbCurrentAccount, payer, transactionService.payoutShadow(payer));
     }
 
     /**
-     * IHB Current Account payment via TransactionService.makePoboPayment()
-     *
-     * When the source VA is an IHB Current Account (ihbParticipant=true):
-     * - The IHB Current Account is the OWNER (subsidiary bears cost)
-     * - The Treasury Settlement VA is the PAYER (resolved from treasuryPoolVaId)
-     * - Payment routes: IHB Current Account → Treasury Settlement VA → Shadow VA → CBS
-     *
-     * This is auto-detected when source VA has ihbParticipant=true, no need for
-     * user to check POBO checkbox or select "behalf of" entity.
+     * The in-house posting: {@code owner} (an IHB current account) bears the payment, {@code payerVaId} pays it out
+     * (6-leg; 4-leg when the account lacks its in-house links). TransactionService checks the IHB credit limit first.
      */
-    private Transaction processIhbPoboPayment(VirtualAccount ihbCurrentAccount, OutwardPaymentRequest request) {
-        log.info("Processing IHB POBO payment: IHB Account={}, Amount={} {}",
-                ihbCurrentAccount.getVaNumber(), request.getAmount(), request.getCurrency());
-
-        // Resolve Treasury Settlement VA from IHB Current Account's treasuryPoolVaId
-        UUID treasurySettlementVaId = ihbCurrentAccount.getTreasuryPoolVaId();
-        if (treasurySettlementVaId == null) {
-            throw new BusinessException("IHB Current Account " + ihbCurrentAccount.getVaNumber() +
-                " has no Treasury Settlement VA configured (treasuryPoolVaId is null). " +
-                "Cannot execute POBO payment. Please ensure the IHB account was created correctly.");
-        }
-
-        VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(treasurySettlementVaId)
-                .orElseThrow(() -> new BusinessException("Treasury Settlement VA not found: " + treasurySettlementVaId +
-                    ". The IHB Current Account's treasuryPoolVaId references a non-existent VA."));
-
-        log.info("IHB POBO routing: Owner={} (IHB Current Account) → Payer={} (Treasury Settlement VA)",
-                ihbCurrentAccount.getVaNumber(), treasurySettlementVa.getVaNumber());
-
-        // Build POBO request with correct owner/payer mapping
-        // - ownerVaId = IHB Current Account (subsidiary bears cost, balance decreases)
-        // - payerVaId = Treasury Settlement VA (makes the actual payment via Shadow VA)
-        TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                .ownerVaId(ihbCurrentAccount.getId())           // IHB Current Account (cost bearer)
-                .payerVaId(treasurySettlementVa.getId())        // Treasury Settlement VA (payer)
-                .amount(request.getAmount())
-                .beneficiaryName(request.getCreditorName())
-                .beneficiaryAccount(request.getCreditorAccount())
-                .beneficiaryBankSwift(request.getCreditorBic())
-                .beneficiaryBankName(request.getCreditorBankName())
-                .description(request.getRemittanceInfo() != null ? request.getRemittanceInfo() :
-                    "IHB POBO Payment to " + request.getCreditorName())
-                .valueDate(request.getRequestedExecutionDate())
-                .channel("ISO20022_IHB_POBO")
-                .build();
-
-        // Delegate to TransactionService - use 6-leg if configured, otherwise 4-leg
-        Transaction txn;
-        if (ihbCurrentAccount.isConfiguredFor6LegPobo()) {
-            log.info("Using IHB 6-leg POBO flow (Mirror Account Model) for {}", ihbCurrentAccount.getVaNumber());
-            txn = transactionService.makeIhb6LegPoboPayment(poboRequest);
-        } else {
-            log.info("Using standard 4-leg POBO flow for {} (6-leg not configured)", ihbCurrentAccount.getVaNumber());
-            txn = transactionService.makePoboPayment(poboRequest);
-        }
-
-        log.info("IHB POBO payment completed: Owner={}, Payer={}, TxnRef={}, Amount={}, 6-leg={}",
-                ihbCurrentAccount.getVaNumber(), treasurySettlementVa.getVaNumber(),
-                txn.getReferenceNumber(), request.getAmount(), ihbCurrentAccount.isConfiguredFor6LegPobo());
-
-        return txn;
+    private Transaction postInHouse(VirtualAccount owner, UUID payerVaId, BigDecimal amount, String creditorName,
+                                    String creditorAccount, String creditorBic, String creditorBankName, String description,
+                                    LocalDate valueDate, String channel) {
+        log.info("In-house payment: owner={} payer={} amount={} channel={}", owner.getVaNumber(), payerVaId, amount, channel);
+        return transactionService.makeIhb6LegPoboPayment(TransactionDto.PoboPaymentRequest.builder()
+                .ownerVaId(owner.getId())
+                .payerVaId(payerVaId)
+                .amount(amount)
+                .beneficiaryName(creditorName)
+                .beneficiaryAccount(creditorAccount)
+                .beneficiaryBankSwift(creditorBic)
+                .beneficiaryBankName(creditorBankName)
+                .description(description)
+                .valueDate(valueDate)
+                .channel(channel)
+                .build());
     }
 
     // ========================================================================
@@ -320,45 +302,64 @@ public class Iso20022OutwardPaymentService {
                 throw new BusinessException("Source virtual account is not active");
             }
 
-            List<Transaction> transactions = new ArrayList<>();
             List<PaymentInstructionResult> results = new ArrayList<>();
             int successCount = 0;
             int failedCount = 0;
             BigDecimal totalAmount = BigDecimal.ZERO;
             BigDecimal totalFees = BigDecimal.ZERO;
 
-            // Check if source VA is IHB participant for auto-POBO routing
-            boolean isIhbAccount = Boolean.TRUE.equals(sourceVa.getIhbParticipant());
-            VirtualAccount treasurySettlementVa = null;
-
-            if (isIhbAccount) {
-                // Resolve Treasury Settlement VA for IHB bulk payments
-                UUID treasurySettlementVaId = sourceVa.getTreasuryPoolVaId();
-                if (treasurySettlementVaId == null) {
-                    throw new BusinessException("IHB Current Account " + sourceVa.getVaNumber() +
-                        " has no Treasury Settlement VA configured. Cannot execute bulk POBO payment.");
+            // POBO by enrolment per row (each row's currency decides, spec R4); a refused row fails alone.
+            List<PaymentInstruction> lines = request.getInstructions();
+            List<Object> routes = new ArrayList<>();
+            List<PoboEnrolmentService.PainDebtor> debtors = new ArrayList<>(); // per row, D6; null when not on behalf
+            for (PaymentInstruction l : lines) {
+                try {
+                    PoboEnrolmentService.Route r = poboRoute(sourceVa, request.isPobo(), request.getBehalfOfVaId(), l.getCurrency());
+                    PoboEnrolmentService.PainDebtor d = r != null ? poboEnrolments.painDebtor(r)
+                            : Boolean.TRUE.equals(sourceVa.getIhbParticipant()) ? legacyDebtor(sourceVa) : null;
+                    routes.add(r);
+                    debtors.add(d);
+                } catch (BusinessException e) {
+                    routes.add(e);
+                    debtors.add(null);
                 }
-                treasurySettlementVa = virtualAccountRepository.findById(treasurySettlementVaId)
-                    .orElseThrow(() -> new BusinessException("Treasury Settlement VA not found: " + treasurySettlementVaId));
-
-                log.info("IHB bulk payment: Owner={}, Payer={}", sourceVa.getVaNumber(), treasurySettlementVa.getVaNumber());
             }
+            List<Iso20022XmlBuilder.BulkLine> paidLines = new ArrayList<>();
 
             // Each instruction in its own transaction: a row that fails (no funds, an FX price outside the streaming
             // limits, a deal used up) rolls back alone, its FX booking with it, and the other rows still pay. In one
             // transaction, one failed inner call marked the whole batch rollback-only.
-            final VirtualAccount payer = treasurySettlementVa;
             TransactionTemplate rowTx = new TransactionTemplate(transactionManager);
             rowTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             // FX for the batch first, committed before any row: per currency, the deals that fit cover the batch's
             // total, one deal is booked for what they leave (within the streaming limit), and rows draw in order.
-            List<PaymentInstruction> lines = request.getInstructions();
-            List<FxPaymentService.BatchFx> batchFx = rowTx.execute(status -> fxPayments.prepareBatch(lines.stream()
-                    .map(l -> new FxPaymentService.BatchRow(sourceVa, l.getCurrency(), ownFx(l) ? null : l.getAmount())).toList()));
+            // POBO and refused rows need no FX (amount null leaves them out of the batch's deals).
+            List<FxPaymentService.BatchFx> batchFx = rowTx.execute(status -> {
+                List<FxPaymentService.BatchRow> rows = new ArrayList<>();
+                for (int n = 0; n < lines.size(); n++) {
+                    PaymentInstruction l = lines.get(n);
+                    rows.add(new FxPaymentService.BatchRow(sourceVa, l.getCurrency(),
+                            ownFx(l) || routes.get(n) != null ? null : l.getAmount()));
+                }
+                return fxPayments.prepareBatch(rows);
+            });
             for (int n = 0; n < lines.size(); n++) {
                 PaymentInstruction instruction = lines.get(n);
                 FxPaymentService.BatchFx planned = batchFx.get(n);
-                if (!ownFx(instruction) && planned.instruction() == null) {
+                Object route = routes.get(n);
+                if (route instanceof BusinessException refused) {
+                    failedCount++;
+                    results.add(PaymentInstructionResult.builder()
+                            .instructionId(instruction.getInstructionId())
+                            .endToEndId(instruction.getEndToEndId())
+                            .success(false)
+                            .errorCode("RJCT")
+                            .errorMessage(refused.getMessage())
+                            .build());
+                    continue;
+                }
+                PoboEnrolmentService.Route pobo = (PoboEnrolmentService.Route) route;
+                if (pobo == null && !ownFx(instruction) && planned.instruction() == null) {
                     failedCount++;
                     results.add(PaymentInstructionResult.builder()
                             .instructionId(instruction.getInstructionId())
@@ -374,10 +375,10 @@ public class Iso20022OutwardPaymentService {
                                 instruction.getFxDeals(), instruction.getFxAtMarket())
                         : planned.instruction();
                 try {
-                    Paid paid = rowTx.execute(status -> payRow(request, instruction, sourceVa, isIhbAccount, payer, fxFor));
+                    Paid paid = rowTx.execute(status -> payRow(request, instruction, sourceVa, pobo, fxFor));
                     Transaction txn = paid.txn();
                     BigDecimal debit = paid.debit();
-                    transactions.add(txn);
+                    paidLines.add(new Iso20022XmlBuilder.BulkLine(txn, instruction, debtors.get(n)));
                     successCount++;
                     totalAmount = totalAmount.add(debit);
                     if (txn.getFeeAmount() != null) {
@@ -407,7 +408,7 @@ public class Iso20022OutwardPaymentService {
             }
 
             // Generate bulk pain.001 XML
-            String pain001Xml = xmlBuilder.buildBulkPain001(request, sourceVa, transactions);
+            String pain001Xml = xmlBuilder.buildBulkPain001(request, sourceVa, paidLines);
 
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("ISO 20022 bulk payment completed: success={}, failed={}, totalAmount={}, time={}ms",
@@ -445,48 +446,24 @@ public class Iso20022OutwardPaymentService {
                 || (l.getFxDeals() != null && !l.getFxDeals().isEmpty()) || l.getFxAtMarket() != null;
     }
 
-    /** One bulk instruction: converted where its currency is not the account's, then paid. */
+    /** One bulk instruction: POBO by enrolment; else converted where its currency is not the account's, then paid. */
     private Paid payRow(BulkPaymentRequest request, PaymentInstruction instruction, VirtualAccount sourceVa,
-                        boolean isIhbAccount, VirtualAccount treasurySettlementVa, FxPaymentService.Instruction fxFor) {
+                        PoboEnrolmentService.Route pobo, FxPaymentService.Instruction fxFor) {
+        if (pobo != null) {
+            Transaction txn = postInHouse(pobo.ihbCurrent(), pobo.paymentVa().getId(), instruction.getAmount(),
+                    instruction.getCreditorName(), instruction.getCreditorAccount(), instruction.getCreditorBic(), null,
+                    instruction.getRemittanceInfo(), request.getRequestedExecutionDate(), "ISO20022_BULK_POBO");
+            return new Paid(txn, instruction.getAmount());
+        }
         FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), fxFor);
         BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
         Transaction txn;
 
-        if (isIhbAccount) {
-            // IHB bulk - auto-route through POBO (6-leg if configured)
-            TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                    .ownerVaId(sourceVa.getId())              // IHB Current Account
-                    .payerVaId(treasurySettlementVa.getId())  // Treasury Settlement VA
-                    .amount(debit)
-                    .beneficiaryName(instruction.getCreditorName())
-                    .beneficiaryAccount(instruction.getCreditorAccount())
-                    .beneficiaryBankSwift(instruction.getCreditorBic())
-                    .description(instruction.getRemittanceInfo())
-                    .valueDate(request.getRequestedExecutionDate())
-                    .channel("ISO20022_BULK_IHB_POBO")
-                    .build();
-
-            // Use 6-leg if configured, otherwise 4-leg
-            if (sourceVa.isConfiguredFor6LegPobo()) {
-                txn = transactionService.makeIhb6LegPoboPayment(poboRequest);
-            } else {
-                txn = transactionService.makePoboPayment(poboRequest);
-            }
-        } else if (request.isPobo() && request.getBehalfOfVaId() != null) {
-            // Explicit POBO bulk - each instruction goes through makePoboPayment
-            TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                    .ownerVaId(request.getBehalfOfVaId())
-                    .payerVaId(request.getSourceVaId())
-                    .amount(debit)
-                    .beneficiaryName(instruction.getCreditorName())
-                    .beneficiaryAccount(instruction.getCreditorAccount())
-                    .beneficiaryBankSwift(instruction.getCreditorBic())
-                    .description(instruction.getRemittanceInfo())
-                    .valueDate(request.getRequestedExecutionDate())
-                    .channel("ISO20022_BULK_POBO")
-                    .build();
-
-            txn = transactionService.makePoboPayment(poboRequest);
+        if (Boolean.TRUE.equals(sourceVa.getIhbParticipant())) {
+            // IHB current account not enrolled: the in-house posting as before (payer from its treasury link)
+            txn = postInHouse(sourceVa, legacyPayer(sourceVa), debit, instruction.getCreditorName(),
+                    instruction.getCreditorAccount(), instruction.getCreditorBic(), null,
+                    instruction.getRemittanceInfo(), request.getRequestedExecutionDate(), "ISO20022_BULK_IHB_POBO");
         } else {
             // Standard bulk - each instruction goes through makePayment
             TransactionDto.PaymentRequest paymentRequest = TransactionDto.PaymentRequest.builder()

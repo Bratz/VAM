@@ -1,7 +1,6 @@
 package com.bank.vam.dto.pobo;
 
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
-import com.bank.vam.entity.pobo.PoboAuthorization;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,116 +10,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * POBO DTOs - Phase 5 Enhanced
- * 
- * Includes:
- * - Authorization request/response
- * - Recharge management
- * - POBO validation
- * - Execution history
- * - Dashboard summaries
- */
+/** POBO DTOs: recharges, statistics, execution history. */
 public class PoboDto {
-
-    // ========================================================================
-    // AUTHORIZATION DTOs
-    // ========================================================================
-    
-    @Data
-    @Builder
-    public static class CreateAuthorizationRequest {
-        private UUID payerEntityId;
-        private String payerEntityCode;
-        private UUID payerVaId;
-        private UUID behalfEntityId;
-        private String behalfEntityCode;
-        private UUID behalfVaId;
-        private PoboAuthorization.AuthorizationType authorizationType;
-        private BigDecimal singlePaymentLimit;
-        private BigDecimal dailyLimit;
-        private BigDecimal monthlyLimit;
-        private String currencyCode;
-        private String allowedPaymentTypes;  // JSON or comma-separated
-        private String allowedVendorIds;     // JSON or comma-separated UUIDs
-        private Boolean autoRecharge;
-        private BigDecimal rechargeServiceFeeRate;
-        private Boolean requiresApproval;
-        private LocalDate effectiveFrom;
-        private LocalDate effectiveTo;
-    }
-    
-    @Data
-    @Builder
-    public static class AuthorizationResponse {
-        private UUID id;
-        private String authorizationCode;
-        private UUID payerEntityId;
-        private String payerEntityCode;
-        private UUID behalfEntityId;
-        private String behalfEntityCode;
-        private PoboAuthorization.AuthorizationType authorizationType;
-        private BigDecimal singlePaymentLimit;
-        private BigDecimal dailyLimit;
-        private BigDecimal monthlyLimit;
-        private String currencyCode;
-        private BigDecimal usedToday;
-        private BigDecimal usedThisMonth;
-        private BigDecimal remainingDailyLimit;
-        private BigDecimal remainingMonthlyLimit;
-        private Boolean autoRecharge;
-        private BigDecimal rechargeServiceFeeRate;
-        private Boolean requiresApproval;
-        private String status;
-        private LocalDate effectiveFrom;
-        private LocalDate effectiveTo;
-        private String approvedBy;
-        private LocalDateTime approvedAt;
-        private LocalDateTime createdAt;
-    }
-    
-    @Data
-    @Builder
-    public static class UpdateLimitsRequest {
-        private BigDecimal singlePaymentLimit;
-        private BigDecimal dailyLimit;
-        private BigDecimal monthlyLimit;
-    }
-
-    // ========================================================================
-    // VALIDATION DTOs
-    // ========================================================================
-    
-    @Data
-    @Builder
-    public static class ValidatePoboRequest {
-        private UUID payerEntityId;
-        private String payerEntityCode;
-        private UUID behalfEntityId;
-        private String behalfEntityCode;
-        private BigDecimal amount;
-        private String currencyCode;
-        private String paymentType;
-        private UUID vendorId;
-    }
-    
-    @Data
-    @Builder
-    public static class ValidatePoboResponse {
-        private Boolean isAuthorized;
-        private String authorizationCode;
-        private Boolean withinLimits;
-        private Boolean paymentTypeAllowed;
-        private Boolean vendorAllowed;
-        private BigDecimal maxAvailable;
-        private BigDecimal remainingDailyLimit;
-        private BigDecimal remainingMonthlyLimit;
-        private Boolean requiresApproval;
-        private Boolean autoRechargeEnabled;
-        private BigDecimal serviceFeeRate;
-        private String rejectionReason;
-        private List<String> warnings;
-    }
 
     // ========================================================================
     // RECHARGE DTOs
@@ -179,47 +70,6 @@ public class PoboDto {
         private LocalDateTime createdAt;
     }
     
-    @Data
-    @Builder
-    public static class SettleRechargeRequest {
-        private UUID rechargeId;
-        private IntercompanyRecharge.SettlementMethod settlementMethod;
-        private String settlementReference;
-        private UUID ihbLoanId;
-    }
-
-    // ========================================================================
-    // PAYMENT PROCESSING DTOs
-    // ========================================================================
-    
-    @Data
-    @Builder
-    public static class PoboPaymentRequest {
-        private UUID payerEntityId;
-        private String payerEntityCode;
-        private UUID behalfEntityId;
-        private String behalfEntityCode;
-        private UUID payableId;
-        private BigDecimal amount;
-        private String currencyCode;
-        private Boolean createRecharge;
-    }
-    
-    @Data
-    @Builder
-    public static class PoboPaymentResponse {
-        private UUID paymentExecutionId;
-        private String paymentReference;
-        private String status;
-        private BigDecimal paidAmount;
-        private UUID rechargeId;
-        private String rechargeReference;
-        private BigDecimal rechargeAmount;
-        private BigDecimal serviceFee;
-        private BigDecimal totalRecharge;
-        private LocalDateTime processedAt;
-    }
-
     // ========================================================================
     // STATISTICS DTOs
     // ========================================================================
@@ -227,7 +77,6 @@ public class PoboDto {
     @Data
     @Builder
     public static class PoboStatsResponse {
-        private int activeAuthorizations;
         private int pendingRecharges;
         private int settledRecharges;
         private BigDecimal totalRechargesOutstanding;
@@ -326,113 +175,4 @@ public class PoboDto {
         private LocalDateTime approvedAt;
     }
 
-    // ========================================================================
-    // PHASE 5: DASHBOARD DTOs
-    // ========================================================================
-    
-    @Data
-    @Builder
-    public static class SubsidiaryPoboDashboard {
-        private UUID entityId;
-        private int activeAuthorizations;
-        private int pendingRecharges;
-        private BigDecimal totalOutstandingRecharge;
-        private List<AuthorizationResponse> authorizations;
-        private List<RechargeResponse> recentRecharges;
-    }
-    
-    @Data
-    @Builder
-    public static class TreasuryPoboDashboard {
-        private UUID entityId;
-        private int totalSubsidiaries;
-        private long activeAuthorizations;
-        private int pendingApprovals;
-        private BigDecimal totalRechargesOutstanding;
-        private BigDecimal totalServiceFeesCollected;
-        private int armLengthValidationsPending;
-        private List<SubsidiaryPoboStatus> subsidiaryStatuses;
-        private List<RechargeResponse> pendingRecharges;
-    }
-    
-    @Data
-    @Builder
-    public static class SubsidiaryPoboStatus {
-        private UUID entityId;
-        private String entityCode;
-        private String authorizationCode;
-        private String status;
-        private BigDecimal dailyLimit;
-        private BigDecimal usedToday;
-        private BigDecimal remainingDailyLimit;
-        private BigDecimal monthlyLimit;
-        private BigDecimal usedThisMonth;
-        private BigDecimal remainingMonthlyLimit;
-    }
-
-    // ========================================================================
-    // ENTITY POSITION DTOs (for reporting)
-    // ========================================================================
-    
-    @Data
-    @Builder
-    public static class EntityPoboPositionResponse {
-        private UUID entityId;
-        private String entityCode;
-        private String entityName;
-        private String entityType; // TREASURY or SUBSIDIARY
-        
-        // As Treasury (payer)
-        private int subsidiariesAuthorized;
-        private BigDecimal totalPaidOnBehalf;
-        private BigDecimal totalRechargesOutstanding;
-        private BigDecimal totalServiceFeesEarned;
-        
-        // As Subsidiary (behalf)
-        private int treasuriesAuthorized;
-        private BigDecimal totalReceivedViaPOBO;
-        private BigDecimal totalRechargesOwed;
-        private BigDecimal totalServiceFeesPaid;
-        
-        // Net position
-        private BigDecimal netPoboPosition;
-    }
-    
-    @Data
-    @Builder
-    public static class HierarchyPoboSummary {
-        private UUID corporateId;
-        private String corporateName;
-        private List<PayerSummary> payers;
-        private List<BehalfSummary> subsidiaries;
-        private BigDecimal totalIntercompanyVolume;
-        private BigDecimal totalServiceFees;
-        private int totalTransactions;
-        private LocalDate periodStart;
-        private LocalDate periodEnd;
-    }
-    
-    @Data
-    @Builder
-    public static class PayerSummary {
-        private UUID entityId;
-        private String entityCode;
-        private String entityName;
-        private int subsidiariesServed;
-        private BigDecimal totalPaid;
-        private BigDecimal totalRechargesCreated;
-        private BigDecimal outstandingRecharges;
-    }
-    
-    @Data
-    @Builder
-    public static class BehalfSummary {
-        private UUID entityId;
-        private String entityCode;
-        private String entityName;
-        private BigDecimal totalReceivedViaPOBO;
-        private BigDecimal totalRechargesOwed;
-        private BigDecimal settledViaIHB;
-        private BigDecimal settledViaNetting;
-    }
 }

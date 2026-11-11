@@ -90,6 +90,7 @@ public class FeePostingService {
     private final CalculatedTaxRepository taxRepository;
     private final ExceptionTransactionRepository exceptionRepository;
     private final SettlementVaResolverService settlementVaResolver;
+    private final IhbMirrorService ihbMirrors;
 
     // ========================================================================
     // FULL FEE POSTING (DEBIT SOURCE BALANCE + CREDIT SETTLEMENT BALANCE)
@@ -197,6 +198,7 @@ public class FeePostingService {
             .status(Transaction.TransactionStatus.COMPLETED)
             .build();
         debitTxn = transactionRepository.save(debitTxn);
+        ihbMirrors.syncIhbMirrors(sourceVa, "fee: " + description, correlationId); // R10: no-op unless an IHB current account
         
         // 7. CREDIT Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = settlementVa.getCurrentBalance();
@@ -374,6 +376,7 @@ public class FeePostingService {
             .processingNotes("Fee debit with balance change")
             .build();
         debitTxn = transactionRepository.save(debitTxn);
+        ihbMirrors.syncIhbMirrors(sourceVa, "fee: " + description, correlationId); // R10: no-op unless an IHB current account
         
         // 6. CREDIT Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = settlementVa.getCurrentBalance();
@@ -567,6 +570,7 @@ public class FeePostingService {
             .processingNotes("Fee debit with balance change. Target: " + targetSettlementVa.getVaNumber())
             .build();
         debitTxn = transactionRepository.save(debitTxn);
+        ihbMirrors.syncIhbMirrors(sourceVa, "fee: " + description, correlationId); // R10: no-op unless an IHB current account
         
         // 7. CREDIT target Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = targetSettlementVa.getCurrentBalance();

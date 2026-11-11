@@ -7,6 +7,7 @@ import com.bank.vam.dto.payables.PayablesDto.PaymentExecutionResponse;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.fileingest.RowStatus;
 import com.bank.vam.entity.fileingest.StagedTransaction;
+import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.repository.fileingest.StagedTransactionRepository;
 import com.bank.vam.service.VirtualAccountService;
@@ -107,8 +108,10 @@ public class PayablesProcessor implements DomainProcessor {
 
         PaymentExecutionRequest executionRequest = PaymentExecutionRequest.builder()
                 .payableId(created.getId())
-                .paymentChannel("BANK_TRANSFER")
-                .paymentMethod("WIRE")
+                // Payable.PaymentChannel / PaymentMethod names: a file is a batch, paid by bank transfer.
+                // ("BANK_TRANSFER" as channel and "WIRE" as method threw in valueOf, so no ingested row paid.)
+                .paymentChannel(Payable.PaymentChannel.BATCH.name())
+                .paymentMethod(Payable.PaymentMethod.BANK_TRANSFER.name())
                 .executedBy(ACTOR)
                 // No one is at the file to choose: the deals planned over the file, else the live price.
                 .fxDeals(fx.draws())
