@@ -167,9 +167,9 @@ public class Iso20022XmlBuilder {
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.001.001.09\">\n");
         xml.append("  <CstmrCdtTrfInitn>\n");
 
-        // Calculate totals
+        // CtrlSum: the sum of the InstdAmt below (instructed amounts, not the converted debits)
         BigDecimal totalAmount = lines.stream()
-                .map(l -> l.txn().getAmount())
+                .map(l -> l.instruction().getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String messageId = request.getMessageId() != null ? request.getMessageId() :
@@ -195,7 +195,7 @@ public class Iso20022XmlBuilder {
         int group = 0;
         for (Map.Entry<PoboEnrolmentService.PainDebtor, List<BulkLine>> g : byDebtor.entrySet()) {
             List<BulkLine> rows = g.getValue();
-            BigDecimal groupSum = rows.stream().map(l -> l.txn().getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal groupSum = rows.stream().map(l -> l.instruction().getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
             group++;
             xml.append("    <PmtInf>\n");
             xml.append("      <PmtInfId>").append(escape(group == 1 ? paymentInfoId : paymentInfoId + "-" + group)).append("</PmtInfId>\n");

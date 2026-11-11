@@ -119,9 +119,12 @@ public class Iso20022OutwardPaymentService {
 
             // A payment in another currency is converted first; the legs below then move the debit amount, in the
             // account's currency. The request's amount goes back to the instructed one for the pain.001.
-            // POBO needs none: the enrolment's IHB current account is in the payment's currency.
-            fx = pobo != null ? null : fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), FxPaymentService.Instruction.of(request.getFxPriceId(),
-                    request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket()));
+            // POBO: none in the IHB account's currency; cross-currency, the treasury's cover on its payment account
+            // after the IHB headroom check on the settle-currency amount (ihb-fx D3, R9).
+            FxPaymentService.Instruction requestedFx = FxPaymentService.Instruction.of(request.getFxPriceId(),
+                    request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket());
+            fx = pobo != null ? pobo.cover(fxPayments, request.getAmount(), requestedFx)
+                    : fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), requestedFx);
             if (fx != null) {
                 request.setAmount(fx.debitAmount());
             }
@@ -161,7 +164,9 @@ public class Iso20022OutwardPaymentService {
                 paymentRoutingService.attachToTransaction(request.getRouteSelectionId(), txn.getId());
             }
             request.setAmount(instructed);
-            if (fx != null) {
+            if (fx != null && pobo != null) {
+                transactionService.settlePoboFx(fx, txn, pobo.paymentVa());
+            } else if (fx != null) {
                 fxPayments.settle(fx, txn, sourceVa);
             }
 
@@ -333,13 +338,15 @@ public class Iso20022OutwardPaymentService {
             rowTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             // FX for the batch first, committed before any row: per currency, the deals that fit cover the batch's
             // total, one deal is booked for what they leave (within the streaming limit), and rows draw in order.
-            // POBO and refused rows need no FX (amount null leaves them out of the batch's deals).
+            // POBO rows convert on the treasury's payment account (ihb-fx D3; same-currency ones need none); refused
+            // rows need no FX (amount null leaves them out of the batch's deals).
             List<FxPaymentService.BatchFx> batchFx = rowTx.execute(status -> {
                 List<FxPaymentService.BatchRow> rows = new ArrayList<>();
                 for (int n = 0; n < lines.size(); n++) {
                     PaymentInstruction l = lines.get(n);
-                    rows.add(new FxPaymentService.BatchRow(sourceVa, l.getCurrency(),
-                            ownFx(l) || routes.get(n) != null ? null : l.getAmount()));
+                    rows.add(new FxPaymentService.BatchRow(
+                            routes.get(n) instanceof PoboEnrolmentService.Route r ? r.paymentVa() : sourceVa, l.getCurrency(),
+                            ownFx(l) || routes.get(n) instanceof BusinessException ? null : l.getAmount()));
                 }
                 return fxPayments.prepareBatch(rows);
             });
@@ -359,7 +366,7 @@ public class Iso20022OutwardPaymentService {
                     continue;
                 }
                 PoboEnrolmentService.Route pobo = (PoboEnrolmentService.Route) route;
-                if (pobo == null && !ownFx(instruction) && planned.instruction() == null) {
+                if (!ownFx(instruction) && planned.instruction() == null) {
                     failedCount++;
                     results.add(PaymentInstructionResult.builder()
                             .instructionId(instruction.getInstructionId())
@@ -450,10 +457,13 @@ public class Iso20022OutwardPaymentService {
     private Paid payRow(BulkPaymentRequest request, PaymentInstruction instruction, VirtualAccount sourceVa,
                         PoboEnrolmentService.Route pobo, FxPaymentService.Instruction fxFor) {
         if (pobo != null) {
-            Transaction txn = postInHouse(pobo.ihbCurrent(), pobo.paymentVa().getId(), instruction.getAmount(),
+            FxPaymentService.Conversion fx = pobo.cover(fxPayments, instruction.getAmount(), fxFor);
+            BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
+            Transaction txn = postInHouse(pobo.ihbCurrent(), pobo.paymentVa().getId(), debit,
                     instruction.getCreditorName(), instruction.getCreditorAccount(), instruction.getCreditorBic(), null,
                     instruction.getRemittanceInfo(), request.getRequestedExecutionDate(), "ISO20022_BULK_POBO");
-            return new Paid(txn, instruction.getAmount());
+            if (fx != null) transactionService.settlePoboFx(fx, txn, pobo.paymentVa());
+            return new Paid(txn, debit);
         }
         FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), fxFor);
         BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();

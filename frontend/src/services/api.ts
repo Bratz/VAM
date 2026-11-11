@@ -423,6 +423,11 @@ export interface Transaction {
 }
 
 export interface TransactionDetail extends Transaction {
+  /** A converted movement: what was instructed, the all-in client rate, the deal reference(s). */
+  instructedAmount?: number | null;
+  instructedCurrency?: string | null;
+  fxRate?: number | null;
+  fxDealRef?: string | null;
   corporateName?: string;
   physicalAccountId?: string;
   physicalAccountNumber?: string;
@@ -1986,6 +1991,10 @@ export interface CoboEnrolment {
   collectionVaId: string;
   collectionVaNumber?: string;
   collectionVaName?: string;
+  /** The subsidiary's IHB current account it settles on; another currency than {@link currency} = cross-currency. */
+  ihbAccountId?: string | null;
+  ihbAccountNumber?: string | null;
+  ihbAccountCurrency?: string | null;
   effectiveFrom: string;
   effectiveTo?: string | null;
   /** In force today. */
@@ -2004,18 +2013,46 @@ export interface CoboCollectionAccount {
 export const coboEnrolmentApi = {
   list: (corporateId: string) =>
     apiClient.get<ApiResponse<CoboEnrolment[]>>('/cobo/enrolments', { params: { corporateId } }).then(r => r.data.data ?? []),
-  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; collectorEntityId: string; collectionVaId: string; effectiveFrom?: string }) =>
+  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; collectorEntityId: string; collectionVaId: string; ihbAccountId?: string; effectiveFrom?: string }) =>
     apiClient.post<ApiResponse<CoboEnrolment>>('/cobo/enrolments', data).then(r => r.data.data),
   end: (id: string) =>
     apiClient.post<ApiResponse<CoboEnrolment>>(`/cobo/enrolments/${id}/end`).then(r => r.data.data),
-  /** The treasury centre's accounts an enrolment in this currency can collect into. */
+  /** The treasury centre's accounts an enrolment settled in this currency (its IHB account's) can collect into. */
   collectionAccounts: (collectorEntityId: string, currency: string) =>
     apiClient.get<ApiResponse<CoboCollectionAccount[]>>('/cobo/enrolments/collection-accounts', { params: { collectorEntityId, currency } })
       .then(r => r.data.data ?? []),
   /** Moves the corporate's old-flow COBO invoices (spec D7); dryRun only reports what would happen. */
   cutover: (corporateId: string, dryRun: boolean) =>
     apiClient.post<ApiResponse<CoboCutoverReport>>('/cobo/cutover', null, { params: { corporateId, dryRun } }).then(r => r.data.data),
+  /** Inward credits to COBO VIBANs held for a negotiated rate (ihb-fx D8), oldest first. */
+  awaitingFx: (corporateId: string) =>
+    apiClient.get<ApiResponse<HeldFxCredit[]>>('/cobo/awaiting-fx', { params: { corporateId } }).then(r => r.data.data ?? []),
+  /** Posts a held credit converted at the accepted firm quote: invoice applied, subsidiary credited. */
+  postHeld: (id: string, quoteId: string) =>
+    apiClient.post<ApiResponse<unknown>>(`/cobo/awaiting-fx/${id}/post`, { quoteId }).then(r => r.data.data),
+  /** Treasury will not convert it: RETURNED to the payer with the reason (funds sent back by hand in v1). */
+  returnHeld: (id: string, reason: string) =>
+    apiClient.post<ApiResponse<HeldFxCredit>>(`/cobo/awaiting-fx/${id}/return`, { reason }).then(r => r.data.data),
 };
+
+/** An inward credit held until treasury negotiates the rate (ihb-fx D8). createdAt = when it arrived. */
+export interface HeldFxCredit {
+  id: string;
+  corporateId: string;
+  vaNumber?: string;
+  /** The treasury centre owning the collection account: it sells the currency. */
+  collectorEntityId: string;
+  /** The collection account's currency, what the credit is converted into. */
+  settleCurrency: string;
+  viban?: string;
+  receivableNumber?: string;
+  subsidiaryCode?: string;
+  amount: number;
+  currency: string;
+  debtorName?: string;
+  reason?: string;
+  createdAt?: string;
+}
 
 /** A subsidiary paid on behalf (POBO) in one currency by the treasury centre from one of its accounts (In-House Bank). */
 export interface PoboEnrolment {
@@ -2034,7 +2071,9 @@ export interface PoboEnrolment {
   paymentIban?: string;
   ihbCurrentVaId?: string;
   ihbCurrentVaNumber?: string;
-  /** The subsidiary's IHB current account balance + credit limit: what POBO payments may still use. */
+  /** The IHB current account's currency (the settle currency); another than {@link currency} = cross-currency. */
+  ihbCurrentCurrency?: string | null;
+  /** The subsidiary's IHB current account balance + credit limit (in its currency): what POBO payments may still use. */
   headroom?: number | null;
   effectiveFrom: string;
   effectiveTo?: string | null;
@@ -2055,18 +2094,40 @@ export interface PoboPaymentAccount {
 export const poboEnrolmentApi = {
   list: (corporateId: string) =>
     apiClient.get<ApiResponse<PoboEnrolment[]>>('/pobo/enrolments', { params: { corporateId } }).then(r => r.data.data ?? []),
-  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; payerEntityId: string; paymentVaId: string; effectiveFrom?: string }) =>
+  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; payerEntityId: string; paymentVaId: string; ihbAccountId?: string; effectiveFrom?: string }) =>
     apiClient.post<ApiResponse<PoboEnrolment>>('/pobo/enrolments', data).then(r => r.data.data),
   end: (id: string) =>
     apiClient.post<ApiResponse<PoboEnrolment>>(`/pobo/enrolments/${id}/end`).then(r => r.data.data),
-  /** The treasury centre's bank-backed accounts an enrolment in this currency can pay from. */
+  /** The treasury centre's bank-backed accounts an enrolment settled in this currency (its IHB account's) can pay from. */
   paymentAccounts: (payerEntityId: string, currency: string) =>
     apiClient.get<ApiResponse<PoboPaymentAccount[]>>('/pobo/enrolments/payment-accounts', { params: { payerEntityId, currency } })
       .then(r => r.data.data ?? []),
   /** Cut-over and repair (spec D8/D9); dryRun previews and changes nothing. */
   cutover: (corporateId: string, dryRun: boolean) =>
     apiClient.post<ApiResponse<PoboCutoverReport>>('/pobo/cutover', null, { params: { corporateId, dryRun } }).then(r => r.data.data),
+  /** Approved payables waiting for treasury to negotiate the rate (ihb-fx D7); paid with payablesApiPhase2.executePayment + fxQuoteId. */
+  awaitingFx: (corporateId: string) =>
+    apiClient.get<ApiResponse<AwaitingFxPayable[]>>('/pobo/enrolments/awaiting-fx', { params: { corporateId } }).then(r => r.data.data ?? []),
 };
+
+/** A POBO payable above the live-price limit, waiting for a negotiated rate; payer* / paymentVa* null when its route broke. */
+export interface AwaitingFxPayable {
+  payableId: string;
+  payableNumber: string;
+  invoiceNumber?: string;
+  vendorName?: string;
+  subsidiaryCode?: string;
+  subsidiaryName?: string;
+  amount: number;
+  currencyCode: string;
+  reason?: string;
+  payerEntityId?: string | null;
+  payerCode?: string | null;
+  paymentVaId?: string | null;
+  paymentVaNumber?: string | null;
+  settleCurrency?: string | null;
+  flaggedAt?: string;
+}
 
 export interface PoboCutoverItem {
   key: string;
@@ -2590,6 +2651,9 @@ export interface PayablePhase2 {
   poboRequestId?: string;
   poboRequestStatus?: string;
   poboTransactionRef?: string;
+  /** AWAITING_FX while treasury negotiates the rate (ihb-fx D7). */
+  fxStatus?: string | null;
+  fxStatusReason?: string | null;
   poboIhbLoanId?: string;
   poboRechargeId?: string;
   poboRequestedAt?: string;
@@ -2770,10 +2834,15 @@ export interface PaymentRoutePreview {
   ihbCurrentVaNumber?: string;
   amount: number;
   currencyCode: string;
-  /** The subsidiary's IHB current account balance + credit limit. */
+  /** The subsidiary's IHB current account balance + credit limit, in settleCurrency. */
   headroom?: number | null;
+  /** The IHB current account's currency and what it would be debited; indicative when not currencyCode. */
+  settleCurrency?: string | null;
+  settleAmount?: number | null;
   /** Set when the amount is over the headroom: the payment would be refused. */
   refusal?: string | null;
+  /** Above the live-price limit (ihb-fx D7): paying hands it to treasury to negotiate the rate. */
+  fxNeedsQuote?: string | null;
 }
 
 // Intercompany Types

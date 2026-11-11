@@ -1576,6 +1576,24 @@ public class TransactionService {
     }
 
     /**
+     * After a cross-currency in-house POBO posting (ihb-fx D3, R7): treasury's cover settles through its own payout --
+     * the payment account's POBO_DEBIT row of the posting, the money that left T -- and X's IHB movement
+     * ({@code ownerDebit}, what {@link #makeIhb6LegPoboPayment} returns) carries the same FX: instructed amount and
+     * currency, rate, deal reference(s).
+     */
+    @Transactional
+    public void settlePoboFx(FxPaymentService.Conversion fx, Transaction ownerDebit, VirtualAccount paymentVa) {
+        Transaction payout = transactionRepository.findAllByCorrelationId(ownerDebit.getCorrelationId()).stream()
+            .filter(t -> paymentVa.getId().equals(t.getVaId()) && t.getMovementType() == Transaction.MovementType.POBO_DEBIT)
+            .findFirst()
+            .orElseThrow(() -> new BusinessException("No payout by " + paymentVa.getVaNumber() + " in POBO posting " + ownerDebit.getReferenceNumber()));
+        fxPayments.settle(fx, payout, paymentVa);
+        FxPaymentService.note(fx, ownerDebit);
+        // X's statement line reads the conversion (ihb-fx 4.3): every statement view shows the description
+        ownerDebit.setDescription(FxPaymentService.line(ownerDebit, "to " + ownerDebit.getBeneficiaryName()));
+    }
+
+    /**
      * Process a COBO collection using the full 6-leg IHB mirror-account flow — the
      * COBO counterpart of {@link #makeIhb6LegPoboPayment}, with the flow of money
      * reversed: an external collection is routed down to the subsidiary instead of

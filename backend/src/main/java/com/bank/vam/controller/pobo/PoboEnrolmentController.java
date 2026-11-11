@@ -1,6 +1,7 @@
 package com.bank.vam.controller.pobo;
 
 import com.bank.vam.dto.ApiResponse;
+import com.bank.vam.service.payables.PayablesService;
 import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.bank.vam.service.pobo.PoboEnrolmentService.EnrolmentView;
 import com.bank.vam.service.pobo.PoboEnrolmentService.PaymentAccount;
@@ -23,9 +24,10 @@ import java.util.UUID;
 public class PoboEnrolmentController {
 
     private final PoboEnrolmentService service;
+    private final PayablesService payables;
 
     public record CreateEnrolmentRequest(UUID corporateId, UUID subsidiaryEntityId, String currency,
-                                         UUID payerEntityId, UUID paymentVaId, LocalDate effectiveFrom) {
+                                         UUID payerEntityId, UUID paymentVaId, UUID ihbAccountId, LocalDate effectiveFrom) {
     }
 
     @GetMapping
@@ -38,7 +40,7 @@ public class PoboEnrolmentController {
     @Operation(summary = "Enrol a subsidiary for payment on its behalf in one currency")
     public ResponseEntity<ApiResponse<EnrolmentView>> create(@RequestBody CreateEnrolmentRequest r) {
         return ResponseEntity.ok(ApiResponse.success(service.create(r.corporateId(), r.subsidiaryEntityId(), r.currency(),
-            r.payerEntityId(), r.paymentVaId(), r.effectiveFrom()), "Enrolled"));
+            r.payerEntityId(), r.paymentVaId(), r.ihbAccountId(), r.effectiveFrom()), "Enrolled"));
     }
 
     @PostMapping("/{id}/end")
@@ -48,9 +50,15 @@ public class PoboEnrolmentController {
     }
 
     @GetMapping("/payment-accounts")
-    @Operation(summary = "The treasury centre's bank-backed accounts an enrolment in this currency can pay from")
+    @Operation(summary = "The treasury centre's bank-backed accounts an enrolment settled in this currency (its IHB account's) can pay from")
     public ResponseEntity<ApiResponse<List<PaymentAccount>>> paymentAccounts(@RequestParam UUID payerEntityId,
                                                                            @RequestParam String currency) {
         return ResponseEntity.ok(ApiResponse.success(service.paymentAccounts(payerEntityId, currency.trim().toUpperCase())));
+    }
+
+    @GetMapping("/awaiting-fx")
+    @Operation(summary = "Approved POBO payables waiting for treasury to negotiate the rate (ihb-fx D7); pay one with its quote via /payables/{id}/execute")
+    public ResponseEntity<ApiResponse<List<PayablesService.AwaitingFxPayable>>> awaitingFx(@RequestParam UUID corporateId) {
+        return ResponseEntity.ok(ApiResponse.success(payables.awaitingFx(corporateId)));
     }
 }

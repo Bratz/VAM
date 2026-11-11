@@ -193,6 +193,15 @@ public class Payable extends BaseEntity {
      */
     @Column(name = "pobo_transaction_ref", length = 50)
     private String poboTransactionRef;
+
+    /** ihb-fx D7: {@link #AWAITING_FX} while treasury negotiates the rate (above the live-price limit); null otherwise. */
+    @Column(name = "fx_status", length = 20)
+    private String fxStatus;
+
+    @Column(name = "fx_status_reason", length = 500)
+    private String fxStatusReason;
+
+    public static final String AWAITING_FX = "AWAITING_FX";
     
     /**
      * IHB loan ID created for the subsidiary as a result of POBO.
@@ -710,7 +719,22 @@ public class Payable extends BaseEntity {
         }
     }
 
+    /**
+     * Awaiting FX means "approved, waiting for treasury's rate" (ihb-fx D7): a payable that can no longer be paid
+     * (rejected, cancelled, on hold, netted ...) waits for nothing. Run on every save, whichever path changed the status.
+     */
+    @PrePersist
+    @PreUpdate
+    public void dropStaleFxStatus() {
+        if (fxStatus != null && !canBePaid()) {
+            fxStatus = null;
+            fxStatusReason = null;
+        }
+    }
+
     public void recordPayment(BigDecimal amount) {
+        fxStatus = null; // paid: nothing awaits FX any more (ihb-fx D7)
+        fxStatusReason = null;
         if (paidAmount == null) paidAmount = BigDecimal.ZERO;
         paidAmount = paidAmount.add(amount);
         calculateOutstanding();

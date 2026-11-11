@@ -24,11 +24,19 @@ final class Pain008 {
     }
 
     /**
-     * {@code accountNumbers}: receiving account id → its number, used as the creditor account.
+     * The receiving account as the creditor account: its IBAN, its currency (the account's, which may differ from the
+     * debits' -- a EUR invoice collected into an AED account, ihb-fx). ponytail: an account without an IBAN keeps its
+     * number as Othr/Id, as before; refuse the run instead if banks reject it.
+     */
+    record Account(String iban, String number, String currency) {
+    }
+
+    /**
+     * {@code accounts}: receiving account id → its {@link Account}, used as the creditor account.
      * {@code onBehalf}: invoice id → its COBO parties, for the debits collected on behalf; the rest have {@code creditorName}.
      */
     static String build(String messageId, String creditorName, String creditorBic, List<CollectionLine> debits,
-                        Map<UUID, String> accountNumbers, Map<UUID, LocalDate> signedDates, Map<UUID, OnBehalf> onBehalf) {
+                        Map<UUID, Account> accounts, Map<UUID, LocalDate> signedDates, Map<UUID, OnBehalf> onBehalf) {
         Map<UUID, OnBehalf> cobo = new HashMap<>(onBehalf); // a line without an invoice id looks up null
         Function<CollectionLine, String> creditor = l -> cobo.containsKey(l.getReceivableId())
                 ? cobo.get(l.getReceivableId()).creditor() : creditorName;
@@ -68,10 +76,17 @@ final class Pain008 {
             x.append("      <Cdtr>\n");
             tag(x, 8, "Nm", creditor.apply(first));
             x.append("      </Cdtr>\n");
-            x.append("      <CdtrAcct>\n        <Id>\n          <Othr>\n");
-            tag(x, 12, "Id", accountNumbers.getOrDefault(first.getCreditorVaId(), String.valueOf(first.getCreditorVaId())));
-            x.append("          </Othr>\n        </Id>\n");
-            tag(x, 8, "Ccy", first.getCurrency());
+            Account account = accounts.getOrDefault(first.getCreditorVaId(), new Account(null, String.valueOf(first.getCreditorVaId()), null));
+            x.append("      <CdtrAcct>\n        <Id>\n");
+            if (account.iban() != null) {
+                tag(x, 10, "IBAN", account.iban());
+            } else {
+                x.append("          <Othr>\n");
+                tag(x, 12, "Id", account.number());
+                x.append("          </Othr>\n");
+            }
+            x.append("        </Id>\n");
+            tag(x, 8, "Ccy", account.currency() != null ? account.currency() : first.getCurrency());
             x.append("      </CdtrAcct>\n");
             x.append("      <CdtrAgt>\n        <FinInstnId>\n");
             tag(x, 10, "BICFI", creditorBic);

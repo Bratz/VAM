@@ -358,6 +358,7 @@ UUID effectiveCorporateId = corporateIdFromHeader;
             .coboCollectorEntityId(cobo != null ? cobo.collectorEntityId() : null)
             .coboCollectorEntityCode(cobo != null ? cobo.collectorCode() : null)
             .coboCollectorEntityName(cobo != null ? cobo.collectorName() : null)
+            .coboIhbAccountId(cobo != null ? cobo.ihbAccountId() : null)
             .coboRequestId(cobo != null ? cobo.id() : null)
             .coboRequestStatus(cobo != null ? Receivable.CoboRequestStatus.APPROVED : null)
             .allowPartialPayment(Boolean.TRUE.equals(request.getAllowPartialPayment()))

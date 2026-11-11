@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRightLeft, Plus, XCircle } from 'lucide-react';
-import { Badge, Button, DataTable, Select } from '../ui';
+import { ArrowRightLeft, Plus, Undo2, XCircle } from 'lucide-react';
+import { Badge, Button, DataTable, Select, TextArea } from '../ui';
+import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { Modal } from '../ui/enhanced';
-import { coboEnrolmentApi, legalEntityApi, type CoboCollectionAccount, type CoboCutoverItem, type CoboCutoverReport, type CoboEnrolment, type LegalEntity } from '../../services/api';
-import { formatCurrency, formatDate } from '../../utils';
+import { coboEnrolmentApi, legalEntityApi, type CoboCollectionAccount, type CoboCutoverItem, type CoboCutoverReport, type CoboEnrolment, type HeldFxCredit, type LegalEntity } from '../../services/api';
+import { formatCurrency, formatDate, formatDateTime } from '../../utils';
+import { FirmQuotePanel } from '../payments/FirmQuotePanel';
 
 /**
  * Collections on behalf (COBO) of the selected corporate: which subsidiary, per currency, the treasury centre
@@ -12,8 +14,8 @@ import { formatCurrency, formatDate } from '../../utils';
  */
 export const CoboEnrolmentsPanel: React.FC<{
   corporateId: string;
-  /** The corporate's IHB current accounts: a subsidiary can be enrolled in the currencies it has one in. */
-  currentAccounts: { participantEntityId: string; currencyCode: string }[];
+  /** The corporate's IHB current accounts: an enrolment settles on one of its subsidiary's. */
+  currentAccounts: IhbAccount[];
 }> = ({ corporateId, currentAccounts }) => {
   const [enrolments, setEnrolments] = useState<CoboEnrolment[]>([]);
   const [entities, setEntities] = useState<LegalEntity[]>([]);
@@ -23,6 +25,10 @@ export const CoboEnrolmentsPanel: React.FC<{
   // Preview of the cut-over of old-flow COBO invoices (spec D7); re-run after every change to the enrolments.
   const [cutover, setCutover] = useState<CoboCutoverReport | null>(null);
   const [cutoverOpen, setCutoverOpen] = useState(false);
+  // Inward credits above the live-price limit, held until treasury negotiates the rate (ihb-fx D8).
+  const [held, setHeld] = useState<HeldFxCredit[]>([]);
+  const [negotiating, setNegotiating] = useState<HeldFxCredit | null>(null);
+  const [returning, setReturning] = useState<HeldFxCredit | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,6 +41,7 @@ export const CoboEnrolmentsPanel: React.FC<{
       setEnrolments(list);
       setEntities(ents);
       setCutover(await coboEnrolmentApi.cutover(corporateId, true).catch(() => null));
+      setHeld(await coboEnrolmentApi.awaitingFx(corporateId).catch(() => []));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load the enrolments');
     } finally {
@@ -73,6 +80,33 @@ export const CoboEnrolmentsPanel: React.FC<{
         </div>
       </div>
       {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
+      {held.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="body-strong">Awaiting FX</span>
+            <Badge variant="warning" size="sm">{held.length}</Badge>
+          </div>
+          <p className="caption">Received but not posted: above the live-price limit, so the rate is negotiated. Accepting a firm price posts the credit at it, pays the invoice and credits the subsidiary.</p>
+          <DataTable
+            data={held}
+            keyExtractor={(h) => h.id}
+            columns={[
+              { key: 'debtorName', header: 'Payer', render: (_, h) => h.debtorName ?? '-' },
+              { key: 'amount', header: 'Amount', align: 'right', minWidth: 140, render: (_, h) => formatCurrency(h.amount, h.currency) },
+              { key: 'receivableNumber', header: 'Invoice', render: (_, h) => (
+                <div className="flex flex-col"><span className="font-mono text-body-sm">{h.receivableNumber ?? '-'}</span><span className="caption font-mono">{h.viban ?? ''}{h.subsidiaryCode ? ' · ' + h.subsidiaryCode : ''}</span></div>
+              ) },
+              { key: 'createdAt', header: 'Received', render: (_, h) => (h.createdAt ? formatDateTime(h.createdAt) : '-') },
+              { key: 'actions', header: '', align: 'right', minWidth: 210, render: (_, h) => (
+                <div className="flex justify-end gap-2">
+                  <Button size="xs" variant="outline" leftIcon={<ArrowRightLeft className="w-4 h-4" />} onClick={() => setNegotiating(h)}>Negotiate</Button>
+                  <Button size="xs" variant="ghost" leftIcon={<Undo2 className="w-4 h-4" />} onClick={() => setReturning(h)}>Return</Button>
+                </div>
+              ) },
+            ]}
+          />
+        </div>
+      )}
       <DataTable
         data={enrolments}
         loading={loading}
@@ -82,7 +116,9 @@ export const CoboEnrolmentsPanel: React.FC<{
           { key: 'subsidiaryName', header: 'Subsidiary', render: (_, e) => (
             <div className="flex flex-col"><span className="body-strong">{e.subsidiaryName ?? '-'}</span><span className="caption">{e.subsidiaryCode}</span></div>
           ) },
-          { key: 'currency', header: 'Currency', minWidth: 90 },
+          { key: 'currency', header: 'Currency', minWidth: 90, render: (_, e) => (
+            <div className="flex flex-col"><span>{e.currency}</span><span className="caption font-mono">{settledOn(e.currency, e.ihbAccountCurrency, e.ihbAccountNumber)}</span></div>
+          ) },
           { key: 'collectorName', header: 'Collected by', render: (_, e) => e.collectorName ?? e.collectorCode ?? '-' },
           { key: 'collectionVaNumber', header: 'Into account', render: (_, e) => (
             <div className="flex flex-col"><span className="font-mono text-body-sm">{e.collectionVaNumber ?? '-'}</span><span className="caption">{e.collectionVaName ?? ''}</span></div>
@@ -96,6 +132,32 @@ export const CoboEnrolmentsPanel: React.FC<{
           ) },
         ]}
       />
+      {negotiating && (
+        <Modal
+          isOpen
+          onClose={() => setNegotiating(null)}
+          title={`Negotiate ${negotiating.currency}/${negotiating.settleCurrency} for ${negotiating.receivableNumber ?? 'this credit'}`}
+          subtitle={`${formatCurrency(negotiating.amount, negotiating.currency)} from ${negotiating.debtorName ?? 'the payer'}, received on ${negotiating.vaNumber}. Accepting posts it on this rate.`}
+          size="md"
+        >
+          <FirmQuotePanel
+            corporateId={corporateId}
+            entityId={negotiating.collectorEntityId}
+            pair={`${negotiating.currency}/${negotiating.settleCurrency}`}
+            side="SELL"
+            amount={negotiating.amount}
+            acceptLabel="Accept and post"
+            onAccept={async (quoteId) => {
+              await coboEnrolmentApi.postHeld(negotiating.id, quoteId);
+              setNegotiating(null);
+              load();
+            }}
+          />
+        </Modal>
+      )}
+      {returning && (
+        <ReturnHeldModal credit={returning} onClose={() => setReturning(null)} onReturned={() => { setReturning(null); load(); }} />
+      )}
       {adding && (
         <AddEnrolmentModal
           corporateId={corporateId}
@@ -116,10 +178,59 @@ export const CoboEnrolmentsPanel: React.FC<{
   );
 };
 
+/** Treasury will not convert a held credit: it goes back to the payer, with the reason (ihb-fx D8; no message in v1). */
+const ReturnHeldModal: React.FC<{ credit: HeldFxCredit; onClose: () => void; onReturned: () => void }> = ({ credit, onClose, onReturned }) => {
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await coboEnrolmentApi.returnHeld(credit.id, reason.trim());
+      onReturned();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not return the credit');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Return ${formatCurrency(credit.amount, credit.currency)} to ${credit.debtorName ?? 'the payer'}`}
+      subtitle={`Not converted or posted; ${credit.receivableNumber ?? 'the invoice'} stays open. The funds are sent back by the bank.`}
+      size="md"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="danger" onClick={submit} loading={saving} disabled={!reason.trim()}>Return to payer</Button>
+        </div>
+      }
+    >
+      <div className="space-y-2">
+        <TextArea label="Reason" value={reason} onChange={e => setReason(e.target.value)} rows={3}
+          placeholder="Why treasury will not convert this credit" />
+        {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
+      </div>
+    </Modal>
+  );
+};
+
+/** An IHB current account an enrolment can settle on. */
+type IhbAccount = { accountId: string; accountNumber: string; participantEntityId: string; currencyCode: string };
+
+/** "→ settled on AED · VA-…" when the enrolment settles in another currency (ihb-fx D2), else the account number. */
+const settledOn = (currency: string, ihbCurrency?: string | null, ihbNumber?: string | null) =>
+  ihbCurrency && ihbCurrency !== currency ? `→ settled on ${ihbCurrency}${ihbNumber ? ' · ' + ihbNumber : ''}` : ihbNumber ?? '';
+
 const AddEnrolmentModal: React.FC<{
   corporateId: string;
   entities: LegalEntity[];
-  currentAccounts: { participantEntityId: string; currencyCode: string }[];
+  currentAccounts: IhbAccount[];
   onClose: () => void;
   onSaved: () => void;
 }> = ({ corporateId, entities, currentAccounts, onClose, onSaved }) => {
@@ -129,25 +240,28 @@ const AddEnrolmentModal: React.FC<{
   const [collectorId, setCollectorId] = useState(collectors.length === 1 ? collectors[0].id : '');
   const [accounts, setAccounts] = useState<CoboCollectionAccount[]>([]);
   const [accountId, setAccountId] = useState('');
+  const [ihbAccountId, setIhbAccountId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // A subsidiary can be credited in-house only in a currency it has an IHB current account in.
-  const currencies = useMemo(
-    () => [...new Set(currentAccounts.filter(a => a.participantEntityId === subsidiaryId).map(a => a.currencyCode))].sort(),
-    [currentAccounts, subsidiaryId]);
-  useEffect(() => { setCurrency(currencies.length === 1 ? currencies[0] : ''); }, [currencies]);
+  // Any currency; it settles on one of the subsidiary's IHB current accounts, by default the one in that currency (ihb-fx D2).
+  const ihbAccounts = useMemo(
+    () => currentAccounts.filter(a => a.participantEntityId === subsidiaryId), [currentAccounts, subsidiaryId]);
+  useEffect(() => {
+    setIhbAccountId((ihbAccounts.find(a => a.currencyCode === currency) ?? (ihbAccounts.length === 1 ? ihbAccounts[0] : undefined))?.accountId ?? '');
+  }, [ihbAccounts, currency]);
+  const settleCurrency = ihbAccounts.find(a => a.accountId === ihbAccountId)?.currencyCode ?? '';
 
   useEffect(() => {
     setAccounts([]);
     setAccountId('');
-    if (!collectorId || !currency) return;
+    if (!collectorId || !settleCurrency) return;
     let live = true;
-    coboEnrolmentApi.collectionAccounts(collectorId, currency)
+    coboEnrolmentApi.collectionAccounts(collectorId, settleCurrency)
       .then(list => { if (live) { setAccounts(list); setAccountId(list.length === 1 ? list[0].id : ''); } })
       .catch(() => { if (live) setAccounts([]); });
     return () => { live = false; };
-  }, [collectorId, currency]);
+  }, [collectorId, settleCurrency]);
 
   const subsidiary = entities.find(e => e.id === subsidiaryId);
   const collector = entities.find(e => e.id === collectorId);
@@ -156,7 +270,7 @@ const AddEnrolmentModal: React.FC<{
     setSaving(true);
     setError(null);
     try {
-      await coboEnrolmentApi.create({ corporateId, subsidiaryEntityId: subsidiaryId, currency, collectorEntityId: collectorId, collectionVaId: accountId });
+      await coboEnrolmentApi.create({ corporateId, subsidiaryEntityId: subsidiaryId, currency, collectorEntityId: collectorId, collectionVaId: accountId, ihbAccountId });
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not enrol');
@@ -174,7 +288,7 @@ const AddEnrolmentModal: React.FC<{
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} loading={saving} disabled={!subsidiaryId || !currency || !collectorId || !accountId}>Enrol</Button>
+          <Button onClick={save} loading={saving} disabled={!subsidiaryId || !currency || !ihbAccountId || !collectorId || !accountId}>Enrol</Button>
         </div>
       }
     >
@@ -182,21 +296,25 @@ const AddEnrolmentModal: React.FC<{
         <Select label="Subsidiary" value={subsidiaryId} onChange={e => setSubsidiaryId(e.target.value)}
           placeholder="Choose the subsidiary"
           options={entities.filter(e => !e.isTreasuryCenter).map(e => ({ value: e.id, label: `${e.entityName} (${e.entityCode})` }))} />
-        <Select label="Currency" value={currency} onChange={e => setCurrency(e.target.value)}
-          placeholder={subsidiaryId ? 'Choose the currency' : 'Choose the subsidiary first'}
-          disabled={!subsidiaryId || currencies.length === 0}
-          error={subsidiary && currencies.length === 0
+        <div>
+          <label className="block body-strong mb-2">Invoice currency</label>
+          <CurrencyPicker value={currency} onChange={setCurrency} allowEmpty emptyLabel="Choose the currency" />
+        </div>
+        <Select label="Settled on (IHB current account)" value={ihbAccountId} onChange={e => setIhbAccountId(e.target.value)}
+          placeholder={subsidiaryId ? 'Choose the account the subsidiary is credited on' : 'Choose the subsidiary first'}
+          disabled={!subsidiaryId || ihbAccounts.length === 0}
+          error={subsidiary && ihbAccounts.length === 0
             ? `${subsidiary.entityCode} has no IHB current account; open one under Current Accounts first` : undefined}
-          options={currencies.map(c => ({ value: c, label: c }))} />
+          options={ihbAccounts.map(a => ({ value: a.accountId, label: `${a.accountNumber} · ${a.currencyCode}` }))} />
         <Select label="Collected by (treasury centre)" value={collectorId} onChange={e => setCollectorId(e.target.value)}
           placeholder="Choose the treasury centre"
           error={collectors.length === 0 ? 'No entity of this corporate is flagged as the treasury centre (Legal Entities)' : undefined}
           options={collectors.map(e => ({ value: e.id, label: `${e.entityName} (${e.entityCode})` }))} />
         <Select label="Collection account" value={accountId} onChange={e => setAccountId(e.target.value)}
-          placeholder={collectorId && currency ? 'Choose the account customers pay into' : 'Choose the currency and treasury centre first'}
-          disabled={!collectorId || !currency || accounts.length === 0}
-          error={collector && currency && accounts.length === 0
-            ? `${collector.entityCode} has no active ${currency} collection account to collect into` : undefined}
+          placeholder={collectorId && settleCurrency ? 'Choose the account customers pay into' : 'Choose the settle account and treasury centre first'}
+          disabled={!collectorId || !settleCurrency || accounts.length === 0}
+          error={collector && settleCurrency && accounts.length === 0
+            ? `${collector.entityCode} has no active ${settleCurrency} collection account to collect into` : undefined}
           options={accounts.map(a => ({ value: a.id, label: `${a.vaNumber}${a.vaName ? ' · ' + a.vaName : ''}` }))} />
         {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
       </div>

@@ -126,6 +126,7 @@ public class CoboCutoverService {
         r.setCoboCollectorEntityId(e.collectorEntityId());
         r.setCoboCollectorEntityCode(e.collectorCode());
         r.setCoboCollectorEntityName(e.collectorName());
+        r.setCoboIhbAccountId(e.ihbAccountId());
         r.setCoboRequestId(e.id());
         r.setCoboRequestStatus(CoboRequestStatus.APPROVED);
         r.setVirtualAccountId(va.getId());

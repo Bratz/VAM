@@ -132,4 +132,82 @@ class IsoOutwardPoboByEnrolmentTest {
             .doesNotContain("I-1");
         assertThat(xml).contains("<GrpHdr>").contains("<NbOfTxs>2</NbOfTxs>\n      <CtrlSum>30</CtrlSum>");
     }
+
+    // ihb-fx Phase 2 (D3, R9): an enrolment for EUR settled on the subsidiary's AED IHB account is covered by the
+    // treasury on its AED payment account, single and bulk.
+
+    private final FxPaymentService.Conversion eurAed = new FxPaymentService.Conversion(new BigDecimal("1000"), "EUR",
+        new BigDecimal("4012.30"), "AED", new BigDecimal("4.0123"), "EUR/AED", java.util.List.of());
+
+    private PoboEnrolmentService.Route eurRoute(LegalEntity sub, VirtualAccount payment) {
+        LegalEntity treasury = new LegalEntity();
+        treasury.setId(payment.getOwningEntityId());
+        VirtualAccount ihbCurrent = account(sub.getId());
+        ihbCurrent.setEffectiveCreditLimit(new BigDecimal("10000"));
+        PoboEnrolment eur = new PoboEnrolment();
+        eur.setCurrency("EUR");
+        PoboEnrolmentService.Route route = new PoboEnrolmentService.Route(eur, sub, treasury, payment, ihbCurrent);
+        when(enrolments.route(sub.getId(), "EUR", LocalDate.now())).thenReturn(Optional.of(route));
+        return route;
+    }
+
+    @Test
+    void aCrossCurrencyPaymentOnBehalfConvertsOnTheTreasurysAccountAndPostsTheAedAmount() {
+        LegalEntity sub = new LegalEntity();
+        sub.setId(UUID.randomUUID());
+        VirtualAccount own = account(sub.getId());
+        VirtualAccount payment = account(UUID.randomUUID());
+        PoboEnrolmentService.Route route = eurRoute(sub, payment);
+        when(fx.preview(payment, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(eurAed);
+        when(fx.convert(payment, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(eurAed);
+        Transaction posted = Transaction.builder().referenceNumber("IHBPOBO-3").build();
+        posted.setId(UUID.randomUUID());
+        when(transactions.makeIhb6LegPoboPayment(any())).thenReturn(posted);
+        OutwardPaymentRequest request = OutwardPaymentRequest.builder()
+            .sourceVaId(own.getId()).amount(new BigDecimal("1000")).currency("EUR")
+            .creditorName("Supplier GmbH").creditorAccount("DE89370400440532013000").build();
+
+        var response = service.processOutwardPayment(request);
+
+        assertThat(response.isSuccess()).isTrue();
+        ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
+        verify(transactions).makeIhb6LegPoboPayment(req.capture());
+        assertThat(req.getValue().getOwnerVaId()).isEqualTo(route.ihbCurrent().getId());
+        assertThat(req.getValue().getAmount()).isEqualByComparingTo("4012.30");
+        verify(fx, never()).convert(eq(own), any(), any(), any());
+        verify(transactions).settlePoboFx(eurAed, posted, payment);
+        assertThat(request.getAmount()).as("back to EUR for the pain.001").isEqualByComparingTo("1000");
+    }
+
+    @Test
+    void aBulkRowOnBehalfInAnotherCurrencyPlansAndConvertsItsFxOnTheTreasurysAccount() {
+        LegalEntity sub = new LegalEntity();
+        sub.setId(UUID.randomUUID());
+        VirtualAccount own = account(sub.getId());
+        VirtualAccount payment = account(UUID.randomUUID());
+        eurRoute(sub, payment);
+        FxPaymentService.Instruction planned = new FxPaymentService.Instruction(null, null,
+            java.util.List.of(new FxPaymentService.Draw(UUID.randomUUID(), new BigDecimal("1000"))), false);
+        when(fx.prepareBatch(any())).thenReturn(java.util.List.of(new FxPaymentService.BatchFx(planned, null)));
+        when(fx.preview(payment, "EUR", new BigDecimal("1000"), planned)).thenReturn(eurAed);
+        when(fx.convert(payment, "EUR", new BigDecimal("1000"), planned)).thenReturn(eurAed);
+        Transaction posted = Transaction.builder().referenceNumber("IHBPOBO-4").build();
+        posted.setId(UUID.randomUUID());
+        when(transactions.makeIhb6LegPoboPayment(any())).thenReturn(posted);
+
+        var response = service.processBulkOutwardPayment(com.bank.vam.iso20022.dto.Iso20022PaymentDto.BulkPaymentRequest.builder()
+            .sourceVaId(own.getId()).instructions(java.util.List.of(com.bank.vam.iso20022.dto.Iso20022PaymentDto.PaymentInstruction
+                .builder().instructionId("I-1").amount(new BigDecimal("1000")).currency("EUR")
+                .creditorName("Supplier GmbH").creditorAccount("DE89370400440532013000").build())).build());
+
+        assertThat(response.getSuccessCount()).isEqualTo(1);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<java.util.List<FxPaymentService.BatchRow>> rows = ArgumentCaptor.forClass(java.util.List.class);
+        verify(fx).prepareBatch(rows.capture());
+        assertThat(rows.getValue().get(0).source()).as("the treasury's payment account, not the subsidiary's").isEqualTo(payment);
+        ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
+        verify(transactions).makeIhb6LegPoboPayment(req.capture());
+        assertThat(req.getValue().getAmount()).isEqualByComparingTo("4012.30");
+        verify(transactions).settlePoboFx(eurAed, posted, payment);
+    }
 }

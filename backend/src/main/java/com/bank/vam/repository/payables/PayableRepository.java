@@ -69,6 +69,8 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
     Page<Payable> findByCorporateId(UUID corporateId, Pageable pageable);
     
     List<Payable> findByCorporateIdAndStatus(UUID corporateId, PayableStatus status);
+
+    List<Payable> findByCorporateIdAndFxStatus(UUID corporateId, String fxStatus);
     
     Page<Payable> findByCorporateIdAndStatusIn(UUID corporateId, List<PayableStatus> statuses, Pageable pageable);
     

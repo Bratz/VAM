@@ -297,4 +297,48 @@ class PoboLegsBalanceTest {
         pobo("800");                                                            // exactly the headroom is fine
         assertThat(ihbCurrent.getCurrentBalance()).isEqualByComparingTo("-1000");
     }
+
+    /**
+     * ihb-fx Phase 2 (D3, D4, R7): a cross-currency POBO posts the conversion's AED debit; the treasury's cover settles
+     * through its own payout row, and the subsidiary's IHB movement carries the instructed EUR, rate and deal.
+     */
+    @Test
+    void aCrossCurrencyPoboDebitsEveryAccountTheConvertedAmountAndSettlesTheCoverThroughTheTreasurysPayout() {
+        for (VirtualAccount va : all) va.setCurrencyCode("AED");
+        com.bank.vam.fx.deal.FxDeal deal = new com.bank.vam.fx.deal.FxDeal();
+        deal.setDealRef("FXD-7");
+        com.bank.vam.fx.deal.FxPaymentService.Conversion cv = new com.bank.vam.fx.deal.FxPaymentService.Conversion(
+            new BigDecimal("1000"), "EUR", new BigDecimal("4012.30"), "AED", new BigDecimal("4.0123"), "EUR/AED",
+            List.of(new com.bank.vam.fx.deal.FxPaymentService.Part(com.bank.vam.fx.deal.FxPaymentService.Source.LIVE, deal,
+                new BigDecimal("1000"), new BigDecimal("1000"), new BigDecimal("4012.30"), new BigDecimal("4.0123"))));
+        when(dep(TransactionRepository.class).findAllByCorrelationId(any()))
+            .thenAnswer(i -> ledger.stream().filter(t -> i.getArgument(0).equals(t.getCorrelationId())).toList());
+        Map<VirtualAccount, BigDecimal> before = balances();
+
+        TransactionDto.PoboPaymentRequest request = new TransactionDto.PoboPaymentRequest();
+        request.setOwnerVaId(ihbCurrent.getId());
+        request.setPayerVaId(treasurySettlement.getId());
+        request.setAmount(cv.debitAmount());
+        request.setBeneficiaryName("Supplier GmbH");
+        Transaction ownerDebit = service.makeIhb6LegPoboPayment(request);
+        service.settlePoboFx(cv, ownerDebit, treasurySettlement);
+
+        Transaction payout = ledger.stream().filter(t -> t.getVaId().equals(treasurySettlement.getId())
+            && t.getMovementType() == Transaction.MovementType.POBO_DEBIT).findFirst().orElseThrow();
+        org.mockito.Mockito.verify(dep(com.bank.vam.fx.deal.FxPaymentService.class)).settle(cv, payout, treasurySettlement);
+        assertThat(ownerDebit.getVaId()).isEqualTo(ihbCurrent.getId());
+        assertThat(ownerDebit.getAmount()).as("X's AED debit").isEqualByComparingTo(cv.debitAmount());
+        assertThat(payout.getAmount()).as("T's AED cash out").isEqualByComparingTo(cv.debitAmount());
+        assertThat(ihbCurrent.getCurrentBalance().subtract(before.get(ihbCurrent))).isEqualByComparingTo("-4012.30");
+        assertThat(shadow.getCurrentBalance().subtract(before.get(shadow))).isEqualByComparingTo("-4012.30");
+        assertThat(treasurySettlement.getCurrentBalance()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(ownerDebit.getInstructedAmount()).isEqualByComparingTo("1000");
+        assertThat(ownerDebit.getInstructedCurrency()).isEqualTo("EUR");
+        assertThat(ownerDebit.getFxRate()).isEqualByComparingTo("4.0123");
+        assertThat(ownerDebit.getFxDealRef()).isEqualTo("FXD-7");
+        // ihb-fx 4.3: X's statement line reads the conversion
+        assertThat(ownerDebit.getDescription()).isEqualTo("EUR 1,000.00 to Supplier GmbH · rate 4.0123 · AED 4,012.30");
+        assertMirrorsFollowThePosition();
+        assertEveryMovementHasALedgerRow(before);
+    }
 }

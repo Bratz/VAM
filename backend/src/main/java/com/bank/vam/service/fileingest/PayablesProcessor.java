@@ -70,8 +70,16 @@ public class PayablesProcessor implements DomainProcessor {
             TransformedRow row = byRowNumber.get(staged.getSourceRowNumber());
             FxPaymentService.BatchFx fx = ingestFx.of(fxPlan, staged);
             if (fx.instruction() == null) {
-                // Held before the payable is created, so a release creates it once, with its FX.
-                ingestFx.hold(staged, row, fx.held());
+                try {
+                    if (ingestFx.crossCurrencyPobo(row)) {
+                        awaitTreasuryFx(staged, row);
+                    } else {
+                        // Held before the payable is created, so a release creates it once, with its FX.
+                        ingestFx.hold(staged, row, fx.held());
+                    }
+                } catch (Exception e) {
+                    fail(staged, DomainProcessor.failureReason(e));
+                }
                 repository.save(staged);
                 continue;
             }
@@ -84,7 +92,47 @@ public class PayablesProcessor implements DomainProcessor {
         }
     }
 
+    /**
+     * A POBO line whose FX treasury covers (ihb-fx D7) and the file's plan cannot: the payable is created and approved,
+     * then flagged Awaiting FX instead of the row being held, so it is on treasury's POBO tab to negotiate and pay
+     * there (a release of the file would not reach it). The row is done: it became that payable.
+     */
+    private void awaitTreasuryFx(StagedTransaction staged, TransformedRow row) {
+        UUID id = createApproved(row);
+        payablesService.flagAwaitingFx(id, "Needs a negotiated rate: in this file, " + row.currency()
+            + " left to convert after treasury's deals is above the live-price limit");
+        staged.setStatus(RowStatus.PROCESSED);
+        staged.setProcessedEntityId(id);
+        staged.setReason("Awaiting FX (treasury): the payable is paid from the POBO tab once treasury agrees the rate");
+    }
+
     private void processOne(StagedTransaction staged, TransformedRow row, FxPaymentService.Instruction fx) {
+        UUID createdId = createApproved(row);
+
+        PaymentExecutionRequest executionRequest = PaymentExecutionRequest.builder()
+                .payableId(createdId)
+                // Payable.PaymentChannel / PaymentMethod names: a file is a batch, paid by bank transfer.
+                // ("BANK_TRANSFER" as channel and "WIRE" as method threw in valueOf, so no ingested row paid.)
+                .paymentChannel(Payable.PaymentChannel.BATCH.name())
+                .paymentMethod(Payable.PaymentMethod.BANK_TRANSFER.name())
+                .executedBy(ACTOR)
+                // No one is at the file to choose: the deals planned over the file, else the live price.
+                .fxDeals(fx.draws())
+                .fxAtMarket(fx.atMarket() ? Boolean.TRUE : null)
+                .build();
+        PaymentExecutionResponse executed = payablesService.executePayment(executionRequest);
+
+        if (!"EXECUTED".equals(executed.getStatus())) {
+            fail(staged, executed.getErrorMessage() != null ? executed.getErrorMessage() : "Execution status: " + executed.getStatus());
+            return;
+        }
+        staged.setStatus(RowStatus.PROCESSED);
+        staged.setProcessedEntityId(createdId);
+        staged.setReason(null);
+    }
+
+    /** create (DRAFT) -> submit -> approve, as the file's owner. */
+    private UUID createApproved(TransformedRow row) {
         VirtualAccount sourceVa = virtualAccountService.getByViban(row.viban());
 
         CreatePayableRequest createRequest = CreatePayableRequest.builder()
@@ -105,27 +153,7 @@ public class PayablesProcessor implements DomainProcessor {
 
         payablesService.submitForApproval(created.getId(), ACTOR);
         payablesService.approvePayable(created.getId(), ACTOR, "Auto-approved by file-ingest pipeline");
-
-        PaymentExecutionRequest executionRequest = PaymentExecutionRequest.builder()
-                .payableId(created.getId())
-                // Payable.PaymentChannel / PaymentMethod names: a file is a batch, paid by bank transfer.
-                // ("BANK_TRANSFER" as channel and "WIRE" as method threw in valueOf, so no ingested row paid.)
-                .paymentChannel(Payable.PaymentChannel.BATCH.name())
-                .paymentMethod(Payable.PaymentMethod.BANK_TRANSFER.name())
-                .executedBy(ACTOR)
-                // No one is at the file to choose: the deals planned over the file, else the live price.
-                .fxDeals(fx.draws())
-                .fxAtMarket(fx.atMarket() ? Boolean.TRUE : null)
-                .build();
-        PaymentExecutionResponse executed = payablesService.executePayment(executionRequest);
-
-        if (!"EXECUTED".equals(executed.getStatus())) {
-            fail(staged, executed.getErrorMessage() != null ? executed.getErrorMessage() : "Execution status: " + executed.getStatus());
-            return;
-        }
-        staged.setStatus(RowStatus.PROCESSED);
-        staged.setProcessedEntityId(created.getId());
-        staged.setReason(null);
+        return created.getId();
     }
 
     private void fail(StagedTransaction staged, String reason) {

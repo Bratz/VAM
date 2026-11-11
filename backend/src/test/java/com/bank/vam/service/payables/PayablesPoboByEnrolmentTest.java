@@ -15,6 +15,9 @@ import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.PayableStatus;
 import com.bank.vam.entity.pobo.PoboEnrolment;
 import com.bank.vam.entity.treasury.PaymentRequest;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.deal.FxDeal;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
@@ -54,6 +57,7 @@ class PayablesPoboByEnrolmentTest {
     private final TransactionService transactions = mock(TransactionService.class);
     private final MarketProfileProperties marketProfile = mock(MarketProfileProperties.class);
     private final PoboEnrolmentService enrolments = mock(PoboEnrolmentService.class);
+    private final FxPaymentService fx = mock(FxPaymentService.class);
 
     private final com.bank.vam.repository.party.PartyBankAccountRepository partyBankAccounts =
 
@@ -61,13 +65,14 @@ class PayablesPoboByEnrolmentTest {
 
     private final PayablesService service = new PayablesService(payables, mock(PartyRepository.class), vas,
         mock(TransactionRepository.class), paymentRequests, transactions, marketProfile, mock(NettingService.class),
-        mock(LegalEntityRepository.class), enrolments, mock(com.bank.vam.fx.deal.FxPaymentService.class),
+        mock(LegalEntityRepository.class), enrolments, fx,
         mock(com.bank.vam.repository.receivables.ReceivableRepository.class), mock(com.bank.vam.service.treasury.FxRateService.class), partyBankAccounts);
 
     private final UUID corp = UUID.randomUUID();
     private LegalEntity subsidiary, treasury;
     private VirtualAccount ownAccount, ihbCurrent, paymentAccount;
     private PoboEnrolmentService.Route route;
+    private Transaction posted;
 
     @BeforeEach
     void setUp() {
@@ -88,7 +93,7 @@ class PayablesPoboByEnrolmentTest {
         when(payables.save(any())).thenAnswer(i -> i.getArgument(0));
         when(paymentRequests.save(any())).thenAnswer(i -> i.getArgument(0));
         when(marketProfile.getActiveHomeBankBic()).thenReturn("HBUKGB4BXXX");
-        Transaction posted = Transaction.builder().referenceNumber("IHBPOBO-1").build();
+        posted = Transaction.builder().referenceNumber("IHBPOBO-1").build();
         posted.setId(UUID.randomUUID());
         when(transactions.makeIhb6LegPoboPayment(any())).thenReturn(posted);
         when(transactions.makePayment(any())).thenReturn(posted);
@@ -332,6 +337,237 @@ class PayablesPoboByEnrolmentTest {
         assertThat(paths(PoboController.class)).noneMatch(p -> p.startsWith("/execute") || p.startsWith("/preview")
             || p.startsWith("/validate") || p.startsWith("/authorizations"));
         assertThat(paths(IntercompanyController.class)).doesNotContain("/pobo/preview", "/pobo/execute");
+    }
+
+    // ihb-fx Phase 2 (docs/specs/ihb-fx.md D3-D6, R7, R9): SUB-X enrolled for EUR, settled on its AED IHB account, paid
+    // by TC-1 from its AED payment account. EUR 1,000 converts on TC-1's account at 4.0123 = AED 4,012.30.
+
+    private FxPaymentService.Conversion conversion;
+
+    private Payable crossCurrency(String creditLimit) {
+        ihbCurrent.setEffectiveCreditLimit(new BigDecimal(creditLimit));
+        PoboEnrolment eur = PoboEnrolment.builder().corporateId(corp).subsidiaryEntityId(subsidiary.getId()).currency("EUR")
+            .payerEntityId(treasury.getId()).paymentVaId(paymentAccount.getId()).ihbAccountId(ihbCurrent.getId())
+            .effectiveFrom(LocalDate.now()).build();
+        PoboEnrolmentService.Route eurRoute = new PoboEnrolmentService.Route(eur, subsidiary, treasury, paymentAccount, ihbCurrent);
+        when(enrolments.route(subsidiary.getId(), "EUR", LocalDate.now())).thenReturn(Optional.of(eurRoute));
+        when(enrolments.painDebtor(eurRoute)).thenReturn(new PoboEnrolmentService.PainDebtor(
+            "TC-1 LLC", "TC-1", "AE070331234567890123456", "EBILAEADXXX", "SUB-X LLC"));
+        FxDeal deal = new FxDeal();
+        deal.setDealRef("FXD-7");
+        conversion = new FxPaymentService.Conversion(new BigDecimal("1000"), "EUR", new BigDecimal("4012.30"), "AED",
+            new BigDecimal("4.0123"), "EUR/AED", List.of(new FxPaymentService.Part(FxPaymentService.Source.LIVE, deal,
+                new BigDecimal("1000"), new BigDecimal("1000"), new BigDecimal("4012.30"), new BigDecimal("4.0123"))));
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(conversion);
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(conversion);
+        Payable p = approved(false);
+        p.setCurrencyCode("EUR");
+        p.setNetAmount(new BigDecimal("1000"));
+        return p;
+    }
+
+    @Test
+    void crossCurrencyPayNowIsCoveredOnTheTreasurysPaymentAccountAndPostsTheAedDebit() {
+        Payable p = crossCurrency("10000");
+
+        String xml = service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build())
+            .getPain001Xml();
+
+        verify(fx).convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET);
+        verify(fx, never()).convert(eq(ihbCurrent), any(), any(), any());
+        ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
+        verify(transactions).makeIhb6LegPoboPayment(req.capture());
+        assertThat(req.getValue().getOwnerVaId()).isEqualTo(ihbCurrent.getId());
+        assertThat(req.getValue().getPayerVaId()).isEqualTo(paymentAccount.getId());
+        assertThat(req.getValue().getAmount()).as("the deal's AED leg, to the fils").isEqualByComparingTo(conversion.debitAmount());
+        verify(transactions).settlePoboFx(conversion, posted, paymentAccount);
+        verify(fx, never()).settle(any(), any(), any());
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.PAID);
+        // R11 / D6: the pain.001 carries EUR 1,000 from the treasury's AED account, on behalf of SUB-X.
+        assertThat(xml).contains("<InstdAmt Ccy=\"EUR\">1000.00</InstdAmt>", "<Dbtr>\n        <Nm>TC-1 LLC</Nm>",
+            "<IBAN>AE070331234567890123456</IBAN>", "<UltmtDbtr>\n        <Nm>SUB-X LLC</Nm>");
+        // The debtor account is the treasury's AED account, so its currency is AED, not the payable's EUR.
+        assertThat(xml).contains("</IBAN>\n        </Id>\n        <Ccy>AED</Ccy>\n      </DbtrAcct>");
+    }
+
+    @Test
+    void crossCurrencyPayNowPassesTheRequestsFxThroughForAFirmQuote() {
+        Payable p = crossCurrency("10000");
+        UUID quote = UUID.randomUUID();
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("1000"), firm)).thenReturn(conversion);
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), firm)).thenReturn(conversion);
+
+        service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).fxQuoteId(quote).executedBy("tester").build());
+
+        verify(fx).convert(paymentAccount, "EUR", new BigDecimal("1000"), firm);
+    }
+
+    @Test
+    void crossCurrencyOverTheHeadroomOnTheAedAmountIsRefusedWithNothingBookedAndThePayableStaysApproved() {
+        Payable p = crossCurrency("1000"); // headroom AED 800: EUR 1,000 would fit, AED 4,012.30 does not
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
+                PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build()))
+            .hasMessageContaining("4012.30 AED is over SUB-X's IHB credit headroom of 800");
+        verify(fx, never()).convert(any(), any(), any(), any());
+        verify(transactions, never()).makeIhb6LegPoboPayment(any());
+        verify(paymentRequests, never()).save(any());
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
+    }
+
+    @Test
+    void whenTheTreasuryCannotCoverItNothingMovesAndThePayableStaysApproved() {
+        Payable p = crossCurrency("10000");
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET))
+            .thenThrow(new BusinessException("FX_PAYMENT_DECLINED", "No FX sub-limit is allocated to TC-1 LLC"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
+                PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build()))
+            .hasMessageContaining("No FX sub-limit");
+        verify(transactions, never()).makeIhb6LegPoboPayment(any());
+        verify(paymentRequests, never()).save(any());
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
+    }
+
+    @Test
+    void sameCurrencyPoboConvertsNothing() {
+        Payable p = approved(false);
+
+        service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build());
+
+        verifyNoInteractions(fx);
+        verify(transactions, never()).settlePoboFx(any(), any(), any());
+    }
+
+    @Test
+    void theCrossCurrencyPreviewShowsTheIndicativeAedAmountAndChecksTheHeadroomOnIt() {
+        Payable p = crossCurrency("1000");
+
+        var preview = service.getPoboPreview(PoboPreviewRequest.builder().payableIds(List.of(p.getId())).build()).get(0);
+
+        assertThat(preview.getSettleCurrency()).isEqualTo("AED");
+        assertThat(preview.getSettleAmount()).isEqualByComparingTo("4012.30");
+        assertThat(preview.getHeadroom()).isEqualByComparingTo("800");
+        assertThat(preview.getRefusal()).contains("4012.30 AED is over");
+        verify(fx, never()).convert(any(), any(), any(), any());
+    }
+
+    // ihb-fx 3a (D7): EUR 300,000 above the EUR/AED streaming limit, T's deals leave all of it -> treasury negotiates.
+
+    private static final String ABOVE = "Above 250,000 EUR in EUR/AED the desk prices on request";
+
+    private Payable aboveTheLimit() {
+        Payable p = crossCurrency("10000000");
+        p.setNetAmount(new BigDecimal("300000"));
+        p.setCorporateId(corp);
+        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY)).thenReturn(ABOVE);
+        return p;
+    }
+
+    @Test
+    void payNowAboveTheLiveLimitIsRefusedAsNeedingANegotiatedRateFlaggedAwaitingFxWithNothingPosted() throws Exception {
+        Payable p = aboveTheLimit();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
+                PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build()))
+            .isInstanceOf(PayablesService.NeedsNegotiatedRate.class)
+            .hasMessageStartingWith("Needs a negotiated rate: " + ABOVE);
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
+        assertThat(p.getFxStatus()).isEqualTo(Payable.AWAITING_FX);
+        assertThat(p.getFxStatusReason()).isEqualTo(ABOVE);
+        verify(payables).save(p);
+        verify(fx, never()).preview(any(), any(), any(), any());
+        verify(fx, never()).convert(any(), any(), any(), any());
+        verify(transactions, never()).makeIhb6LegPoboPayment(any());
+        verify(paymentRequests, never()).save(any());
+        // The flag must survive the refusal: executePayment commits on this exception instead of rolling back.
+        org.springframework.transaction.annotation.Transactional tx = PayablesService.class
+            .getMethod("executePayment", PaymentExecutionRequest.class)
+            .getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+        assertThat(tx.noRollbackFor()).containsExactly(PayablesService.NeedsNegotiatedRate.class);
+
+        // ... and treasury's POBO tab lists it with what to ask the quote for
+        when(payables.findByCorporateIdAndFxStatus(corp, Payable.AWAITING_FX)).thenReturn(List.of(p));
+        assertThat(service.awaitingFx(corp)).singleElement().satisfies(a -> {
+            assertThat(a.payableId()).isEqualTo(p.getId());
+            assertThat(a.amount()).isEqualByComparingTo("300000");
+            assertThat(a.currencyCode()).isEqualTo("EUR");
+            assertThat(a.reason()).isEqualTo(ABOVE);
+            assertThat(a.payerEntityId()).isEqualTo(treasury.getId());
+            assertThat(a.paymentVaId()).isEqualTo(paymentAccount.getId());
+            assertThat(a.settleCurrency()).isEqualTo("AED");
+        });
+    }
+
+    @Test
+    void thePreviewOfAnAmountAboveTheLiveLimitDoesNotBlockPayNowButSaysTreasuryNegotiates() {
+        Payable p = aboveTheLimit();
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), FxPaymentService.Instruction.AT_MARKET))
+            .thenThrow(new BusinessException("FX_PAYMENT_NEEDS_QUOTE", ABOVE + ": ask for a price for this payment"));
+
+        var preview = service.getPoboPreview(PoboPreviewRequest.builder().payableIds(List.of(p.getId())).build()).get(0);
+
+        assertThat(preview.getRefusal()).isNull();
+        assertThat(preview.getFxNeedsQuote()).startsWith(ABOVE);
+    }
+
+    @Test
+    void treasurysAcceptPaysTheAwaitingPayableOnExactlyItsQuoteAndClearsTheFlag() {
+        Payable p = aboveTheLimit();
+        p.setFxStatus(Payable.AWAITING_FX);
+        p.setFxStatusReason(ABOVE);
+        UUID quote = UUID.randomUUID();
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        FxPaymentService.Conversion atQuote = new FxPaymentService.Conversion(new BigDecimal("300000"), "EUR",
+            new BigDecimal("1203690.00"), "AED", new BigDecimal("4.0123"), "EUR/AED", conversion.parts());
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), firm)).thenReturn(atQuote);
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("300000"), firm)).thenReturn(atQuote);
+
+        service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).fxQuoteId(quote).executedBy("treasury").build());
+
+        verify(fx, never()).needsQuote(any(), any(), any(), any());
+        verify(fx).convert(paymentAccount, "EUR", new BigDecimal("300000"), firm);
+        verify(fx, never()).convert(any(), any(), any(), eq(FxPaymentService.Instruction.AT_MARKET));
+        ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
+        verify(transactions).makeIhb6LegPoboPayment(req.capture());
+        assertThat(req.getValue().getAmount()).as("the quote's AED").isEqualByComparingTo("1203690.00");
+        verify(transactions).settlePoboFx(atQuote, posted, paymentAccount);
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.PAID);
+        assertThat(p.getFxStatus()).isNull();
+        assertThat(p.getFxStatusReason()).isNull();
+    }
+
+    @Test
+    void anExpiredQuoteLeavesThePayableWaiting() {
+        Payable p = aboveTheLimit();
+        p.setFxStatus(Payable.AWAITING_FX);
+        UUID quote = UUID.randomUUID();
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), firm)).thenReturn(conversion);
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("300000"), firm))
+            .thenThrow(new BusinessException("FX_PAYMENT_DECLINED", "The price is no longer available (EXPIRED); get a new one"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
+                PaymentExecutionRequest.builder().payableId(p.getId()).fxQuoteId(quote).executedBy("treasury").build()))
+            .hasMessageContaining("EXPIRED");
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
+        assertThat(p.getFxStatus()).isEqualTo(Payable.AWAITING_FX);
+        verify(transactions, never()).makeIhb6LegPoboPayment(any());
+    }
+
+    @Test
+    void withoutAnFxSubLimitAboveTheLiveLimitIsRefusedNotQueued() {
+        Payable p = aboveTheLimit();
+        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY))
+            .thenThrow(new BusinessException("FX_LINE_REFUSED", "No FX sub-limit is allocated to TC-1 LLC"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
+                PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build()))
+            .isNotInstanceOf(PayablesService.NeedsNegotiatedRate.class)
+            .hasMessage("No FX sub-limit is allocated to TC-1 LLC");
+        assertThat(p.getFxStatus()).isNull();
+        assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
     }
 
     private static List<String> paths(Class<?> controller) {

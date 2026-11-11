@@ -414,6 +414,39 @@ and it stays Approved.
 
 ---
 
+## 11. In-house FX: paying and collecting in another currency (≈5 min)
+
+Rehearsed on **localhost** on **11 Nov 2026**; not yet recorded on vam-five. Spec: `docs/specs/ihb-fx.md`.
+Subsidiaries keep one currency; treasury converts back-to-back on its own FX line and passes its deal rate through.
+
+**Prerequisites (data):** as step 10 (treasury's AED payment account with an IBAN), plus an FX sub-limit for MNC Treasury
+Center on TestMNC's FX line (it has one locally).
+
+### 11.1 Enrol for a foreign currency
+**In-House Bank** → **Payments on behalf (POBO)** → **Add enrolment**: MNC Dubai Branch · Currency **EUR** · **Settled on**
+IHB-MNC-UAE-DUBAI-AED-0001 (AED) · Paid by MNC Treasury Center · account QA-TXN-L7-64808. The row reads *EUR → settled on
+AED*. Same on **Collections on behalf (COBO)** for MNC UK Ltd, EUR, settled on its AED IHB account.
+
+### 11.2 A EUR payable
+**Payables → New Payable**, MNC-UAE-DUBAI, **EUR 1,000**: *"Paid by MNC Treasury Center in EUR; settled on MNC Dubai
+Branch's AED account — indicative AED 4,0xx"*. Approve, **Pay Now**. You see, on Dubai's IHB statement: *"EUR 1,000.00 to
+<supplier> · rate 4.0149 · AED 4,014.98"*; the same AED leaves treasury's AED account; the FX deal is MNC Treasury
+Center's. The pain.001 pays EUR 1,000 from treasury's AED IBAN, on behalf of MNC Dubai Branch.
+
+### 11.3 Above the live-price limit (250,000 EUR in EUR/AED)
+A **EUR 260,000** payable: Pay Now answers *"Needs a negotiated rate … waits under Awaiting FX"*; nothing moves; the
+payable shows *Awaiting FX (treasury)*. Treasury, POBO tab → **Awaiting FX** → request a price, **counter** once, accept:
+the payment goes out on exactly that rate. (Dubai's IHB credit limit must cover the AED amount, ≈ AED 1.04m — locally it
+is 1,000,000, so the accept is refused over headroom unless the limit is raised: a good talking point.)
+
+### 11.4 Collecting EUR
+A EUR invoice for MNC-UK gets its VIBAN on treasury's AED account. A EUR 1,000 credit to it converts on arrival: MNC-UK's
+IHB account *"EUR 1,000.00 from Gulf Star Logistics LLC for <invoice> · rate … · AED 4,010.67"*; invoice Paid. A EUR
+300,000 credit is **held, not bounced** (status PDNG): COBO tab → **Awaiting FX** → price, counter, accept → posted and
+applied; or **Return** it to the payer with a reason.
+
+---
+
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
@@ -426,6 +459,8 @@ and it stays Approved.
 | `GET /api/v1/collections/runs/{id}/pain008` | The run's pain.008 |
 | `GET/POST /api/v1/cobo/enrolments`, `POST /api/v1/cobo/cutover?dryRun=` | COBO enrolments; move old-flow COBO invoices |
 | `GET/POST /api/v1/pobo/enrolments`, `POST /api/v1/pobo/cutover?dryRun=` | POBO enrolments; repair IHB positions |
+| `GET /api/v1/pobo/enrolments/awaiting-fx`, `GET /api/v1/cobo/awaiting-fx`, `POST /api/v1/cobo/awaiting-fx/{id}/post\|return` | In-house FX queues above the live-price limit |
+| `GET /api/v1/fx/payments/indicative` | Indicative settle amount for a cross-currency enrolment (books nothing) |
 | `POST /api/v1/receivables/{id}/request-to-pay/send` | Send a Request to Pay: pay link, VIBAN, pain.013, outbox email |
 | `GET /api/v1/receivables/{id}/request-to-pay/message` | The last pain.013 sent for the invoice |
 | `GET /api/v1/outbox?corporateId=` · `?relatedId=` | The simulated outbox, for a corporate or one invoice |

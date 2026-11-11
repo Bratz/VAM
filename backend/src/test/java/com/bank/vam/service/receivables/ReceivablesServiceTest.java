@@ -213,13 +213,14 @@ class ReceivablesServiceTest {
     private static final UUID TREASURY = UUID.randomUUID();
     private static final UUID TREASURY_VA = UUID.randomUUID();
     private static final UUID ENROLMENT = UUID.randomUUID();
+    private static final UUID IHB_ACCOUNT = UUID.randomUUID();
 
     /** SUB-X is enrolled for AED: collected by TC-1 into TREASURY_VA. */
     private void enrolSubsidiaryForAed() {
         when(coboEnrolments.active(eq(SUBSIDIARY), eq("AED"), any())).thenReturn(Optional.of(
             new CoboEnrolmentService.EnrolmentView(ENROLMENT, CORPORATE_ID, SUBSIDIARY, "SUB-X", "Sub X LLC", "AED",
                 TREASURY, "TC-1", "Treasury Centre LLC", TREASURY_VA, "VA-T-AED", "Treasury collections",
-                LocalDate.now(), null, true, "tester", null)));
+                IHB_ACCOUNT, "VA-X-IHB", "AED", LocalDate.now(), null, true, "tester", null)));
         VirtualAccount treasuryVa = VirtualAccount.builder().vaNumber("VA-T-AED").programId(PROGRAM_ID).build();
         treasuryVa.setId(TREASURY_VA);
         when(virtualAccountRepository.findById(TREASURY_VA)).thenReturn(Optional.of(treasuryVa));
@@ -397,5 +398,40 @@ class ReceivablesServiceTest {
 
         BusinessException e = assertThrows(BusinessException.class, () -> service.matchPayment(paymentId, request));
         assertEquals("Unmatched payment not found", e.getMessage());
+    }
+
+    @Test
+    void aCoboInvoiceKeepsTheIhbAccountItsEnrolmentSettlesOn() {
+        stubSaveAssignsId();
+        enrolSubsidiaryForAed();
+
+        service.createInvoice(CORPORATE_ID, baseRequest().owningEntityId(SUBSIDIARY).targetVaId(TARGET_VA_ID).build());
+
+        assertEquals(IHB_ACCOUNT, lastSaved().getCoboIhbAccountId());
+    }
+
+    /** ihb-fx 3.1: enrolled for EUR, settled on the AED IHB account; T collects into its AED account. */
+    @Test
+    void aEurInvoiceOfASubsidiarySettledInAedGetsItsEurVibanOnTreasurysAedAccount() {
+        stubSaveAssignsId();
+        enrolSubsidiaryForAed();
+        when(coboEnrolments.active(eq(SUBSIDIARY), eq("EUR"), any())).thenReturn(Optional.of(
+            new CoboEnrolmentService.EnrolmentView(ENROLMENT, CORPORATE_ID, SUBSIDIARY, "SUB-X", "Sub X LLC", "EUR",
+                TREASURY, "TC-1", "Treasury Centre LLC", TREASURY_VA, "VA-T-AED", "Treasury collections",
+                IHB_ACCOUNT, "VA-X-IHB", "AED", LocalDate.now(), null, true, "tester", null)));
+
+        service.createInvoice(CORPORATE_ID, baseRequest().owningEntityId(SUBSIDIARY).currencyCode("EUR")
+            .amount(new BigDecimal("1000")).targetVaId(TARGET_VA_ID).build());
+
+        Receivable r = lastSaved();
+        assertTrue(r.getIsCobo());
+        assertEquals("EUR", r.getCurrencyCode());
+        assertEquals(TREASURY_VA, r.getVirtualAccountId());
+        assertEquals(IHB_ACCOUNT, r.getCoboIhbAccountId());
+        ArgumentCaptor<VibanCreateRequest> viban = ArgumentCaptor.forClass(VibanCreateRequest.class);
+        verify(vibanService).createViban(eq(PROGRAM_ID), viban.capture());
+        assertEquals(TREASURY_VA, viban.getValue().getVirtualAccountId());
+        assertEquals("EUR", viban.getValue().getCurrencyCode());
+        assertEquals(0, new BigDecimal("1000").compareTo(viban.getValue().getExpectedAmount()));
     }
 }

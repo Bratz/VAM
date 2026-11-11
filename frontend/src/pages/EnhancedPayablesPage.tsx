@@ -29,6 +29,8 @@ import {
   legalEntityApi,
   payablesApiPhase2,
   virtualAccountsApi,
+  transactionsApi,
+  type TransactionDetail,
   VirtualAccount,
   Corporate,
   Program,
@@ -285,6 +287,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               <p className="text-neutral-500 dark:text-neutral-400">Due Date</p>
               <p className="font-medium">{formatDate(payable.dueDate)}</p>
             </div>
+            <PoboSettlement payable={payable} />
           </div>
         </div>
 
@@ -353,6 +356,49 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   );
 };
 
+/**
+ * A POBO payable settled on an IHB account in another currency (ihb-fx R7, R10), as a grid cell: before payment the
+ * indicative settle amount; after it what the posting booked on that account (instructed amount, the all-in client
+ * rate, the settle amount, the deal). Never the bank's mid, margin or floor. Nothing for a same-currency payable.
+ */
+const PoboSettlement: React.FC<{ payable: PayablePhase2 }> = ({ payable }) => {
+  const [route, setRoute] = useState<PaymentRoutePreview | null>(null);
+  const [booked, setBooked] = useState<TransactionDetail | null>(null);
+  const pobo = payable.paymentRoute === 'POBO';
+  const paidRef = pobo ? payable.poboTransactionRef : undefined;
+  useEffect(() => {
+    setRoute(null);
+    setBooked(null);
+    if (!pobo) return;
+    let live = true;
+    if (paidRef) {
+      transactionsApi.getByReference(paidRef).then((r) => { if (live) setBooked(r.data ?? null); }).catch(() => undefined);
+    } else {
+      payablesApiPhase2.previewPobo({ payableIds: [payable.id] })
+        .then((l) => { if (live) setRoute(Array.isArray(l) ? l[0] ?? null : null); }).catch(() => undefined);
+    }
+    return () => { live = false; };
+  }, [payable.id, pobo, paidRef]);
+
+  let text: string | null = null;
+  if (booked?.instructedCurrency && booked.instructedAmount != null && booked.fxRate != null) {
+    text = `Paid ${formatCurrency(booked.instructedAmount, booked.instructedCurrency)} at ${booked.fxRate}: `
+      + `${formatCurrency(booked.amount, booked.currencyCode)} on ${booked.vaNumber ?? 'the IHB account'}${booked.fxDealRef ? ` · ${booked.fxDealRef}` : ''}`;
+  } else if (route?.route === 'POBO' && route.settleCurrency && route.settleCurrency !== route.currencyCode) {
+    text = `Settled on ${route.ihbCurrentVaNumber ?? 'the IHB account'} in ${route.settleCurrency} — `
+      + (route.fxNeedsQuote ? 'rate negotiated by treasury at payment'
+        : route.settleAmount != null ? `indicative ${formatCurrency(route.settleAmount, route.settleCurrency)}, fixed at payment`
+        : 'at the rate on the payment date');
+  }
+  if (!text) return null;
+  return (
+    <div className="col-span-2">
+      <p className="text-neutral-500 dark:text-neutral-400">Settlement</p>
+      <p className="font-medium">{text}</p>
+    </div>
+  );
+};
+
 interface PayNowConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -387,8 +433,10 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
   }, [isOpen, payable]);
   if (!isOpen || !payable) return null;
   const pobo = route?.route === 'POBO';
-  // POBO pays in the payable currency from the IHB current account: no conversion.
-  const needsFx = !pobo && !!account && account.currencyCode !== payable.currencyCode;
+  // POBO: nothing to choose here; in another currency the treasury converts at payment (ihb-fx D3), on its own
+  // entity. So no price is asked until the route is known, and none is sent for POBO (a price would be X's).
+  const direct = route?.route === 'DIRECT' || (!route && !!routeError);
+  const needsFx = direct && !!account && account.currencyCode !== payable.currencyCode;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
@@ -425,7 +473,9 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
               </p>
               <p className="caption">
                 Booked to IHB current account {route.ihbCurrentVaNumber}
-                {route.headroom != null && <>; headroom {formatCurrency(route.headroom, route.currencyCode)}</>}. No fee.
+                {route.settleCurrency && route.settleCurrency !== route.currencyCode && route.settleAmount != null &&
+                  <> for {formatCurrency(route.settleAmount, route.settleCurrency)} (indicative, fixed at payment)</>}
+                {route.headroom != null && <>; headroom {formatCurrency(route.headroom, route.settleCurrency ?? route.currencyCode)}</>}. No fee.
               </p>
             </div>
           </div>
@@ -433,13 +483,21 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
         {!pobo && route?.reason && (
           <p className="body-sm">{route.reason}</p>
         )}
+        {pobo && route?.fxNeedsQuote && (
+          <p className="flex items-start gap-2 text-body-sm text-warning-700 dark:text-warning-300">
+            <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            {payable.fxStatus === 'AWAITING_FX' ? 'Awaiting FX (treasury). ' : ''}Above the live-price limit, so the rate is
+            negotiated: executing hands it to {route.payerEntityName ?? route.payerEntityCode} to agree the rate, and it is paid
+            when they accept a price.
+          </p>
+        )}
         {(route?.refusal || routeError) && (
           <p className="flex items-start gap-2 text-body-sm text-error-600 dark:text-error-300">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />{route?.refusal ?? routeError}
           </p>
         )}
 
-        {account && !pobo && (
+        {account && direct && (
           <PaymentFxPanel
             accountId={account.id}
             corporateId={account.corporateId}
@@ -457,7 +515,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
 
         <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={() => onConfirm(fx)} disabled={loading || !!route?.refusal || (needsFx && !fx)}>
+          <Button variant="primary" onClick={() => onConfirm(direct ? fx : null)} disabled={loading || !!route?.refusal || (needsFx && !fx)}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Execute Payment
           </Button>
@@ -857,6 +915,13 @@ const EnhancedPayablesPage: React.FC = () => {
       setPayNowTarget(null);
     } catch (error: any) {
       console.error('Failed to execute payment:', error);
+      if (error?.response?.data?.error?.code === 'FX_PAYMENT_AWAITING_FX') {
+        // ihb-fx D7: not paid, handed to treasury to negotiate the rate; the list shows it Awaiting FX
+        toast(error.response.data.message);
+        setPayNowTarget(null);
+        loadPayables();
+        return;
+      }
       toast.error(`Failed to execute payment: ${error?.response?.data?.message || error?.message || 'Unknown error'}`);
     } finally {
       setPayNowLoading(false);
@@ -1070,6 +1135,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 <div className="flex flex-col gap-1">
                   {getStatusBadge(payable.status)}
                   {getPoboStatusBadge(payable.poboRequestStatus)}
+                  {payable.fxStatus === 'AWAITING_FX' && <Badge variant="warning" size="sm">Awaiting FX (treasury)</Badge>}
                 </div>
               ),
             },
@@ -1136,6 +1202,7 @@ const EnhancedPayablesPage: React.FC = () => {
             <div className="flex items-center gap-2">
               {getStatusBadge(viewPayable.status)}
               {getPaymentRouteBadge(viewPayable.paymentRoute, viewPayable.isIntercompany, viewPayable.nettingStatus)}
+              {viewPayable.fxStatus === 'AWAITING_FX' && <Badge variant="warning" size="sm">Awaiting FX (treasury)</Badge>}
             </div>
             <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
@@ -1182,6 +1249,7 @@ const EnhancedPayablesPage: React.FC = () => {
                   <p className="font-medium">{viewPayable.poboRequestStatus}</p>
                 </div>
               )}
+              <PoboSettlement payable={viewPayable} />
               {viewPayable.paymentRouteNote && (
                 <div className="col-span-2">
                   <p className="text-neutral-500 dark:text-neutral-400">Payment route</p>

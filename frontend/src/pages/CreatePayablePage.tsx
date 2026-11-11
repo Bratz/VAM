@@ -8,6 +8,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi, poboEnrolmentApi, type CreatePayableRequest, type PoboEnrolment } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
+import { useIndicativeFx } from '../hooks/useIndicativeFx';
 import { useMarket } from '../context/useMarket';
 import { formatCurrency } from '../utils';
 
@@ -409,7 +410,13 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   const enrolment = ownerEnrolments.find(e => e.currency === formData.currencyCode) ?? null;
   const pobo = enrolment && !formData.payDirectly ? enrolment : null;
   const ownerName = owningEntity?.name ?? enrolment?.subsidiaryName;
-  const overHeadroom = !!pobo && pobo.headroom != null && amount > pobo.headroom;
+  // Settled on the IHB account in its own currency (ihb-fx D2): treasury converts on its payment account, so the
+  // headroom (in that currency) is compared with the indicative settle amount, not the payable amount.
+  const settleCurrency = pobo ? pobo.ihbCurrentCurrency ?? pobo.currency : null;
+  const crossCurrency = !!settleCurrency && settleCurrency !== formData.currencyCode;
+  const indicative = useIndicativeFx(pobo?.paymentVaId, formData.currencyCode, amount, settleCurrency);
+  const settleAmount = !pobo ? null : crossCurrency ? indicative?.settleAmount ?? null : amount;
+  const overHeadroom = !!pobo && pobo.headroom != null && settleAmount != null && settleAmount > pobo.headroom;
 
   const sourceAccounts = accounts.filter(a => a.currencyCode === formData.currencyCode);
   const selectedSource = sourceAccounts.find(a => a.id === formData.sourceVirtualAccountId) || null;
@@ -653,15 +660,29 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
                   <div>
                     <p className="body-strong">Paid by {pobo.payerName ?? pobo.payerCode} from {pobo.paymentVaNumber}{pobo.paymentIban ? ` (${pobo.paymentIban})` : ''}</p>
+                    {crossCurrency && (
+                      <p className="body-sm">
+                        Paid by {pobo.payerName ?? pobo.payerCode} in {formData.currencyCode}; settled on {ownerName}&apos;s {settleCurrency} account
+                        {indicative?.needsQuote ? ' — rate negotiated by treasury at payment'
+                          : indicative?.settleAmount != null ? ` — indicative ${formatCurrency(indicative.settleAmount, settleCurrency!)}`
+                          : ' at the rate on the payment date'}
+                      </p>
+                    )}
                     <p className="caption">
                       {ownerName} is enrolled for {pobo.currency}. Once approved, the treasury centre pays the vendor and the amount is
                       booked to {ownerName}&apos;s IHB current account {pobo.ihbCurrentVaNumber ?? ''}
-                      {pobo.headroom != null && <> (headroom {formatCurrency(pobo.headroom, pobo.currency)})</>}. No fee.
+                      {pobo.headroom != null && <> (headroom {formatCurrency(pobo.headroom, settleCurrency!)})</>}. No fee.
                     </p>
+                    {indicative?.refusal && (
+                      <p className="mt-1 flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />{indicative.refusal}
+                      </p>
+                    )}
                     {overHeadroom && (
                       <p className="mt-1 flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                        Would be refused at payment: over {ownerName}&apos;s IHB credit headroom of {formatCurrency(pobo.headroom ?? 0, pobo.currency)}.
+                        Would be refused at payment: {crossCurrency ? `indicatively ${formatCurrency(settleAmount ?? 0, settleCurrency!)}, ` : ''}over
+                        {' '}{ownerName}&apos;s IHB credit headroom of {formatCurrency(pobo.headroom ?? 0, settleCurrency!)}.
                       </p>
                     )}
                   </div>

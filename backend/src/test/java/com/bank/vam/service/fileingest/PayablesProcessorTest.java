@@ -29,6 +29,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -105,5 +106,68 @@ class PayablesProcessorTest {
         verify(transactions).makePayment(payment.capture());
         assertThat(payment.getValue().getFromVaId()).isEqualTo(source.getId());
         assertThat(payment.getValue().getAmount()).isEqualByComparingTo("250");
+    }
+
+    /**
+     * ihb-fx 3a leftover: a cross-currency POBO line the file's FX cannot cover becomes an approved payable flagged
+     * Awaiting FX (treasury's POBO tab), not a held row; a line of anyone else is still held for release.
+     */
+    @Test
+    void aPoboLineAboveTheLiveLimitBecomesAPayableAwaitingTreasurysRateNotAHeldRow() {
+        UUID job = UUID.randomUUID();
+        LegalEntity sub = new LegalEntity();
+        sub.setId(UUID.randomUUID());
+        sub.setEntityName("SUB-X LLC");
+        LegalEntity treasury = new LegalEntity();
+        treasury.setId(UUID.randomUUID());
+        treasury.setEntityCode("TC-1");
+        when(entities.findById(sub.getId())).thenReturn(Optional.of(sub));
+        VirtualAccount source = VirtualAccount.builder().vaNumber("VA-1").viban("AE000000000000000000077")
+            .currencyCode("AED").corporateId(UUID.randomUUID()).owningEntityId(sub.getId()).build();
+        source.setId(UUID.randomUUID());
+        VirtualAccount ihbCurrent = VirtualAccount.builder().vaNumber("IHB-AED").currencyCode("AED").build();
+        ihbCurrent.setId(UUID.randomUUID());
+        VirtualAccount payment = VirtualAccount.builder().vaNumber("TC-AED").currencyCode("AED").build();
+        payment.setId(UUID.randomUUID());
+        com.bank.vam.entity.pobo.PoboEnrolment enrolment = new com.bank.vam.entity.pobo.PoboEnrolment();
+        enrolment.setCurrency("EUR");
+        when(enrolments.route(eq(sub.getId()), eq("EUR"), any())).thenReturn(Optional.of(
+            new PoboEnrolmentService.Route(enrolment, sub, treasury, payment, ihbCurrent)));
+        when(accounts.getByViban("AE000000000000000000077")).thenReturn(source);
+        Map<UUID, Payable> stored = new HashMap<>();
+        when(payables.save(any())).thenAnswer(i -> {
+            Payable p = i.getArgument(0);
+            if (p.getId() == null) p.setId(UUID.randomUUID());
+            stored.put(p.getId(), p);
+            return p;
+        });
+        when(payables.findById(any())).thenAnswer(i -> Optional.ofNullable(stored.get(i.<UUID>getArgument(0))));
+
+        StagedTransaction pobo = new StagedTransaction();
+        pobo.setSourceRowNumber(1);
+        pobo.setStatus(RowStatus.READY);
+        StagedTransaction other = new StagedTransaction();
+        other.setSourceRowNumber(2);
+        other.setStatus(RowStatus.READY);
+        when(staging.findByIngestJobIdAndStatus(job, RowStatus.READY)).thenReturn(List.of(pobo, other));
+        when(ingestFx.of(any(), any())).thenReturn(new FxPaymentService.BatchFx(null, "Waiting for FX: above the limit"));
+        TransformedRow poboRow = new TransformedRow(1, new BigDecimal("300000"), "EUR", "AE000000000000000000077",
+            null, null, "Supplier GmbH", "DE00SUPP", "Machinery", "INV-900");
+        TransformedRow otherRow = new TransformedRow(2, new BigDecimal("300000"), "EUR", "AE000000000000000000088",
+            null, null, "Supplier GmbH", "DE00SUPP", "Machinery", "INV-901");
+        when(ingestFx.crossCurrencyPobo(poboRow)).thenReturn(true);
+
+        processor.process(job, List.of(poboRow, otherRow));
+
+        assertThat(pobo.getStatus()).isEqualTo(RowStatus.PROCESSED);
+        assertThat(pobo.getReason()).startsWith("Awaiting FX (treasury)");
+        Payable waiting = stored.get(pobo.getProcessedEntityId());
+        assertThat(waiting.getStatus()).isEqualTo(Payable.PayableStatus.APPROVED);
+        assertThat(waiting.getPaymentRoute()).isEqualTo(Payable.PaymentRoute.POBO);
+        assertThat(waiting.getFxStatus()).isEqualTo(Payable.AWAITING_FX);
+        assertThat(waiting.getFxStatusReason()).contains("live-price limit");
+        verify(ingestFx, never()).hold(eq(pobo), any(), any());
+        verify(ingestFx).hold(other, otherRow, "Waiting for FX: above the limit");
+        verify(transactions, never()).makeIhb6LegPoboPayment(any());
     }
 }

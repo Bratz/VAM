@@ -46,7 +46,8 @@ class Iso20022InwardPaymentServiceTest {
 
     private final Iso20022InwardPaymentService service = new Iso20022InwardPaymentService(
             vibanRepository, virtualAccountRepository, transactionRepository, transactionService, messageMapper,
-            reconciliationService, fxPayments, fxRates);
+            reconciliationService, fxPayments, fxRates, mock(com.bank.vam.repository.receivables.ReceivableRepository.class),
+            mock(com.bank.vam.repository.receivables.InwardFxHoldRepository.class));
 
     private static final UUID VA_ID = UUID.randomUUID();
 
@@ -297,6 +298,81 @@ class Iso20022InwardPaymentServiceTest {
         verify(fxPayments).settleIncoming(eq(cv), eq(credit), any());
         verify(reconciliationService).attemptAutoReconcile(any(), eq(VIBAN_ID), eq(new BigDecimal("367.20")), eq("AED"),
                 any(), any(), any());
+    }
+
+    /** ihb-fx: a COBO invoice's EUR VIBAN on treasury's AED account; EUR 1,000 sent, AED 4,012.30 credited. */
+    private Viban eurViban(String min, String max) {
+        Viban viban = activeViban();
+        viban.setCurrencyCode("EUR");
+        viban.setExpectedAmount(new BigDecimal("1000"));
+        viban.setMinAmount(new BigDecimal(min));
+        viban.setMaxAmount(new BigDecimal(max));
+        when(vibanRepository.findByViban("GB830410000000000000660643")).thenReturn(Optional.of(viban));
+        when(virtualAccountRepository.findById(VA_ID)).thenReturn(Optional.of(activeVa()));
+        return viban;
+    }
+
+    private InwardPaymentRequest eurRequest(String amount) {
+        InwardPaymentRequest req = vibanRequest(new BigDecimal(amount));
+        req.setCurrency("EUR");
+        return req;
+    }
+
+    @Test
+    void aEurVibanOnAnAedAccountChecksItsBoundsInEurAndRecordsEur() {
+        Viban viban = eurViban("900", "1100");
+        FxPaymentService.Conversion cv = new FxPaymentService.Conversion(new BigDecimal("1000"), "EUR",
+                new BigDecimal("4012.30"), "AED", new BigDecimal("4.0123"), "EUR/AED", List.of());
+        when(fxPayments.convertIncoming(any(), eq("EUR"), any())).thenReturn(cv);
+        stubSuccessfulCollection();
+        when(transactionRepository.findById(any())).thenReturn(Optional.of(Transaction.builder().build()));
+
+        assertTrue(service.processInwardPayment(eurRequest("1000")).isSuccess());
+
+        verify(fxRates, never()).convert(any(), any(), any());
+        assertEquals(0, new BigDecimal("1000").compareTo(viban.getTotalAmountReceived()));
+        // Reconciliation gets the credit as booked; it reads the EUR sent from the credit (ReconciliationService.paidOn).
+        verify(reconciliationService).attemptAutoReconcile(any(), eq(VIBAN_ID), eq(new BigDecimal("4012.30")), eq("AED"),
+                any(), any(), any());
+    }
+
+    @Test
+    void aEurPaymentOutsideTheEurVibansBoundsIsRefusedBeforeAnythingIsBooked() {
+        eurViban("900", "1100");
+
+        InwardPaymentResponse response = service.processInwardPayment(eurRequest("1200"));
+
+        assertFalse(response.isSuccess());
+        verify(fxPayments, never()).convertIncoming(any(), any(), any());
+        verify(transactionService, never()).processCollection(any());
+    }
+
+    @Test
+    void aUsdPaymentToTheEurVibanIsComparedAtTheIndicativeEurAmount() {
+        eurViban("900", "1100");
+        when(fxRates.convert(new BigDecimal("1300"), "USD", "EUR")).thenReturn(new BigDecimal("1196.00"));
+        InwardPaymentRequest req = vibanRequest(new BigDecimal("1300"));
+        req.setCurrency("USD");
+
+        assertFalse(service.processInwardPayment(req).isSuccess());
+        verify(transactionService, never()).processCollection(any());
+    }
+
+    /** D6: treasury cannot sell the EUR (no FX sub-limit, no live price): refused, nothing posted or reconciled. */
+    @Test
+    void aEurCreditTreasuryCannotConvertIsRefusedAndNothingIsPosted() {
+        Viban viban = eurViban("900", "1100");
+        when(fxPayments.convertIncoming(any(), eq("EUR"), any())).thenThrow(new com.bank.vam.exception.BusinessException(
+                "FX_COLLECTION_NEEDS_DEAL", "No FX sub-limit is allocated to MNC-TREASURY, so EUR 1000 cannot be converted"));
+
+        InwardPaymentResponse response = service.processInwardPayment(eurRequest("1000"));
+
+        assertFalse(response.isSuccess());
+        assertEquals("RJCT", response.getStatusCode());
+        verify(transactionService, never()).processCollection(any());
+        verify(fxPayments, never()).settleIncoming(any(), any(), any());
+        verify(reconciliationService, never()).attemptAutoReconcile(any(), any(), any(), any(), any(), any(), any());
+        assertEquals(0, viban.getTotalAmountReceived().signum());
     }
 
     /** A converted credit is booked in AED; a re-delivery of the USD message is still recognised by what was sent. */

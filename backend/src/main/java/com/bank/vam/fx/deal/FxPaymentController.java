@@ -30,4 +30,16 @@ public class FxPaymentController {
         VirtualAccount account = accounts.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
         return ApiResponse.success(payments.plan(account, currency, amount, use));
     }
+
+    /**
+     * What {@code amount} of {@code currency} comes to in the account's currency at today's price, booking nothing:
+     * Create Payable / Create Invoice of a cross-currency POBO / COBO enrolment, on treasury's account (ihb-fx R4).
+     * {@code incoming}: collected into the account (COBO), else paid from it (POBO).
+     */
+    @GetMapping("/indicative")
+    public ApiResponse<FxPaymentService.Indicative> indicative(@RequestParam UUID accountId, @RequestParam String currency,
+                                                               @RequestParam BigDecimal amount, @RequestParam(defaultValue = "false") boolean incoming) {
+        VirtualAccount account = accounts.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
+        return ApiResponse.success(payments.indicative(account, currency, amount, incoming));
+    }
 }

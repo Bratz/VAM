@@ -40,7 +40,8 @@ public class CoboEnrolmentService {
     public record EnrolmentView(UUID id, UUID corporateId, UUID subsidiaryEntityId, String subsidiaryCode,
                                 String subsidiaryName, String currency, UUID collectorEntityId, String collectorCode,
                                 String collectorName, UUID collectionVaId, String collectionVaNumber,
-                                String collectionVaName, LocalDate effectiveFrom, LocalDate effectiveTo, boolean active,
+                                String collectionVaName, UUID ihbAccountId, String ihbAccountNumber,
+                                String ihbAccountCurrency, LocalDate effectiveFrom, LocalDate effectiveTo, boolean active,
                                 String createdBy, LocalDateTime createdAt) {
     }
 
@@ -63,7 +64,7 @@ public class CoboEnrolmentService {
 
     @Transactional
     public EnrolmentView create(UUID corporateId, UUID subsidiaryEntityId, String currencyCode, UUID collectorEntityId,
-                                UUID collectionVaId, LocalDate effectiveFrom) {
+                                UUID collectionVaId, UUID ihbAccountId, LocalDate effectiveFrom) {
         if (corporateId == null || subsidiaryEntityId == null || collectorEntityId == null || collectionVaId == null
             || currencyCode == null || currencyCode.isBlank()) {
             throw new BusinessException("Choose the corporate, subsidiary, currency, treasury centre and collection account");
@@ -81,19 +82,19 @@ public class CoboEnrolmentService {
             throw new BusinessException(subsidiary.getEntityCode() + " cannot collect on its own behalf; choose a subsidiary");
         }
 
+        // The accounts the in-house credit posts to (ReconciliationService.applyPayment): R3
+        VirtualAccount ihbCurrent = settleAccount(subsidiary.getId(), ihbAccountId, currency)
+            .orElseThrow(() -> new BusinessException(ihbAccountId != null
+                ? "The account it settles on is not an active IHB current account of " + subsidiary.getEntityCode()
+                : subsidiary.getEntityCode() + " has no active " + currency
+                    + " IHB current account; open one on the In-House Bank page first"));
+        // The collection account is in the settle currency, the IHB account's (ihb-fx R3)
         VirtualAccount collection = accounts.findById(collectionVaId)
             .orElseThrow(() -> new BusinessException("Collection account not found: " + collectionVaId));
-        String problem = collectionAccountProblem(collection, collector.getId(), currency);
+        String problem = collectionAccountProblem(collection, collector.getId(), ihbCurrent.getCurrencyCode());
         if (problem != null) {
             throw new BusinessException("Collection account " + collection.getVaNumber() + " " + problem);
         }
-
-        // The accounts the in-house credit posts to (ReconciliationService.applyPayment): R3
-        VirtualAccount ihbCurrent = accounts.findByOwningEntityIdAndStatus(subsidiary.getId(), VaStatus.ACTIVE).stream()
-            .filter(va -> va.getMirrorAccountType() == MirrorAccountType.IHB_CURRENT && currency.equals(va.getCurrencyCode()))
-            .findFirst()
-            .orElseThrow(() -> new BusinessException(subsidiary.getEntityCode() + " has no active " + currency
-                + " IHB current account; open one on the In-House Bank page first"));
         boolean icPayableActive = ihbCurrent.getIcPayableVaId() != null && accounts.findById(ihbCurrent.getIcPayableVaId())
             .map(va -> va.getStatus() == VaStatus.ACTIVE).orElse(false);
         if (!icPayableActive) {
@@ -115,6 +116,7 @@ public class CoboEnrolmentService {
             .currency(currency)
             .collectorEntityId(collector.getId())
             .collectionVaId(collection.getId())
+            .ihbAccountId(ihbAccountId)
             .effectiveFrom(effectiveFrom != null ? effectiveFrom : today)
             .build();
         enrolment.setCreatedBy(CurrentUser.name());
@@ -138,13 +140,22 @@ public class CoboEnrolmentService {
         return view(enrolments.save(e));
     }
 
-    /** The collector's accounts an enrolment in {@code currency} can collect into. */
+    /** The collector's accounts an enrolment settled in {@code currency} (its IHB account's) can collect into. */
     @Transactional(readOnly = true)
     public List<CollectionAccount> collectionAccounts(UUID collectorEntityId, String currency) {
         return accounts.findByOwningEntityIdAndStatus(collectorEntityId, VaStatus.ACTIVE).stream()
             .filter(va -> collectionAccountProblem(va, collectorEntityId, currency) == null)
             .map(va -> new CollectionAccount(va.getId(), va.getVaNumber(), va.getVaName(), va.getCurrencyCode()))
             .toList();
+    }
+
+    /** The IHB current account an enrolment settles on (ihb-fx D2): the subsidiary's active {@code ihbAccountId}, or when
+     * null its active one in {@code currency}, as before D2. */
+    private Optional<VirtualAccount> settleAccount(UUID subsidiaryId, UUID ihbAccountId, String currency) {
+        return accounts.findByOwningEntityIdAndStatus(subsidiaryId, VaStatus.ACTIVE).stream()
+            .filter(va -> va.getMirrorAccountType() == MirrorAccountType.IHB_CURRENT)
+            .filter(va -> ihbAccountId != null ? ihbAccountId.equals(va.getId()) : currency.equals(va.getCurrencyCode()))
+            .findFirst();
     }
 
     /** Why {@code va} can't be the collection account, or null. */
@@ -175,11 +186,14 @@ public class CoboEnrolmentService {
         Optional<LegalEntity> sub = legalEntities.findById(e.getSubsidiaryEntityId());
         Optional<LegalEntity> col = legalEntities.findById(e.getCollectorEntityId());
         Optional<VirtualAccount> va = accounts.findById(e.getCollectionVaId());
+        Optional<VirtualAccount> ihb = settleAccount(e.getSubsidiaryEntityId(), e.getIhbAccountId(), e.getCurrency());
         return new EnrolmentView(e.getId(), e.getCorporateId(),
             e.getSubsidiaryEntityId(), sub.map(LegalEntity::getEntityCode).orElse(null), sub.map(LegalEntity::getEntityName).orElse(null),
             e.getCurrency(),
             e.getCollectorEntityId(), col.map(LegalEntity::getEntityCode).orElse(null), col.map(LegalEntity::getEntityName).orElse(null),
             e.getCollectionVaId(), va.map(VirtualAccount::getVaNumber).orElse(null), va.map(VirtualAccount::getVaName).orElse(null),
+            ihb.map(VirtualAccount::getId).orElse(null), ihb.map(VirtualAccount::getVaNumber).orElse(null),
+            ihb.map(VirtualAccount::getCurrencyCode).orElse(null),
             e.getEffectiveFrom(), e.getEffectiveTo(), e.isActiveOn(LocalDate.now()), e.getCreatedBy(), e.getCreatedAt());
     }
 }

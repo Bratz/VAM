@@ -337,4 +337,163 @@ class FxPaymentServiceTest {
         assertThat(credit.getInstructedCurrency()).isEqualTo("EUR");
         assertThat(payments.convertIncoming(usdAccount(), "USD", bd("5"))).isNull();
     }
+
+    // ---- ihb-fx 3a: above the live-price limit, treasury negotiates a firm price (D7, D8) ---------------------------
+
+    private void notStreamed() {
+        when(stream.price(any())).thenReturn(new FxStreamService.StreamPrice(false, "Above 250,000 EUR in EUR/USD the desk prices on request",
+                "EUR/USD", bd("300000"), Instrument.SPOT, null, null, null, null, 0, bd("250000"), 0));
+    }
+
+    /** A firm quote for payment, priced and not yet accepted, and the deal accepting it books. */
+    private FxDeal firmQuote(Side side, String eur, String usd, QuoteStatus status) {
+        FxQuoteRequest q = new FxQuoteRequest();
+        q.setId(UUID.randomUUID());
+        q.setCorporateId(CORP);
+        q.setEntityId(ENTITY);
+        q.setForPayment(true);
+        q.setPair("EUR/USD");
+        q.setSide(side);
+        q.setAmount(bd(eur));
+        q.setStatus(status);
+        when(quotes.get(q.getId())).thenReturn(q);
+        FxDeal deal = DealFixtures.deal(side, Instrument.SPOT, DealStatus.PENDING_SETTLEMENT, LocalDate.now());
+        deal.setQuoteRequestId(q.getId());
+        deal.setBuyAmount(bd(side == Side.BUY ? eur : usd));
+        deal.setSellAmount(bd(side == Side.BUY ? usd : eur));
+        deal.setDrawnAmount(BigDecimal.ZERO);
+        when(quotes.accept(q.getId(), true)).thenReturn(deal);
+        return deal;
+    }
+
+    @Test
+    void whatTheDealsLeaveAboveTheStreamingLimitNeedsAQuoteAndAskingBooksNothing() {
+        book(); // EUR 900 of deals buying EUR
+        notStreamed();
+
+        assertThat(payments.needsQuote(usdAccount(), "EUR", bd("300000"), Side.BUY)).isEqualTo("Above 250,000 EUR in EUR/USD the desk prices on request");
+        verify(stream).price(argThat(c -> c.amount().compareTo(bd("299100")) == 0 && c.forPayment()));
+        assertThat(payments.needsQuote(usdAccount(), "EUR", bd("900"), Side.BUY)).as("the deals cover it").isNull();
+        assertThat(payments.needsQuote(usdAccount(), "USD", bd("300000"), Side.BUY)).as("nothing to convert").isNull();
+        verify(quotes, never()).request(any(), any());
+        verify(quotes, never()).accept(any(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void aCollectionAboveTheStreamingLimitNeedsAQuoteUnlessTheFxLineRefusesAnyDeal() {
+        notStreamed();
+        assertThat(payments.needsQuote(usdAccount(), "EUR", bd("300000"), Side.SELL)).startsWith("Above 250,000 EUR");
+        verify(stream).price(argThat(c -> c.side() == Side.SELL && c.pair().equals("EUR/USD")));
+
+        // D6: no sub-limit -- negotiating cannot help, so it is refused, not held
+        when(quotes.lineRefusal(any())).thenReturn("No FX sub-limit is allocated to Fixture LLC");
+        assertThatThrownBy(() -> payments.needsQuote(usdAccount(), "EUR", bd("300000"), Side.SELL))
+                .isInstanceOf(BusinessException.class).hasMessage("No FX sub-limit is allocated to Fixture LLC");
+    }
+
+    @Test
+    void aPaymentOnItsNegotiatedQuoteIsConvertedWhollyAtItAndTheDealIsNoOtherPaymentsToDraw() {
+        book(); // deals that would fit an at-market payment
+        FxDeal quoted = firmQuote(Side.BUY, "300000.00", "330300.00", QuoteStatus.QUOTED);
+        UUID quoteId = quoted.getQuoteRequestId();
+
+        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("300000.00"),
+                FxPaymentService.Instruction.of(null, quoteId, null, null, null));
+
+        assertThat(cv.parts()).singleElement().satisfies(p -> {
+            assertThat(p.source()).isEqualTo(FxPaymentService.Source.FIRM);
+            assertThat(p.deal()).isSameAs(quoted);
+            assertThat(p.base()).as("the whole deal").isEqualByComparingTo(quoted.baseAmount());
+        });
+        assertThat(cv.debitAmount()).isEqualByComparingTo("330300.00");
+        verify(settlement, never()).legsFor(any(), any()); // no other deal drawn
+
+        // Settled by this payment in full, it is gone from what fits another payment in the pair.
+        quoted.setDrawnAmount(quoted.baseAmount());
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(quoted));
+        assertThat(payments.plan(usdAccount(), "EUR", bd("1000"), null).deals()).isEmpty();
+    }
+
+    @Test
+    void anExpiredQuoteIsRefusedAndBooksNothing() {
+        FxDeal quoted = firmQuote(Side.BUY, "300000.00", "330300.00", QuoteStatus.EXPIRED);
+
+        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("300000.00"),
+                FxPaymentService.Instruction.of(null, quoted.getQuoteRequestId(), null, null, null)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("no longer available (EXPIRED)");
+        verify(quotes, never()).accept(any(), org.mockito.ArgumentMatchers.anyBoolean());
+    }
+
+    @Test
+    void aCollectionOnItsNegotiatedQuoteSellsTheWholeAmountAtItAndOnlyAQuoteForThatSale() {
+        FxDeal quoted = firmQuote(Side.SELL, "300000.00", "329700.00", QuoteStatus.QUOTED);
+
+        FxPaymentService.Conversion cv = payments.convertIncoming(usdAccount(), "EUR", bd("300000.00"), quoted.getQuoteRequestId());
+
+        assertThat(cv.debitAmount()).as("credited to the USD account").isEqualByComparingTo("329700.00");
+        assertThat(cv.parts()).singleElement().satisfies(p -> assertThat(p.deal()).isSameAs(quoted));
+        verify(confirmations).affirm(quoted.getId());
+        verify(deals, never()).findByCorporateIdAndStatusIn(any(), any());
+
+        FxDeal buying = firmQuote(Side.BUY, "300000.00", "330300.00", QuoteStatus.QUOTED);
+        assertThatThrownBy(() -> payments.convertIncoming(usdAccount(), "EUR", bd("300000.00"), buying.getQuoteRequestId()))
+                .hasMessageContaining("ask for a new one selling EUR 300000.00");
+        assertThatThrownBy(() -> payments.convertIncoming(usdAccount(), "EUR", bd("299999.00"), quoted.getQuoteRequestId()))
+                .hasMessageContaining("different amount");
+    }
+
+    // ---- ihb-fx Phase 4: indicative amounts on Create Payable / Create Invoice, and X's IHB line ---------------------
+
+    /** COBO preview: the deal selling EUR first, the rest at the live SELL price; nothing taken, booked or confirmed. */
+    @Test
+    void aCollectionPreviewSellsThroughTheDealsThenAtTheLiveSellPriceAndBooksNothing() {
+        FxDeal sells = DealFixtures.deal(Side.SELL, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(3));
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(sells));
+        when(settlement.legsFor(sells, bd("100000.00"))).thenReturn(new BigDecimal[] {bd("110000.00"), bd("100000.00")});
+        FxStreamService.Leg buy = new FxStreamService.Leg(bd("1.1010"), null, null, bd("22020.00"));
+        FxStreamService.Leg sell = new FxStreamService.Leg(bd("1.0990"), null, null, bd("21980.00"));
+        when(stream.price(argThat(c -> c.side() == Side.SELL && c.pair().equals("EUR/USD") && c.amount().compareTo(bd("20000")) == 0)))
+                .thenReturn(new FxStreamService.StreamPrice(true, null, "EUR/USD", bd("20000"), Instrument.SPOT, LocalDate.now(),
+                        UUID.randomUUID(), buy, sell, 5, bd("1000000"), 31));
+
+        FxPaymentService.Conversion cv = payments.previewIncoming(usdAccount(), "EUR", bd("120000"));
+
+        assertThat(cv.debitAmount()).isEqualByComparingTo("131980.00"); // the deal's leg + the SELL side, not the BUY
+        assertThat(cv.parts()).extracting(FxPaymentService.Part::source).containsExactly(FxPaymentService.Source.DEAL, FxPaymentService.Source.LIVE);
+        assertThat(cv.indicative()).isTrue();
+        verify(stream, never()).take(any());
+        verify(quotes, never()).request(any(), any());
+        verify(settlement, never()).receivedByCollection(any(), any(), any(), any(), any());
+        assertThat(payments.previewIncoming(usdAccount(), "USD", bd("5"))).isNull();
+    }
+
+    @Test
+    void theIndicativeAmountSaysWhenTreasuryNegotiatesAndNeverRefusesForIt() {
+        notStreamed();
+
+        FxPaymentService.Indicative in = payments.indicative(usdAccount(), "EUR", bd("300000"), true);
+        assertThat(in.settleCurrency()).isEqualTo("USD");
+        assertThat(in.settleAmount()).isNull();
+        assertThat(in.needsQuote()).startsWith("Above 250,000 EUR");
+        assertThat(in.refusal()).isNull();
+        assertThat(payments.indicative(usdAccount(), "EUR", bd("300000"), false).needsQuote()).startsWith("Above 250,000 EUR");
+
+        // same currency: the amount itself, nothing to convert
+        FxPaymentService.Indicative same = payments.indicative(usdAccount(), "USD", bd("10"), true);
+        assertThat(same.settleAmount()).isEqualByComparingTo("10");
+        assertThat(same.rate()).isNull();
+    }
+
+    @Test
+    void aConvertedIhbLineShowsBothAmountsAndTheRate() {
+        Transaction m = new Transaction();
+        m.setInstructedAmount(bd("1000.00"));
+        m.setInstructedCurrency("EUR");
+        m.setFxRate(bd("4.01230000"));
+        m.setAmount(bd("4012.30"));
+        m.setCurrencyCode("AED");
+        assertThat(FxPaymentService.line(m, "to Acme GmbH")).isEqualTo("EUR 1,000.00 to Acme GmbH · rate 4.0123 · AED 4,012.30");
+        m.setFxRate(bd("4.012345678"));
+        assertThat(FxPaymentService.line(m, "x")).contains("rate 4.012345678 ·");
+    }
 }

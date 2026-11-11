@@ -55,7 +55,8 @@ public class ReceivablesProcessor implements DomainProcessor {
                 if (response.isSuccess()) {
                     staged.setStatus(RowStatus.PROCESSED);
                     staged.setProcessedEntityId(response.getTransactionId());
-                    staged.setReason(null);
+                    // PDNG: accepted but held for a negotiated rate (ihb-fx D8), so say so on the row
+                    staged.setReason("PDNG".equals(response.getStatusCode()) ? response.getStatusReason() : null);
                 } else {
                     staged.setStatus(RowStatus.FAILED);
                     staged.setReason(response.getErrorMessage());

@@ -148,6 +148,11 @@ public class TransactionDto {
         private String transactionCategory;
         private BigDecimal amount;
         private String currencyCode;
+        /** Converted (FX) movements: what was instructed, the all-in client rate, the deal reference(s). */
+        private BigDecimal instructedAmount;
+        private String instructedCurrency;
+        private BigDecimal fxRate;
+        private String fxDealRef;
         
         // Account info
         private UUID vaId;

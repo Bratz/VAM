@@ -11,11 +11,13 @@ import com.bank.vam.fx.deal.FxPaymentService.BatchFx;
 import com.bank.vam.repository.fileingest.IngestJobRepository;
 import com.bank.vam.repository.fileingest.StagedTransactionRepository;
 import com.bank.vam.service.VirtualAccountService;
+import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,10 +45,12 @@ public class IngestFx {
     private final TimelineEventPublisher timeline;
     private final PaymentsProcessor payments;
     private final PayablesProcessor payables;
+    private final PoboEnrolmentService poboEnrolments;
 
     public IngestFx(VirtualAccountService accounts, FxPaymentService fx, ObjectMapper json, StagedTransactionRepository rows,
                     IngestJobRepository jobs, TimelineEventPublisher timeline,
-                    @Lazy PaymentsProcessor payments, @Lazy PayablesProcessor payables) {
+                    @Lazy PaymentsProcessor payments, @Lazy PayablesProcessor payables, PoboEnrolmentService poboEnrolments) {
+        this.poboEnrolments = poboEnrolments;
         this.accounts = accounts;
         this.fx = fx;
         this.json = json;
@@ -68,8 +72,12 @@ public class IngestFx {
             }
             try {
                 VirtualAccount source = accounts.getByViban(row.viban());
+                // A line of an entity enrolled for POBO in its currency is paid by the treasury: its FX (if any, ihb-fx
+                // D3) is the treasury's, on the enrolment's payment account, as the payment will convert it.
+                VirtualAccount fxSide = poboEnrolments.route(source.getOwningEntityId(), row.currency(), LocalDate.now())
+                        .map(PoboEnrolmentService.Route::paymentVa).orElse(source);
                 planned.add(staged);
-                batch.add(new FxPaymentService.BatchRow(source, row.currency(), row.amount()));
+                batch.add(new FxPaymentService.BatchRow(fxSide, row.currency(), row.amount()));
             } catch (RuntimeException unknownAccount) {
                 // the line fails with its own reason when it is paid
             }
@@ -80,6 +88,13 @@ public class IngestFx {
             byId.put(planned.get(i).getId(), out.get(i));
         }
         return byId;
+    }
+
+    /** The line's entity is enrolled for POBO in its currency, settled in another: its FX is treasury's (ihb-fx D3). */
+    boolean crossCurrencyPobo(TransformedRow row) {
+        VirtualAccount source = accounts.getByViban(row.viban());
+        return poboEnrolments.route(source.getOwningEntityId(), row.currency(), LocalDate.now())
+                .map(PoboEnrolmentService.Route::crossCurrency).orElse(false);
     }
 
     BatchFx of(Map<UUID, BatchFx> plan, StagedTransaction staged) {

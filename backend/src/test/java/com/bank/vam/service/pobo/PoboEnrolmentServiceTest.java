@@ -6,11 +6,13 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.MirrorAccountType;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.pobo.PoboEnrolment;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
+import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.PoboEnrolmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,8 @@ class PoboEnrolmentServiceTest {
     private final LegalEntityRepository entityRepo = mock(LegalEntityRepository.class);
     private final VirtualAccountRepository vaRepo = mock(VirtualAccountRepository.class);
     private final PhysicalAccountRepository paRepo = mock(PhysicalAccountRepository.class);
-    private final PoboEnrolmentService service = new PoboEnrolmentService(repo, entityRepo, vaRepo, paRepo);
+    private final PayableRepository payables = mock(PayableRepository.class);
+    private final PoboEnrolmentService service = new PoboEnrolmentService(repo, entityRepo, vaRepo, paRepo, payables);
 
     private final Map<UUID, LegalEntity> entities = new HashMap<>();
     private final Map<UUID, VirtualAccount> vas = new HashMap<>();
@@ -127,7 +130,7 @@ class PoboEnrolmentServiceTest {
     }
 
     private PoboEnrolmentService.EnrolmentView enrol(LegalEntity payer, VirtualAccount account) {
-        return service.create(CORPORATE, subsidiary.getId(), "aed", payer.getId(), account.getId(), null);
+        return service.create(CORPORATE, subsidiary.getId(), "aed", payer.getId(), account.getId(), null, null);
     }
 
     @Test
@@ -163,7 +166,7 @@ class PoboEnrolmentServiceTest {
 
     @Test
     void theTreasuryCentreCannotBeEnrolledForItself() {
-        assertThatThrownBy(() -> service.create(CORPORATE, treasury.getId(), "AED", treasury.getId(), payment.getId(), null))
+        assertThatThrownBy(() -> service.create(CORPORATE, treasury.getId(), "AED", treasury.getId(), payment.getId(), null, null))
             .isInstanceOf(BusinessException.class).hasMessageContaining("cannot pay on its own behalf");
     }
 
@@ -193,6 +196,51 @@ class PoboEnrolmentServiceTest {
         service.end(first.id());
         assertThat(service.route(subsidiary.getId(), "AED", LocalDate.now())).isEmpty();
         assertThat(enrol(treasury, payment).active()).isTrue();
+    }
+
+    /** ihb-fx 3a leftover: ending the enrolment ends the wait for treasury's rate on its payables, and only on its own. */
+    @Test
+    void endingAnEnrolmentClearsAwaitingFxOnItsPayablesOnly() {
+        var first = enrol(treasury, payment);
+        Payable mine = awaiting(subsidiary.getId(), "AED");
+        Payable otherCurrency = awaiting(subsidiary.getId(), "EUR");
+        Payable otherEntity = awaiting(treasury.getId(), "AED");
+        when(payables.findByCorporateIdAndFxStatus(CORPORATE, Payable.AWAITING_FX)).thenReturn(List.of(mine, otherCurrency, otherEntity));
+
+        service.end(first.id());
+
+        assertThat(mine.getFxStatus()).isNull();
+        assertThat(mine.getFxStatusReason()).isNull();
+        verify(payables).save(mine);
+        assertThat(otherCurrency.getFxStatus()).isEqualTo(Payable.AWAITING_FX);
+        assertThat(otherEntity.getFxStatus()).isEqualTo(Payable.AWAITING_FX);
+    }
+
+    @Test
+    void aPayableThatCanNoLongerBePaidNoLongerAwaitsFx() {
+        Payable p = awaiting(subsidiary.getId(), "AED");
+        p.dropStaleFxStatus();
+        assertThat(p.getFxStatus()).as("approved: still waiting").isEqualTo(Payable.AWAITING_FX);
+
+        p.setStatus(Payable.PayableStatus.CANCELLED);
+        p.dropStaleFxStatus();
+        assertThat(p.getFxStatus()).isNull();
+        assertThat(p.getFxStatusReason()).isNull();
+
+        Payable rejected = awaiting(subsidiary.getId(), "AED");
+        rejected.setStatus(Payable.PayableStatus.REJECTED);
+        rejected.dropStaleFxStatus();
+        assertThat(rejected.getFxStatus()).isNull();
+    }
+
+    private static Payable awaiting(UUID owner, String currency) {
+        Payable p = new Payable();
+        p.setOwningEntityId(owner);
+        p.setCurrencyCode(currency);
+        p.setStatus(Payable.PayableStatus.APPROVED);
+        p.setFxStatus(Payable.AWAITING_FX);
+        p.setFxStatusReason("Above 250,000 EUR in EUR/AED the desk prices on request");
+        return p;
     }
 
     @Test
@@ -276,5 +324,56 @@ class PoboEnrolmentServiceTest {
 
         VirtualAccount none = va(subsidiary, null);
         assertThatThrownBy(() -> service.debtorIban(none)).hasMessage("Not available: no IBAN for the debtor account " + none.getVaNumber());
+    }
+
+    // ihb-fx Phase 1 (docs/specs/ihb-fx.md D2): the enrolment names the IHB account it settles on.
+
+    @Test
+    void aCrossCurrencyEnrolmentSettlesOnTheNamedIhbAccountAndPaysFromATreasuryAccountInItsCurrency() {
+        VirtualAccount eurPayment = bankBacked(va(treasury, null), "AE000000000000000000010");
+        eurPayment.setCurrencyCode("EUR");
+        assertThatThrownBy(() -> service.create(CORPORATE, subsidiary.getId(), "EUR", treasury.getId(), eurPayment.getId(),
+            ihbCurrent.getId(), null)).hasMessageContaining("is in EUR, not AED");
+        assertThat(service.paymentAccounts(treasury.getId(), "AED")).extracting(PoboEnrolmentService.PaymentAccount::id)
+            .containsExactly(payment.getId());
+
+        var view = service.create(CORPORATE, subsidiary.getId(), "eur", treasury.getId(), payment.getId(), ihbCurrent.getId(), null);
+
+        assertThat(view.currency()).isEqualTo("EUR");
+        assertThat(view.ihbCurrentVaId()).isEqualTo(ihbCurrent.getId());
+        assertThat(view.ihbCurrentCurrency()).isEqualTo("AED");
+        var route = service.route(subsidiary.getId(), "EUR", LocalDate.now()).orElseThrow();
+        assertThat(route.ihbCurrent().getId()).isEqualTo(ihbCurrent.getId());
+        assertThat(route.crossCurrency()).isTrue();
+        // Phase 2: no longer refused; the treasury's AED account is the debtor of the pain.001.
+        assertThat(service.painDebtor(route).iban()).isEqualTo("AE070331234567890123456");
+    }
+
+    @Test
+    void withoutANamedIhbAccountTheEnrolmentSettlesOnTheOneInItsCurrencyAsBefore() {
+        VirtualAccount usdIhb = va(subsidiary, MirrorAccountType.IHB_CURRENT);
+        usdIhb.setCurrencyCode("USD");
+        enrol(treasury, payment);
+
+        var route = service.route(subsidiary.getId(), "AED", LocalDate.now()).orElseThrow();
+        assertThat(route.ihbCurrent().getId()).isEqualTo(ihbCurrent.getId());
+        assertThat(route.crossCurrency()).isFalse();
+        assertThat(service.painDebtor(route).iban()).isEqualTo("AE070331234567890123456");
+        assertThat(saved.get(0).getIhbAccountId()).isNull();
+    }
+
+    @Test
+    void theNamedIhbAccountMustBeAnActiveIhbCurrentAccountOfTheSubsidiary() {
+        LegalEntity other = entity("SUB-Y", false);
+        VirtualAccount othersIhb = va(other, MirrorAccountType.IHB_CURRENT);
+        VirtualAccount notIhb = va(subsidiary, null);
+        for (VirtualAccount wrong : List.of(othersIhb, notIhb)) {
+            assertThatThrownBy(() -> service.create(CORPORATE, subsidiary.getId(), "EUR", treasury.getId(), payment.getId(),
+                wrong.getId(), null)).hasMessageContaining("not an active IHB current account of SUB-X");
+        }
+        ihbCurrent.setStatus(VaStatus.CLOSED);
+        assertThatThrownBy(() -> service.create(CORPORATE, subsidiary.getId(), "EUR", treasury.getId(), payment.getId(),
+            ihbCurrent.getId(), null)).hasMessageContaining("not an active IHB current account of SUB-X");
+        assertThat(saved).isEmpty();
     }
 }

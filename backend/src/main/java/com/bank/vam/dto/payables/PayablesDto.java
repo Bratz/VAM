@@ -96,6 +96,9 @@ public class PayablesDto {
         private UUID poboRequestId;
         private String poboRequestStatus;
         private String poboTransactionRef;
+        /** ihb-fx D7: AWAITING_FX while treasury negotiates the rate, with why; null otherwise. */
+        private String fxStatus;
+        private String fxStatusReason;
         private UUID poboIhbLoanId;
         private UUID poboRechargeId;
         private LocalDateTime poboRequestedAt;
@@ -336,10 +339,16 @@ public class PayablesDto {
         private String ihbCurrentVaNumber;
         private BigDecimal amount;
         private String currencyCode;
-        /** POBO: the IHB current account's balance plus its credit limit. */
+        /** POBO: the IHB current account's balance plus its credit limit, in {@code settleCurrency}. */
         private BigDecimal headroom;
-        /** POBO: set when the amount is over the headroom; the payment would be refused. */
+        /** POBO: the IHB current account's currency, and the amount it would be debited -- indicative (live price,
+         * ihb-fx R10) when it differs from {@code currencyCode}; null when no price could be had. */
+        private String settleCurrency;
+        private BigDecimal settleAmount;
+        /** POBO: set when the amount is over the headroom (or cannot be covered); the payment would be refused. */
         private String refusal;
+        /** POBO cross-currency above the live-price limit (ihb-fx D7): paying sends it to treasury to negotiate the rate. */
+        private String fxNeedsQuote;
     }
 
     // ========================================================================

@@ -68,7 +68,7 @@ public class FxPaymentService {
             return new Instruction(priceId, quoteId, draws, Boolean.TRUE.equals(atMarket));
         }
 
-        boolean none() {
+        public boolean none() {
             return priceId == null && quoteId == null && draws.isEmpty() && !atMarket;
         }
     }
@@ -174,11 +174,7 @@ public class FxPaymentService {
             throw new BusinessException("FX_PAYMENT_NEEDS_RATE", "The payment is in " + ccy + " but " + label(source) + " holds "
                     + accountCcy + ": lock a rate or use a booked FX deal to convert it");
         }
-        List<Draw> draws = fx.draws();
-        if (draws.isEmpty() && fx.atMarket() && fx.priceId() == null && fx.quoteId() == null) {
-            draws = plan(source, ccy, amount, null).deals().stream()
-                    .filter(f -> f.covers().signum() > 0).map(f -> new Draw(f.dealId(), f.covers())).toList();
-        }
+        List<Draw> draws = draws(source, ccy, amount, fx);
         List<Part> parts = new ArrayList<>();
         BigDecimal left = amount;
         for (Draw draw : draws) {
@@ -207,11 +203,13 @@ public class FxPaymentService {
     }
 
     /**
-     * What the payment would debit, booking nothing: the deals at their rates, the rest at the firm price or else the
+     * What the payment would debit, booking nothing: the deals at their rates (at market: those that fit, as
+     * {@link #convert} takes them), the rest at the firm price or else the
      * live price (indicative: it moves until the payment is sent). Null in the account's own currency. Refused as
      * {@link #convert} would refuse it, so the payer sees why before sending.
      */
-    @Transactional(readOnly = true)
+    // noRollbackFor: a refusal here is an answer (a caller in its own transaction may show it), not a failure.
+    @Transactional(readOnly = true, noRollbackFor = BusinessException.class)
     public Conversion preview(VirtualAccount source, String currency, BigDecimal amount, Instruction fx) {
         String accountCcy = source.getCurrencyCode();
         String ccy = currencyOf(source, currency);
@@ -220,7 +218,7 @@ public class FxPaymentService {
         }
         List<Part> parts = new ArrayList<>();
         BigDecimal left = amount;
-        for (Draw draw : fx == null ? List.<Draw>of() : fx.draws()) {
+        for (Draw draw : fx == null ? List.<Draw>of() : draws(source, ccy, amount, fx)) {
             FxDeal d = deals.findById(draw.dealId()).orElseThrow(() -> new ResourceNotFoundException("FX deal not found: " + draw.dealId()));
             check(d, source, ccy);
             BigDecimal paid = (draw.amount() == null ? left : draw.amount().min(left)).min(available(d, ccy));
@@ -245,16 +243,30 @@ public class FxPaymentService {
         return conversion(amount, ccy, accountCcy, parts);
     }
 
+    /** The deals named, or for "at market" with none named the ones that fit, as {@link #convert} draws them. */
+    private List<Draw> draws(VirtualAccount source, String ccy, BigDecimal amount, Instruction fx) {
+        if (fx.draws().isEmpty() && fx.atMarket() && fx.priceId() == null && fx.quoteId() == null) {
+            return plan(source, ccy, amount, null).deals().stream()
+                    .filter(f -> f.covers().signum() > 0).map(f -> new Draw(f.dealId(), f.covers())).toList();
+        }
+        return fx.draws();
+    }
+
     /** After the payment's ledger legs: settles each deal's part by the payment and notes the FX on it. */
     @Transactional
     public void settle(Conversion cv, Transaction payment, VirtualAccount source) {
         for (Part p : cv.parts()) {
             settlement.paidByPayment(p.deal(), p.base(), payment.getReferenceNumber(), payment.getId(), label(source));
         }
-        payment.setInstructedAmount(cv.instructedAmount());
-        payment.setInstructedCurrency(cv.instructedCurrency());
-        payment.setFxRate(cv.rate());
-        payment.setFxDealRef(cv.dealRefs());
+        note(cv, payment);
+    }
+
+    /** The FX of {@code cv} on a movement: instructed amount and currency, rate, deal reference(s). */
+    public static void note(Conversion cv, Transaction movement) {
+        movement.setInstructedAmount(cv.instructedAmount());
+        movement.setInstructedCurrency(cv.instructedCurrency());
+        movement.setFxRate(cv.rate());
+        movement.setFxDealRef(cv.dealRefs());
     }
 
     /**
@@ -266,6 +278,17 @@ public class FxPaymentService {
      */
     @Transactional
     public Conversion convertIncoming(VirtualAccount target, String ccy, BigDecimal amount) {
+        return convertIncoming(target, ccy, amount, null);
+    }
+
+    /**
+     * As {@link #convertIncoming(VirtualAccount, String, BigDecimal)}; with {@code quoteId}, the whole amount is sold at
+     * that firm price instead (ihb-fx D8: treasury negotiated it for this credit, so no deal is drawn): a price for
+     * payment, selling {@code ccy} for the account's currency, for exactly {@code amount}, of the account's entity.
+     * ponytail: the quote covers the whole credit even when a deal covers part of it; quote only the rest if desks mind.
+     */
+    @Transactional
+    public Conversion convertIncoming(VirtualAccount target, String ccy, BigDecimal amount, UUID quoteId) {
         String accountCcy = target.getCurrencyCode();
         if (ccy == null || ccy.equalsIgnoreCase(accountCcy)) {
             return null;
@@ -273,27 +296,21 @@ public class FxPaymentService {
         if (target.getOwningEntityId() == null) {
             throw invalid(label(target) + " belongs to no legal entity, and an FX deal is booked for one");
         }
-        List<FxDeal> fitting = deals.findByCorporateIdAndStatusIn(target.getCorporateId(), DRAWABLE).stream()
-                .filter(d -> target.getOwningEntityId().equals(d.getEntityId()))
-                .filter(d -> ccy.equals(d.getSellCurrency()) && accountCcy.equals(d.getBuyCurrency()))
-                .filter(d -> d.getConfirmationStatus() == ConfirmationStatus.AFFIRMED)
-                .filter(d -> notToday(d) == null && available(d, ccy).signum() > 0)
-                .sorted(Comparator.comparing(FxDeal::getValueDate).thenComparing(FxDeal::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-        List<Part> parts = new ArrayList<>();
-        BigDecimal left = amount;
-        for (FxDeal d : fitting) {
-            if (left.signum() == 0) {
-                break;
+        if (quoteId != null) {
+            FxQuoteRequest q = quotes.get(quoteId);
+            if (!Boolean.TRUE.equals(q.getForPayment()) || !q.getPair().equals(ccy + "/" + accountCcy) || q.getSide() != Side.SELL
+                    || q.getAmount().compareTo(amount) != 0 || !target.getCorporateId().equals(q.getCorporateId())
+                    || !target.getOwningEntityId().equals(q.getEntityId())) {
+                throw invalid("That price was for a different amount; ask for a new one selling " + ccy + " " + amount.toPlainString());
             }
-            BigDecimal sold = left.min(available(d, ccy));
-            BigDecimal base = toBase(d, ccy, sold);
-            parts.add(new Part(Source.DEAL, d, base, sold, settlement.legsFor(d, base)[0], d.getRate()));
-            left = left.subtract(sold);
+            FxDeal deal = accepted(q);
+            return conversion(amount, ccy, accountCcy,
+                    List.of(new Part(Source.FIRM, deal, deal.baseAmount(), amount, deal.getBuyAmount(), deal.getRate())));
         }
+        List<Part> parts = new ArrayList<>();
+        BigDecimal left = drawIncoming(target, ccy, amount, parts);
         if (left.signum() > 0) {
-            FxQuoteService.Command c = new FxQuoteService.Command(target.getCorporateId(), target.getOwningEntityId(),
-                    ccy + "/" + accountCcy, Side.SELL, Instrument.SPOT, left, null, null, "Collection conversion", null, true);
+            FxQuoteService.Command c = incomingCommand(target, ccy, left);
             FxStreamService.StreamPrice p = stream.price(c);
             if (!p.streamable()) {
                 throw new BusinessException("FX_COLLECTION_NEEDS_DEAL", p.reason() + ", so " + ccy + " " + left.toPlainString()
@@ -305,16 +322,139 @@ public class FxPaymentService {
         return conversion(amount, ccy, accountCcy, parts);
     }
 
+    /**
+     * What a collection of {@code amount} {@code ccy} would credit {@code target}, booking nothing (ihb-fx R10): the
+     * entity's deals selling {@code ccy} first, as {@link #convertIncoming} draws them, the rest at the live sell price
+     * (indicative). Null in the account's own currency; FX_COLLECTION_NEEDS_QUOTE when the rest is above the live-price
+     * limit (treasury negotiates it when the money arrives, D8).
+     */
+    @Transactional(readOnly = true, noRollbackFor = BusinessException.class)
+    public Conversion previewIncoming(VirtualAccount target, String ccy, BigDecimal amount) {
+        String accountCcy = target.getCurrencyCode();
+        if (ccy == null || ccy.equalsIgnoreCase(accountCcy)) {
+            return null;
+        }
+        if (target.getOwningEntityId() == null) {
+            throw invalid(label(target) + " belongs to no legal entity, and an FX deal is booked for one");
+        }
+        List<Part> parts = new ArrayList<>();
+        BigDecimal left = drawIncoming(target, ccy, amount, parts);
+        if (left.signum() > 0) {
+            FxStreamService.StreamPrice p = stream.price(incomingCommand(target, ccy, left));
+            if (!p.streamable()) {
+                throw new BusinessException("FX_COLLECTION_NEEDS_QUOTE", p.reason() + ": the rate is negotiated by treasury when it arrives");
+            }
+            parts.add(new Part(Source.LIVE, null, null, left, p.sell().counterAmount(), p.sell().rate()));
+        }
+        return conversion(amount, ccy, accountCcy, parts);
+    }
+
+    /** The account entity's deals selling {@code ccy}, soonest first, each taking what it can of {@code amount}; what is left. */
+    private BigDecimal drawIncoming(VirtualAccount target, String ccy, BigDecimal amount, List<Part> parts) {
+        BigDecimal left = amount;
+        for (FxDeal d : fittingIncoming(target, ccy)) {
+            if (left.signum() == 0) {
+                break;
+            }
+            BigDecimal sold = left.min(available(d, ccy));
+            BigDecimal base = toBase(d, ccy, sold);
+            parts.add(new Part(Source.DEAL, d, base, sold, settlement.legsFor(d, base)[0], d.getRate()));
+            left = left.subtract(sold);
+        }
+        return left;
+    }
+
+    /** An amount converted at today's price, for a screen before anything is booked (ihb-fx R4, R10). Client rate only. */
+    public record Indicative(String settleCurrency, BigDecimal settleAmount, BigDecimal rate, String needsQuote, String refusal) {
+    }
+
+    /**
+     * What {@code amount} of {@code currency} comes to in {@code account}'s currency at today's price, booking nothing:
+     * paid from it ({@link #preview} at market) or, {@code incoming}, collected into it ({@link #previewIncoming}).
+     * Above the live-price limit, {@code needsQuote} says why (treasury negotiates it); any other refusal in {@code refusal}.
+     */
+    @Transactional(readOnly = true, noRollbackFor = BusinessException.class)
+    public Indicative indicative(VirtualAccount account, String currency, BigDecimal amount, boolean incoming) {
+        try {
+            Conversion cv = incoming ? previewIncoming(account, currency, amount) : preview(account, currency, amount, Instruction.AT_MARKET);
+            return cv == null ? new Indicative(account.getCurrencyCode(), amount, null, null, null)
+                    : new Indicative(cv.debitCurrency(), cv.debitAmount(), cv.rate(), null, null);
+        } catch (BusinessException e) {
+            boolean quote = "FX_PAYMENT_NEEDS_QUOTE".equals(e.getCode()) || "FX_COLLECTION_NEEDS_QUOTE".equals(e.getCode());
+            return new Indicative(account.getCurrencyCode(), null, null, quote ? e.getMessage() : null, quote ? null : e.getMessage());
+        }
+    }
+
+    /**
+     * X's IHB line for a converted movement (ihb-fx 4.3), from the FX noted on it: "EUR 1,000.00 to Acme · rate 4.0123 ·
+     * AED 4,012.30". {@code what} is "to the supplier" / "from the customer for the invoice", cut to fit the column.
+     */
+    public static String line(Transaction m, String what) {
+        String w = what.length() > 120 ? what.substring(0, 120) : what;
+        BigDecimal r = m.getFxRate().stripTrailingZeros();
+        return money(m.getInstructedCurrency(), m.getInstructedAmount()) + " " + w + " · rate "
+                + r.setScale(Math.max(4, r.scale()), RoundingMode.HALF_UP).toPlainString() + " · " + money(m.getCurrencyCode(), m.getAmount());
+    }
+
+    private static String money(String ccy, BigDecimal amount) {
+        return ccy + " " + String.format(Locale.ROOT, "%,.2f", amount);
+    }
+
+    /**
+     * Why converting {@code amount} of {@code currency} on {@code account} cannot be done unattended (ihb-fx R6a/R6b):
+     * the reason the live price is refused for what the entity's deals leave (above the pair's streaming limit), so
+     * treasury must negotiate a firm price. Null when there is nothing to convert, the deals cover it, or it streams.
+     * {@code side}: BUY for a payment (buys the currency), SELL for a collection. Refused (D6) when the FX line would
+     * refuse any deal anyway (no sub-limit, no headroom): negotiating cannot help. Books nothing and is not
+     * transactional, so asking never dooms the caller's transaction.
+     */
+    public String needsQuote(VirtualAccount account, String currency, BigDecimal amount, Side side) {
+        String ccy = currencyOf(account, currency);
+        if (ccy.equals(account.getCurrencyCode()) || account.getOwningEntityId() == null) {
+            return null;
+        }
+        BigDecimal left = amount;
+        for (FxDeal d : side == Side.BUY ? fitting(account, ccy) : fittingIncoming(account, ccy)) {
+            left = left.subtract(available(d, ccy).min(left));
+        }
+        if (left.signum() <= 0) {
+            return null;
+        }
+        FxQuoteService.Command c = side == Side.BUY ? command(account, ccy, left) : incomingCommand(account, ccy, left);
+        FxStreamService.StreamPrice p = stream.price(c);
+        if (p.streamable()) {
+            return null;
+        }
+        String refusal = quotes.lineRefusal(c);
+        if (refusal != null) {
+            throw new BusinessException("FX_LINE_REFUSED", refusal);
+        }
+        return p.reason();
+    }
+
+    /** The account entity's deals that sell {@code ccy} for the account's currency and can deliver today, soonest first. */
+    private List<FxDeal> fittingIncoming(VirtualAccount target, String ccy) {
+        return deals.findByCorporateIdAndStatusIn(target.getCorporateId(), DRAWABLE).stream()
+                .filter(d -> target.getOwningEntityId().equals(d.getEntityId()))
+                .filter(d -> ccy.equals(d.getSellCurrency()) && target.getCurrencyCode().equals(d.getBuyCurrency()))
+                .filter(d -> d.getConfirmationStatus() == ConfirmationStatus.AFFIRMED)
+                .filter(d -> notToday(d) == null && available(d, ccy).signum() > 0)
+                .sorted(Comparator.comparing(FxDeal::getValueDate).thenComparing(FxDeal::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    private static FxQuoteService.Command incomingCommand(VirtualAccount target, String ccy, BigDecimal amount) {
+        return new FxQuoteService.Command(target.getCorporateId(), target.getOwningEntityId(), ccy + "/" + target.getCurrencyCode(),
+                Side.SELL, Instrument.SPOT, amount, null, null, "Collection conversion", null, true);
+    }
+
     /** After the collection's ledger legs: settles each deal's part through it and notes the FX on the credit. */
     @Transactional
     public void settleIncoming(Conversion cv, Transaction credit, VirtualAccount target) {
         for (Part p : cv.parts()) {
             settlement.receivedByCollection(p.deal(), p.base(), credit.getReferenceNumber(), credit.getId(), label(target));
         }
-        credit.setInstructedAmount(cv.instructedAmount());
-        credit.setInstructedCurrency(cv.instructedCurrency());
-        credit.setFxRate(cv.rate());
-        credit.setFxDealRef(cv.dealRefs());
+        note(cv, credit);
     }
 
     /**

@@ -779,12 +779,14 @@ public class ReconciliationService {
                                              : "Receivable status: " + receivable.getStatus());
         }
         
+        Money paid = paidOn(receivable, transactionId, amount, currencyCode);
+
         // Calculate confidence based on amount match
-        int confidence = calculateAmountConfidence(amount, receivable.getOutstandingAmount(),
+        int confidence = calculateAmountConfidence(paid.amount(), receivable.getOutstandingAmount(),
                                                    receivable.getAmountTolerancePercent());
-        
+
         // Check if amount is acceptable
-        if (!receivable.isPaymentAmountAcceptable(amount)) {
+        if (!receivable.isPaymentAmountAcceptable(paid.amount())) {
             log.warn("Amount {} outside acceptable range for receivable {}", amount, receivableId);
             confidence = Math.min(confidence, MEDIUM_CONFIDENCE_THRESHOLD);
         }
@@ -797,15 +799,15 @@ public class ReconciliationService {
 
         // Create payment match
         ReceivablePayment payment = createPaymentMatch(transactionId, vibanId, receivable,
-                                                        amount, currencyCode, payerName, payerAccount,
+                                                        paid.amount(), paid.currency(), payerName, payerAccount,
                                                         remittanceInfo, ReceivablePayment.MatchType.AUTO,
                                                         confidence, "Direct VIBAN reference match");
-        
+
         // Update receivable
-        applyPayment(receivable, amount, payment.getAppliedAmount(), transactionId, "AUTO");
-        
+        applyPayment(receivable, paid.amount(), payment.getAppliedAmount(), transactionId, "AUTO");
+
         // Update VIBAN statistics
-        updateVibanAfterPayment(viban, amount);
+        updateVibanAfterPayment(viban, paid.amount());
         
         log.info("Direct match successful: transaction {} -> receivable {}, confidence {}%",
                  transactionId, receivableId, confidence);
@@ -839,15 +841,16 @@ public class ReconciliationService {
                                          amount, currencyCode, payerName, payerAccount, remittanceInfo, blocked);
         }
 
-        int confidence = calculateAmountConfidence(amount, receivable.getOutstandingAmount(),
+        Money paid = paidOn(receivable, transactionId, amount, currencyCode);
+        int confidence = calculateAmountConfidence(paid.amount(), receivable.getOutstandingAmount(),
                                                    receivable.getAmountTolerancePercent());
-        
+
         ReceivablePayment payment = createPaymentMatch(transactionId, vibanId, receivable,
-                                                        amount, currencyCode, payerName, payerAccount,
+                                                        paid.amount(), paid.currency(), payerName, payerAccount,
                                                         remittanceInfo, ReceivablePayment.MatchType.AUTO,
                                                         confidence, "VIBAN-linked receivable match");
-        
-        applyPayment(receivable, amount, payment.getAppliedAmount(), transactionId, "AUTO");
+
+        applyPayment(receivable, paid.amount(), payment.getAppliedAmount(), transactionId, "AUTO");
         
         log.info("VIBAN-linked match successful: transaction {} -> receivable {}, confidence {}%",
                  transactionId, receivable.getId(), confidence);
@@ -986,21 +989,22 @@ public class ReconciliationService {
         coboIhbCurrentAccount(receivable, unmatched.getTransactionId());
 
         // Create payment match
+        Money paid = paidOn(receivable, unmatched.getTransactionId(), unmatched.getAmount(), unmatched.getCurrencyCode());
         ReceivablePayment payment = ReceivablePayment.createManualMatch(
                 receivableId,
                 unmatched.getTransactionId(),
-                unmatched.getAmount(),
+                paid.amount(),
                 matchedBy
         );
         payment.setVibanId(unmatched.getVibanId());
         payment.setPayerName(unmatched.getPayerName());
         payment.setPayerAccount(unmatched.getPayerAccount());
         payment.setRemittanceInfo(unmatched.getRemittanceInfo());
-        payment.setCurrencyCode(unmatched.getCurrencyCode());
+        payment.setCurrencyCode(paid.currency());
         payment = receivablePaymentRepository.save(payment);
-        
+
         // Update receivable
-        applyPayment(receivable, unmatched.getAmount(), payment.getAppliedAmount(), unmatched.getTransactionId(), "MANUAL");
+        applyPayment(receivable, paid.amount(), payment.getAppliedAmount(), unmatched.getTransactionId(), "MANUAL");
         
         // Update unmatched payment
         unmatched.matchToReceivable(receivableId, payment.getId(), matchedBy);
@@ -1238,7 +1242,8 @@ public class ReconciliationService {
      * payment unmatched instead.
      *
      * @param amount what the invoice's paid amount rises by (as before)
-     * @param appliedAmount the part applied to the invoice: what the subsidiary is credited
+     * @param appliedAmount the part applied to the invoice: what the subsidiary is credited (settled in another
+     *                      currency: what the bank credit's conversion produced for that part, see {@link #settled})
      * @param bankTransactionId the bank credit that paid it
      * @param source AUTO, MANUAL, DIRECT_DEBIT ... for the ledger notes
      */
@@ -1247,12 +1252,53 @@ public class ReconciliationService {
         VirtualAccount ihbCurrent = coboIhbCurrentAccount(receivable, bankTransactionId);
         receivable.recordPayment(amount);
         if (ihbCurrent != null) {
-            Transaction credit = transactionService.postCoboInHouseCredit(ihbCurrent, appliedAmount, bankTransactionId,
+            // ihb-fx R7: settled in another currency, X gets T's conversion of the applied part, with its FX noted
+            Transaction cash = receivable.getCurrencyCode().equals(ihbCurrent.getCurrencyCode()) ? null
+                : transactionRepository.findById(bankTransactionId).orElseThrow();
+            Transaction credit = transactionService.postCoboInHouseCredit(ihbCurrent,
+                cash == null ? appliedAmount : settled(cash, appliedAmount), bankTransactionId,
                 receivable.getReceivableNumber(), receivable.getCustomerName(), receivable.getCoboCollectorEntityName(), source);
+            if (credit != null && cash != null) {
+                credit.setInstructedAmount(appliedAmount);
+                credit.setInstructedCurrency(receivable.getCurrencyCode());
+                credit.setFxRate(cash.getFxRate());
+                credit.setFxDealRef(cash.getFxDealRef());
+                credit.setDescription(com.bank.vam.fx.deal.FxPaymentService.line(credit,
+                    "from " + receivable.getCustomerName() + " for " + receivable.getReceivableNumber()));
+            }
             if (credit != null) receivable.setCoboTransactionRef(credit.getReferenceNumber());
             if (receivable.isFullyPaid()) receivable.setCoboRequestStatus(Receivable.CoboRequestStatus.COLLECTED);
         }
         receivableRepository.save(receivable);
+    }
+
+    /**
+     * What {@code applied} of a converted credit's instructed amount bought in the currency it was booked in: all of
+     * it when the whole credit applies (so X's credit equals T's conversion to the cent), else pro rata, half up to the
+     * cent; the rest stays with T as the unapplied cash. One credit pays one COBO invoice (the in-house credit is once
+     * per bank transaction), so there is no remainder to carry between applications.
+     */
+    private static BigDecimal settled(Transaction cash, BigDecimal applied) {
+        return applied.compareTo(cash.getInstructedAmount()) >= 0 ? cash.getAmount()
+            : cash.getAmount().multiply(applied).divide(cash.getInstructedAmount(), 2, RoundingMode.HALF_UP);
+    }
+
+    /** An amount and its currency. */
+    public record Money(BigDecimal amount, String currency) {
+    }
+
+    /**
+     * What a bank credit pays on {@code r}: as booked, or -- when it was sent in the invoice's currency and converted
+     * on arrival (ihb-fx: EUR to treasury's AED collection account) -- as sent, so the invoice is matched and paid in
+     * its own currency.
+     */
+    public Money paidOn(Receivable r, UUID transactionId, BigDecimal amount, String currency) {
+        Money booked = new Money(amount, currency);
+        if (r.getCurrencyCode() == null || r.getCurrencyCode().equals(currency) || transactionId == null) return booked;
+        return transactionRepository.findById(transactionId)
+            .filter(t -> r.getCurrencyCode().equals(t.getInstructedCurrency()) && t.getInstructedAmount() != null)
+            .map(t -> new Money(t.getInstructedAmount(), t.getInstructedCurrency()))
+            .orElse(booked);
     }
 
     /** Why {@link #applyPayment} would refuse this payment, or null. */
@@ -1267,7 +1313,8 @@ public class ReconciliationService {
 
     /**
      * For a COBO invoice paid by a bank credit on the collector's account: the subsidiary's active IHB current
-     * account in the invoice currency, whose IC payable is set and active. Null when no in-house credit is due:
+     * account the invoice settles on (set from its enrolment; older invoices: the one in the invoice currency), whose
+     * IC payable is set and active. Null when no in-house credit is due:
      * not COBO, or the cash landed on an account outside the collector (it is already where it belongs).
      */
     private VirtualAccount coboIhbCurrentAccount(Receivable r, UUID bankTransactionId) {
@@ -1277,7 +1324,8 @@ public class ReconciliationService {
         if (bankTransactionId == null) {
             throw new BusinessException(who + ": choose the bank credit that paid this invoice");
         }
-        UUID cashVaId = transactionRepository.findById(bankTransactionId).map(Transaction::getVaId).orElse(null);
+        Transaction cash = transactionRepository.findById(bankTransactionId).orElse(null);
+        UUID cashVaId = cash == null ? null : cash.getVaId();
         boolean onCollector = cashVaId != null && virtualAccountRepository.findById(cashVaId)
             .map(va -> r.getCoboCollectorEntityId().equals(va.getOwningEntityId())).orElse(false);
         if (!onCollector) {
@@ -1290,11 +1338,20 @@ public class ReconciliationService {
         VirtualAccount ihbCurrent = r.getOwningEntityId() == null ? null
             : virtualAccountRepository.findByOwningEntityIdAndStatus(r.getOwningEntityId(), VirtualAccount.VaStatus.ACTIVE).stream()
                 .filter(va -> va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IHB_CURRENT)
-                .filter(va -> r.getCurrencyCode().equals(va.getCurrencyCode()))
+                .filter(va -> r.getCoboIhbAccountId() != null ? r.getCoboIhbAccountId().equals(va.getId())
+                    : r.getCurrencyCode().equals(va.getCurrencyCode()))
                 .findFirst().orElse(null);
         if (ihbCurrent == null) {
-            throw new BusinessException(who + ", which has no active " + r.getCurrencyCode()
-                + " IHB current account to credit");
+            throw new BusinessException(who + ", which has no active "
+                + (r.getCoboIhbAccountId() != null ? "" : r.getCurrencyCode() + " ") + "IHB current account to credit");
+        }
+        if (!r.getCurrencyCode().equals(ihbCurrent.getCurrencyCode())
+                && !(r.getCurrencyCode().equals(cash.getInstructedCurrency()) && cash.getInstructedAmount() != null
+                    && ihbCurrent.getCurrencyCode().equals(cash.getCurrencyCode()))) {
+            // ihb-fx: X is credited what T's conversion of the invoice currency produced (applyPayment); a credit not
+            // sent in the invoice currency, or booked in another than X's, has no such amount.
+            throw new BusinessException(who + ", settled on " + ihbCurrent.getCurrencyCode() + ": only a credit sent in "
+                + r.getCurrencyCode() + " and converted to " + ihbCurrent.getCurrencyCode() + " can pay it");
         }
         boolean icPayableActive = ihbCurrent.getIcPayableVaId() != null && virtualAccountRepository.findById(ihbCurrent.getIcPayableVaId())
             .map(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE).orElse(false);

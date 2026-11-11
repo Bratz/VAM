@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft, Plus, XCircle } from 'lucide-react';
 import { Badge, Button, DataTable, Select } from '../ui';
+import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { Modal } from '../ui/enhanced';
-import { legalEntityApi, poboEnrolmentApi, type LegalEntity, type PoboCutoverItem, type PoboCutoverReport, type PoboEnrolment, type PoboPaymentAccount } from '../../services/api';
+import { legalEntityApi, payablesApiPhase2, poboEnrolmentApi, type AwaitingFxPayable, type LegalEntity, type PoboCutoverItem, type PoboCutoverReport, type PoboEnrolment, type PoboPaymentAccount } from '../../services/api';
+import { FirmQuotePanel } from '../payments/FirmQuotePanel';
 import { formatCurrency, formatDate } from '../../utils';
 
 /**
@@ -12,8 +14,8 @@ import { formatCurrency, formatDate } from '../../utils';
  */
 export const PoboEnrolmentsPanel: React.FC<{
   corporateId: string;
-  /** The corporate's IHB current accounts: a subsidiary can be enrolled in the currencies it has one in. */
-  currentAccounts: { participantEntityId: string; currencyCode: string }[];
+  /** The corporate's IHB current accounts: an enrolment settles on one of its subsidiary's. */
+  currentAccounts: IhbAccount[];
 }> = ({ corporateId, currentAccounts }) => {
   const [enrolments, setEnrolments] = useState<PoboEnrolment[]>([]);
   const [entities, setEntities] = useState<LegalEntity[]>([]);
@@ -23,6 +25,9 @@ export const PoboEnrolmentsPanel: React.FC<{
   // Preview of the cut-over and repair (spec D8/D9); re-run after every change to the enrolments.
   const [cutover, setCutover] = useState<PoboCutoverReport | null>(null);
   const [cutoverOpen, setCutoverOpen] = useState(false);
+  // Payables above the live-price limit, waiting for treasury to negotiate the rate (ihb-fx D7).
+  const [awaiting, setAwaiting] = useState<AwaitingFxPayable[]>([]);
+  const [negotiating, setNegotiating] = useState<AwaitingFxPayable | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,6 +40,7 @@ export const PoboEnrolmentsPanel: React.FC<{
       setEnrolments(list);
       setEntities(ents);
       setCutover(await poboEnrolmentApi.cutover(corporateId, true).catch(() => null));
+      setAwaiting(await poboEnrolmentApi.awaitingFx(corporateId).catch(() => []));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load the enrolments');
     } finally {
@@ -73,6 +79,30 @@ export const PoboEnrolmentsPanel: React.FC<{
         </div>
       </div>
       {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
+      {awaiting.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="body-strong">Awaiting FX</span>
+            <Badge variant="warning" size="sm">{awaiting.length}</Badge>
+          </div>
+          <p className="caption">Above the live-price limit, so the rate is negotiated: request a firm price, counter it if you like, and accept to pay at once on that rate.</p>
+          <DataTable
+            data={awaiting}
+            keyExtractor={(a) => a.payableId}
+            columns={[
+              { key: 'payableNumber', header: 'Payable', render: (_, a) => (
+                <div className="flex flex-col"><span className="font-mono text-body-sm">{a.payableNumber}</span><span className="caption">{a.vendorName ?? ''}</span></div>
+              ) },
+              { key: 'subsidiaryName', header: 'Subsidiary', render: (_, a) => a.subsidiaryName ?? a.subsidiaryCode ?? '-' },
+              { key: 'amount', header: 'Amount', align: 'right', minWidth: 140, render: (_, a) => formatCurrency(a.amount, a.currencyCode) },
+              { key: 'reason', header: 'Why', render: (_, a) => <span className="body-sm">{a.reason ?? '-'}</span> },
+              { key: 'actions', header: '', align: 'right', minWidth: 120, render: (_, a) => (a.payerEntityId && a.settleCurrency
+                ? <Button size="xs" variant="outline" leftIcon={<ArrowRightLeft className="w-4 h-4" />} onClick={() => setNegotiating(a)}>Negotiate</Button>
+                : <span className="caption">No active enrolment</span>) },
+            ]}
+          />
+        </div>
+      )}
       <DataTable
         data={enrolments}
         loading={loading}
@@ -82,12 +112,14 @@ export const PoboEnrolmentsPanel: React.FC<{
           { key: 'subsidiaryName', header: 'Subsidiary', render: (_, e) => (
             <div className="flex flex-col"><span className="body-strong">{e.subsidiaryName ?? '-'}</span><span className="caption">{e.subsidiaryCode}</span></div>
           ) },
-          { key: 'currency', header: 'Currency', minWidth: 90 },
+          { key: 'currency', header: 'Currency', minWidth: 90, render: (_, e) => (
+            <div className="flex flex-col"><span>{e.currency}</span><span className="caption font-mono">{settledOn(e.currency, e.ihbCurrentCurrency, e.ihbCurrentVaNumber)}</span></div>
+          ) },
           { key: 'payerName', header: 'Paid by', render: (_, e) => e.payerName ?? e.payerCode ?? '-' },
           { key: 'paymentVaNumber', header: 'From account', render: (_, e) => (
             <div className="flex flex-col"><span className="font-mono text-body-sm">{e.paymentVaNumber ?? '-'}</span><span className="caption font-mono">{e.paymentIban ?? ''}</span></div>
           ) },
-          { key: 'headroom', header: 'IHB headroom', align: 'right', minWidth: 130, render: (_, e) => (e.headroom != null ? formatCurrency(e.headroom, e.currency) : '-') },
+          { key: 'headroom', header: 'IHB headroom', align: 'right', minWidth: 130, render: (_, e) => (e.headroom != null ? formatCurrency(e.headroom, e.ihbCurrentCurrency ?? e.currency) : '-') },
           { key: 'effectiveFrom', header: 'Effective', render: (_, e) => `${formatDate(e.effectiveFrom)}${e.effectiveTo ? ' – ' + formatDate(e.effectiveTo) : ''}` },
           { key: 'active', header: 'Status', minWidth: 100, render: (_, e) => (
             <Badge variant={e.active ? 'success' : 'neutral'} size="sm">{e.active ? 'Active' : e.effectiveTo ? 'Ended' : 'Scheduled'}</Badge>
@@ -105,6 +137,29 @@ export const PoboEnrolmentsPanel: React.FC<{
           onClose={() => setAdding(false)}
           onSaved={() => { setAdding(false); load(); }}
         />
+      )}
+      {negotiating && negotiating.payerEntityId && negotiating.settleCurrency && (
+        <Modal
+          isOpen
+          onClose={() => setNegotiating(null)}
+          title={`Negotiate ${negotiating.currencyCode}/${negotiating.settleCurrency} for ${negotiating.payableNumber}`}
+          subtitle={`${formatCurrency(negotiating.amount, negotiating.currencyCode)} to ${negotiating.vendorName ?? 'the supplier'} on behalf of ${negotiating.subsidiaryName ?? negotiating.subsidiaryCode}, paid by ${negotiating.payerCode} from ${negotiating.paymentVaNumber}. Accepting pays it on this rate.`}
+          size="md"
+        >
+          <FirmQuotePanel
+            corporateId={corporateId}
+            entityId={negotiating.payerEntityId}
+            pair={`${negotiating.currencyCode}/${negotiating.settleCurrency}`}
+            side="BUY"
+            amount={negotiating.amount}
+            acceptLabel="Accept and pay"
+            onAccept={async (quoteId) => {
+              await payablesApiPhase2.executePayment(negotiating.payableId, 'treasury', undefined, undefined, { fxQuoteId: quoteId });
+              setNegotiating(null);
+              load();
+            }}
+          />
+        </Modal>
       )}
       {cutoverOpen && cutover && (
         <CutoverModal
@@ -201,10 +256,17 @@ const CutoverModal: React.FC<{ corporateId: string; preview: PoboCutoverReport; 
   );
 };
 
+/** An IHB current account an enrolment can settle on. */
+type IhbAccount = { accountId: string; accountNumber: string; participantEntityId: string; currencyCode: string };
+
+/** "→ settled on AED · VA-…" when the enrolment settles in another currency (ihb-fx D2), else the account number. */
+const settledOn = (currency: string, ihbCurrency?: string | null, ihbNumber?: string | null) =>
+  ihbCurrency && ihbCurrency !== currency ? `→ settled on ${ihbCurrency}${ihbNumber ? ' · ' + ihbNumber : ''}` : ihbNumber ?? '';
+
 const AddEnrolmentModal: React.FC<{
   corporateId: string;
   entities: LegalEntity[];
-  currentAccounts: { participantEntityId: string; currencyCode: string }[];
+  currentAccounts: IhbAccount[];
   onClose: () => void;
   onSaved: () => void;
 }> = ({ corporateId, entities, currentAccounts, onClose, onSaved }) => {
@@ -214,25 +276,28 @@ const AddEnrolmentModal: React.FC<{
   const [payerId, setPayerId] = useState(payers.length === 1 ? payers[0].id : '');
   const [accounts, setAccounts] = useState<PoboPaymentAccount[]>([]);
   const [accountId, setAccountId] = useState('');
+  const [ihbAccountId, setIhbAccountId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Payments are booked in-house only in a currency the subsidiary has an IHB current account in.
-  const currencies = useMemo(
-    () => [...new Set(currentAccounts.filter(a => a.participantEntityId === subsidiaryId).map(a => a.currencyCode))].sort(),
-    [currentAccounts, subsidiaryId]);
-  useEffect(() => { setCurrency(currencies.length === 1 ? currencies[0] : ''); }, [currencies]);
+  // Any currency; it settles on one of the subsidiary's IHB current accounts, by default the one in that currency (ihb-fx D2).
+  const ihbAccounts = useMemo(
+    () => currentAccounts.filter(a => a.participantEntityId === subsidiaryId), [currentAccounts, subsidiaryId]);
+  useEffect(() => {
+    setIhbAccountId((ihbAccounts.find(a => a.currencyCode === currency) ?? (ihbAccounts.length === 1 ? ihbAccounts[0] : undefined))?.accountId ?? '');
+  }, [ihbAccounts, currency]);
+  const settleCurrency = ihbAccounts.find(a => a.accountId === ihbAccountId)?.currencyCode ?? '';
 
   useEffect(() => {
     setAccounts([]);
     setAccountId('');
-    if (!payerId || !currency) return;
+    if (!payerId || !settleCurrency) return;
     let live = true;
-    poboEnrolmentApi.paymentAccounts(payerId, currency)
+    poboEnrolmentApi.paymentAccounts(payerId, settleCurrency)
       .then(list => { if (live) { setAccounts(list); setAccountId(list.length === 1 ? list[0].id : ''); } })
       .catch(() => { if (live) setAccounts([]); });
     return () => { live = false; };
-  }, [payerId, currency]);
+  }, [payerId, settleCurrency]);
 
   const subsidiary = entities.find(e => e.id === subsidiaryId);
   const payer = entities.find(e => e.id === payerId);
@@ -241,7 +306,7 @@ const AddEnrolmentModal: React.FC<{
     setSaving(true);
     setError(null);
     try {
-      await poboEnrolmentApi.create({ corporateId, subsidiaryEntityId: subsidiaryId, currency, payerEntityId: payerId, paymentVaId: accountId });
+      await poboEnrolmentApi.create({ corporateId, subsidiaryEntityId: subsidiaryId, currency, payerEntityId: payerId, paymentVaId: accountId, ihbAccountId });
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not enrol');
@@ -259,7 +324,7 @@ const AddEnrolmentModal: React.FC<{
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} loading={saving} disabled={!subsidiaryId || !currency || !payerId || !accountId}>Enrol</Button>
+          <Button onClick={save} loading={saving} disabled={!subsidiaryId || !currency || !ihbAccountId || !payerId || !accountId}>Enrol</Button>
         </div>
       }
     >
@@ -267,21 +332,25 @@ const AddEnrolmentModal: React.FC<{
         <Select label="Subsidiary" value={subsidiaryId} onChange={e => setSubsidiaryId(e.target.value)}
           placeholder="Choose the subsidiary"
           options={entities.filter(e => !e.isTreasuryCenter).map(e => ({ value: e.id, label: `${e.entityName} (${e.entityCode})` }))} />
-        <Select label="Currency" value={currency} onChange={e => setCurrency(e.target.value)}
-          placeholder={subsidiaryId ? 'Choose the currency' : 'Choose the subsidiary first'}
-          disabled={!subsidiaryId || currencies.length === 0}
-          error={subsidiary && currencies.length === 0
+        <div>
+          <label className="block body-strong mb-2">Payment currency</label>
+          <CurrencyPicker value={currency} onChange={setCurrency} allowEmpty emptyLabel="Choose the currency" />
+        </div>
+        <Select label="Settled on (IHB current account)" value={ihbAccountId} onChange={e => setIhbAccountId(e.target.value)}
+          placeholder={subsidiaryId ? 'Choose the account the subsidiary is debited on' : 'Choose the subsidiary first'}
+          disabled={!subsidiaryId || ihbAccounts.length === 0}
+          error={subsidiary && ihbAccounts.length === 0
             ? `${subsidiary.entityCode} has no IHB current account; open one under Current Accounts first` : undefined}
-          options={currencies.map(c => ({ value: c, label: c }))} />
+          options={ihbAccounts.map(a => ({ value: a.accountId, label: `${a.accountNumber} · ${a.currencyCode}` }))} />
         <Select label="Paid by (treasury centre)" value={payerId} onChange={e => setPayerId(e.target.value)}
           placeholder="Choose the treasury centre"
           error={payers.length === 0 ? 'No entity of this corporate is flagged as the treasury centre (Legal Entities)' : undefined}
           options={payers.map(e => ({ value: e.id, label: `${e.entityName} (${e.entityCode})` }))} />
         <Select label="Payment account" value={accountId} onChange={e => setAccountId(e.target.value)}
-          placeholder={payerId && currency ? 'Choose the account suppliers are paid from' : 'Choose the currency and treasury centre first'}
-          disabled={!payerId || !currency || accounts.length === 0}
-          error={payer && currency && accounts.length === 0
-            ? `${payer.entityCode} has no active ${currency} account backed by a bank account (IBAN) to pay from` : undefined}
+          placeholder={payerId && settleCurrency ? 'Choose the account suppliers are paid from' : 'Choose the settle account and treasury centre first'}
+          disabled={!payerId || !settleCurrency || accounts.length === 0}
+          error={payer && settleCurrency && accounts.length === 0
+            ? `${payer.entityCode} has no active ${settleCurrency} account backed by a bank account (IBAN) to pay from` : undefined}
           options={accounts.map(a => ({ value: a.id, label: `${a.vaNumber}${a.vaName ? ' · ' + a.vaName : ''} · ${a.iban}` }))} />
         {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
       </div>

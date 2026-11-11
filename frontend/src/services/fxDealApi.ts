@@ -375,6 +375,15 @@ export interface FxLineView {
   allocations: FxAllocation[];
 }
 
+/** An amount at today's price on an account (ihb-fx R4, R10); needsQuote: above the live-price limit, treasury negotiates. */
+export interface IndicativeFx {
+  settleCurrency: string;
+  settleAmount?: number | null;
+  rate?: number | null;
+  needsQuote?: string | null;
+  refusal?: string | null;
+}
+
 export const fxDealApi = {
   /** The deals that fit a payment; {@code use} limits them to the ones the payer kept ticked. */
   paymentPlan: (accountId: string, currency: string, amount: number, use?: string[]) =>
@@ -382,6 +391,14 @@ export const fxDealApi = {
       // an empty list is "none": sent as an id no deal has, since an empty parameter would read as all
       params: { accountId, currency, amount, ...(use ? { use: (use.length ? use : ['00000000-0000-0000-0000-000000000000']).join(',') } : {}) },
     }).then(r => r.data.data),
+
+  /**
+   * What an amount comes to in the account's currency at today's price, booking nothing (ihb-fx R4): paid from the
+   * account, or `incoming` collected into it. Client rate only.
+   */
+  indicative: (accountId: string, currency: string, amount: number, incoming = false) =>
+    apiClient.get<ApiResponse<IndicativeFx>>('/fx/payments/indicative', { params: { accountId, currency, amount, incoming } })
+      .then(r => r.data.data),
 
   /** Ask the desk for a better price. With no targetRate it is "your best price". */
   counter: (id: string, body: { targetRate?: number; note?: string } = {}) =>

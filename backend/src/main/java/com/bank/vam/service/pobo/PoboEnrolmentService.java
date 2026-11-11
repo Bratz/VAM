@@ -7,12 +7,15 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.MirrorAccountType;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.pobo.PoboEnrolment;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
+import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.PoboEnrolmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,12 +42,14 @@ public class PoboEnrolmentService {
     private final LegalEntityRepository legalEntities;
     private final VirtualAccountRepository accounts;
     private final PhysicalAccountRepository physicalAccounts;
+    private final PayableRepository payables;
 
     /** An enrolment with the names a screen or a payable needs; {@code headroom} = IHB current balance + credit limit. */
     public record EnrolmentView(UUID id, UUID corporateId, UUID subsidiaryEntityId, String subsidiaryCode,
                                 String subsidiaryName, String currency, UUID payerEntityId, String payerCode,
                                 String payerName, UUID paymentVaId, String paymentVaNumber, String paymentVaName,
-                                String paymentIban, UUID ihbCurrentVaId, String ihbCurrentVaNumber, BigDecimal headroom,
+                                String paymentIban, UUID ihbCurrentVaId, String ihbCurrentVaNumber, String ihbCurrentCurrency,
+                                BigDecimal headroom,
                                 LocalDate effectiveFrom, LocalDate effectiveTo, boolean active, String createdBy,
                                 LocalDateTime createdAt) {
     }
@@ -62,6 +67,31 @@ public class PoboEnrolmentService {
                         VirtualAccount ihbCurrent) {
         public BigDecimal headroom() {
             return PoboEnrolmentService.headroom(ihbCurrent);
+        }
+
+        /** Paid in the enrolment currency, settled on an IHB account in another (ihb-fx D2). */
+        public boolean crossCurrency() {
+            return enrolment.getCurrency() != null && !enrolment.getCurrency().equals(ihbCurrent.getCurrencyCode());
+        }
+
+        /** Why a payment settling {@code settleAmount} (in the IHB account's currency) is refused before money moves, or null. */
+        public String refusal(BigDecimal settleAmount) {
+            return headroomRefusal(ihbCurrent, settleAmount);
+        }
+
+        /**
+         * Treasury's back-to-back cover of a cross-currency payment of {@code amount} (ihb-fx D3, R5, R9): previewed on
+         * T's payment account (T's deals in the pair first, then the live price), refused when the settle-currency
+         * amount is over X's IHB headroom, then converted there -- on T's FX line, never X's. At market unless
+         * {@code requested} names a price, quote or deal. Null for a same-currency route (nothing to convert).
+         */
+        public FxPaymentService.Conversion cover(FxPaymentService fx, BigDecimal amount, FxPaymentService.Instruction requested) {
+            if (!crossCurrency()) return null;
+            FxPaymentService.Instruction how = requested == null || requested.none() ? FxPaymentService.Instruction.AT_MARKET : requested;
+            String ccy = enrolment.getCurrency();
+            String refusal = refusal(fx.preview(paymentVa, ccy, amount, how).debitAmount());
+            if (refusal != null) throw new BusinessException(refusal + " (" + ccy + " " + amount.toPlainString() + " at the indicative rate)");
+            return fx.convert(paymentVa, ccy, amount, how);
         }
     }
 
@@ -87,12 +117,13 @@ public class PoboEnrolmentService {
             .orElseThrow(() -> new BusinessException("Enrolment's treasury centre not found: " + e.getPayerEntityId()));
         VirtualAccount paymentVa = accounts.findById(e.getPaymentVaId())
             .orElseThrow(() -> new BusinessException("Enrolment's payment account not found: " + e.getPaymentVaId()));
-        String problem = paymentAccountProblem(paymentVa, payer.getId(), currency);
+        VirtualAccount ihbCurrent = ihbCurrent(subsidiary, e.getIhbAccountId(), currency);
+        String problem = paymentAccountProblem(paymentVa, payer.getId(), ihbCurrent.getCurrencyCode());
         if (problem != null) {
             throw new BusinessException("Cannot pay on behalf of " + subsidiary.getEntityCode() + ": payment account "
                 + paymentVa.getVaNumber() + " " + problem + "; end the enrolment or fix the account");
         }
-        return Optional.of(new Route(e, subsidiary, payer, paymentVa, ihbCurrent(subsidiary, currency)));
+        return Optional.of(new Route(e, subsidiary, payer, paymentVa, ihbCurrent));
     }
 
     /**
@@ -112,7 +143,7 @@ public class PoboEnrolmentService {
 
     @Transactional
     public EnrolmentView create(UUID corporateId, UUID subsidiaryEntityId, String currencyCode, UUID payerEntityId,
-                                UUID paymentVaId, LocalDate effectiveFrom) {
+                                UUID paymentVaId, UUID ihbAccountId, LocalDate effectiveFrom) {
         if (corporateId == null || subsidiaryEntityId == null || payerEntityId == null || paymentVaId == null
             || currencyCode == null || currencyCode.isBlank()) {
             throw new BusinessException("Choose the corporate, subsidiary, currency, treasury centre and payment account");
@@ -130,13 +161,14 @@ public class PoboEnrolmentService {
             throw new BusinessException(subsidiary.getEntityCode() + " cannot pay on its own behalf; choose a subsidiary");
         }
 
+        // R2: the accounts the in-house posting needs; the payment account is in its currency (ihb-fx R3)
+        VirtualAccount ihbCurrent = ihbCurrent(subsidiary, ihbAccountId, currency);
         VirtualAccount paymentVa = accounts.findById(paymentVaId)
             .orElseThrow(() -> new BusinessException("Payment account not found: " + paymentVaId));
-        String problem = paymentAccountProblem(paymentVa, payer.getId(), currency);
+        String problem = paymentAccountProblem(paymentVa, payer.getId(), ihbCurrent.getCurrencyCode());
         if (problem != null) {
             throw new BusinessException("Payment account " + paymentVa.getVaNumber() + " " + problem);
         }
-        ihbCurrent(subsidiary, currency); // R2: the accounts the in-house posting needs
 
         // ponytail: checked here, not by a DB constraint (ddl-auto can't make a partial unique index), as COBO.
         enrolments.findBySubsidiaryEntityId(subsidiary.getId()).stream()
@@ -151,12 +183,13 @@ public class PoboEnrolmentService {
             .currency(currency)
             .payerEntityId(payer.getId())
             .paymentVaId(paymentVa.getId())
+            .ihbAccountId(ihbAccountId)
             .effectiveFrom(effectiveFrom != null ? effectiveFrom : today)
             .build();
         enrolment.setCreatedBy(CurrentUser.name());
         PoboEnrolment saved = enrolments.save(enrolment);
-        log.info("POBO enrolment: {} {} paid by {} from {}", subsidiary.getEntityCode(), currency,
-            payer.getEntityCode(), paymentVa.getVaNumber());
+        log.info("POBO enrolment: {} {} paid by {} from {}, settled on {}", subsidiary.getEntityCode(), currency,
+            payer.getEntityCode(), paymentVa.getVaNumber(), ihbCurrent.getVaNumber());
         return view(saved);
     }
 
@@ -171,10 +204,18 @@ public class PoboEnrolmentService {
         }
         e.setEffectiveTo(today);
         e.setUpdatedBy(CurrentUser.name());
+        // ihb-fx D7: its payables no longer wait for treasury's rate; they are paid directly from now on
+        payables.findByCorporateIdAndFxStatus(e.getCorporateId(), Payable.AWAITING_FX).stream()
+            .filter(p -> e.getSubsidiaryEntityId().equals(p.getOwningEntityId()) && e.getCurrency().equals(p.getCurrencyCode()))
+            .forEach(p -> {
+                p.setFxStatus(null);
+                p.setFxStatusReason(null);
+                payables.save(p);
+            });
         return view(enrolments.save(e));
     }
 
-    /** The treasury centre's accounts an enrolment in {@code currency} can pay from. */
+    /** The treasury centre's accounts an enrolment settled in {@code currency} (its IHB account's) can pay from. */
     @Transactional(readOnly = true)
     public List<PaymentAccount> paymentAccounts(UUID payerEntityId, String currency) {
         return accounts.findByOwningEntityIdAndStatus(payerEntityId, VaStatus.ACTIVE).stream()
@@ -200,13 +241,22 @@ public class PoboEnrolmentService {
             + (ihbCurrent.getEffectiveCreditLimit() != null ? ihbCurrent.getEffectiveCreditLimit() : BigDecimal.ZERO) + ")";
     }
 
-    /** The subsidiary's IHB current account in {@code currency} with the links the 6-leg posting needs (R2). */
-    private VirtualAccount ihbCurrent(LegalEntity subsidiary, String currency) {
-        VirtualAccount current = accounts.findByOwningEntityIdAndStatus(subsidiary.getId(), VaStatus.ACTIVE).stream()
-            .filter(va -> va.getMirrorAccountType() == MirrorAccountType.IHB_CURRENT && currency.equals(va.getCurrencyCode()))
-            .findFirst()
-            .orElseThrow(() -> new BusinessException(subsidiary.getEntityCode() + " has no active " + currency
-                + " IHB current account; open one on the In-House Bank page first"));
+    /** The IHB current account an enrolment settles on (ihb-fx D2): the subsidiary's active {@code ihbAccountId}, or when
+     * null its active one in {@code currency}, as before D2. */
+    private Optional<VirtualAccount> settleAccount(UUID subsidiaryId, UUID ihbAccountId, String currency) {
+        return accounts.findByOwningEntityIdAndStatus(subsidiaryId, VaStatus.ACTIVE).stream()
+            .filter(va -> va.getMirrorAccountType() == MirrorAccountType.IHB_CURRENT)
+            .filter(va -> ihbAccountId != null ? ihbAccountId.equals(va.getId()) : currency.equals(va.getCurrencyCode()))
+            .findFirst();
+    }
+
+    /** {@link #settleAccount} with the links the 6-leg posting needs (R2). */
+    private VirtualAccount ihbCurrent(LegalEntity subsidiary, UUID ihbAccountId, String currency) {
+        VirtualAccount current = settleAccount(subsidiary.getId(), ihbAccountId, currency)
+            .orElseThrow(() -> new BusinessException(ihbAccountId != null
+                ? "The account it settles on is not an active IHB current account of " + subsidiary.getEntityCode()
+                : subsidiary.getEntityCode() + " has no active " + currency
+                    + " IHB current account; open one on the In-House Bank page first"));
         if (!current.isIhbParticipant()) {
             throw new BusinessException("IHB current account " + current.getVaNumber() + " is not flagged as an IHB participant");
         }
@@ -259,8 +309,13 @@ public class PoboEnrolmentService {
      * account behind it -- never a VA id. Refused when it has none.
      */
     public String debtorIban(VirtualAccount va) {
-        return Stream.of(va.getViban(), va.getBankIban(), iban(va)).filter(i -> i != null && !i.isBlank()).findFirst()
+        return Optional.ofNullable(accountIban(va))
             .orElseThrow(() -> new BusinessException("Not available: no IBAN for the debtor account " + va.getVaNumber()));
+    }
+
+    /** The IBAN a message names for {@code va} (its VIBAN, else its bank IBAN, else its bank account's), or null. */
+    public String accountIban(VirtualAccount va) {
+        return Stream.of(va.getViban(), va.getBankIban(), iban(va)).filter(i -> i != null && !i.isBlank()).findFirst().orElse(null);
     }
 
     /**
@@ -315,9 +370,7 @@ public class PoboEnrolmentService {
         Optional<LegalEntity> sub = legalEntities.findById(e.getSubsidiaryEntityId());
         Optional<LegalEntity> payer = legalEntities.findById(e.getPayerEntityId());
         Optional<VirtualAccount> va = accounts.findById(e.getPaymentVaId());
-        Optional<VirtualAccount> current = accounts.findByOwningEntityIdAndStatus(e.getSubsidiaryEntityId(), VaStatus.ACTIVE).stream()
-            .filter(a -> a.getMirrorAccountType() == MirrorAccountType.IHB_CURRENT && e.getCurrency().equals(a.getCurrencyCode()))
-            .findFirst();
+        Optional<VirtualAccount> current = settleAccount(e.getSubsidiaryEntityId(), e.getIhbAccountId(), e.getCurrency());
         return new EnrolmentView(e.getId(), e.getCorporateId(),
             e.getSubsidiaryEntityId(), sub.map(LegalEntity::getEntityCode).orElse(null), sub.map(LegalEntity::getEntityName).orElse(null),
             e.getCurrency(),
@@ -325,6 +378,7 @@ public class PoboEnrolmentService {
             e.getPaymentVaId(), va.map(VirtualAccount::getVaNumber).orElse(null), va.map(VirtualAccount::getVaName).orElse(null),
             va.map(this::iban).orElse(null),
             current.map(VirtualAccount::getId).orElse(null), current.map(VirtualAccount::getVaNumber).orElse(null),
+            current.map(VirtualAccount::getCurrencyCode).orElse(null),
             current.map(PoboEnrolmentService::headroom).orElse(null),
             e.getEffectiveFrom(), e.getEffectiveTo(), e.isActiveOn(LocalDate.now()), e.getCreatedBy(), e.getCreatedAt());
     }

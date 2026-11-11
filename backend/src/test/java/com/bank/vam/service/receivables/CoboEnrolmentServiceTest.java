@@ -92,7 +92,7 @@ class CoboEnrolmentServiceTest {
     }
 
     private CoboEnrolmentService.EnrolmentView enrol(LegalEntity collector, VirtualAccount account) {
-        return service.create(CORPORATE, subsidiary.getId(), "aed", collector.getId(), account.getId(), null);
+        return service.create(CORPORATE, subsidiary.getId(), "aed", collector.getId(), account.getId(), null, null);
     }
 
     @Test
@@ -170,5 +170,23 @@ class CoboEnrolmentServiceTest {
         assertThat(saved).isEmpty();
         assertThat(service.collectionAccounts(treasury.getId(), "AED")).extracting(CoboEnrolmentService.CollectionAccount::id)
             .containsExactly(collection.getId());
+    }
+
+    @Test
+    void aCrossCurrencyEnrolmentSettlesOnTheNamedIhbAccountAndCollectsIntoAnAccountInItsCurrency() {
+        VirtualAccount eur = va(treasury, null);
+        eur.setCurrencyCode("EUR");
+        assertThatThrownBy(() -> service.create(CORPORATE, subsidiary.getId(), "EUR", treasury.getId(), eur.getId(),
+            ihbCurrent.getId(), null)).hasMessageContaining("is in EUR, not AED");
+
+        var view = service.create(CORPORATE, subsidiary.getId(), "EUR", treasury.getId(), collection.getId(), ihbCurrent.getId(), null);
+
+        assertThat(view.currency()).isEqualTo("EUR");
+        assertThat(view.ihbAccountId()).isEqualTo(ihbCurrent.getId());
+        assertThat(view.ihbAccountCurrency()).isEqualTo("AED");
+        assertThat(service.active(subsidiary.getId(), "EUR", LocalDate.now())).map(CoboEnrolmentService.EnrolmentView::ihbAccountId)
+            .contains(ihbCurrent.getId());
+        // Without a named account: the one in the enrolment currency, as before.
+        assertThat(enrol(treasury, collection).ihbAccountId()).isEqualTo(ihbCurrent.getId());
     }
 }

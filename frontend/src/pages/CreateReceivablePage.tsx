@@ -15,6 +15,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Link2, Mail, Calculator, DollarSign, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi, coboEnrolmentApi, type CoboEnrolment } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
+import { useIndicativeFx } from '../hooks/useIndicativeFx';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
@@ -1293,6 +1294,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   };
 
   const breakdown = useMemo(() => invoiceBreakdown(formData), [formData]);
+  // Settled on the subsidiary's IHB account in another currency (ihb-fx D2): T sells the invoice currency on arrival.
+  const settleCurrency = cobo ? cobo.ihbAccountCurrency ?? cobo.currency : null;
+  const indicative = useIndicativeFx(cobo?.collectionVaId, formData.currency, breakdown.total, settleCurrency, true);
 
   // Collection account is optional in general, but required when generating a VIBAN --
   // VibanService.createInvoiceViban() needs a real target VA to attach the VIBAN to.
@@ -1594,6 +1598,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
                     <div>
                       <p className="body-strong">Collected by {cobo.collectorName ?? cobo.collectorCode} into {cobo.collectionVaName ?? cobo.collectionVaNumber}</p>
+                      {settleCurrency && settleCurrency !== formData.currency && (
+                        <p className="body-sm">
+                          Collected by {cobo.collectorName ?? cobo.collectorCode} in {formData.currency}; credited to {ownerName ?? cobo.subsidiaryName}&apos;s {settleCurrency} account
+                          {indicative?.needsQuote ? ' — rate negotiated by treasury when it arrives'
+                            : indicative?.settleAmount != null ? ` — indicative ${formatCurrency(indicative.settleAmount, settleCurrency)}`
+                            : ' at the rate on the day it arrives'}
+                        </p>
+                      )}
                       <p className="caption">
                         {cobo.collectionVaNumber} · {ownerName ?? cobo.subsidiaryName} is enrolled for {cobo.currency}. The customer pays the
                         treasury centre through a VIBAN named &ldquo;{cobo.collectorName} re: {cobo.subsidiaryName}&rdquo;; when the money

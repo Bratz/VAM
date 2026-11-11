@@ -1,5 +1,234 @@
 # Active Work / Status Tracker
 
+## ✅ In-house FX for POBO and COBO (spec: docs/specs/ihb-fx.md, decisions D1–D8)
+Same shape as POBO/COBO: phases in order, reported after each; commit and push only when the user says so.
+Design: back-to-back (D3) = convert on treasury's **settle-currency** account with the FX module that already exists
+(`FxPaymentService.convert` outgoing, `convertIncoming` incoming, e13cc54); no foreign-currency treasury accounts.
+Same-currency enrolments must behave exactly as today (all existing POBO/COBO tests unchanged).
+
+### Phase 1 — enrolment names the IHB account it settles on (D2)
+- [x] 1.1 `pobo_enrolment` / `cobo_enrolment` gain `ihb_account_id` (ddl-auto, nullable; null = the IHB current account
+      in the enrolment currency, as today — no migration). Enrolment currency = payment/collection currency.
+- [x] 1.2 Validation: the IHB account is X's active IHB_CURRENT with its mirrors; T's payment/collection account is in
+      the IHB account's currency (was: the enrolment currency); one open enrolment per subsidiary + currency as now.
+- [x] 1.3 `Route` returns the named IHB account; COBO receivables store it at creation (`cobo_ihb_account_id`) and
+      ReconciliationService.coboIhbCurrentAccount uses it (fallback: by invoice currency, for old invoices).
+- [x] 1.4 API + both enrolment panels: currency list = any currency; "Settled on" picker (X's IHB accounts); account
+      picker filtered by the settle currency; the row shows "EUR → settled on AED".
+
+Phase 1 done (636 tests, tsc clean): `ihbAccountId` on both enrolments (null = the IHB current account in the enrolment
+currency, one `settleAccount` per service); T's account checked in the settle currency; `Route.crossCurrency()`; COBO
+invoices keep `cobo_ihb_account_id` (createInvoice, cut-over). Until Phases 2/3 a cross-currency route is refused before
+money moves: POBO in `painDebtor(Route)` (+ preview refusal), COBO in `coboIhbCurrentAccount`. Panels: any currency, "Settled on".
+
+### Phase 2 — POBO cross-currency payment (D3–D6)
+- [x] 2.1 PayablesService.executePayment, POBO route with payable currency ≠ IHB account currency: preview the cover on
+      T's payment account (`fxPayments.preview`, at market) → IHB headroom check on the AED amount (R9) → `convert` at
+      market on T's payment account (T's deals first, then live price; T's sub-limit) → 6-leg posting with the AED
+      amount → `fxPayments.settle` → instructed amount/currency, rate, deal ref also on X's IHB movement (R7).
+- [x] 2.2 Refusals (D6): no sub-limit / no price / over headroom → nothing moves, payable stays APPROVED with the reason.
+- [x] 2.3 pain.001: InstdAmt in the payable currency, DbtrAcct T's settle-currency IBAN, UltmtDbtr X (check it).
+- [x] 2.4 Same in Iso20022OutwardPaymentService (POBO route) and the payables file ingest / batch path.
+- [x] 2.5 getPoboPreview / headroom on the POBO tab use the indicative AED amount.
+
+Phase 2 done (645 tests, tsc clean): `Route.cover(fx, amount, instruction)` = preview on T's payment account (at market
+unless the request names a price/quote/deal; `preview` at market now takes T's fitting deals first, as `convert`) ->
+headroom on the AED amount -> `convert` there (T's line); FX_NOT_YET gone (POBO). executePayment converts before PROCESSING /
+the PaymentRequest row (direct path too), so a refusal leaves the payable APPROVED. `TransactionService.settlePoboFx`
+settles the cover on T's payout row of the posting (payment account's POBO_DEBIT) and notes instructed EUR / rate / deal
+on X's IHB movement. ISO single + bulk the same (bulk plans POBO rows' FX on T's account; uncovered -> AWAITING_FX row);
+IngestFx plans an enrolled entity's lines on the enrolment's payment account (payables and payments files). Bulk pain.001
+CtrlSum = sum of InstdAmt (was the converted debits). getPoboPreview: `settleCurrency` / indicative `settleAmount`, refusal
+on it; Pay Now shows them. For 3a/4: preview does not check T's FX sub-limit (refused at convert); a deal booked by a
+committed batch plan stays booked when its row is then refused; `executeBatchPayment` self-invokes executePayment in one
+transaction (a later failure can leave earlier state), unchanged.
+
+### Phase 3 — COBO cross-currency collection (D3, D5, D6)
+- [x] 3.1 Create Invoice for an enrolled subsidiary in the enrolment currency (EUR): COBO, VIBAN and pay link on T's
+      settle-currency (AED) collection account; VIBAN expected amount/bounds stay in EUR.
+- [x] 3.2 Inward: VIBAN bounds compared in the VIBAN's currency (e13cc54 compares in the account's — fix); the credit
+      converts as now; reconciliation matches the invoice on the **instructed** EUR amount; X's IHB account is credited
+      the AED of the applied part (pro rata when part is unapplied); FX details on X's IHB movement.
+- [x] 3.3 Direct debits (CollectionSettlementService) and "apply an unmatched credit" (manual) for a cross-currency
+      COBO invoice: same rule. pain.008 / pain.013 carry EUR (check).
+- [x] 3.4 Refusal (D6): T cannot sell the EUR → the inward credit is refused (already the behaviour; test it).
+
+Phase 3 done (656 tests): createInvoice already put a EUR invoice's EUR VIBAN on the enrolment's AED account (test
+added). The instructed amount reaches reconciliation from the bank credit itself (settleIncoming notes it before
+reconcile; DD and manual the same): `ReconciliationService.paidOn` = booked amount, or the instructed one when it was
+sent in the invoice currency -- used by the direct / VIBAN-linked tiers, manualMatch and COBO `collectCredits` (now lists
+converted credits at their EUR amount); unmatched rows stay in the booked AED. `applyPayment`: settled in another
+currency, X gets credit AED x applied / instructed, half-up to the cent, the whole AED when the whole credit applies
+(one credit pays one COBO invoice, so no remainder to carry); instructed EUR (the applied part), rate, deal ref on X's
+IHB line. Phase-1 refusal replaced by: a cross-currency invoice takes only a credit sent in its currency and booked in
+X's (else unmatched / refused). Inward: VIBAN bounds and VIBAN stats in the VIBAN's currency (`inVibanCurrency`).
+Checked: pain.013 InstdAmt EUR, CdtrAcct = the VIBAN on T's AED account; pain.008 InstdAmt EUR, CdtrAcct Id = T's VA
+number but CdtrAcct/Ccy = EUR (the line's, not the account's AED; pre-existing for every foreign-currency DD -- for 4/5).
+For 3a/4: amount-based tier still matches in the booked currency only; X's statement line text unchanged (Phase 4.3).
+
+### Phase 3a — above the live-price threshold (D7, D8)
+- [x] 3a.1 POBO: an uncovered amount above the stream limit → refusal "needs a negotiated rate"; payable flagged
+      *Awaiting FX* (new nullable `fx_status` / reason on payables); POBO payments pass the request's FX fields (a firm
+      quote id) through to `convert` instead of always at market.
+- [x] 3a.2 POBO tab "Awaiting FX" list: request quote (for payment, T's entity, BUY the payable currency), counter,
+      accept → `executePayment` with that quote id in the same action (the deal is the payment's).
+- [x] 3a.3 COBO: `convertIncoming` takes a firm quote (SELL); an uncovered inward credit above the limit is stored as
+      awaiting FX (new table: the inward request + VIBAN/VA + status AWAITING_FX / POSTED), answered PDNG, not posted;
+      the idempotency guard also checks it.
+- [x] 3a.4 COBO tab "Awaiting FX" list: request quote, counter, accept → post the stored credit through the normal
+      inward path with that quote (convert, reconcile, credit X) in one transaction.
+- [x] 3a.5 Tests: both queues; a deal accepted for one payment is not drawn by another; a resent held credit is a
+      duplicate; quote expiry leaves the item waiting.
+
+Phase 3a done (672 tests, tsc clean): `FxPaymentService.needsQuote(account, ccy, amount, side)` -- what the entity's deals
+leave, not streamable -> the reason; null when covered/streamable; throws FX_LINE_REFUSED when the line refuses any deal
+(D6: refused, not queued). Not transactional, books nothing, so asking never dooms the caller's transaction. POBO:
+executePayment asks it (cross-currency route, no price/quote/deals named) before `cover`; on a reason sets
+`payables.fx_status` AWAITING_FX + `fx_status_reason` and throws `PayablesService.NeedsNegotiatedRate`
+(FX_PAYMENT_AWAITING_FX), with `@Transactional(noRollbackFor = NeedsNegotiatedRate.class)` so the flag commits and
+nothing else has moved; `Payable.recordPayment` clears it. getPoboPreview reports it as `fxNeedsQuote` (not a refusal,
+so Pay Now stays enabled). `GET /pobo/enrolments/awaiting-fx`; treasury's accept = the existing
+`POST /payables/{id}/execute` with `fxQuoteId` (firm quote for the whole amount, no deals: the deal is the payment's,
+settled in full by it). COBO: `convertIncoming(.., quoteId)` (SELL, forPayment, pair, amount, corporate + entity
+checked); a credit to a COBO invoice's VIBAN with a reason is stored in `inward_fx_hold` (request fields, VA/VIBAN/
+invoice, AWAITING_FX/POSTED) and answered PDNG (`fxHoldId`), nothing posted; the idempotency guard answers a
+re-delivery with the same hold. `GET /cobo/awaiting-fx`, `POST /cobo/awaiting-fx/{id}/post {quoteId}` =
+`Iso20022InwardPaymentService.postHeld` (row lock, normal inward path with the quote, POSTED + transaction ref; any
+refusal rolls back and the credit stays held). UI: `components/payments/FirmQuotePanel` (request for payment, counter,
+countdown, accept; client rate and counter amount only) in an "Awaiting FX" section of both enrolment panels;
+payables show "Awaiting FX (treasury)". For 4/5: a file run's above-limit POBO line is still held on the ingest row
+before its payable exists (not on the POBO tab); direct debits above the limit are still refused (convertIncoming at
+market); a credit to a non-COBO account or by VA number keeps today's refusal; no RETURNED for a held credit treasury
+will not convert; the flag stays set when a later Pay Now no longer needs a quote but fails for another reason.
+
+### Phase 4 — screens
+- [x] 4.1 Create Payable / Create Invoice: "Paid by T in EUR; settled on X's AED account — indicative AED 4,012.30"
+      (FX preview on T's account; all-in client rate only, never mid/margin/floor).
+- [x] 4.2 Payable detail / approval: the indicative AED amount; after payment the actual rate and AED amount.
+- [x] 4.3 X's IHB statement line: "EUR 1,000.00 to <supplier> · rate 4.0123 · AED 4,012.30".
+- [x] 4.4 pain.008 (found in Phase 3, predates it): creditor account given as the VA number, not the IBAN, and its
+      currency set to the invoice currency (EUR) although T's account is AED — use the account's real IBAN and currency.
+- [x] 3a leftovers: (a) file-run above-limit POBO line on the POBO tab; (b) "Return to payer" for a held COBO credit;
+      (c) Awaiting FX cleared when the payable can no longer be paid or its enrolment ends.
+
+Phase 4 done (680 tests, tsc clean): `GET /fx/payments/indicative?accountId&currency&amount&incoming` =
+`FxPaymentService.indicative` (POBO: `preview` at market on T's payment account; COBO: new `previewIncoming` -- T's deals
+selling the currency, then the live SELL price, books nothing); above the limit -> `needsQuote`, never a refusal.
+`hooks/useIndicativeFx` (debounced) on Create Payable (POBO banner: "Paid by T in EUR; settled on X's AED account —
+indicative AED …" / "rate negotiated by treasury at payment"; headroom now shown in the IHB account's currency and
+compared with the indicative settle amount -- Phase-1 leftover) and Create Invoice ("Collected by T in EUR; credited to
+X's AED account — indicative …"). Pay Now asks for no price until the route is known and sends none for POBO (a price
+would be X's entity; T's is used at payment -- Phase-2 leftover). `PoboSettlement` cell in the approval modal and the
+payable detail: before payment the indicative settle amount (getPoboPreview), after payment the posted IHB movement
+(`/transactions/reference/{poboTransactionRef}`, now with instructed amount/currency, fxRate, fxDealRef): "Paid EUR … at
+rate: AED … on <IHB> · FXD-…". 4.3 via the backend description (every view -- transactions list, grouped view,
+statement preview, camt.053 remittance info -- reads it): `FxPaymentService.line(movement, what)` set in
+`settlePoboFx` ("to <beneficiary>") and COBO `applyPayment` ("from <customer> for <receivable no.>"). pain.008:
+`Pain008.Account(iban, number, currency)`: CdtrAcct/Id/IBAN = `PoboEnrolmentService.accountIban` (VIBAN, bank IBAN,
+bank account's IBAN -- as pain.001), Ccy = the account's; no IBAN -> Othr/Id VA number as before (ponytail).
+(a) PayablesProcessor: a held line whose entity is cross-currency POBO-enrolled is created + approved and flagged
+AWAITING_FX (`PayablesService.flagAwaitingFx`), row PROCESSED with the payable id -- not held, so it is on the POBO tab;
+other held lines still hold/release. (b) `POST /cobo/awaiting-fx/{id}/return {reason}` -> RETURNED + return_reason /
+returned_by / returned_at (ddl-auto columns), nothing posted, no pacs.004 (ponytail); "Return" on the COBO Awaiting FX
+list. (c) `Payable.dropStaleFxStatus` (@PrePersist/@PreUpdate: not payable any more -> flag cleared, whichever path
+changed the status); `PoboEnrolmentService.end` clears the flag on that subsidiary + currency's payables.
+For 5: payments-file (not payables) POBO lines above the limit are still held on the ingest row; a re-delivery of a
+RETURNED credit is held again as new; the flag stays when T books a deal that would now cover it (cleared on payment);
+UI not walked live (backend preview not restarted).
+
+### Phase 5 — verification
+- [x] 5.1 Acceptance 1–9 of the spec as tests; all existing tests pass unchanged.
+- [x] 5.1a Account-impact test per path (POBO auto, POBO queued, COBO auto, COBO held, direct debit, manual apply):
+      assert every account's delta — X's IHB current (AED, = the deal's AED leg to the fils), T's IC mirror (follows
+      R10), T's settle-currency account + shadow + physical, fee, **T's EUR accounts unchanged**, deal utilisation
+      row, no posting to the deal's settlement accounts, a ledger row per movement.
+- [x] 5.1b Live run: snapshot **all** virtual/physical account balances before each scenario and diff the whole table
+      after, so any movement outside the expected set shows up.
+- [x] 5.2 Localhost end to end: enrol MNC-UAE-DUBAI EUR settled on its AED IHB account; EUR payable Pay Now (deal on
+      MNC-TREASURY's line, Dubai debited the AED leg, pain.001); over-headroom refusal; COBO EUR invoice paid by a EUR
+      inward credit; a corporate without T sub-limit refused; EUR 300,000 POBO and COBO through the Awaiting FX
+      queues with a countered quote. Back up and restore data (incl. physical accounts and
+      fx_* tables).
+- [x] 5.3 Typecheck, full suite; demo walkthrough step 11.
+Phase 5 (localhost, 11 Nov, whole-table balance diff per scenario): Dubai enrolled EUR → AED IHB, paid by MNC-TREASURY
+from QA-TXN-L7-64808 (test IBAN + VA→physical link set for the run). EUR 1,000 Pay Now: 4 accounts moved by AED 4,014.98
+(Dubai IHB −, treasury physical + shadow −, ICR mirror = position), deal FXD-…270CD5 on MNC-TREASURY settled by the
+payment, Dubai line "EUR 1,000.00 to Test Supplier GmbH · rate 4.014978 · AED 4,014.98". EUR 260,000: Awaiting FX,
+nothing moved; quote 4.014517 countered to 4.014216, accept refused over Dubai's AED headroom (nothing booked, still
+waiting); limit raised for the run: accept paid exactly the countered quote (AED 1,043,894.02), flag cleared. COBO
+MNC-UK EUR → AED: EUR 1,000 to the VIBAN on treasury's AED account → AED 4,010.67 credited, invoice PAID/COLLECTED,
+ICP mirror = position; EUR 300,000 → PDNG hold, re-delivery = same hold, nothing posted; SELL quote countered and
+posted (AED 1,202,821.20), invoice PAID; a third hold returned to payer (cannot be posted/returned again). Found and
+fixed: pain.001 DbtrAcct/Ccy was the payable's currency (EUR) instead of the paying account's (AED). Screens: POBO row
+"EUR → settled on AED", Create Payable indicative AED / "rate negotiated by treasury at payment" above the limit, no
+mid/margin/floor. 680 tests, tsc clean. Data restored from backups (incl. physical accounts, fx_* tables).
+Seen, not changed (pre-existing): collection/VIBAN fees on treasury's account are credited to IHBS-MNC-UAE-DUBAI-AED
+(the settlement VA its program resolves to); a POBO payout can take treasury's bank account below zero (only the
+subsidiary's IHB headroom is checked, not treasury's own funds).
+
+## Planned: Notional pooling (spec: docs/specs/notional-pooling.md, decisions D1–D11)
+Starts after in-house FX is committed (both touch tasks/todo.md and frontend/src/services/api.ts). Phases in order,
+reported after each; commit and push only when the user says so. Money/ledger risks first.
+
+### Phase 1 — stop the damage
+- [ ] 1.1 Pool reference from the database (Postgres sequence via a Flyway migration in backend/src/main/resources/db/
+      migration + mirror in database/migrations, starting after the highest existing NP-/POOL- number); drop the static
+      AtomicInteger. Simulator activation keeps working.
+- [ ] 1.2 Remove the per-click management fee and the joining fee (D9) and their ledger postings.
+- [ ] 1.3 Retire the "Calculate Interest" button's YTD/allocation increments (replaced in Phase 3); until then the
+      button is hidden, not left double-counting.
+- [ ] 1.4 Backend membership checks (R1, R3, R4): same currency as the pool, home-bank PHYSICAL_MIRROR, same corporate
+      and the pool's legal entity, not already in a pool (single and bulk add); member leave sets left_date and status
+      instead of deleting; pool SUSPEND / CLOSE endpoints.
+- [ ] 1.5 One writer for membership: PhysicalAccountController pooling enable/disable either goes through the pool
+      service or is retired (pick the smaller; flags follow membership).
+
+### Phase 2 — structure and rates (D1–D3, D7, D8)
+- [ ] 2.1 `notional_pools`: header_account_id (mandatory, a member), legal_entity_id, interest_configuration_id, pool
+      floor; `pool_members.debit_limit`. Entity columns via ddl-auto.
+- [ ] 2.2 InterestConfiguration target type POOL: the enum value + a Flyway migration that widens chk_ic_target_type
+      (CHECK constraints don't follow the enum). Create/edit pool creates/links its config (credit/debit base + spread,
+      day count default by currency, optional tiers); the free-typed rate is retired.
+- [ ] 2.3 Verify InterestConfigurationService.calculateDailyInterest uses the debit rate for a negative balance and the
+      config's day count and tiers; fix there if not (it serves the IHB too — keep IHB tests green).
+- [ ] 2.4 Create/edit pool UI: entity, currency, header picker (from members), rates, limits; AccountSelector filtered
+      by entity + currency + home bank.
+
+### Phase 3 — daily runs (D4, D5, D6, R9, R13)
+- [ ] 3.1 `pool_interest_calculations` (use the existing entity, drop its approval statuses' use per D11) + new
+      `pool_interest_lines` (member, EOD balance, snapshot date used, standalone interest, allocated interest).
+- [ ] 3.2 Run(pool, valueDate): members' EOD balances from shadow_balance_snapshot (as_of = value date, else the last
+      earlier one, flagged); pooled interest on the net (credit/debit rate); standalone per member; benefit = pooled −
+      Σ standalone; allocation pro rata (credit interest to members in credit by credit balance; debit interest to
+      members in debit by debit balance), residue to the header; limit/floor breaches flagged. Idempotent per
+      (pool, date) via a unique constraint.
+- [ ] 3.3 Scheduler after end of day (one run per active pool for yesterday) + manual run for a date range (catch-up).
+- [ ] 3.4 Tests: acceptance 2 and 3 of the spec (the +1,000,000 / −400,000 example), pro rata both signs, residue,
+      missing snapshot, re-run unchanged.
+
+### Phase 4 — month-end posting (D5, D11)
+- [ ] 4.1 Month end (scheduler on the 1st for the previous month, + manual): Σ allocated per member → one interest
+      movement per member on the ledger (credit or debit; ledger rows, statement line "Pool interest <pool> <month>"),
+      runs marked posted; idempotent per (pool, month).
+- [ ] 4.2 Correction: re-running a posted date makes a new run and a reversing + new posting, never an edit.
+- [ ] 4.3 Tests: Σ postings = Σ daily pooled interest; posting twice changes nothing; correction path.
+
+### Phase 5 — screens and data (R15–R18, D10)
+- [ ] 5.1 NotionalPoolingPage: totals per currency (no cross-currency sum, no "AED" label); list shows run-dated
+      figures; pool detail: members with EOD balance, today's accrual, month-to-date interest and benefit, run history,
+      breaches; "Savings" means benefit only.
+- [ ] 5.2 Hierarchy "Pool interest" KPI = month-to-date, labelled; copilot GetPoolsTool fields follow.
+- [ ] 5.3 Data (D10): close NP-0001/0002; re-seed the demo pools (seed SQL + a Flyway data migration for existing
+      environments) with eligible members — home bank, one currency, one entity, a header — and build their figures by
+      running the daily calculation over the snapshot history (no hard-coded YTD). Check vam-five's pools too.
+- [ ] 5.4 Simulator "activate" creates pools that pass the new checks (or says why not).
+
+### Phase 6 — verification
+- [ ] 6.1 Spec acceptance 1–7 as tests; full suite; typecheck.
+- [ ] 6.2 Localhost: restart then create two pools; run a week of dates; re-run a date; month-end post; member
+      statement lines; refusals (other currency / bank / entity); per-currency totals. Back up and restore data.
+- [ ] 6.3 Demo walkthrough step for notional pooling.
+
 ## ✅ POBO through the In-House Bank (spec: docs/specs/pobo-in-house-bank.md, decisions D1–D10)
 Same shape as the COBO work. Phases are applied in order; nothing is committed or pushed until the user says so.
 

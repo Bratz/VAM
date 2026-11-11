@@ -213,6 +213,11 @@ public class Receivable extends BaseEntity {
      */
     @Column(name = "cobo_collector_entity_name", length = 200)
     private String coboCollectorEntityName;
+
+    /** The subsidiary's IHB current account a COBO invoice is credited to, from its enrolment at creation (ihb-fx D2).
+     * Null on older invoices: the subsidiary's IHB current account in the invoice currency. */
+    @Column(name = "cobo_ihb_account_id")
+    private UUID coboIhbAccountId;
     
     /**
      * Reference to the COBO request/authorization record.

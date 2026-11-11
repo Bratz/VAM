@@ -40,6 +40,11 @@ public class CoboEnrolment extends BaseEntity {
     @Column(name = "collection_va_id", nullable = false)
     private UUID collectionVaId;
 
+    /** The subsidiary's IHB current account it settles on (D2 of docs/specs/ihb-fx.md); cross-currency when its currency
+     * differs from {@code currency}. Null: the subsidiary's IHB current account in {@code currency}, as before D2. */
+    @Column(name = "ihb_account_id")
+    private UUID ihbAccountId;
+
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
 

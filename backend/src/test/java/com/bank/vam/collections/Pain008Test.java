@@ -42,7 +42,7 @@ class Pain008Test {
         LocalDate d2 = LocalDate.of(2026, 11, 20);
         String xml = Pain008.build("CR-1", "Test Corp", "EBILAEADXXX",
                 List.of(debit("A", "100.00", d1, "FRST"), debit("B", "50.50", d1, "FRST"), debit("C", "10.00", d2, "RCUR")),
-                Map.of(ACCOUNT, "VA-AED-1"), Map.of(), Map.of());
+                Map.of(ACCOUNT, new Pain008.Account(null, "VA-AED-1", "AED")), Map.of(), Map.of());
 
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
                 .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
@@ -74,7 +74,7 @@ class Pain008Test {
         cobo.setCreditorVaId(treasuryAccount);
 
         String xml = Pain008.build("CR-2", "Test Corp", "EBILAEADXXX", List.of(direct, cobo),
-                Map.of(ACCOUNT, "VA-AED-1", treasuryAccount, "VA-TRS-1"), Map.of(),
+                Map.of(ACCOUNT, new Pain008.Account(null, "VA-AED-1", "AED"), treasuryAccount, new Pain008.Account("AE460260001015555555555", "VA-TRS-1", "AED")), Map.of(),
                 Map.of(cobo.getReceivableId(), new Pain008.OnBehalf("Treasury Centre FZE", "Sub <X> LLC")));
 
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -88,7 +88,11 @@ class Pain008Test {
         Element coboBlock = (Element) doc.getElementsByTagName("PmtInf").item(1);
         assertEquals("1", coboBlock.getElementsByTagName("NbOfTxs").item(0).getTextContent());
         assertEquals("Treasury Centre FZE", ((Element) coboBlock.getElementsByTagName("Cdtr").item(0)).getElementsByTagName("Nm").item(0).getTextContent());
-        assertEquals("VA-TRS-1", ((Element) coboBlock.getElementsByTagName("CdtrAcct").item(0)).getElementsByTagName("Id").item(1).getTextContent());
+        // the account's IBAN (schema choice Id/IBAN), not its VA number
+        Element cdtrAcct = (Element) coboBlock.getElementsByTagName("CdtrAcct").item(0);
+        assertEquals("AE460260001015555555555", cdtrAcct.getElementsByTagName("IBAN").item(0).getTextContent());
+        assertEquals(0, cdtrAcct.getElementsByTagName("Othr").getLength());
+        assertEquals("AED", cdtrAcct.getElementsByTagName("Ccy").item(0).getTextContent());
         Element tx = (Element) coboBlock.getElementsByTagName("DrctDbtTxInf").item(0);
         assertEquals("Sub <X> LLC", ((Element) tx.getElementsByTagName("UltmtCdtr").item(0)).getElementsByTagName("Nm").item(0).getTextContent());
         // ISO 20022 order: UltmtCdtr follows DrctDbtTx and precedes DbtrAgt

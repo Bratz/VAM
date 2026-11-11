@@ -308,6 +308,18 @@ public class FxQuoteService {
         }
     }
 
+    /** Why the FX line would refuse a spot like {@code c} now (no line, no sub-limit, no headroom), or null. Reads only. */
+    String lineRefusal(Command c) {
+        try {
+            FxLimitService.Line line = limitService.line(c.corporateId());
+            BigDecimal charge = limitService.charge(c.instrument(), c.pair().substring(0, 3), c.amount(), LocalDate.now(),
+                    forwards.spotDate(), line.currency());
+            return limitService.refusal(c.corporateId(), c.entityId(), charge);
+        } catch (RuntimeException e) {
+            return e.getMessage();
+        }
+    }
+
     void validate(Command c) {
         if (c.pair() == null || !PAIR.matcher(c.pair()).matches()) {
             throw new BusinessException("FX_PAIR_UNSUPPORTED", "Pair must look like EUR/USD: " + c.pair());

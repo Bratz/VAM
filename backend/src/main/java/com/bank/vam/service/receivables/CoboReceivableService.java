@@ -100,7 +100,10 @@ public class CoboReceivableService {
                                 LocalDateTime paymentDate, UUID vaId, String vaNumber) {
     }
 
-    /** The unmatched credits on the collecting entity's active accounts in the invoice currency, newest first. */
+    /**
+     * The unmatched credits on the collecting entity's active accounts that pay in the invoice currency -- booked in it,
+     * or sent in it and converted on arrival (ihb-fx: EUR to treasury's AED account) -- at that amount, newest first.
+     */
     @Transactional(readOnly = true)
     public List<CollectCredit> collectCredits(UUID receivableId) {
         return collectCredits(receivableRepository.findById(receivableId)
@@ -112,12 +115,14 @@ public class CoboReceivableService {
             throw new BusinessException("Receivable " + receivable.getReceivableNumber() + " has no collecting entity");
         }
         return virtualAccountRepository.findByOwningEntityIdAndStatus(receivable.getCoboCollectorEntityId(), VaStatus.ACTIVE).stream()
-            .filter(v -> receivable.getCurrencyCode().equals(v.getCurrencyCode()))
             .flatMap(v -> unmatchedPaymentRepository.findByVirtualAccountId(v.getId()).stream()
                 .filter(UnmatchedPayment::isPending)
-                .filter(u -> receivable.getCurrencyCode().equals(u.getCurrencyCode()))
-                .map(u -> new CollectCredit(u.getId(), u.getAmount(), u.getCurrencyCode(), u.getPayerName(),
-                    u.getRemittanceInfo(), u.getPaymentDate(), v.getId(), v.getVaNumber())))
+                .map(u -> {
+                    ReconciliationService.Money paid = reconciliationService.paidOn(receivable, u.getTransactionId(), u.getAmount(), u.getCurrencyCode());
+                    return new CollectCredit(u.getId(), paid.amount(), paid.currency(), u.getPayerName(),
+                        u.getRemittanceInfo(), u.getPaymentDate(), v.getId(), v.getVaNumber());
+                })
+                .filter(c -> receivable.getCurrencyCode().equals(c.currencyCode())))
             .sorted(Comparator.comparing(CollectCredit::paymentDate, Comparator.nullsLast(Comparator.reverseOrder())))
             .toList();
     }

@@ -3,9 +3,15 @@ package com.bank.vam.iso20022.service;
 import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.entity.receivables.InwardFxHold;
+import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.fx.deal.FxPaymentService;
+import com.bank.vam.fx.deal.Side;
+import com.bank.vam.repository.receivables.InwardFxHoldRepository;
+import com.bank.vam.repository.receivables.ReceivableRepository;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.mapper.Iso20022MessageMapper;
 import com.bank.vam.repository.TransactionRepository;
@@ -73,6 +79,8 @@ public class Iso20022InwardPaymentService {
     private final ReconciliationService reconciliationService;
     private final FxPaymentService fxPayments;
     private final FxRateService fxRates;
+    private final ReceivableRepository receivableRepository;
+    private final InwardFxHoldRepository fxHolds;
 
     // ========================================================================
     // PROCESS INWARD PAYMENT (Main Entry Point)
@@ -84,6 +92,65 @@ public class Iso20022InwardPaymentService {
      */
     @Transactional
     public InwardPaymentResponse processInwardPayment(InwardPaymentRequest request) {
+        return process(request, null);
+    }
+
+    /** The corporate's inward credits held for a negotiated rate (ihb-fx D8), oldest first. */
+    @Transactional(readOnly = true)
+    public List<InwardFxHold> heldForFx(UUID corporateId) {
+        return fxHolds.findByCorporateIdAndStatusOrderByCreatedAtAsc(corporateId, InwardFxHold.AWAITING_FX);
+    }
+
+    /**
+     * Posts a held credit (ihb-fx D8) through the normal inward path, converted at the firm quote treasury accepted:
+     * convert on the quote, the 4-leg collection, settleIncoming, reconciliation (invoice paid, subsidiary credited).
+     * All or nothing in this transaction: a quote that expired, or any refusal, leaves the credit held.
+     */
+    @Transactional
+    public InwardPaymentResponse postHeld(UUID holdId, UUID fxQuoteId) {
+        InwardFxHold h = fxHolds.lockById(holdId).orElseThrow(() -> new ResourceNotFoundException("Held credit not found: " + holdId));
+        if (!InwardFxHold.AWAITING_FX.equals(h.getStatus())) {
+            throw new BusinessException("FX_HOLD_NOT_WAITING", "This credit is already " + h.getStatus().toLowerCase()
+                + (h.getTransactionRef() != null ? " (" + h.getTransactionRef() + ")" : ""));
+        }
+        if (fxQuoteId == null) {
+            throw new BusinessException("FX_HOLD_NEEDS_QUOTE", "Accept a firm quote to post this credit");
+        }
+        InwardPaymentResponse r = process(h.toRequest(), fxQuoteId);
+        if (!r.isSuccess() || r.getTransactionId() == null) {
+            throw new BusinessException("FX_HOLD_NOT_POSTED", "Not posted: " + r.getStatusReason());
+        }
+        h.setStatus(InwardFxHold.POSTED);
+        h.setTransactionId(r.getTransactionId());
+        h.setTransactionRef(r.getTransactionReference());
+        h.setPostedAt(LocalDateTime.now());
+        fxHolds.save(h);
+        return r;
+    }
+
+    /**
+     * Treasury will not convert a held credit (ihb-fx D8): it goes back to the payer. Marked RETURNED with the reason,
+     * who and when; nothing was posted, so nothing is reversed. ponytail: no outgoing return message (pacs.004) in v1;
+     * the bank returns the funds by hand from this record. Locked, so it cannot be posted and returned at once.
+     */
+    @Transactional
+    public InwardFxHold returnHeld(UUID holdId, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException("FX_HOLD_RETURN_REASON", "Say why the credit is returned to the payer");
+        }
+        InwardFxHold h = fxHolds.lockById(holdId).orElseThrow(() -> new ResourceNotFoundException("Held credit not found: " + holdId));
+        if (!InwardFxHold.AWAITING_FX.equals(h.getStatus())) {
+            throw new BusinessException("FX_HOLD_NOT_WAITING", "This credit is already " + h.getStatus().toLowerCase());
+        }
+        h.setStatus(InwardFxHold.RETURNED);
+        h.setReturnReason(reason.trim());
+        h.setReturnedBy(com.bank.vam.config.CurrentUser.name());
+        h.setReturnedAt(LocalDateTime.now());
+        return fxHolds.save(h);
+    }
+
+    /** {@code fxQuoteId}: posting a held credit at treasury's firm quote; null for a credit as it arrives. */
+    private InwardPaymentResponse process(InwardPaymentRequest request, UUID fxQuoteId) {
         long startTime = System.currentTimeMillis();
 
         log.info("Processing ISO 20022 inward payment: amount={} {}, creditorAccount={}",
@@ -118,9 +185,9 @@ public class Iso20022InwardPaymentService {
 
                 // Validate amount against VIBAN constraints
                 // A paid VIBAN's bounds were for the invoice it settled; a late payment is taken whatever its amount.
-                // Bounds are in the account's currency; a payment in another one is compared at the indicative
-                // rate (nothing is booked before the payment is accepted).
-                if (viban.canAcceptPayment() && !viban.isAmountInBounds(inAccountCurrency(request, va))) {
+                // Bounds are in the VIBAN's currency (a COBO invoice's may differ from treasury's account, ihb-fx);
+                // a payment in another one is compared at the indicative rate (nothing is booked before it is accepted).
+                if (viban.canAcceptPayment() && !viban.isAmountInBounds(inVibanCurrency(request, viban, va, null))) {
                     return buildErrorResponse(request, startTime, "AM02", "Payment amount out of allowed bounds");
                 }
 
@@ -164,6 +231,43 @@ public class Iso20022InwardPaymentService {
                 if (duplicate.isPresent()) {
                     return buildDuplicateResponse(request, startTime, duplicate.get(), va, vibanNumber, viban);
                 }
+                // A re-delivered credit that is held for FX answers with that hold, not a second one.
+                Optional<InwardFxHold> held = fxQuoteId != null ? Optional.empty()
+                        : fxHolds.findByVirtualAccountIdAndEndToEndId(va.getId(), request.getEndToEndId()).stream()
+                            .filter(h -> InwardFxHold.AWAITING_FX.equals(h.getStatus()) && request.getAmount().compareTo(h.getAmount()) == 0
+                                && request.getCurrency().equalsIgnoreCase(h.getCurrency()))
+                            .findFirst();
+                if (held.isPresent()) {
+                    return buildHeldResponse(startTime, held.get(), va, "Duplicate payment - already held awaiting FX");
+                }
+            }
+
+            // ihb-fx D8: a credit to a COBO invoice's VIBAN that needs a negotiated rate (what T's deals leave is above
+            // the live-price limit) is accepted and held, never bounced: PDNG, nothing posted, until treasury accepts a
+            // quote (postHeld). Asked before converting: needsQuote books nothing and cannot doom this transaction (a
+            // line refusal, D6, is an ordinary RJCT below). ponytail: COBO VIBANs only (spec scope); any other
+            // account keeps today's refusal from convertIncoming (FX_COLLECTION_NEEDS_DEAL).
+            if (fxQuoteId == null && viban != null) {
+                Receivable invoice = coboInvoice(viban);
+                String why = invoice == null ? null : fxPayments.needsQuote(va, request.getCurrency(), request.getAmount(), Side.SELL);
+                if (why != null) {
+                    InwardFxHold h = InwardFxHold.of(request);
+                    h.setCorporateId(va.getCorporateId());
+                    h.setVirtualAccountId(va.getId());
+                    h.setVaNumber(va.getVaNumber());
+                    h.setCollectorEntityId(va.getOwningEntityId());
+                    h.setSettleCurrency(va.getCurrencyCode());
+                    h.setVibanId(viban.getId());
+                    h.setViban(vibanNumber);
+                    h.setReceivableId(invoice.getId());
+                    h.setReceivableNumber(invoice.getReceivableNumber());
+                    h.setSubsidiaryCode(invoice.getOwningEntityCode());
+                    h.setReason(why);
+                    log.info("Inward credit {} {} to COBO VIBAN {} held for a negotiated rate: {}", request.getCurrency(),
+                            request.getAmount(), vibanNumber, why);
+                    return buildHeldResponse(startTime, fxHolds.save(h), va, "Accepted, awaiting FX: " + why
+                            + "; treasury negotiates the rate and posts it");
+                }
             }
 
             // 3. Build CollectionRequest for 4-leg accounting via TransactionService
@@ -173,7 +277,8 @@ public class Iso20022InwardPaymentService {
             // A payment in another currency than the account's is converted on credit, as direct debits are: the
             // account owner's deals selling that currency first, then the live price (refused if neither can).
             // Before this, a USD 1,000 credit to an AED account was booked as AED 1,000.
-            FxPaymentService.Conversion fx = fxPayments.convertIncoming(va, request.getCurrency(), request.getAmount());
+            FxPaymentService.Conversion fx = fxQuoteId == null ? fxPayments.convertIncoming(va, request.getCurrency(), request.getAmount())
+                    : fxPayments.convertIncoming(va, request.getCurrency(), request.getAmount(), fxQuoteId);
             BigDecimal credited = fx != null ? fx.debitAmount() : request.getAmount();
             String creditCcy = fx != null ? fx.debitCurrency() : request.getCurrency();
 
@@ -201,7 +306,7 @@ public class Iso20022InwardPaymentService {
 
             // 5. Update VIBAN usage stats (only if routed via VIBAN)
             if (viban != null) {
-                viban.recordPayment(credited);
+                viban.recordPayment(inVibanCurrency(request, viban, va, credited));
                 vibanRepository.save(viban);
             }
 
@@ -523,10 +628,15 @@ public class Iso20022InwardPaymentService {
     // HELPERS
     // ========================================================================
 
-    /** The payment's amount in {@code va}'s currency at the indicative rate; books nothing. */
-    private BigDecimal inAccountCurrency(InwardPaymentRequest request, VirtualAccount va) {
-        return request.getCurrency().equals(va.getCurrencyCode()) ? request.getAmount()
-            : fxRates.convert(request.getAmount(), request.getCurrency(), va.getCurrencyCode());
+    /**
+     * The payment in the VIBAN's currency (the account's when it names none): as sent when in it, as credited to
+     * {@code va} when that is it ({@code credited} null before the conversion), else at the indicative rate; books nothing.
+     */
+    private BigDecimal inVibanCurrency(InwardPaymentRequest request, Viban viban, VirtualAccount va, BigDecimal credited) {
+        String ccy = viban.getCurrencyCode() != null ? viban.getCurrencyCode() : va.getCurrencyCode();
+        if (ccy.equals(request.getCurrency())) return request.getAmount();
+        if (credited != null && ccy.equals(va.getCurrencyCode())) return credited;
+        return fxRates.convert(request.getAmount(), request.getCurrency(), ccy);
     }
 
     private void validateRequest(InwardPaymentRequest request) {
@@ -554,6 +664,39 @@ public class Iso20022InwardPaymentService {
                 .statusReason(errorMessage)
                 .errorCode(errorCode)
                 .errorMessage(errorMessage)
+                .processingTimeMs(System.currentTimeMillis() - startTime)
+                .build();
+    }
+
+    /** The COBO invoice behind a VIBAN (the VIBAN's invoice reference, else the invoice linked to it), or null. */
+    private Receivable coboInvoice(Viban viban) {
+        Optional<Receivable> r = Optional.empty();
+        if (("INVOICE".equals(viban.getReferenceType()) || "RECEIVABLE".equals(viban.getReferenceType())) && viban.getReferenceId() != null) {
+            try {
+                r = receivableRepository.findById(UUID.fromString(viban.getReferenceId()));
+            } catch (IllegalArgumentException notAnId) {
+                // not an invoice id: fall back to the link below
+            }
+        }
+        if (r.isEmpty()) {
+            r = receivableRepository.findByPrimaryVibanId(viban.getId());
+        }
+        return r.filter(x -> Boolean.TRUE.equals(x.getIsCobo()) && x.getCoboCollectorEntityId() != null).orElse(null);
+    }
+
+    /** PDNG: accepted, held for a negotiated rate (ihb-fx D8); nothing posted, so the balance is unchanged. */
+    private InwardPaymentResponse buildHeldResponse(long startTime, InwardFxHold h, VirtualAccount va, String reason) {
+        return InwardPaymentResponse.builder()
+                .success(true)
+                .statusCode("PDNG")
+                .statusReason(reason)
+                .fxHoldId(h.getId())
+                .virtualAccountId(va.getId())
+                .vaNumber(va.getVaNumber())
+                .vibanId(h.getVibanId())
+                .viban(h.getViban())
+                .balanceBefore(va.getCurrentBalance())
+                .balanceAfter(va.getCurrentBalance())
                 .processingTimeMs(System.currentTimeMillis() - startTime)
                 .build();
     }

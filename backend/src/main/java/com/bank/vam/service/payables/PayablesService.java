@@ -4,6 +4,7 @@ import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.payables.PayablesDto.*;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.fx.deal.FxPaymentService;
+import com.bank.vam.fx.deal.Side;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
@@ -320,6 +321,19 @@ public class PayablesService {
             if (route == null) {
                 return b.route(PaymentRoute.DIRECT.name()).reason(directReason(p, today)).build();
             }
+            // Cross-currency (ihb-fx R9/R10): the settle-currency amount at the price T would get now, booking nothing.
+            BigDecimal settle = null;
+            String refusal = null;
+            String needsQuote = null;
+            try {
+                settle = !route.crossCurrency() ? p.getNetAmount() : fxPayments.preview(route.paymentVa(),
+                    p.getCurrencyCode(), p.getNetAmount(), FxPaymentService.Instruction.AT_MARKET).debitAmount();
+                refusal = route.refusal(settle);
+            } catch (BusinessException e) {
+                // Above the live-price limit is not a refusal: paying hands it to treasury to negotiate (ihb-fx D7).
+                if ("FX_PAYMENT_NEEDS_QUOTE".equals(e.getCode())) needsQuote = e.getMessage();
+                else refusal = e.getMessage();
+            }
             return b.route(PaymentRoute.POBO.name())
                 .payerEntityCode(route.payer().getEntityCode())
                 .payerEntityName(route.payer().getEntityName())
@@ -327,7 +341,10 @@ public class PayablesService {
                 .paymentVaName(route.paymentVa().getVaName())
                 .ihbCurrentVaNumber(route.ihbCurrent().getVaNumber())
                 .headroom(route.headroom())
-                .refusal(PoboEnrolmentService.headroomRefusal(route.ihbCurrent(), p.getNetAmount()))
+                .settleCurrency(route.ihbCurrent().getCurrencyCode())
+                .settleAmount(settle)
+                .refusal(refusal)
+                .fxNeedsQuote(needsQuote)
                 .build();
         }).collect(Collectors.toList());
     }
@@ -356,7 +373,7 @@ public class PayablesService {
      * @param request Payment execution request
      * @return Response with transaction ID and pain.001 reference
      */
-    @Transactional
+    @Transactional(noRollbackFor = NeedsNegotiatedRate.class)
     public PaymentExecutionResponse executePayment(PaymentExecutionRequest request) {
         log.info("Executing payment for payable: {}", request.getPayableId());
 
@@ -403,6 +420,31 @@ public class PayablesService {
         String debtorBic = onBehalf != null && onBehalf.bic() != null ? onBehalf.bic() : debtorAgentBic();
         Supplier supplier = supplier(payable);
 
+        // A payable in another currency than its account is converted first (a rate locked on screen, a booked deal,
+        // or for files the live price); the legs then debit the converted amount in the account's currency. POBO in
+        // the IHB account's currency needs none; cross-currency POBO is covered by the treasury on its payment account
+        // (ihb-fx D3), the IHB headroom checked on the settle-currency amount first (R9). All before anything is
+        // marked or recorded, so a refusal leaves the payable APPROVED (D6).
+        FxPaymentService.Instruction requestedFx = FxPaymentService.Instruction.of(request.getFxPriceId(),
+            request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket());
+        // ihb-fx D7: nothing chosen and what T's deals leave is above the live-price limit -> treasury negotiates.
+        // Asked before converting (needsQuote books and dooms nothing); the flag commits with the refusal
+        // (noRollbackFor), the payable stays APPROVED, and treasury's accept pays it here with its quote id.
+        if (pobo != null && pobo.crossCurrency() && requestedFx.quoteId() == null && requestedFx.priceId() == null
+                && requestedFx.draws().isEmpty()) {
+            String why = fxPayments.needsQuote(pobo.paymentVa(), payable.getCurrencyCode(), payable.getNetAmount(), Side.BUY);
+            if (why != null) {
+                payable.setFxStatus(Payable.AWAITING_FX);
+                payable.setFxStatusReason(why);
+                payableRepository.save(payable);
+                throw new NeedsNegotiatedRate("Needs a negotiated rate: " + why + ". It waits under Awaiting FX on "
+                    + pobo.payer().getEntityCode() + "'s POBO tab");
+            }
+        }
+        FxPaymentService.Conversion fx = pobo != null ? pobo.cover(fxPayments, payable.getNetAmount(), requestedFx)
+            : fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(), requestedFx);
+        BigDecimal debit = fx == null ? payable.getNetAmount() : fx.debitAmount();
+
         // Generate payment reference
         String paymentRef = "PMT-" + System.currentTimeMillis();
         String pain001MsgId = "PAIN001-" + paymentRef;
@@ -421,14 +463,6 @@ public class PayablesService {
         if (pobo != null) paymentRequest.setSourceVaId(pobo.paymentVa().getId()); // the account the money leaves from
         PaymentRequest savedPaymentRequest = paymentRequestRepository.save(paymentRequest);
         log.info("Created PaymentRequest: {} for payable: {}", savedPaymentRequest.getId(), payable.getPayableNumber());
-
-        // A payable in another currency than its account is converted first (a rate locked on screen, a booked deal,
-        // or for files the live price); the legs then debit the converted amount in the account's currency.
-        // POBO needs none: the enrolment's IHB current account is in the payable's currency.
-        FxPaymentService.Conversion fx = pobo != null ? null : fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(),
-            FxPaymentService.Instruction.of(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
-                request.getFxDeals(), request.getFxAtMarket()));
-        BigDecimal debit = fx == null ? payable.getNetAmount() : fx.debitAmount();
 
         // 2. Execute payment via TransactionService
         // =====================================================================
@@ -481,7 +515,9 @@ public class PayablesService {
 
             debitTxn = transactionService.makePayment(paymentTxnRequest);
         }
-        if (fx != null) {
+        if (fx != null && pobo != null) {
+            transactionService.settlePoboFx(fx, debitTxn, pobo.paymentVa());
+        } else if (fx != null) {
             fxPayments.settle(fx, debitTxn, sourceVa);
         }
         log.info("Transaction created via TransactionService: {} for VA: {}",
@@ -492,7 +528,9 @@ public class PayablesService {
         paymentRequestRepository.save(savedPaymentRequest);
 
         // 3. Generate pain.001 XML
-        String pain001Xml = generatePain001ForPayable(payable, pain001MsgId, onBehalf, debtorIban, debtorBic, supplier);
+        // DbtrAcct/Ccy is the paying account's currency (AED for a EUR payment converted on an AED account), not the payable's.
+        String debtorCcy = (pobo != null ? pobo.paymentVa() : legacyPayer != null ? legacyPayer : sourceVa).getCurrencyCode();
+        String pain001Xml = generatePain001ForPayable(payable, pain001MsgId, onBehalf, debtorIban, debtorBic, debtorCcy, supplier);
 
         // Update PaymentRequest with XML
         savedPaymentRequest.setPain001Xml(pain001Xml);
@@ -693,7 +731,7 @@ public class PayablesService {
      * (the schema's place there; it covers the PmtInf's one transaction). Remittance carries the invoice number.
      */
     private String generatePain001ForPayable(Payable payable, String msgId, PoboEnrolmentService.PainDebtor onBehalf,
-                                             String debtorIban, String debtorBic, Supplier supplier) {
+                                             String debtorIban, String debtorBic, String debtorCcy, Supplier supplier) {
         // The debtor's real name: the treasury centre on behalf, else the payable's owning entity, else its legal
         // entity record — never a placeholder.
         String debtorName = onBehalf != null ? onBehalf.name()
@@ -767,7 +805,7 @@ public class PayablesService {
         xml.append("        <Id>\n");
         xml.append("          <IBAN>").append(escapeXml(debtorIban)).append("</IBAN>\n");
         xml.append("        </Id>\n");
-        xml.append("        <Ccy>").append(payable.getCurrencyCode()).append("</Ccy>\n");
+        xml.append("        <Ccy>").append(debtorCcy != null ? debtorCcy : payable.getCurrencyCode()).append("</Ccy>\n");
         xml.append("      </DbtrAcct>\n");
 
         // Debtor Agent (Bank)
@@ -1296,6 +1334,62 @@ public class PayablesService {
         return s;
     }
 
+    /** Pay Now refused because the rate must be negotiated (ihb-fx D7); the payable's Awaiting FX flag commits with it. */
+    public static class NeedsNegotiatedRate extends BusinessException {
+        public NeedsNegotiatedRate(String message) {
+            super("FX_PAYMENT_AWAITING_FX", message);
+        }
+    }
+
+    /**
+     * Hands an approved cross-currency POBO payable to treasury's Awaiting FX list without trying to pay it (ihb-fx D7):
+     * a file run whose FX, planned over the whole file, is above the live-price limit. Paid from the POBO tab.
+     */
+    @Transactional
+    public void flagAwaitingFx(UUID payableId, String reason) {
+        Payable p = payableRepository.findById(payableId)
+            .orElseThrow(() -> new ResourceNotFoundException("Payable not found: " + payableId));
+        p.setFxStatus(Payable.AWAITING_FX);
+        p.setFxStatusReason(reason);
+        payableRepository.save(p);
+    }
+
+    /** A payable waiting for treasury to negotiate its rate, with what the quote is asked for (T's entity and account). */
+    public record AwaitingFxPayable(UUID payableId, String payableNumber, String invoiceNumber, String vendorName,
+                                    String subsidiaryCode, String subsidiaryName, BigDecimal amount, String currencyCode,
+                                    String reason, UUID payerEntityId, String payerCode, UUID paymentVaId,
+                                    String paymentVaNumber, String settleCurrency, LocalDateTime flaggedAt) {
+    }
+
+    /**
+     * The corporate's approved payables flagged Awaiting FX (ihb-fx D7), oldest first. Treasury asks for a firm quote
+     * (for payment, on the payer's entity, buying the payable currency against {@code settleCurrency}) and pays with it.
+     * The route is null-safe: a payable whose enrolment ended or broke is listed without payer, so it cannot be quoted.
+     * ponytail: the quote is for the whole payable (T's deals that fit part of it are left for others); the flag is
+     * cleared by a payment, by the payable leaving a payable status (Payable#dropStaleFxStatus) and by the enrolment
+     * ending, so one that merely stops needing a quote (T booked a deal) stays listed until it is paid.
+     */
+    @Transactional(readOnly = true)
+    public List<AwaitingFxPayable> awaitingFx(UUID corporateId) {
+        LocalDate today = LocalDate.now();
+        return payableRepository.findByCorporateIdAndFxStatus(corporateId, Payable.AWAITING_FX).stream()
+            .filter(Payable::canBePaid)
+            .sorted(Comparator.comparing(Payable::getUpdatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+            .map(p -> {
+                PoboEnrolmentService.Route r;
+                try {
+                    r = poboRoute(p, today);
+                } catch (BusinessException e) {
+                    r = null;
+                }
+                return new AwaitingFxPayable(p.getId(), p.getPayableNumber(), p.getInvoiceNumber(), p.getVendorName(),
+                    p.getOwningEntityCode(), p.getOwningEntityName(), p.getNetAmount(), p.getCurrencyCode(), p.getFxStatusReason(),
+                    r == null ? null : r.payer().getId(), r == null ? null : r.payer().getEntityCode(),
+                    r == null ? null : r.paymentVa().getId(), r == null ? null : r.paymentVa().getVaNumber(),
+                    r == null ? null : r.paymentVa().getCurrencyCode(), p.getUpdatedAt());
+            }).toList();
+    }
+
     /** The POBO route for {@code p} on {@code day}: its owner's active enrolment for its currency, unless the payable
      * is intercompany or opted out (spec R4-R6, D4). */
     private PoboEnrolmentService.Route poboRoute(Payable p, LocalDate day) {
@@ -1430,6 +1524,8 @@ public class PayablesService {
             .poboRequestId(p.getPoboRequestId())
             .poboRequestStatus(p.getPoboRequestStatus() != null ? p.getPoboRequestStatus().name() : null)
             .poboTransactionRef(p.getPoboTransactionRef())
+            .fxStatus(p.getFxStatus())
+            .fxStatusReason(p.getFxStatusReason())
             .poboIhbLoanId(p.getPoboIhbLoanId())
             .poboRechargeId(p.getPoboRechargeId())
             .poboRequestedAt(p.getPoboRequestedAt())

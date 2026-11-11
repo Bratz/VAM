@@ -91,6 +91,8 @@ public class Iso20022PaymentDto {
         // Transaction reference - from Transaction.referenceNumber
         private String transactionReference;
         private UUID transactionId;
+        /** PDNG: the held credit awaiting a negotiated rate (ihb-fx D8); nothing is posted yet. */
+        private UUID fxHoldId;
 
         // VA credited
         private UUID virtualAccountId;

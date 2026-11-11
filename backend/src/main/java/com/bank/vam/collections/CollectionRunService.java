@@ -42,6 +42,7 @@ public class CollectionRunService {
     private final HomeBankProperties homeBank;
     private final com.bank.vam.repository.receivables.ReceivableRepository receivables;
     private final PlatformTransactionManager transactionManager;
+    private final com.bank.vam.service.pobo.PoboEnrolmentService ibans;
 
     public record RunSummary(UUID id, String runRef, LocalDateTime createdAt, CollectionRun.Source source,
                              Map<Status, Long> lineStatuses, List<CollectionRoutingService.Total> totals,
@@ -122,8 +123,10 @@ public class CollectionRunService {
 
         List<CollectionLine> debits = made.stream().filter(l -> l.getMethod() == Method.DIRECT_DEBIT).toList();
         if (!debits.isEmpty()) {
-            Map<UUID, String> numbers = accounts.findAllById(debits.stream().map(CollectionLine::getCreditorVaId).collect(Collectors.toSet()))
-                    .stream().collect(Collectors.toMap(VirtualAccount::getId, VirtualAccount::getVaNumber));
+            // The creditor account is the receiving account's IBAN in its own currency (as pain.001 / pain.013 name it)
+            Map<UUID, Pain008.Account> numbers = accounts.findAllById(debits.stream().map(CollectionLine::getCreditorVaId).collect(Collectors.toSet()))
+                    .stream().collect(Collectors.toMap(VirtualAccount::getId,
+                            va -> new Pain008.Account(ibans.accountIban(va), va.getVaNumber(), va.getCurrencyCode())));
             Map<UUID, LocalDate> signed = new HashMap<>();
             used.values().forEach(m -> { if (m.getSignedDate() != null) signed.put(m.getId(), m.getSignedDate()); });
             Map<UUID, Pain008.OnBehalf> onBehalf = cobo.values().stream().collect(Collectors.toMap(
