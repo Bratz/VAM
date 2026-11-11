@@ -6,15 +6,15 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  * AR Automation with COBO (Collect On Behalf Of), VIBAN, and IHB Integration
  * 
  * PHASE 3 COMPLETE VERSION:
- * - Modal-based COBO request (matches Payables POBO pattern)
+ * - COBO is set up by enrolment (In-House Bank) and decided when an invoice is created; no per-invoice request
  * - Intercompany Tab with visual badges
  * - Pending Netting Tab
- * - COBO History Tab with Treasury Approval actions (Approve/Reject/Execute)
- * - Full Treasury workflow support
+ * - COBO History Tab: COBO invoices by subsidiary and currency (read-only), with "apply a bank credit" for money
+ *   that reached the treasury outside the invoice's VIBAN
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Download, RefreshCw, Clock, ArrowDownLeft, FileText, Eye, X, AlertTriangle, Copy, Plus, QrCode, Loader2, Building2, Landmark, Calculator, GitMerge, ThumbsUp, ThumbsDown, Play, XCircle } from 'lucide-react';
+import { Search, Download, RefreshCw, Clock, ArrowDownLeft, FileText, Eye, X, AlertTriangle, Copy, Plus, QrCode, Loader2, Building2, GitMerge, Play, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
@@ -52,7 +52,7 @@ import {
   type ReceivableStatusPhase3,
   type Corporate,
   type LegalEntity,
-  type CoboCollectAccount,
+  type CoboCollectCredit,
 } from '../services/api';
 import { errorText } from './fx/fxFormat';
 import { useNavigation } from '../hooks/useNavigation';
@@ -149,21 +149,6 @@ interface VibanRecord {
   invoiceId?: string;
 }
 
-interface CoboPreview {
-  collectingEntity: { id: string; name: string; code: string };
-  behalfEntity: { id: string; name: string; code: string };
-  collectionAmount: number;
-  currencyCode: string;
-  charges: { code: string; name: string; amount: number }[];
-  totalCharges: number;
-  netAmount: number;
-  ihbDepositPreview: {
-    depositAmount: number;
-    interestRate: number;
-    estimatedMonthlyInterest: number;
-  };
-}
-
 // ============================================================================
 // STATUS CONFIGURATIONS
 // ============================================================================
@@ -251,295 +236,44 @@ const StatsCard: React.FC<{
   );
 };
 
-// COBO Request Modal Component
-interface CoboModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  receivables: InvoicePhase3[];
-  entities: LegalEntity[];
-  onSubmit: (collectingEntityId: string, receivableIds: string[]) => Promise<void>;
-}
-
-const CoboRequestModal: React.FC<CoboModalProps> = ({
-  isOpen,
-  onClose,
-  receivables,
-  entities,
-  onSubmit,
-}) => {
-  const [collectingEntityId, setCollectingEntityId] = useState('');
-  const [preview, setPreview] = useState<CoboPreview | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [generateViban, setGenerateViban] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
-  
-  // Filter for treasury/holding entities (COBO collectors)
-  const treasuryEntities = useMemo(() => 
-    entities.filter(e => 
-      (e as any).isTreasuryCenter || 
-      (e as any).entityType === 'HOLDING' || 
-      (e as any).entityType === 'TREASURY'
-    ), 
-    [entities]
-  );
-
-  const totalAmount = useMemo(() => 
-    receivables.reduce((sum, r) => sum + r.outstandingAmount, 0),
-    [receivables]
-  );
-
-  const currency = receivables[0]?.currencyCode || 'AED';
-
-  // Load preview when entity selected
-  useEffect(() => {
-    const loadPreview = async () => {
-      if (!collectingEntityId || receivables.length === 0) {
-        setPreview(null);
-        return;
-      }
-      
-      setPreviewLoading(true);
-      try {
-        // Calculate preview locally (0.15% COBO fee)
-        const selectedEntity = entities.find(e => e.id === collectingEntityId);
-        const behalfEntity = entities.find(e => e.id === receivables[0].owningEntityId);
-        const fees = totalAmount * 0.0015;
-        
-        setPreview({
-          collectingEntity: { 
-            id: collectingEntityId, 
-            code: selectedEntity?.entityCode || '', 
-            name: selectedEntity?.entityName || '' 
-          },
-          behalfEntity: { 
-            id: receivables[0].owningEntityId || '', 
-            code: behalfEntity?.entityCode || receivables[0].owningEntityCode || '', 
-            name: behalfEntity?.entityName || receivables[0].owningEntityName || '' 
-          },
-          collectionAmount: totalAmount,
-          currencyCode: currency,
-          charges: [{ code: 'COBO-FEE', name: 'COBO Service Fee (0.15%)', amount: fees }],
-          totalCharges: fees,
-          netAmount: totalAmount - fees,
-          ihbDepositPreview: {
-            depositAmount: totalAmount - fees,
-            interestRate: 3.5,
-            estimatedMonthlyInterest: (totalAmount - fees) * 0.035 / 12
-          }
-        });
-      } catch (err) {
-        console.error('Failed to load preview:', err);
-      } finally {
-        setPreviewLoading(false);
-      }
-    };
-
-    loadPreview();
-  }, [collectingEntityId, receivables, entities, totalAmount, currency]);
-
-  const handleSubmit = async () => {
-    if (!collectingEntityId || receivables.length === 0) return;
-    
-    setSubmitLoading(true);
-    try {
-      await onSubmit(collectingEntityId, receivables.map(r => r.id));
-      onClose();
-    } catch (err) {
-      console.error('COBO submission failed:', err);
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Request COBO Collection" size="lg">
-      <div className="space-y-6">
-        {/* Selected Receivables Summary */}
-        <div className="bg-surface-page rounded-lg p-4">
-          <h4 className="text-body-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Selected Receivables ({receivables.length})</h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {receivables.map(r => (
-              <div key={r.id} className="flex justify-between items-center text-body-sm">
-                <div>
-                  <span className="font-mono font-medium">{r.invoiceNumber}</span>
-                  <span className="text-neutral-500 ml-2 dark:text-neutral-400">{r.customerName}</span>
-                </div>
-                <span className="font-semibold">{formatCurrency(r.outstandingAmount, r.currencyCode)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-edge mt-3 pt-3 flex justify-between items-center">
-            <span className="font-semibold text-neutral-700 dark:text-neutral-200">Total Amount</span>
-            <span className="text-body-lg font-bold text-cat-1 dark:text-cat-1-fg">{formatCurrency(totalAmount, currency)}</span>
-          </div>
-        </div>
-
-        {/* Treasury Entity Selector */}
-        <div>
-          <label className="field-label block mb-2">
-            <Landmark className="w-4 h-4 inline mr-2" />
-            Collecting Treasury Entity
-          </label>
-          <select
-            value={collectingEntityId}
-            onChange={(e) => setCollectingEntityId(e.target.value)}
-            className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-cat-1 focus:border-cat-1 dark:bg-primary-900"
-          >
-            <option value="">Select Treasury Entity...</option>
-            {treasuryEntities.length > 0 ? (
-              treasuryEntities.map(entity => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.entityCode} - {entity.entityName}
-                </option>
-              ))
-            ) : (
-              entities.slice(0, 5).map(entity => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.entityCode} - {entity.entityName}
-                </option>
-              ))
-            )}
-          </select>
-          <p className="caption mt-1">
-            Treasury will collect on behalf of {receivables[0]?.owningEntityCode || 'subsidiary'}
-          </p>
-        </div>
-
-        {/* VIBAN Option */}
-        <Checkbox size="sm" label="Generate VIBAN for collection" checked={generateViban} onChange={setGenerateViban} />
-
-        {/* Preview Card */}
-        {previewLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-cat-1 dark:text-cat-1-fg" />
-            <span className="ml-2 text-neutral-500 dark:text-neutral-400">Loading preview...</span>
-          </div>
-        ) : preview && (
-          <Card className="p-4 bg-gradient-to-br from-cat-1-soft to-info-50 border-cat-1/20 dark:border-cat-1/30 dark:from-cat-1/15 dark:to-info-500/15">
-            <h4 className="text-body-sm font-semibold text-cat-1 dark:text-cat-1-fg mb-3 flex items-center gap-2">
-              <Calculator className="w-4 h-4" />
-              COBO Preview
-            </h4>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between text-body-sm">
-                <span className="text-neutral-600 dark:text-neutral-300">Collection Amount</span>
-                <span className="font-semibold">{formatCurrency(preview.collectionAmount, preview.currencyCode)}</span>
-              </div>
-              
-              {preview.charges.map((charge, idx) => (
-                <div key={idx} className="flex justify-between text-body-sm">
-                  <span className="text-neutral-600 dark:text-neutral-300">{charge.name}</span>
-                  <span className="text-rose-600 dark:text-rose-300">-{formatCurrency(charge.amount, preview.currencyCode)}</span>
-                </div>
-              ))}
-              
-              <div className="border-t border-cat-1/20 pt-2 flex justify-between dark:border-cat-1/30">
-                <span className="font-semibold text-neutral-700 dark:text-neutral-200">Net to Subsidiary</span>
-                <span className="text-body-lg font-bold text-cat-5 dark:text-cat-5-fg">{formatCurrency(preview.netAmount, preview.currencyCode)}</span>
-              </div>
-              
-              {preview.ihbDepositPreview && (
-                <div className="mt-3 p-3 bg-white/50 rounded-lg dark:bg-primary-900/50">
-                  <p className="caption">
-                    <strong>IHB Deposit:</strong> {formatCurrency(preview.ihbDepositPreview.depositAmount, preview.currencyCode)} 
-                    @ {preview.ihbDepositPreview.interestRate}% p.a.
-                  </p>
-                  <p className="text-caption text-cat-5 dark:text-cat-5-fg mt-1">
-                    Est. Monthly Interest: {formatCurrency(preview.ihbDepositPreview.estimatedMonthlyInterest, preview.currencyCode)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={submitLoading}>
-            Cancel
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleSubmit}
-            disabled={!collectingEntityId || receivables.length === 0 || submitLoading}
-            leftIcon={submitLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownLeft className="w-4 h-4" />}
-          >
-            {submitLoading ? 'Submitting...' : 'Submit COBO Request'}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-// Treasury Approval Modal Component
-interface TreasuryApprovalModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+// Apply Bank Credit Modal: money for a COBO invoice that reached the collector outside the VIBAN (spec D6)
+interface ApplyCreditModalProps {
   invoice: InvoicePhase3 | null;
-  action: 'approve' | 'reject' | 'execute' | null;
-  /** reason: for a rejection; treasuryVaId: the account an execution collects into. */
-  onConfirm: (reason?: string, treasuryVaId?: string) => Promise<void>;
+  onClose: () => void;
+  /** The unmatched bank credit to apply. */
+  onConfirm: (unmatchedPaymentId: string) => Promise<void>;
   loading: boolean;
 }
 
-const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
-  isOpen,
-  onClose,
-  invoice,
-  action,
-  onConfirm,
-  loading,
-}) => {
-  const [reason, setReason] = useState('');
-  const [accounts, setAccounts] = useState<CoboCollectAccount[] | null>(null);
-  const [accountId, setAccountId] = useState('');
-  const [accountsError, setAccountsError] = useState<string | null>(null);
+const ApplyCreditModal: React.FC<ApplyCreditModalProps> = ({ invoice, onClose, onConfirm, loading }) => {
+  const [credits, setCredits] = useState<CoboCollectCredit[] | null>(null);
+  const [creditId, setCreditId] = useState('');
+  const [creditsError, setCreditsError] = useState<string | null>(null);
 
-  // Executing needs the account the money goes into: the collecting entity's accounts in the invoice
-  // currency, COLLECTION first and pre-selected; the treasurer can pick another.
+  // An unmatched bank credit on the collecting entity's accounts in the invoice currency. Nothing is pre-selected;
+  // the treasurer picks the one that paid.
   useEffect(() => {
-    if (!isOpen || action !== 'execute' || !invoice) return;
+    if (!invoice) return;
     let live = true;
-    setAccounts(null);
-    setAccountId('');
-    setAccountsError(null);
-    receivablesApiPhase3.coboCollectAccounts(invoice.id)
-      .then(list => {
-        if (!live) return;
-        setAccounts(list);
-        const preferred = list.find(a => a.category === 'COLLECTION') ?? (list.length === 1 ? list[0] : undefined);
-        if (preferred) setAccountId(preferred.id);
-      })
-      .catch(err => { if (live) setAccountsError(errorText(err)); });
+    setCredits(null);
+    setCreditId('');
+    setCreditsError(null);
+    receivablesApiPhase3.coboCollectCredits(invoice.id)
+      .then(list => { if (live) setCredits(list); })
+      .catch(err => { if (live) setCreditsError(errorText(err)); });
     return () => { live = false; };
-  }, [isOpen, action, invoice]);
+  }, [invoice]);
 
-  if (!invoice || !action) return null;
-
-  const titles = {
-    approve: 'Approve COBO Request',
-    reject: 'Reject COBO Request',
-    execute: 'Execute COBO Collection',
-  };
-
-  const descriptions = {
-    approve: `Approve COBO collection for ${invoice.invoiceNumber} (${formatCurrency(invoice.outstandingAmount, invoice.currencyCode)})`,
-    reject: `Reject COBO collection request for ${invoice.invoiceNumber}`,
-    execute: `Execute collection and credit treasury VA for ${invoice.invoiceNumber}`,
-  };
-
-  const handleConfirm = async () => {
-    await onConfirm(action === 'reject' ? reason : undefined, action === 'execute' ? accountId : undefined);
-    setReason('');
-  };
+  if (!invoice) return null;
+  const collector = invoice.coboCollectorEntityCode ?? 'the collecting entity';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={titles[action]} size="md">
+    <Modal isOpen onClose={onClose} title="Apply Bank Credit" size="md">
       <div className="space-y-4">
-        <p className="body-sm">{descriptions[action]}</p>
-        
+        <p className="body-sm">
+          Choose the bank credit that paid {invoice.invoiceNumber}. It is applied to the invoice and credited to
+          {' '}{invoice.owningEntityCode ?? 'the subsidiary'}&apos;s in-house account.
+        </p>
         <div className="bg-surface-page rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
@@ -547,7 +281,7 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
               <p className="font-mono font-medium">{invoice.invoiceNumber}</p>
             </div>
             <div>
-              <p className="text-neutral-500 dark:text-neutral-400">Amount</p>
+              <p className="text-neutral-500 dark:text-neutral-400">Outstanding</p>
               <p className="font-semibold">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</p>
             </div>
             <div>
@@ -560,63 +294,35 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
             </div>
           </div>
         </div>
-
-        {action === 'execute' && (
-          <div>
-            <Select
-              id="cobo-collect-account"
-              label="Collect into"
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              placeholder={accounts === null && !accountsError ? 'Loading accounts…' : 'Choose an account'}
-              options={(accounts ?? []).map(a => ({
-                value: a.id,
-                label: `${a.vaNumber}${a.vaName ? ` · ${a.vaName}` : ''} · ${a.category === 'COLLECTION' ? 'Collection' : 'Transaction'} · ${formatCurrency(a.currentBalance, invoice.currencyCode)}`,
-              }))}
-              hint={`${invoice.coboCollectorEntityCode ?? 'The collecting entity'}'s ${invoice.currencyCode} accounts`}
-            />
-            {accounts?.length === 0 && (
-              <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">
-                {invoice.coboCollectorEntityCode ?? 'The collecting entity'} has no active {invoice.currencyCode} collection or transaction account to collect into.
-              </p>
-            )}
-            {accountsError && <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">{accountsError}</p>}
-          </div>
-        )}
-
-        {action === 'reject' && (
-          <div>
-            <label className="field-label block mb-2">
-              Rejection Reason <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-cat-1 dark:bg-primary-900"
-              rows={3}
-              placeholder="Enter reason for rejection..."
-            />
-          </div>
-        )}
-
+        <div>
+          <Select
+            id="cobo-collect-credit"
+            label="Bank credit"
+            value={creditId}
+            onChange={(e) => setCreditId(e.target.value)}
+            placeholder={credits === null && !creditsError ? 'Loading credits…' : 'Choose the bank credit'}
+            options={(credits ?? []).map(c => ({
+              value: c.id,
+              label: [formatCurrency(c.amount, c.currencyCode), c.payerName, c.paymentDate ? formatDate(c.paymentDate) : null, c.vaNumber]
+                .filter(Boolean).join(' · '),
+            }))}
+            hint={`Unmatched ${invoice.currencyCode} credits on ${collector}'s accounts`}
+          />
+          {credits?.length === 0 && (
+            <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">
+              No unmatched {invoice.currencyCode} credit on {collector}&apos;s accounts. Nothing can be applied until the money arrives.
+            </p>
+          )}
+          {creditsError && <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">{creditsError}</p>}
+        </div>
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            variant={action === 'reject' ? 'danger' : 'primary'}
-            onClick={handleConfirm}
-            disabled={loading || (action === 'reject' && !reason.trim()) || (action === 'execute' && !accountId)}
-            leftIcon={
-              loading ? <Loader2 className="w-4 h-4 animate-spin" /> :
-              action === 'approve' ? <ThumbsUp className="w-4 h-4" /> :
-              action === 'reject' ? <ThumbsDown className="w-4 h-4" /> :
-              <Play className="w-4 h-4" />
-            }
+          <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button
+            onClick={() => onConfirm(creditId)}
+            disabled={loading || !creditId}
+            leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
           >
-            {loading ? 'Processing...' : 
-              action === 'approve' ? 'Approve' :
-              action === 'reject' ? 'Reject' : 'Execute Collection'}
+            {loading ? 'Processing...' : 'Apply Credit'}
           </Button>
         </div>
       </div>
@@ -655,20 +361,15 @@ const EnhancedReceivablesPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, setProcessing] = useState(false);
   
-  // COBO Modal state
-  const [showCoboModal, setShowCoboModal] = useState(false);
-  const [coboReceivables, setCoboReceivables] = useState<InvoicePhase3[]>([]);
 
   // Netting Cycle Picker Modal state
   const [showNettingPicker, setShowNettingPicker] = useState(false);
   const [nettingInvoice, setNettingInvoice] = useState<InvoicePhase3 | null>(null);
   
-  // Treasury Approval Modal state
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [approvalInvoice, setApprovalInvoice] = useState<InvoicePhase3 | null>(null);
+  // Apply Bank Credit (COBO) modal state
+  const [creditInvoice, setCreditInvoice] = useState<InvoicePhase3 | null>(null);
   const [viewInvoice, setViewInvoice] = useState<InvoicePhase3 | null>(null);
-  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | 'execute' | null>(null);
-  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [creditLoading, setCreditLoading] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
@@ -884,7 +585,8 @@ const EnhancedReceivablesPage: React.FC = () => {
     const partial = invoices.filter((i) => i.status === 'PARTIAL');
     const paidInvoices = invoices.filter((i) => i.status === 'PAID');
     const overdue = invoices.filter(isOverdue);
-    const coboPending = invoices.filter((i) => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL');
+    // Collected by treasury on a subsidiary's behalf and still owed
+    const coboOutstanding = invoices.filter((i) => i.isCobo && i.outstandingAmount > 0 && !settled.includes(i.status));
     const intercompany = invoices.filter((i) => i.isIntercompany);
     const nettingEligible = invoices.filter((i) => i.nettingEligible);
     const nettingIncluded = invoices.filter((i) => i.nettingStatus === 'INCLUDED' || i.nettingStatus === 'PENDING');
@@ -902,8 +604,8 @@ const EnhancedReceivablesPage: React.FC = () => {
       overdueCount: overdue.length,
       paidCount: paidInvoices.length,
       averageDaysOutstanding,
-      coboPendingCount: coboPending.length,
-      coboPendingAmount: sum(coboPending, outstanding),
+      coboPendingCount: coboOutstanding.length,
+      coboPendingAmount: sum(coboOutstanding, outstanding),
       intercompanyCount: intercompany.length,
       intercompanyAmount: sum(intercompany, outstanding),
       nettingEligibleCount: nettingEligible.length,
@@ -936,8 +638,11 @@ const EnhancedReceivablesPage: React.FC = () => {
     [filteredInvoices]
   );
 
-  const coboHistoryInvoices = useMemo(() => 
-    filteredInvoices.filter(inv => inv.isCobo || (inv.coboRequestStatus && inv.coboRequestStatus !== 'NOT_REQUESTED')), 
+  // COBO invoices by subsidiary and currency (R19)
+  const coboHistoryInvoices = useMemo(() =>
+    filteredInvoices.filter(inv => inv.isCobo || (inv.coboRequestStatus && inv.coboRequestStatus !== 'NOT_REQUESTED'))
+      .sort((a, b) => (a.owningEntityCode ?? '').localeCompare(b.owningEntityCode ?? '')
+        || a.currencyCode.localeCompare(b.currencyCode) || (b.invoiceDate ?? '').localeCompare(a.invoiceDate ?? '')),
     [filteredInvoices]
   );
 
@@ -966,84 +671,18 @@ const EnhancedReceivablesPage: React.FC = () => {
     }
   };
 
-  const handleRequestCobo = (invoice: InvoicePhase3) => {
-    setCoboReceivables([invoice]);
-    setShowCoboModal(true);
-  };
-
-  const handleBulkCobo = () => {
-    const selected = filteredInvoices.filter(inv => selectedIds.has(inv.id));
-    setCoboReceivables(selected);
-    setShowCoboModal(true);
-  };
-
-  const handleSubmitCobo = async (collectingEntityId: string, receivableIds: string[]) => {
-    setProcessing(true);
+  // Money for a COBO invoice that reached the collector outside the VIBAN: apply an unmatched bank credit (D6)
+  const handleApplyCredit = async (unmatchedPaymentId: string) => {
+    if (!creditInvoice) return;
+    setCreditLoading(true);
     try {
-      for (const id of receivableIds) {
-        await receivablesApiPhase3.submitForCobo({
-          receivableId: id,
-          collectorEntityId: collectingEntityId,
-          requestedBy: 'current-user',
-        });
-      }
+      await receivablesApiPhase3.executeCoboCollection({ receivableId: creditInvoice.id, unmatchedPaymentId });
       await fetchData();
-      setSelectedIds(new Set());
-      setShowCoboModal(false);
-      setCoboReceivables([]);
-    } catch (err: any) {
-      setError(err.message || 'COBO submission failed');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  // Treasury Approval Handlers
-  const handleApproveCobo = (invoice: InvoicePhase3) => {
-    setApprovalInvoice(invoice);
-    setApprovalAction('approve');
-    setShowApprovalModal(true);
-  };
-
-  const handleRejectCobo = (invoice: InvoicePhase3) => {
-    setApprovalInvoice(invoice);
-    setApprovalAction('reject');
-    setShowApprovalModal(true);
-  };
-
-  const handleExecuteCobo = (invoice: InvoicePhase3) => {
-    setApprovalInvoice(invoice);
-    setApprovalAction('execute');
-    setShowApprovalModal(true);
-  };
-
-  const handleApprovalConfirm = async (reason?: string, treasuryVaId?: string) => {
-    if (!approvalInvoice || !approvalAction) return;
-    
-    setApprovalLoading(true);
-    try {
-      if (approvalAction === 'approve') {
-        await receivablesApiPhase3.approveCobo(approvalInvoice.id, 'treasury-user', 'Approved');
-      } else if (approvalAction === 'reject') {
-        await receivablesApiPhase3.rejectCobo(approvalInvoice.id, 'treasury-user', reason || 'Rejected');
-      } else if (approvalAction === 'execute') {
-        await receivablesApiPhase3.executeCoboCollection({
-          receivableId: approvalInvoice.id,
-          treasuryVaId,
-          subsidiaryVaId: approvalInvoice.subsidiaryVaId,
-          amount: approvalInvoice.outstandingAmount,
-          paymentReference: `COBO-${Date.now()}`,
-        });
-      }
-      
-      await fetchData();
-      setShowApprovalModal(false);
-      setApprovalInvoice(null);
-      setApprovalAction(null);
+      setCreditInvoice(null);
     } catch (err: any) {
       setError(errorText(err));
     } finally {
-      setApprovalLoading(false);
+      setCreditLoading(false);
     }
   };
 
@@ -1168,15 +807,6 @@ const EnhancedReceivablesPage: React.FC = () => {
               : 'Select all eligible'}
           </Button>
         )}
-        {selectedIds.size > 0 && (
-          <Button
-            variant="primary"
-            onClick={handleBulkCobo}
-            leftIcon={<ArrowDownLeft className="w-4 h-4" />}
-          >
-            Request COBO ({selectedIds.size})
-          </Button>
-        )}
         {selectedIds.size > 0 && selectedCorporateId && (
           <Button variant="outline" onClick={() => setPlanIds(Array.from(selectedIds))}>
             Plan collection ({selectedIds.size})
@@ -1273,9 +903,9 @@ const EnhancedReceivablesPage: React.FC = () => {
             delay={0.25}
           />
           <StatsCard
-            title="COBO Pending"
+            title="COBO Outstanding"
             value={formatCurrency(stats.coboPendingAmount || 0, reportingCurrency)}
-            subtitle={`${stats.coboPendingCount || 0} awaiting treasury`}
+            subtitle={`${stats.coboPendingCount || 0} collected by treasury, unpaid`}
             icon={<ArrowDownLeft className="w-5 h-5" />}
             color="amber"
             delay={0.3}
@@ -1488,9 +1118,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Actions', minWidth: 210,
                       render: (_, invoice) => {
                         const isSelectable = COLLECTABLE.includes(invoice.status);
-                        const canRequestCobo = !invoice.isCobo &&
-                          invoice.coboRequestStatus === 'NOT_REQUESTED' &&
-                          isSelectable;
                         return (
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)} title="View Details">
@@ -1499,17 +1126,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                             {(invoice.status as string) === 'DRAFT' && (
                               <Button variant="outline" size="sm" onClick={() => handleIssueDraft(invoice)} title="Issue invoice">
                                 Issue
-                              </Button>
-                            )}
-                            {canRequestCobo && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                leftIcon={<ArrowDownLeft className="w-4 h-4" />}
-                                onClick={() => handleRequestCobo(invoice)}
-                                title="Request COBO"
-                              >
-                                COBO
                               </Button>
                             )}
                             {!invoice.assignedViban && isSelectable && (
@@ -1768,13 +1384,14 @@ const EnhancedReceivablesPage: React.FC = () => {
               {activeTab === 'mandates' && <MandatesTab corporateId={selectedCorporateId} />}
               {activeTab === 'outbox' && <OutboxTab corporateId={selectedCorporateId} />}
 
-              {/* COBO History Tab - WITH TREASURY APPROVAL BUTTONS */}
+              {/* COBO History Tab: read-only, by subsidiary and currency; apply a bank credit for money outside the VIBAN */}
               {activeTab === 'cobo-history' && (
                 <DataTable
                   data={coboHistoryInvoices}
                   keyExtractor={(invoice) => invoice.id}
                   emptyIcon={<ArrowDownLeft className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No COBO collections found"
+                  emptyDescription="Enrol a subsidiary under In-House Bank, Collections on behalf; its new invoices are collected by treasury"
                   columns={[
                     {
                       key: 'invoiceNumber',
@@ -1822,57 +1439,40 @@ const EnhancedReceivablesPage: React.FC = () => {
                       ),
                     },
                     {
+                      key: 'currencyCode',
+                      header: 'Currency',
+                      minWidth: 90,
+                    },
+                    {
                       key: 'coboRequestStatus',
                       header: 'Status',
                       align: 'center',
-                      render: (_, invoice) => getCoboStatusBadge(invoice.coboRequestStatus) || (<Badge variant="neutral" size="sm">Pending</Badge>),
+                      render: (_, invoice) => invoice.coboRequestStatus === 'COLLECTED' || (invoice.isCobo && invoice.outstandingAmount <= 0)
+                        ? <Badge variant="success" size="sm">Collected</Badge>
+                        : invoice.coboRequestStatus === 'APPROVED'
+                          ? <Badge variant="info" size="sm">{invoice.paidAmount > 0 ? 'Part collected' : 'Outstanding'}</Badge>
+                          : getCoboStatusBadge(invoice.coboRequestStatus),
                     },
                     {
-                      key: 'coboRequestedAt',
-                      header: 'Requested',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <span className="text-body-sm">{invoice.coboRequestedAt ? formatDate(invoice.coboRequestedAt) : '-'}</span>
-                          <span className="caption">{invoice.coboRequestedBy || ''}</span>
-                        </div>
-                      ),
+                      key: 'outstandingAmount',
+                      header: 'Outstanding',
+                      align: 'right',
+                      render: (_, invoice) => formatCurrency(invoice.outstandingAmount, invoice.currencyCode),
                     },
                     {
                       key: 'actions',
                       header: 'Actions',
                       render: (_, invoice) => (
                         <div className="flex items-center gap-1">
-                          {invoice.coboRequestStatus === 'PENDING_TREASURY_APPROVAL' && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleApproveCobo(invoice)}
-                                className="text-success-600 border-success-200 hover:bg-success-50 dark:text-success-300 dark:border-success-500/30 dark:hover:bg-success-500/10"
-                                title="Approve COBO"
-                              >
-                                <ThumbsUp className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRejectCobo(invoice)}
-                                className="text-error-600 border-error-200 hover:bg-error-50 dark:text-error-300 dark:border-error-500/30 dark:hover:bg-error-500/10"
-                                title="Reject COBO"
-                              >
-                                <ThumbsDown className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                          {invoice.coboRequestStatus === 'APPROVED' && (
+                          {invoice.coboRequestStatus === 'APPROVED' && invoice.outstandingAmount > 0 && (
                             <Button
-                              variant="primary"
+                              variant="outline"
                               size="sm"
-                              onClick={() => handleExecuteCobo(invoice)}
+                              onClick={() => setCreditInvoice(invoice)}
                               leftIcon={<Play className="w-4 h-4" />}
-                              title="Execute Collection"
+                              title="Money arrived outside the invoice's VIBAN: apply that bank credit"
                             >
-                              Execute
+                              Apply credit
                             </Button>
                           )}
                           <Button
@@ -1894,7 +1494,6 @@ const EnhancedReceivablesPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* COBO Request Modal */}
       <CollectionPlanModal
         isOpen={planIds !== null}
         onClose={() => setPlanIds(null)}
@@ -1903,22 +1502,11 @@ const EnhancedReceivablesPage: React.FC = () => {
         onSent={() => { setSelectedIds(new Set()); fetchData(); }}
       />
 
-      <CoboRequestModal
-        isOpen={showCoboModal}
-        onClose={() => { setShowCoboModal(false); setCoboReceivables([]); }}
-        receivables={coboReceivables}
-        entities={legalEntities}
-        onSubmit={handleSubmitCobo}
-      />
-
-      {/* Treasury Approval Modal */}
-      <TreasuryApprovalModal
-        isOpen={showApprovalModal}
-        onClose={() => { setShowApprovalModal(false); setApprovalInvoice(null); setApprovalAction(null); }}
-        invoice={approvalInvoice}
-        action={approvalAction}
-        onConfirm={handleApprovalConfirm}
-        loading={approvalLoading}
+      <ApplyCreditModal
+        invoice={creditInvoice}
+        onClose={() => setCreditInvoice(null)}
+        onConfirm={handleApplyCredit}
+        loading={creditLoading}
       />
 
       {/* Netting Cycle Picker Modal */}

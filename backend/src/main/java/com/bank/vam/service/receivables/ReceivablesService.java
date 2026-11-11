@@ -68,7 +68,7 @@ public class ReceivablesService {
     private final SettlementVaResolverService settlementVaResolver;
     private final ExceptionTransactionRepository exceptionTransactionRepository;
 
-    private final CoboReceivableService coboReceivables;
+    private final CoboEnrolmentService coboEnrolments;
     private final com.bank.vam.outbox.OutboxEmailRepository outbox;
     private final UnmatchedPaymentRepository unmatchedPaymentRepository;
     private final ReconciliationService reconciliationService;
@@ -305,9 +305,15 @@ UUID effectiveCorporateId = corporateIdFromHeader;
         String invoiceNumber = !typed.isEmpty() ? typed
                 : "INV-" + LocalDate.now().getYear() + "-" + String.format("%04d", System.currentTimeMillis() % 10000);
         boolean draft = Boolean.TRUE.equals(request.getDraft());
+        String currency = request.getCurrencyCode() != null ? request.getCurrencyCode() : "AED";
+        // Collected on behalf when the owning entity is enrolled for this currency, unless the user chose to collect
+        // directly (spec D3, D5). The enrolment decides the collector and the account, not the client.
+        CoboEnrolmentService.EnrolmentView cobo = Boolean.TRUE.equals(request.getCollectDirectly()) ? null
+                : coboEnrolments.active(owningEntityId, currency, LocalDate.now()).orElse(null);
+        UUID targetVaId = cobo != null ? cobo.collectionVaId() : request.getTargetVaId();
         // The invoice sits where its collection account sits in the hierarchy.
-        VirtualAccount collectionVa = request.getTargetVaId() == null ? null
-                : virtualAccountRepository.findById(request.getTargetVaId()).orElse(null);
+        VirtualAccount collectionVa = targetVaId == null ? null
+                : virtualAccountRepository.findById(targetVaId).orElse(null);
 
         // Real, shareable "pay this invoice" link -- unconditional (unlike VIBAN generation, this
         // costs nothing and needs no target account) -- see PublicReceivablesController.
@@ -323,10 +329,11 @@ UUID effectiveCorporateId = corporateIdFromHeader;
             .receivableNumber(invoiceNumber)
             .corporateId(effectiveCorporateId)
             .owningEntityId(owningEntityId)
-            .owningEntityCode(owningEntityCode)
+            .owningEntityCode(cobo != null ? cobo.subsidiaryCode() : owningEntityCode)
+            .owningEntityName(cobo != null ? cobo.subsidiaryName() : null)
             .customerPartyId(request.getCustomerId())
             .customerName(request.getCustomerName())
-            .virtualAccountId(request.getTargetVaId())
+            .virtualAccountId(targetVaId)
             .paymentLinkToken(paymentLinkToken)
             .issueDate(request.getIssueDate() != null ? request.getIssueDate() : LocalDate.now())
             .dueDate(request.getDueDate())
@@ -339,12 +346,20 @@ UUID effectiveCorporateId = corporateIdFromHeader;
             .taxAmount(request.getTaxAmount() != null ? request.getTaxAmount() : BigDecimal.ZERO)
             .outstandingAmount(request.getAmount())
             .paidAmount(BigDecimal.ZERO)
-            .currencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : "AED")
+            .currencyCode(currency)
             .description(request.getDescription())
             .notes(blankToNull(request.getNotes()))
             .metadata(blankToNull(request.getMetadata()))
             .status(draft ? Receivable.ReceivableStatus.DRAFT : Receivable.ReceivableStatus.OPEN)
-            .collectionRoute(Receivable.CollectionRoute.DIRECT)
+            .collectionRoute(cobo != null ? Receivable.CollectionRoute.COBO : Receivable.CollectionRoute.DIRECT)
+            // COBO by enrolment: no approval step. APPROVED = collected by treasury, outstanding; applyPayment moves it
+            // to COLLECTED when paid. cobo_request_id keeps the enrolment that decided it.
+            .isCobo(cobo != null)
+            .coboCollectorEntityId(cobo != null ? cobo.collectorEntityId() : null)
+            .coboCollectorEntityCode(cobo != null ? cobo.collectorCode() : null)
+            .coboCollectorEntityName(cobo != null ? cobo.collectorName() : null)
+            .coboRequestId(cobo != null ? cobo.id() : null)
+            .coboRequestStatus(cobo != null ? Receivable.CoboRequestStatus.APPROVED : null)
             .allowPartialPayment(Boolean.TRUE.equals(request.getAllowPartialPayment()))
             .allowOverpayment(Boolean.TRUE.equals(request.getAllowOverpayment()))
             .hierarchyNodeId(collectionVa != null && collectionVa.getHierarchyNodeId() != null
@@ -361,12 +376,13 @@ UUID effectiveCorporateId = corporateIdFromHeader;
         String vibanNumber = null;
         UUID vibanId = null;
 
-        if (Boolean.TRUE.equals(request.getCreateViban()) || Boolean.TRUE.equals(request.getGenerateViban())) {
-            if (request.getTargetVaId() == null) {
+        // A COBO invoice always gets one: on the treasury's pooled collection account the VIBAN is what identifies it.
+        if (cobo != null || Boolean.TRUE.equals(request.getCreateViban()) || Boolean.TRUE.equals(request.getGenerateViban())) {
+            if (targetVaId == null) {
                 throw new BusinessException("A collection account (targetVaId) is required to generate a VIBAN");
             }
-            VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetVaId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + request.getTargetVaId()));
+            VirtualAccount targetVa = virtualAccountRepository.findById(targetVaId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + targetVaId));
             // Not vibanService.createInvoiceViban() -- that helper's fixed parameter list has no
             // room for customerName, which left every invoice-created VIBAN showing a blank
             // customer in the VIBANs tab. validUntil also falls back to 30 days out rather than
@@ -381,7 +397,7 @@ UUID effectiveCorporateId = corporateIdFromHeader;
                     .validUntil(request.getDueDate() != null
                         ? request.getDueDate().atStartOfDay() : LocalDateTime.now().plusDays(30))
                     .singleUse(false)
-                    .customerName(savedReceivable.getCustomerName())
+                    .customerName(savedReceivable.vibanName())
                     .build());
             vibanNumber = createdViban.getViban();
             vibanId = createdViban.getId();
@@ -392,10 +408,6 @@ UUID effectiveCorporateId = corporateIdFromHeader;
             savedReceivable = receivableRepository.save(savedReceivable);
         }
 
-        if (!draft && request.getCoboCollectorEntityId() != null) {
-            // The same request the COBO History tab makes: it waits for treasury approval.
-            savedReceivable = coboReceivables.submitForCobo(savedReceivable.getId(), request.getCoboCollectorEntityId(), "portal");
-        }
         if (!draft && Boolean.TRUE.equals(request.getSendInvoiceEmail())) {
             outbox.save(invoiceEmail(savedReceivable, paymentLink));
         }
@@ -464,6 +476,7 @@ UUID effectiveCorporateId = corporateIdFromHeader;
         body.append("\nPay online: ").append(payLink).append("\n");
         if (r.getViban() != null) {
             body.append("Or transfer ").append(amount).append(" to IBAN ").append(r.getViban())
+                    .append(r.coboAccountName() != null ? " (" + r.coboAccountName() + ")" : "")
                     .append(", quoting ").append(r.getReceivableNumber()).append(".\n");
         }
         com.bank.vam.outbox.OutboxEmail e = new com.bank.vam.outbox.OutboxEmail();
@@ -496,6 +509,7 @@ UUID effectiveCorporateId = corporateIdFromHeader;
                     .description(r.getDescription())
                     .status(r.getStatus().name())
                     .viban(r.getViban())
+                    .accountName(r.coboAccountName())
                     .build();
         });
     }
@@ -505,20 +519,13 @@ UUID effectiveCorporateId = corporateIdFromHeader;
         Receivable receivable = receivableRepository.findById(invoiceId)
             .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
 
-        BigDecimal newPaidAmount = receivable.getPaidAmount().add(request.getAmount());
-        BigDecimal newOutstanding = receivable.getNetAmount().subtract(newPaidAmount);
-        Receivable.ReceivableStatus newStatus = newOutstanding.compareTo(BigDecimal.ZERO) <= 0
-            ? Receivable.ReceivableStatus.PAID
-            : Receivable.ReceivableStatus.PARTIAL;
-
-        receivable.setPaidAmount(newPaidAmount);
-        receivable.setOutstandingAmount(newOutstanding);
-        receivable.setStatus(newStatus);
-        Receivable saved = receivableRepository.save(receivable);
+        // Through the one application point: a COBO invoice is also credited in-house to its subsidiary
+        reconciliationService.applyPayment(receivable, request.getAmount(), request.getAmount(),
+            request.getTransactionId(), request.getMatchType() != null ? request.getMatchType() : "RECORDED");
         log.info("Recorded payment {} of {} against invoice {}, new status {}",
-            request.getPaymentReference(), request.getAmount(), saved.getReceivableNumber(), newStatus);
+            request.getPaymentReference(), request.getAmount(), receivable.getReceivableNumber(), receivable.getStatus());
 
-        InvoiceResponse response = mapReceivableToInvoiceResponse(saved);
+        InvoiceResponse response = mapReceivableToInvoiceResponse(receivable);
         response.setMatchedPayments(List.of(MatchedPaymentResponse.builder()
             .paymentRef(request.getPaymentReference())
             .amount(request.getAmount())

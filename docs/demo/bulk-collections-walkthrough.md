@@ -305,6 +305,52 @@ request still went out as pain.013, and the pay link still works.
 
 ---
 
+## 9. Collected on behalf by the in-house bank (COBO) (≈4 min)
+
+> **Checked on localhost on 11 Nov 2026** (not yet recorded on vam-five). Spec: `docs/specs/cobo-in-house-bank.md`.
+> Treasury collects a subsidiary's invoices into its own account and credits the subsidiary in-house when the
+> money arrives — no per-invoice approval, no manual "collect".
+
+### 9.1 Enrol the subsidiary (once)
+**In-House Bank → Collections on behalf (COBO) → Add enrolment**: Subsidiary **MNC UK Ltd (MNC-UK)**, Currency
+**AED** (the only currency it has an IHB current account in), Collected by **MNC Treasury Center**, Account
+**UAE TREASURY POOL ACC** → **Enrol**.
+
+You see: the row *MNC UK Ltd · AED · MNC Treasury Center · UAE TREASURY POOL ACC · Active*.
+
+### 9.2 Raise the invoice
+**Receivables → Create Invoice**: Corporate **Test Multinational Corp**, Owning entity **MNC-UK**, customer
+*Gulf Freight Services LLC*, amount **1000** AED.
+
+You see *"Collected by MNC Treasury Center into UAE TREASURY POOL ACC"* in place of the account picker (and a
+**Collect directly instead** opt-out). Switch the currency to USD and it says *"Not collected on behalf: MNC UK Ltd
+is not enrolled for USD (only AED)"*. Back to AED → **Create Invoice**.
+
+The invoice's VIBAN sits on treasury's account and is named **"MNC Treasury Center re: MNC UK Ltd"** — the pay
+page shows that name above the IBAN.
+
+### 9.3 The customer pays
+Post an inward credit to the invoice's VIBAN (Swagger `POST /api/v1/iso20022/inward/payment`, or a pacs.008).
+
+On localhost, AED 1,000 gave:
+
+| Account | Before | After |
+|---|---|---|
+| UAE TREASURY POOL ACC (treasury, cash) | 0.00 | 998.00 (platform collection fee AED 2; no COBO fee) |
+| IC payable MNC-TREASURY → MNC-UK | 706.00 | 1,706.00 |
+| MNC-UK IHB current account | 100.00 | 1,100.00 |
+
+The invoice is **Paid**, COBO **Collected**, one payment. MNC-UK's IHB current account shows *"COBO INV-… from Gulf
+Freight Services LLC, collected by MNC Treasury Center"*. A second payment to the same VIBAN is refused
+(*VIBAN cannot accept payment: PAID*) and never credits MNC-UK twice.
+
+### 9.4 Existing COBO invoices (one-off)
+**Move existing COBO invoices (n)** on the same tab previews, then moves, invoices from the old per-invoice flow:
+pending → direct collection; approved and enrolled → new pay details on treasury's account; otherwise direct.
+Running it again finds nothing to move.
+
+---
+
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
@@ -315,6 +361,7 @@ request still went out as pain.013, and the pay link still works.
 | `POST /api/v1/iso20022/inward/camt054` | A credit that settles a waiting debit; debit entries with a return reason |
 | `POST /api/v1/collections/runs/lines` | ERP: lines naming invoices, or new invoices to raise and collect |
 | `GET /api/v1/collections/runs/{id}/pain008` | The run's pain.008 |
+| `GET/POST /api/v1/cobo/enrolments`, `POST /api/v1/cobo/cutover?dryRun=` | COBO enrolments; move old-flow COBO invoices |
 | `POST /api/v1/receivables/{id}/request-to-pay/send` | Send a Request to Pay: pay link, VIBAN, pain.013, outbox email |
 | `GET /api/v1/receivables/{id}/request-to-pay/message` | The last pain.013 sent for the invoice |
 | `GET /api/v1/outbox?corporateId=` · `?relatedId=` | The simulated outbox, for a corporate or one invoice |

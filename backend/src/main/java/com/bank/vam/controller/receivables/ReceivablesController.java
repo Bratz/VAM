@@ -283,61 +283,8 @@ public class ReceivablesController {
     // PHASE 3: COBO ENDPOINTS
     // ========================================================================
 
-    @Operation(summary = "Submit receivable for COBO collection")
-    @PostMapping("/{receivableId}/cobo/submit")
-    public ResponseEntity<Map<String, Object>> submitForCobo(
-            @PathVariable UUID receivableId,
-            @RequestBody CoboSubmitRequest request) {
-        log.info("API: Submit receivable {} for COBO", receivableId);
-        
-        Receivable receivable = coboService.submitForCobo(
-            receivableId,
-            request.getCollectorEntityId(),
-            request.getRequestedBy()
-        );
-        
-        return ResponseEntity.ok(Map.of(
-            "success", true, 
-            "data", toReceivableResponse(receivable),
-            "message", "COBO request submitted successfully"
-        ));
-    }
-
-    @Operation(summary = "Approve COBO request (Treasury)")
-    @PostMapping("/{receivableId}/cobo/approve")
-    public ResponseEntity<Map<String, Object>> approveCobo(
-            @PathVariable UUID receivableId,
-            @RequestBody CoboApproveRequest request) {
-        log.info("API: Approve COBO for receivable {}", receivableId);
-        
-        Receivable receivable = coboService.approveCobo(receivableId, request.getApprovedBy());
-        
-        return ResponseEntity.ok(Map.of(
-            "success", true, 
-            "data", toReceivableResponse(receivable),
-            "message", "COBO request approved"
-        ));
-    }
-
-    @Operation(summary = "Reject COBO request (Treasury)")
-    @PostMapping("/{receivableId}/cobo/reject")
-    public ResponseEntity<Map<String, Object>> rejectCobo(
-            @PathVariable UUID receivableId,
-            @RequestBody CoboRejectRequest request) {
-        log.info("API: Reject COBO for receivable {}", receivableId);
-        
-        Receivable receivable = coboService.rejectCobo(
-            receivableId, 
-            request.getRejectedBy(), 
-            request.getReason()
-        );
-        
-        return ResponseEntity.ok(Map.of(
-            "success", true, 
-            "data", toReceivableResponse(receivable),
-            "message", "COBO request rejected"
-        ));
-    }
+    // Per-invoice COBO request / approve / reject are gone: COBO is set up by enrolment (In-House Bank,
+    // CoboEnrolmentController) and decided when the invoice is created.
 
     @Operation(summary = "Execute COBO collection")
     @PostMapping("/{receivableId}/cobo/collect")
@@ -350,10 +297,7 @@ public class ReceivablesController {
         CoboReceivableService.CoboCollectionRequest serviceRequest = 
             CoboReceivableService.CoboCollectionRequest.builder()
                 .receivableId(receivableId)
-                .treasuryVaId(request.getTreasuryVaId())
-                .subsidiaryVaId(request.getSubsidiaryVaId())
-                .amount(request.getAmount())
-                .paymentReference(request.getPaymentReference())
+                .unmatchedPaymentId(request.getUnmatchedPaymentId())
                 .notes(request.getNotes())
                 .build();
         
@@ -362,14 +306,14 @@ public class ReceivablesController {
         return ResponseEntity.ok(Map.of(
             "success", true, 
             "data", result,
-            "message", "COBO collection executed successfully"
+            "message", "Bank credit applied to the invoice"
         ));
     }
 
-    @Operation(summary = "Accounts an approved COBO invoice can be collected into")
-    @GetMapping("/{receivableId}/cobo/collect-accounts")
-    public ResponseEntity<Map<String, Object>> coboCollectAccounts(@PathVariable UUID receivableId) {
-        return ResponseEntity.ok(Map.of("success", true, "data", coboService.collectAccounts(receivableId)));
+    @Operation(summary = "Unmatched bank credits on the collector's accounts that can pay an approved COBO invoice")
+    @GetMapping("/{receivableId}/cobo/collect-credits")
+    public ResponseEntity<Map<String, Object>> coboCollectCredits(@PathVariable UUID receivableId) {
+        return ResponseEntity.ok(Map.of("success", true, "data", coboService.collectCredits(receivableId)));
     }
 
     @Operation(summary = "Preview COBO collection (calculate fees)")

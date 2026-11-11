@@ -1,5 +1,88 @@
 # Active Work / Status Tracker
 
+## ✅ COBO through the In-House Bank (spec: docs/specs/cobo-in-house-bank.md, decisions D1–D8)
+Ship in phases; each phase is one commit, pushed only when the user says so. Money risks first.
+
+Facts the plan rests on (verified 2026-11-11):
+- An inbound pacs.008 on a VIBAN is posted as cash to the VIBAN's account first (`TransactionService.processCollection`,
+  called from `Iso20022InwardPaymentService`), then matched (`ReconciliationService.attemptAutoReconcile`).
+- Payments reach an invoice in exactly two service methods: `ReconciliationService.updateReceivableAfterPayment`
+  (auto + manual match) and `ReceivablesService.recordPayment` (direct-debit settlement, manual "record payment").
+- `TransactionService.makeIhb6LegCoboCollection` books the cash inflow again (leg 1, shadow account), so it must not
+  run after a cash-driven match. The COBO credit needs only the in-house legs: treasury IC payable +, subsidiary
+  IHB current account +.
+- Only MNC-UK and MNC-UAE-DUBAI (AED) have an IHB current account (`mirror_account_type = IHB_CURRENT`) locally;
+  six corporates have a treasury centre flagged; TestShop / TestPay / TestRealty have none.
+
+### Phase 1 — one money path per invoice (closes the double-count and "click creates money")
+- [x] 1.1 One application point: both payment methods above call one `applyPayment(invoice, amount, bankTxnId, source)`.
+      For a COBO invoice it also posts the in-house credit (IC payable +gross, subsidiary IHB current +gross, with the
+      invoice number and customer in the description); idempotent per bank transaction; no IHB current account ->
+      payment left unmatched with the reason.
+- [x] 1.2 Retire the money-creating Collect: `executeCoboCollection` no longer credits accounts. Treasury applies an
+      existing unmatched credit on its account to the invoice (D6) through `ReconciliationService.manualMatch` -> 1.1.
+- [x] 1.3 Tests: COBO invoice paid by VIBAN -> one payment, subsidiary +gross, IC payable +gross, cash once;
+      second credit for a paid invoice -> overpayment / unapplied rule; Collect cannot create a credit.
+
+Phase 1 done: `ReconciliationService.applyPayment` is the one application point (auto + manual match, recordPayment);
+`TransactionService.postCoboInHouseCredit` posts IC payable + / IHB current + gross, idempotent per bank txn
+(correlation `COBO-<bankTxnId>`), only when the cash landed on a collector-owned account (`ponytail:` branch, drop after 2.4).
+Collect = apply an unmatched credit (`/cobo/collect` takes unmatchedPaymentId; `/cobo/collect-credits` lists them).
+`makeIhb6LegCoboCollection` now unused. 558 tests.
+
+### Phase 2 — enrolment and invoice creation
+- [x] 2.1 `cobo_enrolment` (entity, ddl-auto): subsidiary, currency, collector (must be `isTreasuryCenter`), collection
+      account (collector's, same currency, active), effective from/to. Validation R1–R3 (subsidiary needs an IHB
+      current account and treasury the IC payable in that currency).
+- [x] 2.2 API + In-House Bank screen: list / add / end enrolments.
+- [x] 2.3 Create Invoice: enrolled owner + currency -> COBO automatically, "Collected by <T> into <account>", collection
+      account fixed; explicit "collect directly instead" opt-out (D3); other currency -> direct, with the reason (D5);
+      non-enrolled -> collection accounts limited to the owning entity's (R7). Remove the COBO tab's collector picker.
+- [x] 2.4 Pay details on treasury: a COBO invoice's VIBAN is issued under T's collection account, named
+      "<T> re: <X>"; pay page, Request to Pay email and pain.013 carry it.
+- [x] 2.5 Retire per-invoice Request COBO / approve / reject from the Receivables list; COBO History becomes a
+      read-only list of COBO collections by subsidiary and currency (R19).
+
+Phase 2 done (566 tests): CoboEnrolment + service/controller (/api/v1/cobo/enrolments), In-House Bank tab
+"Collections on behalf (COBO)"; createInvoice decides COBO from the enrolment (collectDirectly opt-out), VIBAN under the
+collector's account named "<T> re: <X>"; request/approve/reject removed; COBO History read-only.
+Phase 6 polish: pay page shows the VIBAN but not the "T re: X" name; pain.013 creditor name is still the corporate.
+
+### Phase 3 — direct debits collected on behalf (D8)
+- [x] 3.1 pain.008: for COBO lines the creditor is T (its account and creditor id) and `UltmtCdtr` is the subsidiary.
+- [x] 3.2 Settlement of such a debit goes through 1.1; a return reverses the in-house credit and reopens the invoice.
+
+### Phase 4 — subsidiary view
+- [x] 4.1 Subsidiary's IHB current account statement shows one line per collected invoice (from 1.1's postings).
+
+Phases 3–4 done (574 tests): pain.008 COBO lines in their own PmtInf (Cdtr = treasury + its account, UltmtCdtr =
+subsidiary); settlement passes the bank txn so the in-house credit posts; returns reverse it (`COBO-REV-<id>`, idempotent);
+statement line "COBO INV-x from <customer>, collected by <T>".
+
+### Phase 5 — cut-over (D7)
+Design: no subsidiary is enrolled at deploy, so an automatic startup cut-over would revert every in-flight COBO invoice.
+It is an action run from the In-House Bank COBO tab after enrolling, with a preview (dry run) first.
+- [x] 5.1 Pending-approval COBO invoices -> direct collection (is_cobo false, request cleared).
+- [x] 5.2 Approved-not-collected COBO invoices of enrolled subsidiaries -> new flow: VIBAN reissued on T's account;
+      not enrolled -> direct collection. One-off, idempotent, run once per environment (admin action or startup
+      runner guarded by a marker); report what changed.
+
+### Phase 6 — verification
+- [x] 6.1 Acceptance tests 1–9 of the spec (unit + an end-to-end pacs.008 / camt.054 run on localhost).
+- [x] 6.2 Full suite, typecheck, live check on localhost; update docs/demo walkthrough with a COBO step
+      (enrol MNC-UK for AED, invoice, pay via VIBAN, see MNC-UK's IHB current account).
+
+Phase 5 done: CoboCutoverService + POST /api/v1/cobo/cutover?dryRun=, "Move existing COBO invoices" on the COBO tab.
+Phase 6 (localhost, 11 Nov): enrolled MNC-UK/AED; COBO invoice -> VIBAN "MNC Treasury Center re: MNC UK Ltd" on
+UAE TREASURY POOL ACC; inward AED 1,000 -> treasury +998 (platform fee 2), IC payable +1,000, MNC-UK IHB current
++1,000, invoice PAID/COLLECTED, one payment; duplicate credit refused (VIBAN PAID); USD invoice -> direct with
+the note; cut-over dry run / real run / re-run (nothing left); pay page shows the account name. Test data removed,
+balances restored. 576 tests. Acceptance 5 (DD) and 8 (apply unmatched credit) covered by unit tests, not run live.
+Follow-ups: a credit to a paid invoice's VIBAN is refused by the bank-side VIBAN rule (would be returned) rather
+than held as unapplied cash; pain.013 creditor name is still the corporate (CdtrAcct is the treasury VIBAN).
+
+Not in scope (spec §7): COBO fees (D4), in-house FX, per-customer enrolment, netting of COBO positions.
+
 ## ✅ Create Payable and Create Invoice audit fixes + responsive layout (2026-11-11)
 User: "fix all including the responsive layout" (audit of both create pages on vam-five).
 - [x] Create Payable data integrity: DRAFT vs PENDING_APPROVAL (no auto-APPROVED), edit works, VAT once

@@ -33,8 +33,9 @@ class CollectionReturnServiceTest {
     private final VirtualAccountRepository accounts = mock(VirtualAccountRepository.class);
     private final TransactionService transactions = mock(TransactionService.class);
     private final Iso20022RequestToPayService requestToPay = mock(Iso20022RequestToPayService.class);
+    private final com.bank.vam.repository.TransactionRepository ledger = mock(com.bank.vam.repository.TransactionRepository.class);
     private final CollectionReturnService service = new CollectionReturnService(lines, runs, mandates, receivables, accounts,
-            transactions, requestToPay, mock(PlatformTransactionManager.class));
+            transactions, ledger, requestToPay, mock(PlatformTransactionManager.class));
 
     private final CollectionLine line = new CollectionLine();
     private final CustomerMandate mandate = new CustomerMandate();
@@ -96,6 +97,38 @@ class CollectionReturnServiceTest {
         assertEquals(CustomerMandate.Status.SUSPENDED, mandate.getStatus());
         assertEquals("Suspended after MD01 No valid mandate on INV-1", mandate.getStatusReason());
         verify(requestToPay).sendRequestToPay(line.getReceivableId());
+    }
+
+    @Test
+    void aReturnedCoboDebitAlsoReversesTheSubsidiarysInHouseCredit() {
+        line.setStatus(Status.SETTLED);
+        line.setTransactionRef("COL-1");
+        invoice.setIsCobo(true);
+        invoice.setCoboRequestStatus(Receivable.CoboRequestStatus.COLLECTED);
+        com.bank.vam.entity.Transaction credit = new com.bank.vam.entity.Transaction();
+        credit.setId(UUID.randomUUID());
+        when(ledger.findByReferenceNumber("COL-1")).thenReturn(Optional.of(credit));
+
+        assertEquals("RETURNED", service.apply(List.of(new Return("DD-1", "AM04"))).get(0).result());
+
+        verify(transactions).reverseCollection(eq(line.getCreditorVaId()), eq(new BigDecimal("100.00")), eq("AED"), eq("COL-1"),
+                any(), any(), any(), eq("DIRECT_DEBIT"));
+        verify(transactions, times(1)).reverseCoboInHouseCredit(eq(credit.getId()), any());
+        assertEquals(ReceivableStatus.OPEN, invoice.getStatus());
+        assertEquals(new BigDecimal("100.00"), invoice.getOutstandingAmount());
+        assertNull(invoice.getCoboRequestStatus());
+    }
+
+    @Test
+    void aCoboDebitRejectedBeforeSettlementHasNoInHouseCreditToReverse() {
+        line.setStatus(Status.SENT);
+        invoice.setIsCobo(true);
+
+        assertEquals("REJECTED", service.apply(List.of(new Return("DD-1", "AM04"))).get(0).result());
+
+        verify(transactions, never()).reverseCoboInHouseCredit(any(), any());
+        verify(transactions, never()).reverseCollection(any(), any(), any(), any(), any(), any(), any(), any());
+        verifyNoInteractions(ledger);
     }
 
     @Test

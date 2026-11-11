@@ -17,6 +17,8 @@ import com.bank.vam.repository.receivables.UnmatchedPaymentRepository;
 import com.bank.vam.repository.treasury.ExceptionTransactionRepository;
 import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.repository.ProgramRepository;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.service.TransactionService;
 import com.bank.vam.service.treasury.SettlementVaResolverService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +77,7 @@ public class ReconciliationService {
     private final VirtualAccountRepository virtualAccountRepository;
     private final TransactionRepository transactionRepository;
     private final ProgramRepository programRepository;
+    private final TransactionService transactionService;
 
     // Default confidence thresholds
     private static final int HIGH_CONFIDENCE_THRESHOLD = 90;
@@ -784,6 +787,12 @@ public class ReconciliationService {
             confidence = Math.min(confidence, MEDIUM_CONFIDENCE_THRESHOLD);
         }
         
+        String blocked = applyBlocker(receivable, transactionId);
+        if (blocked != null) {
+            return createUnmatchedResult(transactionId, vibanId, viban.getVirtualAccountId(),
+                                         amount, currencyCode, payerName, payerAccount, remittanceInfo, blocked);
+        }
+
         // Create payment match
         ReceivablePayment payment = createPaymentMatch(transactionId, vibanId, receivable,
                                                         amount, currencyCode, payerName, payerAccount,
@@ -791,7 +800,7 @@ public class ReconciliationService {
                                                         confidence, "Direct VIBAN reference match");
         
         // Update receivable
-        updateReceivableAfterPayment(receivable, amount);
+        applyPayment(receivable, amount, payment.getAppliedAmount(), transactionId, "AUTO");
         
         // Update VIBAN statistics
         updateVibanAfterPayment(viban, amount);
@@ -822,6 +831,12 @@ public class ReconciliationService {
                                          "Receivable status: " + receivable.getStatus());
         }
         
+        String blocked = applyBlocker(receivable, transactionId);
+        if (blocked != null) {
+            return createUnmatchedResult(transactionId, vibanId, receivable.getVirtualAccountId(),
+                                         amount, currencyCode, payerName, payerAccount, remittanceInfo, blocked);
+        }
+
         int confidence = calculateAmountConfidence(amount, receivable.getOutstandingAmount(),
                                                    receivable.getAmountTolerancePercent());
         
@@ -830,7 +845,7 @@ public class ReconciliationService {
                                                         remittanceInfo, ReceivablePayment.MatchType.AUTO,
                                                         confidence, "VIBAN-linked receivable match");
         
-        updateReceivableAfterPayment(receivable, amount);
+        applyPayment(receivable, amount, payment.getAppliedAmount(), transactionId, "AUTO");
         
         log.info("VIBAN-linked match successful: transaction {} -> receivable {}, confidence {}%",
                  transactionId, receivable.getId(), confidence);
@@ -874,13 +889,18 @@ public class ReconciliationService {
         ScoredMatch bestMatch = scoredMatches.get(0);
         
         // Only auto-match if confidence is high enough
+        String blocked = bestMatch.score >= HIGH_CONFIDENCE_THRESHOLD ? applyBlocker(bestMatch.receivable, transactionId) : null;
+        if (blocked != null) {
+            return createUnmatchedResult(transactionId, vibanId, bestMatch.receivable.getVirtualAccountId(),
+                                         amount, currencyCode, payerName, payerAccount, remittanceInfo, blocked);
+        }
         if (bestMatch.score >= HIGH_CONFIDENCE_THRESHOLD) {
             ReceivablePayment payment = createPaymentMatch(transactionId, vibanId, bestMatch.receivable,
                                                             amount, currencyCode, payerName, payerAccount,
                                                             remittanceInfo, ReceivablePayment.MatchType.AUTO,
                                                             bestMatch.score, "Amount-based auto-match");
             
-            updateReceivableAfterPayment(bestMatch.receivable, amount);
+            applyPayment(bestMatch.receivable, amount, payment.getAppliedAmount(), transactionId, "AUTO");
             
             log.info("Amount-based match successful: transaction {} -> receivable {}, confidence {}%",
                      transactionId, bestMatch.receivable.getId(), bestMatch.score);
@@ -960,6 +980,9 @@ public class ReconciliationService {
                     .build();
         }
         
+        // A COBO invoice the payment can't be credited through is refused before anything is written
+        coboIhbCurrentAccount(receivable, unmatched.getTransactionId());
+
         // Create payment match
         ReceivablePayment payment = ReceivablePayment.createManualMatch(
                 receivableId,
@@ -975,7 +998,7 @@ public class ReconciliationService {
         payment = receivablePaymentRepository.save(payment);
         
         // Update receivable
-        updateReceivableAfterPayment(receivable, unmatched.getAmount());
+        applyPayment(receivable, unmatched.getAmount(), payment.getAppliedAmount(), unmatched.getTransactionId(), "MANUAL");
         
         // Update unmatched payment
         unmatched.matchToReceivable(receivableId, payment.getId(), matchedBy);
@@ -1200,9 +1223,84 @@ public class ReconciliationService {
         return receivablePaymentRepository.save(payment);
     }
 
-    private void updateReceivableAfterPayment(Receivable receivable, BigDecimal amount) {
+    // ========================================================================
+    // THE ONE APPLICATION POINT
+    // ========================================================================
+
+    /**
+     * The one place a payment reaches an invoice: auto match, manual match, direct-debit settlement and
+     * record-payment all come here. For a COBO invoice whose cash is on the collector's account it also posts
+     * the in-house credit to the subsidiary (IC payable +, IHB current account +), gross, for the amount applied;
+     * the cash itself is not booked again. Throws {@link BusinessException} before anything is written when a
+     * COBO invoice can't be credited that way; the auto path asks {@link #applyBlocker} first and leaves the
+     * payment unmatched instead.
+     *
+     * @param amount what the invoice's paid amount rises by (as before)
+     * @param appliedAmount the part applied to the invoice: what the subsidiary is credited
+     * @param bankTransactionId the bank credit that paid it
+     * @param source AUTO, MANUAL, DIRECT_DEBIT ... for the ledger notes
+     */
+    public void applyPayment(Receivable receivable, BigDecimal amount, BigDecimal appliedAmount,
+                             UUID bankTransactionId, String source) {
+        VirtualAccount ihbCurrent = coboIhbCurrentAccount(receivable, bankTransactionId);
         receivable.recordPayment(amount);
+        if (ihbCurrent != null) {
+            Transaction credit = transactionService.postCoboInHouseCredit(ihbCurrent, appliedAmount, bankTransactionId,
+                receivable.getReceivableNumber(), receivable.getCustomerName(), receivable.getCoboCollectorEntityName(), source);
+            if (credit != null) receivable.setCoboTransactionRef(credit.getReferenceNumber());
+            if (receivable.isFullyPaid()) receivable.setCoboRequestStatus(Receivable.CoboRequestStatus.COLLECTED);
+        }
         receivableRepository.save(receivable);
+    }
+
+    /** Why {@link #applyPayment} would refuse this payment, or null. */
+    private String applyBlocker(Receivable receivable, UUID bankTransactionId) {
+        try {
+            coboIhbCurrentAccount(receivable, bankTransactionId);
+            return null;
+        } catch (BusinessException e) {
+            return e.getMessage();
+        }
+    }
+
+    /**
+     * For a COBO invoice paid by a bank credit on the collector's account: the subsidiary's active IHB current
+     * account in the invoice currency, whose IC payable is set and active. Null when no in-house credit is due:
+     * not COBO, or the cash landed on an account outside the collector (it is already where it belongs).
+     */
+    private VirtualAccount coboIhbCurrentAccount(Receivable r, UUID bankTransactionId) {
+        if (!Boolean.TRUE.equals(r.getIsCobo()) || r.getCoboCollectorEntityId() == null) return null;
+        String who = r.getReceivableNumber() + " is collected by " + r.getCoboCollectorEntityCode()
+            + " on behalf of " + r.getOwningEntityCode();
+        if (bankTransactionId == null) {
+            throw new BusinessException(who + ": choose the bank credit that paid this invoice");
+        }
+        UUID cashVaId = transactionRepository.findById(bankTransactionId).map(Transaction::getVaId).orElse(null);
+        boolean onCollector = cashVaId != null && virtualAccountRepository.findById(cashVaId)
+            .map(va -> r.getCoboCollectorEntityId().equals(va.getOwningEntityId())).orElse(false);
+        if (!onCollector) {
+            // A COBO invoice's VIBAN and pay link sit on the collector's account (createInvoice), so this is cash paid
+            // to the subsidiary some other way: it is already the subsidiary's, and crediting it in-house would count it twice.
+            log.warn("{}: cash of bank transaction {} is not on the collector's account; applied directly, no in-house credit",
+                who, bankTransactionId);
+            return null;
+        }
+        VirtualAccount ihbCurrent = r.getOwningEntityId() == null ? null
+            : virtualAccountRepository.findByOwningEntityIdAndStatus(r.getOwningEntityId(), VirtualAccount.VaStatus.ACTIVE).stream()
+                .filter(va -> va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IHB_CURRENT)
+                .filter(va -> r.getCurrencyCode().equals(va.getCurrencyCode()))
+                .findFirst().orElse(null);
+        if (ihbCurrent == null) {
+            throw new BusinessException(who + ", which has no active " + r.getCurrencyCode()
+                + " IHB current account to credit");
+        }
+        boolean icPayableActive = ihbCurrent.getIcPayableVaId() != null && virtualAccountRepository.findById(ihbCurrent.getIcPayableVaId())
+            .map(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE).orElse(false);
+        if (!icPayableActive) {
+            throw new BusinessException(who + ", but its IHB current account " + ihbCurrent.getVaNumber()
+                + " has no active IC payable at the treasury");
+        }
+        return ihbCurrent;
     }
 
     private void updateVibanAfterPayment(Viban viban, BigDecimal amount) {

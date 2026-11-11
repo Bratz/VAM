@@ -246,7 +246,7 @@ public class ReceivablesDto {
         private BigDecimal taxAmount;
         private String notes;                  // for the customer
         private String metadata;               // JSON: line items, charges, VAT and payment terms, internal notes
-        private UUID coboCollectorEntityId;    // collect on behalf of the owning entity: submitted for treasury approval
+        private Boolean collectDirectly;       // owning entity enrolled for COBO in this currency, but collect this one directly (spec D3)
         private Boolean draft;
         private Boolean sendInvoiceEmail;
     }
@@ -937,39 +937,9 @@ public class ReceivablesDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class CoboSubmitRequest {
-        private UUID collectorEntityId;
-        private String requestedBy;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CoboApproveRequest {
-        private String approvedBy;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CoboRejectRequest {
-        private String rejectedBy;
-        private String reason;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class CoboExecuteRequest {
-        private UUID treasuryVaId;
-        private UUID subsidiaryVaId;
-        private BigDecimal amount;
-        private String paymentReference;
+        /** The unmatched bank credit on the collector's account that paid the invoice. */
+        private UUID unmatchedPaymentId;
         private String notes;
     }
 
@@ -1276,6 +1246,8 @@ public class ReceivablesDto {
         private String description;
         private String status;
         private String viban;
+        /** Account name to pay: "<treasury> re: <subsidiary>" when the treasury collects on the subsidiary's behalf. */
+        private String accountName;
     }
 
     // ========================================================================

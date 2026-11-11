@@ -782,31 +782,6 @@ public class Receivable extends BaseEntity {
     // ========================================================================
     
     /**
-     * Check if this receivable is eligible for COBO routing.
-     */
-    public boolean canRequestCobo() {
-        return (status == ReceivableStatus.OPEN || status == ReceivableStatus.PARTIAL || status == ReceivableStatus.OVERDUE)
-            && collectionRoute == CollectionRoute.DIRECT
-            && (coboRequestStatus == null || coboRequestStatus == CoboRequestStatus.NOT_REQUESTED);
-    }
-    
-    /**
-     * Request COBO for this receivable.
-     */
-    public void requestCobo(UUID collectorEntityId, String collectorEntityCode, 
-                            String collectorEntityName, String requestedBy) {
-        this.collectionRoute = CollectionRoute.COBO;
-        this.isCobo = true;
-        this.coboCollectorEntityId = collectorEntityId;
-        this.coboCollectorEntityCode = collectorEntityCode;
-        this.coboCollectorEntityName = collectorEntityName;
-        this.coboRequestStatus = CoboRequestStatus.PENDING_TREASURY_APPROVAL;
-        this.coboRequestedAt = LocalDateTime.now();
-        this.coboRequestedBy = requestedBy;
-        this.status = ReceivableStatus.PENDING_COBO;
-    }
-    
-    /**
      * Treasury approves COBO request.
      */
     public void approveCobo(String approvedBy) {
@@ -918,6 +893,17 @@ public class Receivable extends BaseEntity {
      */
     public boolean isCoboRouted() {
         return collectionRoute == CollectionRoute.COBO;
+    }
+
+    /** "&lt;collector&gt; re: &lt;owning entity&gt;" when the treasury centre collects on the owner's behalf (COBO spec R6), else null. */
+    public String coboAccountName() {
+        return Boolean.TRUE.equals(isCobo) && coboCollectorEntityName != null && owningEntityName != null
+            ? coboCollectorEntityName + " re: " + owningEntityName : null;
+    }
+
+    /** The name the invoice's VIBAN carries: {@link #coboAccountName()}, else the customer's name as before. */
+    public String vibanName() {
+        return coboAccountName() != null ? coboAccountName() : customerName;
     }
     
     /**

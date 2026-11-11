@@ -26,6 +26,8 @@ interface PublicInvoice {
   description: string | null;
   status: string;
   viban: string | null;
+  /** Set when the treasury collects on the subsidiary's behalf: "<treasury> re: <subsidiary>". */
+  accountName?: string | null;
 }
 
 const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
@@ -95,7 +97,10 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
                   Transfer the amount above to this account, quoting {invoice.receivableNumber} as the reference
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <code className="text-body-sm font-mono text-primary-900 dark:text-neutral-50 break-all">{invoice.viban}</code>
+                  <div className="min-w-0">
+                    {invoice.accountName && <p className="body-strong">{invoice.accountName}</p>}
+                    <code className="text-body-sm font-mono text-primary-900 dark:text-neutral-50 break-all">{invoice.viban}</code>
+                  </div>
                   <button onClick={copyViban} className="p-2 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg flex-shrink-0" title="Copy account number">
                     {copied ? <Check className="w-4 h-4 text-success-600 dark:text-success-300" /> : <Copy className="w-4 h-4 text-accent-600 dark:text-accent-300" />}
                   </button>

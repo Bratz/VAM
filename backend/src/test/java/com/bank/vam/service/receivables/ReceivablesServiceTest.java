@@ -52,7 +52,7 @@ class ReceivablesServiceTest {
     private final ExceptionTransactionRepository exceptionTransactionRepository = mock(ExceptionTransactionRepository.class);
     private final CorporateRepository corporateRepository = mock(CorporateRepository.class);
 
-    private final CoboReceivableService coboReceivables = mock(CoboReceivableService.class);
+    private final CoboEnrolmentService coboEnrolments = mock(CoboEnrolmentService.class);
     private final com.bank.vam.outbox.OutboxEmailRepository outbox = mock(com.bank.vam.outbox.OutboxEmailRepository.class);
     private final UnmatchedPaymentRepository unmatchedPaymentRepository = mock(UnmatchedPaymentRepository.class);
     private final ReconciliationService reconciliationService = mock(ReconciliationService.class);
@@ -60,7 +60,7 @@ class ReceivablesServiceTest {
     private final ReceivablesService service = new ReceivablesService(
             virtualAccountRepository, transactionRepository, vibanRepository, receivableRepository,
             vibanService, corporateRepository, transactionService, settlementVaResolver,
-            exceptionTransactionRepository, coboReceivables, outbox, unmatchedPaymentRepository, reconciliationService);
+            exceptionTransactionRepository, coboEnrolments, outbox, unmatchedPaymentRepository, reconciliationService);
 
     {
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "http://test.local");
@@ -194,39 +194,106 @@ class ReceivablesServiceTest {
         verify(receivableRepository, never()).save(any());
     }
 
-    /** A draft is stored as DRAFT and nothing goes out: no COBO request, no email. */
+    /** A draft is stored as DRAFT and nothing goes out: no email. */
     @Test
     void aDraftIsKeptAsADraftAndNotSent() {
         stubSaveAssignsId();
 
-        service.createInvoice(CORPORATE_ID, baseRequest().draft(true).sendInvoiceEmail(true)
-                .coboCollectorEntityId(UUID.randomUUID()).build());
+        service.createInvoice(CORPORATE_ID, baseRequest().draft(true).sendInvoiceEmail(true).build());
 
         ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
         verify(receivableRepository, atLeastOnce()).save(saved.capture());
         assertEquals(Receivable.ReceivableStatus.DRAFT, saved.getValue().getStatus());
-        verifyNoInteractions(coboReceivables, outbox);
+        verifyNoInteractions(outbox);
+    }
+
+    // --- COBO by enrolment (spec D3, D5, R5, R6) ---
+
+    private static final UUID SUBSIDIARY = UUID.randomUUID();
+    private static final UUID TREASURY = UUID.randomUUID();
+    private static final UUID TREASURY_VA = UUID.randomUUID();
+    private static final UUID ENROLMENT = UUID.randomUUID();
+
+    /** SUB-X is enrolled for AED: collected by TC-1 into TREASURY_VA. */
+    private void enrolSubsidiaryForAed() {
+        when(coboEnrolments.active(eq(SUBSIDIARY), eq("AED"), any())).thenReturn(Optional.of(
+            new CoboEnrolmentService.EnrolmentView(ENROLMENT, CORPORATE_ID, SUBSIDIARY, "SUB-X", "Sub X LLC", "AED",
+                TREASURY, "TC-1", "Treasury Centre LLC", TREASURY_VA, "VA-T-AED", "Treasury collections",
+                LocalDate.now(), null, true, "tester", null)));
+        VirtualAccount treasuryVa = VirtualAccount.builder().vaNumber("VA-T-AED").programId(PROGRAM_ID).build();
+        treasuryVa.setId(TREASURY_VA);
+        when(virtualAccountRepository.findById(TREASURY_VA)).thenReturn(Optional.of(treasuryVa));
+        when(vibanService.createViban(eq(PROGRAM_ID), any(VibanCreateRequest.class)))
+            .thenReturn(VibanResponse.builder().id(UUID.randomUUID()).viban("AE-T-VIBAN-1").build());
+    }
+
+    private Receivable lastSaved() {
+        ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
+        verify(receivableRepository, atLeastOnce()).save(saved.capture());
+        return saved.getValue();
     }
 
     @Test
-    void collectOnBehalfIsSubmittedAndTheInvoiceIsEmailed() {
+    void anEnrolledSubsidiarysInvoiceIsCollectedByTreasuryIntoTheEnrolmentAccountWithItsVibanThere() {
         stubSaveAssignsId();
-        UUID treasury = UUID.randomUUID();
-        when(coboReceivables.submitForCobo(any(), eq(treasury), eq("portal"))).thenAnswer(inv -> {
-            Receivable r = Receivable.builder().receivableNumber("INV-X").currencyCode("AED")
-                    .netAmount(BigDecimal.valueOf(500)).customerEmail("ap@acme.example").build();
-            r.setId(inv.getArgument(0));
-            return r;
-        });
+        enrolSubsidiaryForAed();
 
-        service.createInvoice(CORPORATE_ID, baseRequest().coboCollectorEntityId(treasury).sendInvoiceEmail(true).build());
+        // The client's account choice and lack of a VIBAN request don't matter: the enrolment decides
+        InvoiceResponse response = service.createInvoice(CORPORATE_ID, baseRequest().owningEntityId(SUBSIDIARY)
+            .targetVaId(TARGET_VA_ID).customerEmail("ap@acme.example").sendInvoiceEmail(true).build());
 
-        verify(coboReceivables).submitForCobo(any(), eq(treasury), eq("portal"));
+        Receivable r = lastSaved();
+        assertTrue(r.getIsCobo());
+        assertEquals(Receivable.CollectionRoute.COBO, r.getCollectionRoute());
+        assertEquals(TREASURY, r.getCoboCollectorEntityId());
+        assertEquals("TC-1", r.getCoboCollectorEntityCode());
+        assertEquals(Receivable.CoboRequestStatus.APPROVED, r.getCoboRequestStatus());
+        assertEquals(ENROLMENT, r.getCoboRequestId());
+        assertEquals(TREASURY_VA, r.getVirtualAccountId());
+        assertEquals(Receivable.ReceivableStatus.OPEN, r.getStatus());
+
+        ArgumentCaptor<VibanCreateRequest> viban = ArgumentCaptor.forClass(VibanCreateRequest.class);
+        verify(vibanService).createViban(eq(PROGRAM_ID), viban.capture());
+        assertEquals(TREASURY_VA, viban.getValue().getVirtualAccountId());
+        assertEquals("Treasury Centre LLC re: Sub X LLC", viban.getValue().getCustomerName());
+        assertEquals("AE-T-VIBAN-1", response.getViban());
+
         ArgumentCaptor<com.bank.vam.outbox.OutboxEmail> mail = ArgumentCaptor.forClass(com.bank.vam.outbox.OutboxEmail.class);
         verify(outbox).save(mail.capture());
-        assertEquals("SENT", mail.getValue().getStatus());
-        assertEquals("INVOICE", mail.getValue().getRelatedType());
+        assertTrue(mail.getValue().getBody().contains("to IBAN AE-T-VIBAN-1 (Treasury Centre LLC re: Sub X LLC)"));
         assertTrue(mail.getValue().getBody().contains("Pay online: http://test.local/?page=pay-invoice&token="));
+    }
+
+    @Test
+    void collectDirectlyOptsTheInvoiceOutOfCobo() {
+        stubSaveAssignsId();
+        enrolSubsidiaryForAed();
+
+        service.createInvoice(CORPORATE_ID, baseRequest().owningEntityId(SUBSIDIARY).targetVaId(TARGET_VA_ID)
+            .collectDirectly(true).build());
+
+        Receivable r = lastSaved();
+        assertFalse(r.getIsCobo());
+        assertEquals(Receivable.CollectionRoute.DIRECT, r.getCollectionRoute());
+        assertNull(r.getCoboCollectorEntityId());
+        assertEquals(TARGET_VA_ID, r.getVirtualAccountId());
+        verify(coboEnrolments, never()).active(any(), any(), any());
+        verify(vibanService, never()).createViban(any(), any());
+    }
+
+    @Test
+    void anInvoiceInACurrencyTheSubsidiaryIsNotEnrolledForIsCollectedDirectly() {
+        stubSaveAssignsId();
+        enrolSubsidiaryForAed();
+
+        service.createInvoice(CORPORATE_ID, baseRequest().owningEntityId(SUBSIDIARY).currencyCode("USD")
+            .targetVaId(TARGET_VA_ID).build());
+
+        Receivable r = lastSaved();
+        assertFalse(r.getIsCobo());
+        assertEquals(TARGET_VA_ID, r.getVirtualAccountId());
+        verify(coboEnrolments).active(eq(SUBSIDIARY), eq("USD"), any());
+        verify(vibanService, never()).createViban(any(), any());
     }
 
     /** It used to answer with four made-up demo invoices, the same under every such corporate. */

@@ -71,6 +71,13 @@ public class CollectionRunService {
         TransactionTemplate own = new TransactionTemplate(transactionManager);
         own.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
+        // Collected on behalf (COBO, spec D8): the treasury is the creditor and collects into the invoice's account
+        // (its collection account); the subsidiary is the ultimate creditor. The mandate stays the subsidiary's.
+        Map<UUID, com.bank.vam.entity.receivables.Receivable> cobo = receivables.findAllById(plan.lines().stream()
+                        .filter(l -> l.method() == Method.DIRECT_DEBIT).map(CollectionRoutingService.Line::receivableId).toList())
+                .stream().filter(r -> Boolean.TRUE.equals(r.getIsCobo()) && r.getCoboCollectorEntityId() != null && r.getVirtualAccountId() != null)
+                .collect(Collectors.toMap(com.bank.vam.entity.receivables.Receivable::getId, Function.identity()));
+
         List<CollectionLine> made = new ArrayList<>();
         for (CollectionRoutingService.Line p : plan.lines()) {
             CollectionLine l = new CollectionLine();
@@ -93,7 +100,7 @@ public class CollectionRunService {
                     l.setSequenceType(p.sequenceType());
                     l.setCollectionDate(p.collectionDate());
                     l.setEndToEndId("DD-" + random(24));
-                    l.setCreditorVaId(m.getCreditorVaId());
+                    l.setCreditorVaId(cobo.containsKey(p.receivableId()) ? cobo.get(p.receivableId()).getVirtualAccountId() : m.getCreditorVaId());
                     l.setDebtorName(m.getDebtorName());
                     l.setDebtorIban(m.getDebtorIban());
                     l.setDebtorBic(m.getDebtorBic());
@@ -119,7 +126,11 @@ public class CollectionRunService {
                     .stream().collect(Collectors.toMap(VirtualAccount::getId, VirtualAccount::getVaNumber));
             Map<UUID, LocalDate> signed = new HashMap<>();
             used.values().forEach(m -> { if (m.getSignedDate() != null) signed.put(m.getId(), m.getSignedDate()); });
-            run.setPain008Xml(Pain008.build(run.getRunRef(), corporate.getLegalName(), homeBank.getBic(), debits, numbers, signed));
+            Map<UUID, Pain008.OnBehalf> onBehalf = cobo.values().stream().collect(Collectors.toMap(
+                    com.bank.vam.entity.receivables.Receivable::getId, r -> new Pain008.OnBehalf(
+                            Objects.toString(r.getCoboCollectorEntityName(), r.getCoboCollectorEntityCode()),
+                            Objects.toString(r.getOwningEntityName(), r.getOwningEntityCode()))));
+            run.setPain008Xml(Pain008.build(run.getRunRef(), corporate.getLegalName(), homeBank.getBic(), debits, numbers, signed, onBehalf));
         }
         return new RunDetail(summary(run, made), made);
     }

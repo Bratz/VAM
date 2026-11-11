@@ -1868,6 +1868,163 @@ public class TransactionService {
     }
 
     /**
+     * The in-house half of a COBO collection whose cash is already on treasury's account (posted when the bank
+     * credit arrived): treasury's IC payable to the subsidiary +amount, the subsidiary's IHB current account
+     * +amount. Unlike {@link #makeIhb6LegCoboCollection} no cash leg is booked again. Gross, no fee (spec D4).
+     * Idempotent per bank transaction: a second call for the same one posts nothing and returns null.
+     *
+     * @param ihbCurrentVa the subsidiary's IHB current account; its icPayableVaId must be set
+     * @param bankTransactionId the bank credit that paid the invoice
+     * @param collectorName the treasury centre that collected it, named on the subsidiary's statement line (R18)
+     */
+    @Transactional
+    public Transaction postCoboInHouseCredit(VirtualAccount ihbCurrentVa, BigDecimal amount, UUID bankTransactionId,
+                                             String invoiceNumber, String customerName, String collectorName, String source) {
+        String correlationId = "COBO-" + bankTransactionId;
+        if (transactionRepository.existsByCorrelationId(correlationId)) {
+            log.info("COBO in-house credit for bank transaction {} already posted; skipped", bankTransactionId);
+            return null;
+        }
+        VirtualAccount icPayableVa = virtualAccountRepository.findById(ihbCurrentVa.getIcPayableVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("IC Payable VA not found: " + ihbCurrentVa.getIcPayableVaId()));
+        validateVaActive(ihbCurrentVa, "IHB owner");
+        validateVaActive(icPayableVa, "IC Payable");
+
+        String behalfOf = ihbCurrentVa.getOwningEntityCode() != null ? ihbCurrentVa.getOwningEntityCode() : ihbCurrentVa.getVaNumber();
+        String collector = collectorName != null ? collectorName : "Treasury";
+        String what = "COBO " + invoiceNumber + " from " + customerName;
+
+        BigDecimal icBefore = icPayableVa.getCurrentBalance();
+        icPayableVa.setCurrentBalance(icBefore.add(amount));
+        virtualAccountRepository.save(icPayableVa);
+        transactionRepository.save(Transaction.builder()
+                .movementType(Transaction.MovementType.IC_PAYABLE)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(icPayableVa.getCorporateId())
+                .legalEntityId(icPayableVa.getOwningEntityId())
+                .vaId(icPayableVa.getId())
+                .programId(icPayableVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(icBefore)
+                .balanceAfter(icPayableVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(LocalDate.now())
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("IC Payable: " + collector + " owes " + behalfOf + " for " + what)
+                .channel("IHB_COBO")
+                .remitterName(customerName)
+                .externalReference(invoiceNumber)
+                .counterpartyVaId(ihbCurrentVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOf)
+                .behalfOfVaId(ihbCurrentVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO in-house credit (" + source + ") - IC Payable increase; bank transaction " + bankTransactionId)
+                .build());
+
+        BigDecimal ownerBefore = ihbCurrentVa.getCurrentBalance();
+        ihbCurrentVa.setCurrentBalance(ownerBefore.add(amount));
+        ihbCurrentVa.setAvailableBalance(ihbCurrentVa.getCurrentBalance().add(
+            ihbCurrentVa.getEffectiveCreditLimit() != null ? ihbCurrentVa.getEffectiveCreditLimit() : BigDecimal.ZERO));
+        virtualAccountRepository.save(ihbCurrentVa);
+        Transaction ownerTxn = transactionRepository.save(Transaction.builder()
+                .movementType(Transaction.MovementType.TRANSFER_IN)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ihbCurrentVa.getCorporateId())
+                .legalEntityId(ihbCurrentVa.getOwningEntityId())
+                .vaId(ihbCurrentVa.getId())
+                .programId(ihbCurrentVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(ownerBefore)
+                .balanceAfter(ihbCurrentVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(LocalDate.now())
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description(what + ", collected by " + collector)
+                .channel("IHB_COBO")
+                .remitterName(customerName)
+                .externalReference(invoiceNumber)
+                .counterpartyVaId(icPayableVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOf)
+                .behalfOfVaId(ihbCurrentVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO in-house credit (" + source + ") - IHB Current Account credit; bank transaction " + bankTransactionId)
+                .build());
+
+        propagateBalanceChanges(ihbCurrentVa.getId(), amount);
+        log.info("COBO in-house credit {} {} for {}: IHB current {} and IC payable {} +{}",
+            amount, ihbCurrentVa.getCurrencyCode(), invoiceNumber, ihbCurrentVa.getVaNumber(), icPayableVa.getVaNumber(), amount);
+        return ownerTxn;
+    }
+
+    /**
+     * Undoes {@link #postCoboInHouseCredit} for a bank credit that came back (a returned direct debit): each of its
+     * legs is posted again the other way -- IC payable -amount, the subsidiary's IHB current account -amount -- under
+     * correlation {@code COBO-REV-<bankTransactionId>}. Idempotent; nothing to do (null) when no in-house credit was
+     * posted for that bank transaction. The IHB current account may go below zero: a return is not optional.
+     *
+     * @return the IHB current account's debit, or null
+     */
+    @Transactional
+    public Transaction reverseCoboInHouseCredit(UUID bankTransactionId, String reason) {
+        String correlationId = "COBO-REV-" + bankTransactionId;
+        if (transactionRepository.existsByCorrelationId(correlationId)) {
+            log.info("COBO in-house credit for bank transaction {} already reversed; skipped", bankTransactionId);
+            return null;
+        }
+        Transaction ownerDebit = null;
+        for (Transaction leg : transactionRepository.findAllByCorrelationId("COBO-" + bankTransactionId)) {
+            VirtualAccount va = virtualAccountRepository.findById(leg.getVaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("VA not found: " + leg.getVaId()));
+            boolean owner = leg.getMovementType() == Transaction.MovementType.TRANSFER_IN;
+            BigDecimal before = va.getCurrentBalance();
+            va.setCurrentBalance(before.subtract(leg.getAmount()));
+            if (owner) {
+                va.setAvailableBalance(va.getCurrentBalance().add(
+                    va.getEffectiveCreditLimit() != null ? va.getEffectiveCreditLimit() : BigDecimal.ZERO));
+            }
+            virtualAccountRepository.save(va);
+            Transaction out = transactionRepository.save(Transaction.builder()
+                    .movementType(owner ? Transaction.MovementType.TRANSFER_OUT : Transaction.MovementType.REVERSAL)
+                    .transactionCategory(TransactionCategory.INTERNAL)
+                    .corporateId(leg.getCorporateId())
+                    .legalEntityId(leg.getLegalEntityId())
+                    .vaId(va.getId())
+                    .programId(leg.getProgramId())
+                    .amount(leg.getAmount())
+                    .currencyCode(leg.getCurrencyCode())
+                    .balanceBefore(before)
+                    .balanceAfter(va.getCurrentBalance())
+                    .transactionDate(LocalDateTime.now())
+                    .valueDate(LocalDate.now())
+                    .referenceNumber(generateReferenceNumber("IHBCOBORV"))
+                    .description("Returned: " + leg.getDescription() + " (" + reason + ")")
+                    .channel("IHB_COBO")
+                    .remitterName(leg.getRemitterName())
+                    .externalReference(leg.getExternalReference())
+                    .counterpartyVaId(leg.getCounterpartyVaId())
+                    .correlationId(correlationId)
+                    .isRobo(true)
+                    .behalfOfEntity(leg.getBehalfOfEntity())
+                    .behalfOfVaId(leg.getBehalfOfVaId())
+                    .status(Transaction.TransactionStatus.COMPLETED)
+                    .processingNotes("IHB COBO in-house credit reversed (" + leg.getReferenceNumber() + "); bank transaction " + bankTransactionId)
+                    .build());
+            if (owner) {
+                propagateBalanceChanges(va.getId(), leg.getAmount().negate());
+                ownerDebit = out;
+            }
+        }
+        if (ownerDebit != null) log.info("COBO in-house credit for bank transaction {} reversed: {}", bankTransactionId, reason);
+        return ownerDebit;
+    }
+
+    /**
      * Posts the intercompany ledger leg for a cross-entity SURPLUS cash-
      * concentration sweep (subsidiary's excess cash flows up to Treasury).
      *

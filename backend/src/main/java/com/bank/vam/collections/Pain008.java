@@ -5,23 +5,35 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * pain.008.001.08 (Customer Direct Debit Initiation) for a run: one message, one PmtInf per receiving account,
- * scheme, collection date, currency and sequence type — the fields a PmtInf fixes for all its transactions.
- * Scheme-neutral: the scheme is a proprietary local instrument.
+ * creditor, scheme, collection date, currency and sequence type — the fields a PmtInf fixes for all its transactions.
+ * Scheme-neutral: the scheme is a proprietary local instrument. A debit collected on behalf of a subsidiary (COBO,
+ * spec D8) has the treasury as creditor and the subsidiary as ultimate creditor.
  */
 final class Pain008 {
 
     private Pain008() {
     }
 
-    /** {@code accountNumbers}: receiving account id → its number, used as the creditor account. */
+    /** A debit collected by {@code creditor} (the treasury) on behalf of {@code ultimateCreditor} (the subsidiary). */
+    record OnBehalf(String creditor, String ultimateCreditor) {
+    }
+
+    /**
+     * {@code accountNumbers}: receiving account id → its number, used as the creditor account.
+     * {@code onBehalf}: invoice id → its COBO parties, for the debits collected on behalf; the rest have {@code creditorName}.
+     */
     static String build(String messageId, String creditorName, String creditorBic, List<CollectionLine> debits,
-                        Map<UUID, String> accountNumbers, Map<UUID, LocalDate> signedDates) {
+                        Map<UUID, String> accountNumbers, Map<UUID, LocalDate> signedDates, Map<UUID, OnBehalf> onBehalf) {
+        Map<UUID, OnBehalf> cobo = new HashMap<>(onBehalf); // a line without an invoice id looks up null
+        Function<CollectionLine, String> creditor = l -> cobo.containsKey(l.getReceivableId())
+                ? cobo.get(l.getReceivableId()).creditor() : creditorName;
         Map<List<Object>, List<CollectionLine>> groups = debits.stream().collect(Collectors.groupingBy(
-                l -> List.<Object>of(l.getCreditorVaId(), l.getSchemeCode(), l.getCollectionDate(), l.getCurrency(), l.getSequenceType()),
+                l -> Arrays.<Object>asList(l.getCreditorVaId(), creditor.apply(l), l.getSchemeCode(), l.getCollectionDate(), l.getCurrency(), l.getSequenceType()),
                 LinkedHashMap::new, Collectors.toList()));
 
         StringBuilder x = new StringBuilder();
@@ -54,7 +66,7 @@ final class Pain008 {
             x.append("      </PmtTpInf>\n");
             tag(x, 6, "ReqdColltnDt", first.getCollectionDate().toString());
             x.append("      <Cdtr>\n");
-            tag(x, 8, "Nm", creditorName);
+            tag(x, 8, "Nm", creditor.apply(first));
             x.append("      </Cdtr>\n");
             x.append("      <CdtrAcct>\n        <Id>\n          <Othr>\n");
             tag(x, 12, "Id", accountNumbers.getOrDefault(first.getCreditorVaId(), String.valueOf(first.getCreditorVaId())));
@@ -75,6 +87,12 @@ final class Pain008 {
                 LocalDate signed = signedDates.get(l.getMandateId());
                 if (signed != null) tag(x, 12, "DtOfSgntr", signed.toString());
                 x.append("          </MndtRltdInf>\n        </DrctDbtTx>\n");
+                OnBehalf onBehalfOf = cobo.get(l.getReceivableId());
+                if (onBehalfOf != null) {
+                    x.append("        <UltmtCdtr>\n");
+                    tag(x, 10, "Nm", onBehalfOf.ultimateCreditor());
+                    x.append("        </UltmtCdtr>\n");
+                }
                 x.append("        <DbtrAgt>\n          <FinInstnId>\n");
                 if (l.getDebtorBic() != null) {
                     tag(x, 12, "BICFI", l.getDebtorBic());

@@ -5,14 +5,15 @@
  * 
  * Layout:
  * - Main Form: Customer, Invoice Details, Collection Account, VIBAN
- * - Optional Tabs: Line Items, Tax & Charges, Payment Link, COBO, Hierarchy, Documents, Reminders
+ * - Optional Tabs: Line Items, Tax & Charges, Payment Link, Documents, Email
+ * - Collection on behalf (COBO) follows the owning entity's enrolment (In-House Bank), with a per-invoice opt-out
  * 
  * Design: Fast entry for common cases, full features available in tabs
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Link2, Mail, Calculator, DollarSign, ArrowDownLeft, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
-import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
+import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Link2, Mail, Calculator, DollarSign, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
+import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi, coboEnrolmentApi, type CoboEnrolment } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -22,6 +23,7 @@ import QRCode from 'react-qr-code';
 
 import { StatusIconBadge } from '../components/ui/StatusIconBadge';
 import { Toggle } from '../components/ui/Toggle';
+import { Checkbox } from '../components/ui/Checkbox';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -49,6 +51,7 @@ interface CollectionAccount {
   accountType: 'PHYSICAL' | 'VIRTUAL';
   /** An entity's in-house-bank current account: offered, but not the default for a customer invoice. */
   ihbCurrent?: boolean;
+  owningEntityId?: string;
 }
 
 interface LineItem {
@@ -81,7 +84,6 @@ interface IntercompanyEntity {
   id: string;
   code: string;
   name: string;
-  type: 'HEADQUARTERS' | 'SUBSIDIARY' | 'BRANCH';
   currency: string;
   ihbBalance: number;
 }
@@ -127,11 +129,6 @@ interface ReceivableFormData {
     percent: number;
   };
   
-  // COBO (Optional)
-  coboEnabled: boolean;
-  collectingEntityId: string;
-  behalfEntityId: string;
-  coboRechargeMarkup: number;
   
   
   // Documents (Optional)
@@ -798,113 +795,6 @@ const PaymentLinkTab: React.FC = () => (
   </div>
 );
 
-// COBO Tab
-const CoboTab: React.FC<{
-  formData: ReceivableFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ReceivableFormData>>;
-  entities: IntercompanyEntity[];
-}> = ({ formData, setFormData, entities }) => {
-  const collectingEntity = entities.find(e => e.id === formData.collectingEntityId);
-  const behalfEntity = entities.find(e => e.id === formData.behalfEntityId);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={cn('p-2 rounded-lg', formData.coboEnabled ? 'bg-success-100 dark:bg-success-500/20' : 'bg-surface-muted')}>
-            <ArrowDownLeft className={cn('w-5 h-5', formData.coboEnabled ? 'text-success-600 dark:text-success-300' : 'text-neutral-500 dark:text-neutral-400')} />
-          </div>
-          <div>
-            <p className="body-strong">Collect On Behalf Of (COBO)</p>
-            <p className="caption">Treasury collects for subsidiary, creates IHB deposit</p>
-          </div>
-        </div>
-        <Toggle
-          aria-label="Enable COBO collection"
-          checked={formData.coboEnabled}
-          onChange={(enabled) => setFormData(prev => ({ ...prev, coboEnabled: enabled }))}
-        />
-      </div>
-
-      {formData.coboEnabled && (
-        <div className="space-y-4 p-4 bg-success-50 rounded-lg dark:bg-success-500/10">
-          {/* Collecting Entity */}
-          <div>
-            <label className="field-label block mb-2">
-              <Landmark className="w-4 h-4 inline mr-1" />
-              Collecting Entity (Treasury)
-            </label>
-            <select
-              value={formData.collectingEntityId}
-              onChange={(e) => setFormData(prev => ({ ...prev, collectingEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
-            >
-              <option value="">Select treasury entity...</option>
-              {entities.filter(e => e.type === 'HEADQUARTERS').map(e => (
-                <option key={e.id} value={e.id}>{e.name} ({e.code})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* On Behalf Entity */}
-          <div>
-            <label className="field-label block mb-2">
-              <Building2 className="w-4 h-4 inline mr-1" />
-              On Behalf Of (Subsidiary)
-            </label>
-            <select
-              value={formData.behalfEntityId}
-              onChange={(e) => setFormData(prev => ({ ...prev, behalfEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
-              disabled={!formData.collectingEntityId}
-            >
-              <option value="">Select subsidiary...</option>
-              {entities.filter(e => e.type !== 'HEADQUARTERS' && e.id !== formData.collectingEntityId).map(e => (
-                <option key={e.id} value={e.id}>{e.name} ({e.code})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Recharge Markup */}
-          <div>
-            <label className="field-label block mb-2">
-              Recharge Markup %
-            </label>
-            <input
-              type="number"
-              value={formData.coboRechargeMarkup}
-              onChange={(e) => setFormData(prev => ({ ...prev, coboRechargeMarkup: parseFloat(e.target.value) || 0 }))}
-              className="w-24 px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
-              step="0.1"
-            />
-          </div>
-
-          {/* Preview */}
-          {collectingEntity && behalfEntity && (
-            <div className="p-3 bg-surface-card rounded-lg border border-success-200 dark:border-success-500/30">
-              <p className="caption mb-2">COBO Flow</p>
-              <div className="flex items-center justify-between text-body-sm">
-                <span className="font-medium">Customer pays →</span>
-                <span className="text-primary-600 dark:text-primary-200">{collectingEntity.code}</span>
-                <span>→</span>
-                <span className="text-success-600 dark:text-success-300">IHB Deposit for {behalfEntity.code}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Info Note */}
-          <div className="flex items-start gap-2 p-3 bg-surface-card rounded-lg border border-success-200 dark:border-success-500/30">
-            <Info className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
-            <p className="caption">
-              When payment is received, treasury will create an IHB deposit for the subsidiary. Interest accrues until settlement.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 // Documents Tab
 const DocumentsTab: React.FC<{
   formData: ReceivableFormData;
@@ -1088,10 +978,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     charges: [],
     earlyPaymentDiscount: { enabled: false, days: 10, percent: 2 },
     latePaymentFee: { enabled: false, percent: 1.5 },
-    coboEnabled: false,
-    collectingEntityId: '',
-    behalfEntityId: '',
-    coboRechargeMarkup: 0,
     externalRefs: [],
     customerNotes: '',
     internalNotes: '',
@@ -1114,6 +1000,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const [entities, setEntities] = useState<IntercompanyEntity[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [corporateName, setCorporateName] = useState<string>('');
+  const [enrolments, setEnrolments] = useState<CoboEnrolment[]>([]);
+  // Owning entity enrolled for COBO in this currency, but this invoice is collected directly (spec D3)
+  const [collectDirectly, setCollectDirectly] = useState(false);
 
 
   // Load data from APIs on mount or when corporateId changes
@@ -1177,7 +1066,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           bankName: 'Bank',
           currency: va.currencyCode || 'AED',
           accountType: va.vaType || 'VIRTUAL',
-          ihbCurrent: !!va.ihbParticipant
+          ihbCurrent: !!va.ihbParticipant,
+          owningEntityId: va.owningEntityId
         })));
       } catch (error) {
         console.error('Failed to load accounts:', error);
@@ -1185,16 +1075,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       }
 
       try {
-        // Load legal entities for COBO
+        // Load legal entities (the owning entity picker)
         const entitiesResponse = await legalEntityApi.getByCorporate(effectiveCorporateId);
         const entitiesList = Array.isArray(entitiesResponse?.data) ? entitiesResponse.data : [];
         setEntities(entitiesList.map((e: any) => ({
           id: e.id,
           code: e.entityCode || '',
           name: e.entityName || '',
-          // Who can collect for others: the treasury centre, or a holding company.
-          type: e.isTreasuryCenter || e.treasuryCenter || e.entityType === 'TREASURY_CENTER' || e.entityType === 'HOLDING'
-            ? 'HEADQUARTERS' : 'SUBSIDIARY',
           currency: e.baseCurrency || 'AED',
           ihbBalance: 0
         })));
@@ -1203,6 +1090,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         setEntities([]);
       }
 
+      // Who is collected on behalf: decides whether an invoice is COBO (the backend decides again on save)
+      setEnrolments(await coboEnrolmentApi.list(effectiveCorporateId).catch(() => []));
 
       setDataLoading(false);
     };
@@ -1215,7 +1104,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     { id: 'line-items', label: 'Line Items', icon: Package, badge: formData.useLineItems ? formData.lineItems.length : 0 },
     { id: 'tax-charges', label: 'Tax & Charges', icon: Calculator, badge: formData.charges.length },
     { id: 'payment-link', label: 'Payment Link', icon: Link2, badge: 0 },
-    { id: 'cobo', label: 'COBO', icon: ArrowDownLeft, badge: formData.coboEnabled ? 1 : 0 },
     { id: 'documents', label: 'References & Notes', icon: Paperclip, badge: formData.externalRefs.length },
     { id: 'email', label: 'Email', icon: Mail, badge: formData.sendInvoiceEmail ? 1 : 0 },
   ];
@@ -1226,6 +1114,15 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     setFormData(prev => ({ ...prev, dueDate }));
   }, [formData.invoiceDate, formData.paymentTerms]);
 
+  // Collected on behalf: the owning entity's enrolment for the invoice currency decides, unless opted out.
+  const ownerEnrolments = enrolments.filter(e => e.active && owningEntityId && e.subsidiaryEntityId === owningEntityId);
+  const enrolment = ownerEnrolments.find(e => e.currency === formData.currency) ?? null;
+  const cobo = enrolment && !collectDirectly ? enrolment : null;
+  const ownerName = entities.find(e => e.id === owningEntityId)?.name;
+
+  // Accounts in the invoice currency; with an owning entity, only that entity's (R7).
+  const availableAccounts = accounts.filter(a => a.currency === formData.currency && (!owningEntityId || a.owningEntityId === owningEntityId));
+
   // Set the default collection account for the invoice currency.
   //
   // This has to survive a currency change, not just first load. availableAccounts below is
@@ -1234,9 +1131,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   // targetVaId pointing at an account in the wrong currency. Selecting a customer sets the
   // currency from that customer, so this is an ordinary path, not an edge case.
   useEffect(() => {
-    const stillValid = accounts.some(
-      a => a.id === formData.collectionAccountId && a.currency === formData.currency
-    );
+    const stillValid = availableAccounts.some(a => a.id === formData.collectionAccountId);
     if (stillValid) return;
 
     // The default is the first account in the invoice currency, in the order the accounts
@@ -1244,12 +1139,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // carry no isDefault field on the API or in the database, so the previous
     // `a.isDefault && ...` could never match and no invoice ever got a collection account.
     // Ordinary operating/collection accounts first; an entity's IHB current account only if there is nothing else.
-    const inCurrency = accounts.filter(a => a.currency === formData.currency);
+    const inCurrency = availableAccounts;
     const defaultAccount = inCurrency.find(a => !a.ihbCurrent) ?? inCurrency[0];
     setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount?.id ?? '' }));
     setSelectedAccount(defaultAccount ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on currency/account changes only. formData.collectionAccountId is read to see whether the current pick is still valid and is written here, so depending on it would re-apply the default the moment the user clears the field.
-  }, [formData.currency, accounts]);
+  }, [formData.currency, accounts, owningEntityId]);
 
   // Filter customers
   // Typing searches the server: the list loaded up front holds only the first 100 customers.
@@ -1270,8 +1165,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     c.code.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  // Filter accounts
-  const availableAccounts = accounts.filter(a => a.currency === formData.currency);
 
   // Handlers
   const handleSelectCustomer = (customer: Customer) => {
@@ -1296,9 +1189,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // Customer and collection account are optional - can be added later
     if (!formData.invoiceNumber) newErrors.invoiceNumber = 'Invoice number is required';
     if (breakdown.total <= 0) newErrors.amount = formData.useLineItems ? 'Add a line item with an amount' : 'Valid amount is required';
-    if (formData.coboEnabled && (!formData.collectingEntityId || !formData.behalfEntityId)) {
-      newErrors.submit = 'Collect on behalf: choose the collecting treasury and the subsidiary (COBO tab), or switch it off';
-    }
     if (selectedCustomer && selectedCustomer.creditAvailable > 0 && breakdown.total > selectedCustomer.creditAvailable) {
       newErrors.amount = `Amount exceeds available credit (${formatCurrency(selectedCustomer.creditAvailable, selectedCustomer.currency)})`;
     }
@@ -1313,11 +1203,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     }
     setLoading(true);
     try {
-      // Owning entity: with COBO, the subsidiary collected on behalf of; otherwise the entity chosen in the banner;
-      // otherwise none.
-      const ownerId: string | undefined = formData.coboEnabled && formData.behalfEntityId
-        ? formData.behalfEntityId : (effectiveLegalEntityId || undefined);
-      const owningEntityId = ownerId;
+      const ownerId: string | undefined = effectiveLegalEntityId || undefined;
       const owningEntityCode = ownerId ? entities.find(e => e.id === ownerId)?.code : undefined;
 
 
@@ -1325,7 +1211,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       const createRequest = {
         // Corporate and Entity context - pass in body for proper backend handling
         corporateId: effectiveCorporateId,
-        owningEntityId: owningEntityId,
+        owningEntityId: ownerId,
         owningEntityCode: owningEntityCode,
         customerId: formData.customerId,
         customerName: selectedCustomer?.name || '',
@@ -1341,7 +1227,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         notes: formData.customerNotes,
         draft: isDraft,
         sendInvoiceEmail: formData.sendInvoiceEmail,
-        coboCollectorEntityId: formData.coboEnabled && formData.behalfEntityId ? formData.collectingEntityId : undefined,
+        // COBO is decided by the backend from the enrolment; only the opt-out is ours to send
+        collectDirectly: enrolment ? collectDirectly : undefined,
         // Kept with the invoice; there are no columns for these.
         metadata: JSON.stringify({
           subtotal: breakdown.subtotal,
@@ -1354,13 +1241,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           latePaymentFee: formData.latePaymentFee.enabled ? formData.latePaymentFee : undefined,
           externalRefs: formData.externalRefs.length ? formData.externalRefs : undefined,
           internalNotes: formData.internalNotes || undefined,
-          coboRechargeMarkup: formData.coboEnabled ? formData.coboRechargeMarkup : undefined,
         }),
         currencyCode: formData.currency,
         dueDate: formData.dueDate,
         description: formData.description || `Invoice ${formData.invoiceNumber}`,
         // Target VA (collection account)
-        targetVaId: formData.collectionAccountId,
+        targetVaId: cobo ? cobo.collectionVaId : formData.collectionAccountId,
         generateViban: formData.generateViban,
         // VIBAN options
         createViban: formData.generateViban,
@@ -1487,7 +1373,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       setSelectedCustomer(null);
                       setCustomerSearch('');
                       setSelectedAccount(null);
-                      setFormData(prev => ({ ...prev, customerId: '', collectionAccountId: '', collectingEntityId: '', behalfEntityId: '' }));
+                      setFormData(prev => ({ ...prev, customerId: '', collectionAccountId: '' }));
                       try { localStorage.setItem('receivables.corporateId', id); } catch { /* storage unavailable */ }
                     }}
                     className="w-full mt-0.5 px-3 py-1.5 border border-edge-strong rounded-lg text-body-sm bg-surface-card"
@@ -1507,10 +1393,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <label htmlFor="invoice-entity" className="text-caption font-medium text-cat-1 dark:text-cat-1-fg uppercase tracking-wide">Owning entity</label>
                 <select
                   id="invoice-entity"
-                  value={formData.coboEnabled && formData.behalfEntityId ? formData.behalfEntityId : owningEntityId}
-                  onChange={(e) => setOwningEntityId(e.target.value)}
-                  disabled={!effectiveCorporateId || entities.length === 0 || (formData.coboEnabled && !!formData.behalfEntityId)}
-                  title={formData.coboEnabled && formData.behalfEntityId ? 'Set by Collect On Behalf Of: the subsidiary owns the invoice' : undefined}
+                  value={owningEntityId}
+                  onChange={(e) => { setOwningEntityId(e.target.value); setCollectDirectly(false); }}
+                  disabled={!effectiveCorporateId || entities.length === 0}
                   className="w-full mt-0.5 px-3 py-1.5 border border-edge-strong rounded-lg text-body-sm bg-surface-card disabled:opacity-60"
                 >
                   <option value="">{entities.length ? 'Not set' : (dataLoading ? 'Loading...' : 'No legal entities')}</option>
@@ -1704,13 +1589,41 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               />
 
               <div className="space-y-3">
-                {!dataLoading && effectiveCorporateId && availableAccounts.length === 0 && (
+                {cobo && (
+                  <div className="flex items-start gap-3 p-4 rounded-lg border border-success-200 bg-success-50 dark:bg-success-500/10 dark:border-success-500/30">
+                    <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
+                    <div>
+                      <p className="body-strong">Collected by {cobo.collectorName ?? cobo.collectorCode} into {cobo.collectionVaName ?? cobo.collectionVaNumber}</p>
+                      <p className="caption">
+                        {cobo.collectionVaNumber} · {ownerName ?? cobo.subsidiaryName} is enrolled for {cobo.currency}. The customer pays the
+                        treasury centre through a VIBAN named &ldquo;{cobo.collectorName} re: {cobo.subsidiaryName}&rdquo;; when the money
+                        arrives, {ownerName ?? cobo.subsidiaryName}&apos;s IHB current account is credited in full.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {enrolment && (
+                  <Checkbox
+                    checked={collectDirectly}
+                    onChange={setCollectDirectly}
+                    label="Collect directly instead"
+                    description={`${ownerName ?? enrolment.subsidiaryName} collects this invoice into its own account, not through ${enrolment.collectorName ?? enrolment.collectorCode}.`}
+                  />
+                )}
+                {!enrolment && ownerEnrolments.length > 0 && (
+                  <p className="flex items-start gap-2 text-body-sm text-neutral-600 dark:text-neutral-300">
+                    <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    Not collected on behalf: {ownerName} is not enrolled for {formData.currency} (only
+                    {' ' + ownerEnrolments.map(e => e.currency).join(', ')}), so it collects this invoice directly.
+                  </p>
+                )}
+                {!cobo && !dataLoading && effectiveCorporateId && availableAccounts.length === 0 && (
                   <p className="text-body-sm text-neutral-500 dark:text-neutral-400">
-                    This corporate has no collection or operating account in {formData.currency} (settlement accounts are
+                    {ownerName ?? 'This corporate'} has no collection or operating account in {formData.currency} (settlement accounts are
                     not offered). The invoice can still be raised without one; generating a VIBAN needs one.
                   </p>
                 )}
-                {availableAccounts.map((account) => (
+                {!cobo && availableAccounts.map((account) => (
                   <button
                     key={account.id}
                     onClick={() => handleSelectAccount(account)}
@@ -1736,8 +1649,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 ))}
               </div>
 
-              {/* VIBAN Generation */}
-              <div className="mt-6 pt-6 border-t border-edge">
+              {/* VIBAN Generation: a COBO invoice always gets one on the treasury's account (backend) */}
+              {!cobo && <div className="mt-6 pt-6 border-t border-edge">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-cat-1-soft rounded-lg dark:bg-cat-1/15"><QrCode className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" /></div>
@@ -1760,7 +1673,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <p className="text-body-sm text-cat-1 dark:text-cat-1-fg">A real VIBAN will be created and shown on the receivable once you save.</p>
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
 
             {/* Optional Tabs */}
@@ -1798,7 +1711,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 {activeTab === 'line-items' && <LineItemsTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
                 {activeTab === 'tax-charges' && <TaxChargesTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
                 {activeTab === 'payment-link' && <PaymentLinkTab />}
-                {activeTab === 'cobo' && <CoboTab formData={formData} setFormData={setFormData} entities={entities} />}
                 {activeTab === 'documents' && <DocumentsTab formData={formData} setFormData={setFormData} />}
                 {activeTab === 'email' && <EmailTab formData={formData} setFormData={setFormData} email={selectedCustomer?.email} />}
                 {!activeTab && (
@@ -1838,9 +1750,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   </div>
                   <div className="pt-3 border-t border-edge-subtle">
                     <p className="caption">Collection Account</p>
-                    <p className="body-strong">{selectedAccount?.accountName || '-'}</p>
+                    <p className="body-strong">{cobo ? `${cobo.collectionVaName ?? cobo.collectionVaNumber} (${cobo.collectorCode})` : selectedAccount?.accountName || '-'}</p>
                   </div>
-                  {formData.generateViban && (
+                  {(cobo || formData.generateViban) && (
                     <div>
                       <p className="caption">VIBAN</p>
                       <p className="text-caption text-cat-1 dark:text-cat-1-fg">Will generate on save</p>
@@ -1848,13 +1760,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   )}
 
                   {/* Features Summary */}
-                  {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.sendInvoiceEmail) && (
+                  {(formData.useLineItems || formData.charges.length > 0 || cobo || formData.sendInvoiceEmail) && (
                     <div className="pt-3 border-t border-edge-subtle">
                       <p className="caption mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
                         {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded-md dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
                         {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded-md dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
-                        {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded-md dark:bg-success-500/10 dark:text-success-300">COBO</span>}
+                        {cobo && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded-md dark:bg-success-500/10 dark:text-success-300">COBO</span>}
                         {formData.sendInvoiceEmail && <span className="px-2 py-1 bg-surface-muted text-neutral-700 dark:text-neutral-200 text-caption rounded-md">Email</span>}
                       </div>
                     </div>

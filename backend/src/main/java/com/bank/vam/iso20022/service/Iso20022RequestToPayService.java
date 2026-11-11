@@ -75,6 +75,7 @@ public class Iso20022RequestToPayService {
                 .append("Pay online: ").append(link).append("\n\n");
         if (r.getViban() != null) {
             body.append("Or transfer ").append(amount).append(" to IBAN ").append(r.getViban())
+                    .append(r.coboAccountName() != null ? " (" + r.coboAccountName() + ")" : "")
                     .append(", quoting ").append(r.getReceivableNumber()).append(" as the reference.\n\n");
         }
         body.append("This payment request was sent as ISO 20022 pain.013, reference ").append(endToEndId).append(".");
@@ -157,7 +158,7 @@ public class Iso20022RequestToPayService {
                         .validUntil(receivable.getDueDate() != null && receivable.getDueDate().isAfter(java.time.LocalDate.now())
                                 ? receivable.getDueDate().plusDays(30).atStartOfDay() : LocalDateTime.now().plusDays(30))
                         .singleUse(false)
-                        .customerName(receivable.getCustomerName())
+                        .customerName(receivable.vibanName())
                         .build());
             });
             receivable.setViban(created.getViban());

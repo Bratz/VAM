@@ -101,7 +101,7 @@ class SettlementRoutingTest {
         TransactionRepository txns = mock(TransactionRepository.class);
         when(txns.save(any(Transaction.class))).thenAnswer(i -> { Transaction t = i.getArgument(0); t.setId(UUID.randomUUID()); return t; });
         ReconciliationService reconciliation = new ReconciliationService(null, null, null, null,
-            resolver, exceptions, vas, txns, mock(ProgramRepository.class));
+            resolver, exceptions, vas, txns, mock(ProgramRepository.class), null);
 
         var first = reconciliation.processBankCharge(programId, UUID.randomUUID(), null,
             new BigDecimal("300"), "EUR", LocalDate.now(), "STMT-42", "Account maintenance");

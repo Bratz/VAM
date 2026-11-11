@@ -98,6 +98,27 @@ class CollectionSettlementServiceTest {
     }
 
     @Test
+    void aCoboDebitCreditsTheTreasurysAccountAndAppliesThePaymentWithThatBankCredit() {
+        // the run put the invoice's account (the treasury's collection account) on a COBO line: settlement credits it
+        invoice.setIsCobo(true);
+        UUID credited = UUID.randomUUID();
+        when(transactions.processCollection(any())).thenReturn(TransactionDto.CollectionResponse.builder()
+                .netAmount(new BigDecimal("100.00")).referenceNumber("COL-9").transactionId(credited).build());
+        when(lines.dueToSettle(FRIDAY)).thenReturn(List.of(line.getId()));
+
+        assertEquals(1, service.process(FRIDAY).settled());
+
+        ArgumentCaptor<TransactionDto.CollectionRequest> req = ArgumentCaptor.forClass(TransactionDto.CollectionRequest.class);
+        verify(transactions).processCollection(req.capture());
+        assertEquals(line.getCreditorVaId(), req.getValue().getTargetVaId());
+        ArgumentCaptor<RecordPaymentRequest> paid = ArgumentCaptor.forClass(RecordPaymentRequest.class);
+        verify(receivablesService, times(1)).recordPayment(eq(line.getReceivableId()), paid.capture());
+        assertEquals(credited, paid.getValue().getTransactionId()); // applyPayment posts the in-house credit against it
+        assertEquals("DIRECT_DEBIT", paid.getValue().getMatchType());
+        assertEquals(new BigDecimal("100.00"), account.getHeldBalance()); // the cash on the treasury's account is held
+    }
+
+    @Test
     void releaseMakesTheHeldMoneyAvailable() {
         line.setStatus(Status.SETTLED);
         line.setCreditedAmount(new BigDecimal("98.00"));

@@ -53,6 +53,7 @@ public class CollectionReturnService {
     private final ReceivableRepository receivables;
     private final VirtualAccountRepository accounts;
     private final TransactionService transactions;
+    private final com.bank.vam.repository.TransactionRepository ledger;
     private final Iso20022RequestToPayService requestToPay;
     private final PlatformTransactionManager transactionManager;
 
@@ -115,7 +116,7 @@ public class CollectionReturnService {
                     l.getCreditGross() != null ? l.getCreditGross() : l.getAmount(),
                     l.getCreditCurrency() != null ? l.getCreditCurrency() : l.getCurrency(), l.getTransactionRef(),
                     why, l.getDebtorName(), l.getDebtorIban(), "DIRECT_DEBIT");
-            reopen(l);
+            reopen(l, why);
             l.setStatus(Status.RETURNED);
             l.setReason("Returned after collection: " + why);
         } else {
@@ -135,10 +136,18 @@ public class CollectionReturnService {
         return new Outcome(r.endToEndId(), l.getStatus().name(), l.getReason(), null);
     }
 
-    /** Undoes the payment the settlement recorded against the invoice. */
-    private void reopen(CollectionLine l) {
+    /**
+     * Undoes the payment the settlement recorded against the invoice; for one collected on behalf (COBO), also the
+     * in-house credit the settlement gave the subsidiary for it (spec R16).
+     */
+    private void reopen(CollectionLine l, String why) {
         Receivable inv = receivables.findById(l.getReceivableId()).orElse(null);
         if (inv == null) return;
+        if (Boolean.TRUE.equals(inv.getIsCobo()) && l.getTransactionRef() != null) {
+            ledger.findByReferenceNumber(l.getTransactionRef())
+                    .ifPresent(credit -> transactions.reverseCoboInHouseCredit(credit.getId(), "direct debit " + l.getEndToEndId() + " returned, " + why));
+            if (inv.getCoboRequestStatus() == Receivable.CoboRequestStatus.COLLECTED) inv.setCoboRequestStatus(null);
+        }
         BigDecimal paid = inv.getPaidAmount().subtract(l.getAmount()).max(BigDecimal.ZERO);
         inv.setPaidAmount(paid);
         inv.setOutstandingAmount(inv.getNetAmount().subtract(paid));

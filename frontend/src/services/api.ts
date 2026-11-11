@@ -1826,29 +1826,22 @@ interface ReceivableListResponsePhase3 {
 }
 
 // COBO Types
-interface CoboSubmitRequest {
-  receivableId: string;
-  collectorEntityId: string;
-  requestedBy: string;
-  notes?: string;
-}
-
-export interface CoboCollectAccount {
+/** An unmatched bank credit on the collecting entity's account that can pay an approved COBO invoice. */
+export interface CoboCollectCredit {
   id: string;
+  amount: number;
+  currencyCode: string;
+  payerName?: string;
+  remittanceInfo?: string;
+  paymentDate?: string;
+  vaId: string;
   vaNumber: string;
-  vaName?: string;
-  category: 'COLLECTION' | 'TRANSACTION';
-  currentBalance: number;
 }
 
 interface CoboExecuteRequest {
   receivableId: string;
-  // Treasury's collecting VA -- omit to let the backend resolve it from the
-  // receivable's already-approved COBO collector entity.
-  treasuryVaId?: string;
-  subsidiaryVaId?: string;
-  amount?: number;
-  paymentReference?: string;
+  /** The unmatched bank credit that paid the invoice; nothing is credited without one. */
+  unmatchedPaymentId: string;
   notes?: string;
 }
 
@@ -1979,6 +1972,69 @@ const extractReceivableData = <T>(response: ApiResponse<T>): T => {
 };
 
 // Phase 3 API Client
+/** A subsidiary collected on behalf (COBO) in one currency by the treasury centre (In-House Bank). */
+export interface CoboEnrolment {
+  id: string;
+  corporateId: string;
+  subsidiaryEntityId: string;
+  subsidiaryCode?: string;
+  subsidiaryName?: string;
+  currency: string;
+  collectorEntityId: string;
+  collectorCode?: string;
+  collectorName?: string;
+  collectionVaId: string;
+  collectionVaNumber?: string;
+  collectionVaName?: string;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  /** In force today. */
+  active: boolean;
+  createdBy?: string;
+  createdAt?: string;
+}
+
+export interface CoboCollectionAccount {
+  id: string;
+  vaNumber: string;
+  vaName?: string;
+  currencyCode: string;
+}
+
+export const coboEnrolmentApi = {
+  list: (corporateId: string) =>
+    apiClient.get<ApiResponse<CoboEnrolment[]>>('/cobo/enrolments', { params: { corporateId } }).then(r => r.data.data ?? []),
+  create: (data: { corporateId: string; subsidiaryEntityId: string; currency: string; collectorEntityId: string; collectionVaId: string; effectiveFrom?: string }) =>
+    apiClient.post<ApiResponse<CoboEnrolment>>('/cobo/enrolments', data).then(r => r.data.data),
+  end: (id: string) =>
+    apiClient.post<ApiResponse<CoboEnrolment>>(`/cobo/enrolments/${id}/end`).then(r => r.data.data),
+  /** The treasury centre's accounts an enrolment in this currency can collect into. */
+  collectionAccounts: (collectorEntityId: string, currency: string) =>
+    apiClient.get<ApiResponse<CoboCollectionAccount[]>>('/cobo/enrolments/collection-accounts', { params: { collectorEntityId, currency } })
+      .then(r => r.data.data ?? []),
+  /** Moves the corporate's old-flow COBO invoices (spec D7); dryRun only reports what would happen. */
+  cutover: (corporateId: string, dryRun: boolean) =>
+    apiClient.post<ApiResponse<CoboCutoverReport>>('/cobo/cutover', null, { params: { corporateId, dryRun } }).then(r => r.data.data),
+};
+
+export interface CoboCutoverItem {
+  invoiceId: string;
+  invoiceNumber: string;
+  owningEntity: string;
+  currency: string;
+  outstanding: number;
+  /** What happens (dry run) or happened, and why. */
+  detail: string;
+}
+
+export interface CoboCutoverReport {
+  corporateId: string;
+  dryRun: boolean;
+  toDirect: CoboCutoverItem[];
+  toNewFlow: CoboCutoverItem[];
+  skipped: CoboCutoverItem[];
+}
+
 export const receivablesApiPhase3 = {
   // =========================================================================
   // CRUD & SEARCH
@@ -2039,30 +2095,6 @@ export const receivablesApiPhase3 = {
   // COBO WORKFLOW
   // =========================================================================
   
-  submitForCobo: async (request: CoboSubmitRequest): Promise<ReceivablePhase3> => {
-    const response = await apiClient.post<ApiResponse<ReceivablePhase3>>(
-      `/receivables/${request.receivableId}/cobo/submit`,
-      request
-    );
-    return extractReceivableData(response.data);
-  },
-  
-  approveCobo: async (receivableId: string, actionedBy: string, notes?: string): Promise<ReceivablePhase3> => {
-    const response = await apiClient.post<ApiResponse<ReceivablePhase3>>(
-      `/receivables/${receivableId}/cobo/approve`,
-      { actionedBy, approved: true, notes }
-    );
-    return extractReceivableData(response.data);
-  },
-  
-  rejectCobo: async (receivableId: string, actionedBy: string, reason: string): Promise<ReceivablePhase3> => {
-    const response = await apiClient.post<ApiResponse<ReceivablePhase3>>(
-      `/receivables/${receivableId}/cobo/reject`,
-      { actionedBy, approved: false, notes: reason }
-    );
-    return extractReceivableData(response.data);
-  },
-  
   executeCoboCollection: async (request: CoboExecuteRequest): Promise<ReceivablePhase3> => {
     const response = await apiClient.post<ApiResponse<ReceivablePhase3>>(
       `/receivables/${request.receivableId}/cobo/collect`,
@@ -2071,9 +2103,9 @@ export const receivablesApiPhase3 = {
     return extractReceivableData(response.data);
   },
   
-  /** The collecting entity's accounts an approved COBO invoice can be collected into (COLLECTION first). */
-  coboCollectAccounts: async (receivableId: string): Promise<CoboCollectAccount[]> => {
-    const response = await apiClient.get<ApiResponse<CoboCollectAccount[]>>(`/receivables/${receivableId}/cobo/collect-accounts`);
+  /** Unmatched bank credits on the collecting entity's accounts in the invoice currency, newest first. */
+  coboCollectCredits: async (receivableId: string): Promise<CoboCollectCredit[]> => {
+    const response = await apiClient.get<ApiResponse<CoboCollectCredit[]>>(`/receivables/${receivableId}/cobo/collect-credits`);
     return response.data.data;
   },
 
