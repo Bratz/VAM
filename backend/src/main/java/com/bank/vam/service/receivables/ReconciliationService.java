@@ -774,7 +774,9 @@ public class ReconciliationService {
             log.warn("Receivable {} cannot accept payment, status: {}", receivableId, receivable.getStatus());
             return createUnmatchedResult(transactionId, vibanId, viban.getVirtualAccountId(),
                                          amount, currencyCode, payerName, payerAccount, remittanceInfo,
-                                         "Receivable status: " + receivable.getStatus());
+                                         receivable.getStatus() == Receivable.ReceivableStatus.PAID
+                                             ? receivable.getReceivableNumber() + " is already paid; held as unapplied cash"
+                                             : "Receivable status: " + receivable.getStatus());
         }
         
         // Calculate confidence based on amount match

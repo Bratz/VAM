@@ -54,6 +54,12 @@ public class Iso20022RequestToPayService {
      * The Request to Pay as the email the payer would get. There is no mail server: it is kept in the outbox
      * (SENT, simulated), or marked NO_ADDRESS when neither the invoice nor the customer has an email address.
      */
+    /** pain.013 creditor: the collecting treasury for a COBO invoice (the subsidiary goes in UltmtCdtr), else the corporate. */
+    private static String pain013Creditor(Receivable r, String creditor) {
+        return Boolean.TRUE.equals(r.getIsCobo()) && r.getCoboCollectorEntityName() != null
+                && !r.getCoboCollectorEntityName().isBlank() ? r.getCoboCollectorEntityName() : creditor;
+    }
+
     /** The creditor's real name: the corporate's legal name, else the owning entity's; refused rather than invented. */
     private String creditorName(Receivable r) {
         return Optional.ofNullable(r.getCorporateId()).flatMap(corporates::findById).map(c -> c.getLegalName())
@@ -116,7 +122,7 @@ public class Iso20022RequestToPayService {
         }
         ensureViban(receivable);
         String link = frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken();
-        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId, link, creditor);
+        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId, link, pain013Creditor(receivable, creditor));
         receivable.setRequestToPayXml(xml);
         outbox.save(email(receivable, debtor, link, endToEndId, creditor));
 

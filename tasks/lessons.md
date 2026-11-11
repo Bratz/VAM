@@ -563,3 +563,9 @@ for "credit limit" because FX felt like a separate domain.
 ## Tailwind here has no sm/md/lg breakpoints (2026-11-10)
 `tailwind.config` overrides `screens` to only `xl` (1280) and `2xl` (1536); the portal is desktop-only.
 `lg:grid-cols-3` silently does nothing and the grid stays one column. Use fixed `grid-cols-N`, or `xl:`.
+
+## Undoing a test collection: the physical account moves too (2026-11-11)
+An inward credit (`processCollection`) credits the shadow VA's linked **physical account** as well as the VAs; the
+ledger rows (`va_movements`) don't show it. Reverting only the VAs is undone by the next shadow refresh, which copies
+the physical balance back onto the shadow. When cleaning up a test payment, also revert `physical_accounts`
+(match by `virtual_accounts.linked_physical_account_id`) — check `updated_at` on physical accounts after the test.

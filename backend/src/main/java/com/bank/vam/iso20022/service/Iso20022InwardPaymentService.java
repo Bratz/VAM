@@ -103,7 +103,7 @@ public class Iso20022InwardPaymentService {
                 viban = vibanOpt.get();
                 vibanNumber = accountNumber;
 
-                if (!viban.canAcceptPayment()) {
+                if (!viban.canReceiveFunds()) {
                     return buildErrorResponse(request, startTime, "AC04", "VIBAN cannot accept payment: " + viban.getStatus());
                 }
 
@@ -112,7 +112,8 @@ public class Iso20022InwardPaymentService {
                         .orElseThrow(() -> new BusinessException("Virtual account not found for VIBAN"));
 
                 // Validate amount against VIBAN constraints
-                if (!viban.isAmountInBounds(request.getAmount())) {
+                // A paid VIBAN's bounds were for the invoice it settled; a late payment is taken whatever its amount.
+                if (viban.canAcceptPayment() && !viban.isAmountInBounds(request.getAmount())) {
                     return buildErrorResponse(request, startTime, "AM02", "Payment amount out of allowed bounds");
                 }
 

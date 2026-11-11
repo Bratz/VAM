@@ -106,6 +106,31 @@ class Iso20022RequestToPayServiceTest {
     private static final UUID RECEIVABLE_ID = UUID.randomUUID();
     private static final UUID PARTY_ID = UUID.randomUUID();
 
+    /** Collected on behalf: the treasury is the pain.013 creditor and the subsidiary its ultimate creditor. */
+    @Test
+    void aCoboRequestNamesTheTreasuryAsCreditorAndTheSubsidiaryAsUltimateCreditor() {
+        Receivable r = receivable();
+        r.setIsCobo(true);
+        r.setCoboCollectorEntityName("MNC Treasury Center");
+        r.setOwningEntityName("MNC UK Ltd");
+        when(receivableRepository.findById(RECEIVABLE_ID)).thenReturn(Optional.of(r));
+        when(partyRepository.findById(PARTY_ID)).thenReturn(Optional.of(debtor()));
+
+        String xml = service.sendRequestToPay(RECEIVABLE_ID).getPain013Xml();
+
+        assertTrue(xml.contains("<Cdtr>\n        <Nm>MNC Treasury Center</Nm>"), xml);
+        assertTrue(xml.contains("<UltmtCdtr>\n        <Nm>MNC UK Ltd</Nm>"), xml);
+    }
+
+    /** A direct invoice has no ultimate creditor. */
+    @Test
+    void aDirectRequestHasNoUltimateCreditor() {
+        when(receivableRepository.findById(RECEIVABLE_ID)).thenReturn(Optional.of(receivable()));
+        when(partyRepository.findById(PARTY_ID)).thenReturn(Optional.of(debtor()));
+
+        assertFalse(service.sendRequestToPay(RECEIVABLE_ID).getPain013Xml().contains("UltmtCdtr"));
+    }
+
     private Receivable receivable() {
         Receivable r = Receivable.builder()
                 .receivableNumber("INV-2026-0001")

@@ -78,8 +78,9 @@ UAE TREASURY POOL ACC; inward AED 1,000 -> treasury +998 (platform fee 2), IC pa
 +1,000, invoice PAID/COLLECTED, one payment; duplicate credit refused (VIBAN PAID); USD invoice -> direct with
 the note; cut-over dry run / real run / re-run (nothing left); pay page shows the account name. Test data removed,
 balances restored. 576 tests. Acceptance 5 (DD) and 8 (apply unmatched credit) covered by unit tests, not run live.
-Follow-ups: a credit to a paid invoice's VIBAN is refused by the bank-side VIBAN rule (would be returned) rather
-than held as unapplied cash; pain.013 creditor name is still the corporate (CdtrAcct is the treasury VIBAN).
+Follow-ups (fixed 11 Nov): a paid invoice's VIBAN now takes money in (`Viban.canReceiveFunds`): the cash is credited
+and left unmatched "INV-x is already paid; held as unapplied cash" (checked live on localhost, reverted); expired /
+cancelled / suspended VIBANs still refuse. pain.013 for a COBO invoice: Cdtr = treasury, UltmtCdtr = subsidiary.
 
 Not in scope (spec §7): COBO fees (D4), in-house FX, per-customer enrolment, netting of COBO positions.
 

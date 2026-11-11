@@ -69,7 +69,7 @@ public class VibanRoutingService {
         }
 
         // 2. Validate VIBAN
-        if (!viban.canAcceptPayment()) {
+        if (!viban.canReceiveFunds()) {
             log.warn("VIBAN cannot accept payment: {} status={}", viban.getViban(), viban.getStatus());
             return RoutingResult.builder()
                 .success(false)
@@ -96,8 +96,9 @@ public class VibanRoutingService {
 
         // 4. Validate amount if expected amount is set
         boolean amountMatches = viban.matchesAmount(request.getAmount());
-        boolean amountInBounds = viban.isAmountInBounds(request.getAmount());
-        
+        // A paid VIBAN's bounds were for the invoice it settled; a late payment is taken whatever its amount.
+        boolean amountInBounds = !viban.canAcceptPayment() || viban.isAmountInBounds(request.getAmount());
+
         if (!amountInBounds) {
             log.warn("Payment amount {} out of bounds for VIBAN {}", request.getAmount(), viban.getViban());
             return RoutingResult.builder()

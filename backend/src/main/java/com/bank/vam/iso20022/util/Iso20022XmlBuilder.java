@@ -309,6 +309,14 @@ public class Iso20022XmlBuilder {
             xml.append("        </Id>\n");
             xml.append("      </CdtrAcct>\n");
         }
+        // Collected on behalf: the treasury is the creditor (above), the subsidiary that issued the invoice is the
+        // ultimate creditor, as in the pain.008 for COBO direct debits.
+        if (Boolean.TRUE.equals(receivable.getIsCobo()) && receivable.getOwningEntityName() != null
+                && !receivable.getOwningEntityName().isBlank()) {
+            xml.append("      <UltmtCdtr>\n");
+            xml.append("        <Nm>").append(escape(receivable.getOwningEntityName())).append("</Nm>\n");
+            xml.append("      </UltmtCdtr>\n");
+        }
 
         xml.append("      <CdtTrfTxInf>\n");
         xml.append("        <PmtId>\n");

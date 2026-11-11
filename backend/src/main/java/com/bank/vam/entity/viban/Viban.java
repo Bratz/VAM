@@ -406,6 +406,15 @@ public class Viban extends BaseEntity {
     /**
      * Check if this VIBAN can accept payments.
      */
+    /**
+     * Whether money sent to this VIBAN is taken in. A paid invoice's VIBAN still is: a late or duplicate payment is
+     * real cash, so it is credited to the account and left unmatched for treasury to return or reapply, not bounced.
+     * Expired, cancelled and suspended VIBANs still refuse.
+     */
+    public boolean canReceiveFunds() {
+        return canAcceptPayment() || (isPaid() && !isExpired());
+    }
+
     public boolean canAcceptPayment() {
         if (!isActive()) return false;
         if (isExpired()) return false;
