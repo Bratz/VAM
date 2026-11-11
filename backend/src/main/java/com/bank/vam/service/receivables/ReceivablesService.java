@@ -662,7 +662,7 @@ UUID effectiveCorporateId = corporateIdFromHeader;
         TransactionDto.CollectionRequest txnRequest = TransactionDto.CollectionRequest.builder()
             .targetVaId(resolvedTargetVaId)
             .amount(request.getAmount())
-            .currencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : "AED")
+            .currencyCode(request.getCurrencyCode()) // none given: the account's currency (was "AED" for any account)
             .remitterName(request.getSenderName())
             .remitterAccount(request.getSenderAccount())
             .viban(request.getViban())

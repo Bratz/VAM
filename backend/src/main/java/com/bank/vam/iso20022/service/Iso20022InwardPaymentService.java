@@ -5,6 +5,7 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.mapper.Iso20022MessageMapper;
 import com.bank.vam.repository.TransactionRepository;
@@ -12,6 +13,7 @@ import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.service.TransactionService;
 import com.bank.vam.service.receivables.ReconciliationService;
+import com.bank.vam.service.treasury.FxRateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,6 +71,8 @@ public class Iso20022InwardPaymentService {
     private final TransactionService transactionService;
     private final Iso20022MessageMapper messageMapper;
     private final ReconciliationService reconciliationService;
+    private final FxPaymentService fxPayments;
+    private final FxRateService fxRates;
 
     // ========================================================================
     // PROCESS INWARD PAYMENT (Main Entry Point)
@@ -88,6 +92,7 @@ public class Iso20022InwardPaymentService {
         try {
             // 1. Validate request
             validateRequest(request);
+            request.setCurrency(request.getCurrency().toUpperCase());
 
             // 2. Lookup VIBAN or VA by number
             // The creditorAccount can be either a VIBAN or a VA number
@@ -113,7 +118,9 @@ public class Iso20022InwardPaymentService {
 
                 // Validate amount against VIBAN constraints
                 // A paid VIBAN's bounds were for the invoice it settled; a late payment is taken whatever its amount.
-                if (viban.canAcceptPayment() && !viban.isAmountInBounds(request.getAmount())) {
+                // Bounds are in the account's currency; a payment in another one is compared at the indicative
+                // rate (nothing is booked before the payment is accepted).
+                if (viban.canAcceptPayment() && !viban.isAmountInBounds(inAccountCurrency(request, va))) {
                     return buildErrorResponse(request, startTime, "AM02", "Payment amount out of allowed bounds");
                 }
 
@@ -146,10 +153,13 @@ public class Iso20022InwardPaymentService {
                     && !"NOTPROVIDED".equalsIgnoreCase(request.getEndToEndId())) {
                 Optional<Transaction> duplicate = transactionRepository.findAllByEndToEndIdAndVaId(request.getEndToEndId(), va.getId())
                         .stream()
-                        .filter(t -> (request.getAmount().compareTo(t.getAmount()) == 0
+                        .filter(t -> ((request.getAmount().compareTo(t.getAmount()) == 0
                                         || request.getAmount().compareTo(t.getAmount().add(
                                                 t.getFeeAmount() != null ? t.getFeeAmount() : BigDecimal.ZERO)) == 0)
-                                && request.getCurrency().equalsIgnoreCase(t.getCurrencyCode()))
+                                    && request.getCurrency().equalsIgnoreCase(t.getCurrencyCode()))
+                                // A converted credit is booked in the account's currency; it keeps what was sent.
+                                || (t.getInstructedAmount() != null && request.getAmount().compareTo(t.getInstructedAmount()) == 0
+                                    && request.getCurrency().equalsIgnoreCase(t.getInstructedCurrency())))
                         .findFirst();
                 if (duplicate.isPresent()) {
                     return buildDuplicateResponse(request, startTime, duplicate.get(), va, vibanNumber, viban);
@@ -160,10 +170,17 @@ public class Iso20022InwardPaymentService {
             // This delegates to TransactionService.processCollection() which creates:
             // CBS → Shadow VA → Settlement VA → Target VA (4 balanced entries)
 
+            // A payment in another currency than the account's is converted on credit, as direct debits are: the
+            // account owner's deals selling that currency first, then the live price (refused if neither can).
+            // Before this, a USD 1,000 credit to an AED account was booked as AED 1,000.
+            FxPaymentService.Conversion fx = fxPayments.convertIncoming(va, request.getCurrency(), request.getAmount());
+            BigDecimal credited = fx != null ? fx.debitAmount() : request.getAmount();
+            String creditCcy = fx != null ? fx.debitCurrency() : request.getCurrency();
+
             TransactionDto.CollectionRequest collectionRequest = TransactionDto.CollectionRequest.builder()
                     .targetVaId(va.getId())
-                    .amount(request.getAmount())
-                    .currencyCode(request.getCurrency())
+                    .amount(credited)
+                    .currencyCode(creditCcy)
                     .valueDate(LocalDate.now())
                     .remitterName(request.getDebtorName())
                     .remitterAccount(request.getDebtorAccount())
@@ -178,10 +195,13 @@ public class Iso20022InwardPaymentService {
 
             // 4. Process collection using 4-leg accounting
             TransactionDto.CollectionResponse collectionResponse = transactionService.processCollection(collectionRequest);
+            if (fx != null) {
+                fxPayments.settleIncoming(fx, transactionRepository.findById(collectionResponse.getTransactionId()).orElseThrow(), va);
+            }
 
             // 5. Update VIBAN usage stats (only if routed via VIBAN)
             if (viban != null) {
-                viban.recordPayment(request.getAmount());
+                viban.recordPayment(credited);
                 vibanRepository.save(viban);
             }
 
@@ -199,8 +219,8 @@ public class Iso20022InwardPaymentService {
             ReconciliationService.ReconciliationResult reconciliation = null;
             if (viban != null) {
                 reconciliation = reconciliationService.attemptAutoReconcile(
-                        collectionResponse.getTransactionId(), viban.getId(), request.getAmount(),
-                        request.getCurrency(), request.getDebtorName(), request.getDebtorAccount(),
+                        collectionResponse.getTransactionId(), viban.getId(), credited,
+                        creditCcy, request.getDebtorName(), request.getDebtorAccount(),
                         request.getRemittanceInfo());
             }
 
@@ -502,6 +522,12 @@ public class Iso20022InwardPaymentService {
     // ========================================================================
     // HELPERS
     // ========================================================================
+
+    /** The payment's amount in {@code va}'s currency at the indicative rate; books nothing. */
+    private BigDecimal inAccountCurrency(InwardPaymentRequest request, VirtualAccount va) {
+        return request.getCurrency().equals(va.getCurrencyCode()) ? request.getAmount()
+            : fxRates.convert(request.getAmount(), request.getCurrency(), va.getCurrencyCode());
+    }
 
     private void validateRequest(InwardPaymentRequest request) {
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {

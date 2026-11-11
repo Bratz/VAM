@@ -4,6 +4,7 @@ import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.viban.Viban;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.InwardPaymentRequest;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.InwardPaymentResponse;
 import com.bank.vam.iso20022.mapper.Iso20022MessageMapper;
@@ -12,6 +13,7 @@ import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.service.TransactionService;
 import com.bank.vam.service.receivables.ReconciliationService;
+import com.bank.vam.service.treasury.FxRateService;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -21,6 +23,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -38,16 +41,19 @@ class Iso20022InwardPaymentServiceTest {
     private final TransactionService transactionService = mock(TransactionService.class);
     private final Iso20022MessageMapper messageMapper = mock(Iso20022MessageMapper.class);
     private final ReconciliationService reconciliationService = mock(ReconciliationService.class);
+    private final FxPaymentService fxPayments = mock(FxPaymentService.class);
+    private final FxRateService fxRates = mock(FxRateService.class);
 
     private final Iso20022InwardPaymentService service = new Iso20022InwardPaymentService(
             vibanRepository, virtualAccountRepository, transactionRepository, transactionService, messageMapper,
-            reconciliationService);
+            reconciliationService, fxPayments, fxRates);
 
     private static final UUID VA_ID = UUID.randomUUID();
 
     private VirtualAccount activeVa() {
         VirtualAccount va = VirtualAccount.builder()
                 .vaNumber("VA-1000")
+                .currencyCode("AED")
                 .status(VirtualAccount.VaStatus.ACTIVE)
                 .currentBalance(BigDecimal.valueOf(500))
                 .build();
@@ -267,5 +273,47 @@ class Iso20022InwardPaymentServiceTest {
         assertEquals("AED", lines.get(1).getCurrency());
         assertEquals(List.of("AE11VIBAN1", "AE070331234567890123456", "AE070331234567890123456", "AE22OTHER"),
                 lines.stream().map(InwardPaymentRequest::getCreditorAccount).toList());
+    }
+
+    /** A USD credit to an AED account is converted on credit; it was booked as AED at the USD amount. */
+    @Test
+    void aPaymentInAnotherCurrencyIsConvertedBeforeItIsCredited() {
+        when(vibanRepository.findByViban("GB830410000000000000660643")).thenReturn(Optional.of(activeViban()));
+        when(virtualAccountRepository.findById(VA_ID)).thenReturn(Optional.of(activeVa()));
+        when(fxRates.convert(BigDecimal.valueOf(100), "USD", "AED")).thenReturn(new BigDecimal("367.25"));
+        FxPaymentService.Conversion cv = new FxPaymentService.Conversion(BigDecimal.valueOf(100), "USD",
+                new BigDecimal("367.20"), "AED", new BigDecimal("3.672"), "USD/AED", List.of());
+        when(fxPayments.convertIncoming(any(), eq("USD"), eq(BigDecimal.valueOf(100)))).thenReturn(cv);
+        stubSuccessfulCollection();
+        Transaction credit = Transaction.builder().build();
+        when(transactionRepository.findById(any())).thenReturn(Optional.of(credit));
+
+        InwardPaymentRequest req = vibanRequest(BigDecimal.valueOf(100));
+        req.setCurrency("usd");
+        assertTrue(service.processInwardPayment(req).isSuccess());
+
+        verify(transactionService).processCollection(argThat(c ->
+                c.getAmount().compareTo(new BigDecimal("367.20")) == 0 && "AED".equals(c.getCurrencyCode())));
+        verify(fxPayments).settleIncoming(eq(cv), eq(credit), any());
+        verify(reconciliationService).attemptAutoReconcile(any(), eq(VIBAN_ID), eq(new BigDecimal("367.20")), eq("AED"),
+                any(), any(), any());
+    }
+
+    /** A converted credit is booked in AED; a re-delivery of the USD message is still recognised by what was sent. */
+    @Test
+    void aRedeliveredForeignCurrencyPaymentIsADuplicate() {
+        stubAccountLookup();
+        Transaction existing = Transaction.builder().vaId(VA_ID).amount(new BigDecimal("367.20")).currencyCode("AED")
+                .instructedAmount(BigDecimal.valueOf(100)).instructedCurrency("USD").referenceNumber("REF-FX").build();
+        existing.setId(UUID.randomUUID());
+        when(transactionRepository.findAllByEndToEndIdAndVaId("E2E-FX", VA_ID)).thenReturn(List.of(existing));
+
+        InwardPaymentRequest req = request("E2E-FX", BigDecimal.valueOf(100));
+        req.setCurrency("USD");
+        InwardPaymentResponse response = service.processInwardPayment(req);
+
+        assertEquals("REF-FX", response.getTransactionReference());
+        verify(fxPayments, never()).convertIncoming(any(), any(), any());
+        verify(transactionService, never()).processCollection(any());
     }
 }

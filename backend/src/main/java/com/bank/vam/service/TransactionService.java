@@ -2329,6 +2329,11 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Target VA not found"));
 
         validateVaActive(targetVa, "collection to");
+        // A credit is booked in the account's currency: callers convert first (FxPaymentService.convertIncoming).
+        if (request.getCurrencyCode() != null && !request.getCurrencyCode().equalsIgnoreCase(targetVa.getCurrencyCode())) {
+            throw new BusinessException(targetVa.getVaNumber() + " is in " + targetVa.getCurrencyCode() + "; a credit in "
+                + request.getCurrencyCode() + " has to be converted first");
+        }
 
         // 2. Resolve Shadow VA (CBS entry point)
         VirtualAccount shadowVa = resolveShadowVa(targetVa);
