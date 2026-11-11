@@ -1047,17 +1047,20 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   // No made-up corporate: without one from the Receivables page (e.g. the page opened from a link), use the one last
   // chosen there, else the user picks it in the banner. It used to fall back to a demo corporate id.
   const [chosenCorporateId, setChosenCorporateId] = useState<string>(() => {
+    if (corporateIdFromParams) return corporateIdFromParams;
     try { return localStorage.getItem('receivables.corporateId') || ''; } catch { return ''; }
   });
-  const effectiveCorporateId: string = corporateIdFromParams || chosenCorporateId;
+  const effectiveCorporateId: string = isEditMode && corporateIdFromParams ? corporateIdFromParams : chosenCorporateId;
   const [corporateOptions, setCorporateOptions] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
-    if (corporateIdFromParams) return;
     corporatesApi.getAll(0, 100)
       .then((r) => setCorporateOptions((r.data || []).map((c) => ({ id: c.id, name: c.legalName || c.tradeName || c.corporateId }))))
       .catch(() => setCorporateOptions([]));
-  }, [corporateIdFromParams]);
-  const effectiveLegalEntityId = legalEntityIdFromParams || null;
+  }, []);
+  // The invoice's owning entity: chosen here (pre-filled from the Receivables page's entity filter). "Not set" is a
+  // real choice; it used to fall back silently to the corporate's first entity.
+  const [owningEntityId, setOwningEntityId] = useState<string>(legalEntityIdFromParams || '');
+  const effectiveLegalEntityId = owningEntityId || null;
 
 
   // Form state
@@ -1112,11 +1115,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const [dataLoading, setDataLoading] = useState(true);
   const [corporateName, setCorporateName] = useState<string>('');
 
-  // Derived: Get the selected legal entity details
-  const selectedLegalEntity = useMemo(() => {
-    if (!effectiveLegalEntityId || entities.length === 0) return null;
-    return entities.find(e => e.id === effectiveLegalEntityId) || null;
-  }, [effectiveLegalEntityId, entities]);
 
   // Load data from APIs on mount or when corporateId changes
   useEffect(() => {
@@ -1210,7 +1208,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     };
 
     loadData();
-  }, [effectiveCorporateId, effectiveLegalEntityId]);
+  }, [effectiveCorporateId]);
 
   // Tab definitions
   const tabs = [
@@ -1315,28 +1313,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     }
     setLoading(true);
     try {
-      // Determine owning entity: priority is:
-      // 1. If legalEntityId was passed from parent page, use it
-      // 2. If COBO enabled, use behalfEntity (subsidiary on whose behalf we're collecting)
-      // 3. Otherwise, use first available entity (typically HQ)
-      let owningEntityId: string | undefined = effectiveLegalEntityId || undefined;
-      let owningEntityCode: string | undefined;
-
-      if (owningEntityId) {
-        // Use entity passed from parent page
-        const selectedEntity = entities.find(e => e.id === owningEntityId);
-        owningEntityCode = selectedEntity?.code;
-      } else if (formData.coboEnabled && formData.behalfEntityId) {
-        // COBO: owning entity is the subsidiary on whose behalf we're collecting
-        const behalfEntity = entities.find(e => e.id === formData.behalfEntityId);
-        owningEntityId = formData.behalfEntityId;
-        owningEntityCode = behalfEntity?.code;
-      } else if (entities.length > 0) {
-        // Non-COBO: use the first available entity (typically HQ)
-        const defaultEntity = entities[0];
-        owningEntityId = defaultEntity.id;
-        owningEntityCode = defaultEntity.code;
-      }
+      // Owning entity: with COBO, the subsidiary collected on behalf of; otherwise the entity chosen in the banner;
+      // otherwise none.
+      const ownerId: string | undefined = formData.coboEnabled && formData.behalfEntityId
+        ? formData.behalfEntityId : (effectiveLegalEntityId || undefined);
+      const owningEntityId = ownerId;
+      const owningEntityCode = ownerId ? entities.find(e => e.id === ownerId)?.code : undefined;
 
 
       // Build the request payload matching CreateInvoiceRequest DTO
@@ -1485,55 +1467,57 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         {/* Corporate & Entity Context Banner */}
         <div className="mb-6 p-4 bg-gradient-to-r from-info-50 to-cat-1-soft border border-info-200 rounded-lg dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-[16rem] flex-1">
               <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
                 <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
               </div>
-              <div>
-                <p className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Corporate</p>
-                <p className="body-strong font-semibold">
-                  {dataLoading ? 'Loading...' : corporateName}
-                </p>
-              </div>
-            </div>
-            <div className="w-px h-10 bg-info-200 block dark:bg-info-500/15" />
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-cat-1/10 rounded-lg dark:bg-cat-1/15">
-                <Landmark className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" />
-              </div>
-              <div>
-                <p className="text-caption font-medium text-cat-1 dark:text-cat-1-fg uppercase tracking-wide">Legal Entity</p>
-                <p className="body-strong font-semibold">
-                  {dataLoading ? 'Loading...' : (
-                    selectedLegalEntity
-                      ? `${selectedLegalEntity.name} (${selectedLegalEntity.code})`
-                      : effectiveLegalEntityId
-                        ? 'Entity ID: ' + effectiveLegalEntityId.substring(0, 8) + '...'
-                        : 'All Entities'
-                  )}
-                </p>
-              </div>
-            </div>
-            {!corporateIdFromParams && (
-              <>
-                <div className="w-px h-10 bg-info-200 block dark:bg-info-500/15" />
-                <div className="min-w-[14rem]">
-                  <label htmlFor="invoice-corporate" className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Invoice for</label>
+              <div className="flex-1 min-w-0">
+                <label htmlFor="invoice-corporate" className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Corporate</label>
+                {isEditMode ? (
+                  <p className="body-strong font-semibold">{dataLoading ? 'Loading...' : corporateName}</p>
+                ) : (
                   <select
                     id="invoice-corporate"
                     value={chosenCorporateId}
                     onChange={(e) => {
-                      setChosenCorporateId(e.target.value);
-                      try { localStorage.setItem('receivables.corporateId', e.target.value); } catch { /* storage unavailable */ }
+                      const id = e.target.value;
+                      setChosenCorporateId(id);
+                      // Another corporate's customers, accounts and entities: start those choices again.
+                      setOwningEntityId('');
+                      setSelectedCustomer(null);
+                      setCustomerSearch('');
+                      setSelectedAccount(null);
+                      setFormData(prev => ({ ...prev, customerId: '', collectionAccountId: '', collectingEntityId: '', behalfEntityId: '' }));
+                      try { localStorage.setItem('receivables.corporateId', id); } catch { /* storage unavailable */ }
                     }}
                     className="w-full mt-0.5 px-3 py-1.5 border border-edge-strong rounded-lg text-body-sm bg-surface-card"
                   >
                     <option value="">Choose a corporate…</option>
                     {corporateOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                </div>
-              </>
-            )}
+                )}
+              </div>
+            </div>
+            <div className="w-px h-10 bg-info-200 block dark:bg-info-500/15" />
+            <div className="flex items-center gap-3 min-w-[16rem] flex-1">
+              <div className="p-2 bg-cat-1/10 rounded-lg dark:bg-cat-1/15">
+                <Landmark className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <label htmlFor="invoice-entity" className="text-caption font-medium text-cat-1 dark:text-cat-1-fg uppercase tracking-wide">Owning entity</label>
+                <select
+                  id="invoice-entity"
+                  value={formData.coboEnabled && formData.behalfEntityId ? formData.behalfEntityId : owningEntityId}
+                  onChange={(e) => setOwningEntityId(e.target.value)}
+                  disabled={!effectiveCorporateId || entities.length === 0 || (formData.coboEnabled && !!formData.behalfEntityId)}
+                  title={formData.coboEnabled && formData.behalfEntityId ? 'Set by Collect On Behalf Of: the subsidiary owns the invoice' : undefined}
+                  className="w-full mt-0.5 px-3 py-1.5 border border-edge-strong rounded-lg text-body-sm bg-surface-card disabled:opacity-60"
+                >
+                  <option value="">{entities.length ? 'Not set' : (dataLoading ? 'Loading...' : 'No legal entities')}</option>
+                  {entities.map((en) => <option key={en.id} value={en.id}>{en.code} - {en.name}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1720,6 +1704,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               />
 
               <div className="space-y-3">
+                {!dataLoading && effectiveCorporateId && availableAccounts.length === 0 && (
+                  <p className="text-body-sm text-neutral-500 dark:text-neutral-400">
+                    This corporate has no collection or operating account in {formData.currency} (settlement accounts are
+                    not offered). The invoice can still be raised without one; generating a VIBAN needs one.
+                  </p>
+                )}
                 {availableAccounts.map((account) => (
                   <button
                     key={account.id}

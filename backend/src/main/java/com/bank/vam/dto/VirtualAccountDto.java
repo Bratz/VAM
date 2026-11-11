@@ -814,6 +814,9 @@ public class VirtualAccountDto {
          */
         private Boolean settlementMark;
 
+        /** IHB mirror role (IHB_CURRENT, IC_RECEIVABLE, IC_PAYABLE, ...); null or NONE for an ordinary account. */
+        private String mirrorAccountType;
+
         // ====================================================================
         // AGGREGATED BALANCES (for AGGREGATION, ROOT, CURRENCY_MIRROR nodes)
         // ====================================================================

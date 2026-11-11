@@ -55,6 +55,8 @@ public class PayablesDto {
         private String vendorName;
         private String vendorAccount;
         private String vendorBank;
+        private String vendorReference;     // contract reference
+        private Boolean isPobo;             // treasury to pay on behalf of the owning entity (paymentViaEntityId)
         
         // Amounts
         private String currencyCode;
@@ -215,6 +217,13 @@ public class PayablesDto {
         // Approval
         private Boolean approvalRequired;
         private Integer approvalLevel;
+        /** DRAFT (incomplete allowed) or PENDING_APPROVAL (validated). Absent means DRAFT. */
+        private String status;
+
+        // POBO: the paying (treasury) entity pays on behalf of the owning entity
+        private Boolean isPobo;
+        private UUID paymentViaEntityId;
+        private String paymentViaEntityCode;
         
         // Metadata
         private String description;
@@ -231,6 +240,16 @@ public class PayablesDto {
     public static class UpdatePayableRequest {
         private String invoiceNumber;
         private String externalReference;
+        private String vendorReference;
+        /** DRAFT or PENDING_APPROVAL; absent leaves the status as it is. */
+        private String status;
+        private UUID virtualAccountId;
+        private UUID owningEntityId;
+        private String owningEntityCode;
+        private String owningEntityName;
+        private Boolean isPobo;
+        private UUID paymentViaEntityId;
+        private String paymentViaEntityCode;
         
         // Phase 2: Party can be updated before approval
         private UUID partyId;

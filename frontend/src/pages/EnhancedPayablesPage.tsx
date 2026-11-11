@@ -240,13 +240,15 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
   // Defensive: ensure arrays
   const entitiesList = Array.isArray(entities) ? entities : [];
   const payablesList = Array.isArray(payables) ? payables : [];
-  const treasuryEntities = entitiesList.filter(e => (e as any).isTreasuryCenter || (e as any).entityType === 'HOLDING');
+  const treasuryEntities = entitiesList.filter(e => (e as any).isTreasuryCenter || e.entityType === 'TREASURY_CENTER' || e.entityType === 'HOLDING');
 
+  // Start from the paying entity chosen when the payable was created (POBO on Create Payable).
+  const chosenPayerId = payablesList[0]?.paymentViaEntityId;
   useEffect(() => {
     if (treasuryEntities.length > 0 && !payingEntityId) {
-      setPayingEntityId(treasuryEntities[0].id);
+      setPayingEntityId(treasuryEntities.find(e => e.id === chosenPayerId)?.id ?? treasuryEntities[0].id);
     }
-  }, [treasuryEntities, payingEntityId]);
+  }, [treasuryEntities, payingEntityId, chosenPayerId]);
 
   // Keyed on WHICH payables are selected, not how many. The preview is priced from
   // payablesList.map(p => p.id), so keying on .length left the amounts, fees and IHB loan
@@ -757,7 +759,7 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           <Landmark className="w-4 h-4" />
         </button>
       )}
-      {payable.nettingEligible && payable.nettingStatus === 'NOT_INCLUDED' && (
+      {payable.nettingEligible && payable.nettingStatus === 'NOT_INCLUDED' && payable.status === 'APPROVED' && (
         <button
           onClick={() => onAddToNetting(payable)}
           className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"

@@ -87,6 +87,10 @@ public class PayablesProcessor implements DomainProcessor {
         VirtualAccount sourceVa = virtualAccountService.getByViban(row.viban());
 
         CreatePayableRequest createRequest = CreatePayableRequest.builder()
+                // The payable belongs to the corporate and entity of the account it is paid from; without them it was
+                // stored with no corporate and so appeared in no corporate's payables list.
+                .corporateId(sourceVa.getCorporateId())
+                .owningEntityId(sourceVa.getOwningEntityId())
                 .invoiceNumber(row.endToEndId())
                 .grossAmount(row.amount())
                 .currencyCode(row.currency())

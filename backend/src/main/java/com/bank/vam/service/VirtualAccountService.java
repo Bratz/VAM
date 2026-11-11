@@ -2902,6 +2902,7 @@ public class VirtualAccountService {
                 .accountCategory(va.getAccountCategory() != null ? va.getAccountCategory().name() : null)
                 .accountType(va.getAccountType() != null ? va.getAccountType().name() : null)
                 .settlementMark(va.isSettlementVa())
+                .mirrorAccountType(va.getMirrorAccountType() != null ? va.getMirrorAccountType().name() : null)
                 .parentAccountId(va.getParentAccountId())
                 // Aggregated balances (for hierarchy nodes)
                 .aggregatedBalance(va.getAggregatedBalance())

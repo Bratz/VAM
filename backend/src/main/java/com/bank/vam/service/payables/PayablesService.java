@@ -111,7 +111,7 @@ public class PayablesService {
                 PayableType.valueOf(request.getPayableType()) : PayableType.INVOICE)
             // Amounts
             .currencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : marketProfile.getDefaultCurrency())
-            .grossAmount(request.getGrossAmount())
+            .grossAmount(request.getGrossAmount() != null ? request.getGrossAmount() : BigDecimal.ZERO)
             .discountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO)
             .taxAmount(request.getTaxAmount() != null ? request.getTaxAmount() : BigDecimal.ZERO)
             .withholdingTax(request.getWithholdingTax() != null ? request.getWithholdingTax() : BigDecimal.ZERO)
@@ -142,8 +142,8 @@ public class PayablesService {
             // Approval
             .approvalRequired(request.getApprovalRequired() != null ? request.getApprovalRequired() : true)
             .approvalLevel(request.getApprovalLevel() != null ? request.getApprovalLevel() : 1)
-            // Status - Single stage: go directly to APPROVED (ready for payment)
-            .status(PayableStatus.APPROVED)
+            // A new payable is a draft or awaits approval; approval is its own step (approvePayable).
+            .status(requestedStatus(request.getStatus(), PayableStatus.DRAFT))
             .paymentStatus(PaymentStatus.UNPAID)
             .nettingStatus(NettingStatus.NOT_INCLUDED)
             // Metadata
@@ -152,11 +152,9 @@ public class PayablesService {
             .createdBy(request.getCreatedBy())
             .build();
 
-        // Calculate net amount
-        BigDecimal netAmount = request.getGrossAmount()
-            .subtract(payable.getDiscountAmount())
-            .add(payable.getTaxAmount())
-            .subtract(payable.getWithholdingTax());
+        applyPobo(payable, request.getIsPobo(), request.getPaymentViaEntityId(), request.getPaymentViaEntityCode());
+
+        BigDecimal netAmount = netOf(payable);
         payable.setNetAmount(netAmount);
         payable.setOutstandingAmount(netAmount);
 
@@ -170,6 +168,9 @@ public class PayablesService {
         // Validate party if provided
         if (request.getPartyId() != null) {
             enrichFromParty(payable, request.getPartyId());
+        }
+        if (payable.getStatus() == PayableStatus.PENDING_APPROVAL) {
+            requireSubmittable(payable);
         }
 
         Payable saved = payableRepository.save(payable);
@@ -204,6 +205,16 @@ public class PayablesService {
 
         if (request.getInvoiceNumber() != null) payable.setInvoiceNumber(request.getInvoiceNumber());
         if (request.getExternalReference() != null) payable.setExternalReference(request.getExternalReference());
+        if (request.getVendorReference() != null) payable.setVendorReference(request.getVendorReference());
+        if (request.getVirtualAccountId() != null) payable.setVirtualAccountId(request.getVirtualAccountId());
+        if (request.getOwningEntityId() != null) {
+            payable.setOwningEntityId(request.getOwningEntityId());
+            payable.setOwningEntityCode(request.getOwningEntityCode());
+            payable.setOwningEntityName(request.getOwningEntityName());
+        }
+        if (request.getIsPobo() != null) {
+            applyPobo(payable, request.getIsPobo(), request.getPaymentViaEntityId(), request.getPaymentViaEntityCode());
+        }
         if (request.getPartyId() != null) {
             payable.setPartyId(request.getPartyId());
             payable.setVendorId(request.getPartyId());
@@ -218,10 +229,14 @@ public class PayablesService {
         if (request.getPaymentTermsDays() != null) payable.setPaymentTermsDays(request.getPaymentTermsDays());
         if (request.getHierarchyNodeId() != null) payable.setHierarchyNodeId(request.getHierarchyNodeId());
         if (request.getHierarchyPath() != null) payable.setHierarchyPath(request.getHierarchyPath());
-        if (request.getScheduledDate() != null) payable.setScheduledDate(request.getScheduledDate());
         if (request.getPaymentPriority() != null) payable.setPaymentPriority(PaymentPriority.valueOf(request.getPaymentPriority()));
         if (request.getPaymentMethod() != null) payable.setPaymentMethod(PaymentMethod.valueOf(request.getPaymentMethod()));
-        if (request.getPaymentChannel() != null) payable.setPaymentChannel(PaymentChannel.valueOf(request.getPaymentChannel()));
+        if (request.getPaymentChannel() != null) {
+            payable.setPaymentChannel(PaymentChannel.valueOf(request.getPaymentChannel()));
+            // A schedule date belongs to the Scheduled channel; switching away drops it.
+            if (payable.getPaymentChannel() != PaymentChannel.SCHEDULED) payable.setScheduledDate(null);
+        }
+        if (request.getScheduledDate() != null) payable.setScheduledDate(request.getScheduledDate());
         if (request.getDescription() != null) payable.setDescription(request.getDescription());
         if (request.getNotes() != null) payable.setNotes(request.getNotes());
 
@@ -231,12 +246,12 @@ public class PayablesService {
         if (request.getWithholdingTax() != null) payable.setWithholdingTax(request.getWithholdingTax());
 
         // Recompute net/outstanding from whatever amount fields are now on the payable
-        BigDecimal netAmount = payable.getGrossAmount()
-            .subtract(payable.getDiscountAmount() != null ? payable.getDiscountAmount() : BigDecimal.ZERO)
-            .add(payable.getTaxAmount() != null ? payable.getTaxAmount() : BigDecimal.ZERO)
-            .subtract(payable.getWithholdingTax() != null ? payable.getWithholdingTax() : BigDecimal.ZERO);
+        BigDecimal netAmount = netOf(payable);
         payable.setNetAmount(netAmount);
         payable.setOutstandingAmount(netAmount);
+
+        if (request.getStatus() != null) payable.setStatus(requestedStatus(request.getStatus(), payable.getStatus()));
+        if (payable.getStatus() == PayableStatus.PENDING_APPROVAL) requireSubmittable(payable);
 
         if (request.getUpdatedBy() != null) payable.setUpdatedBy(request.getUpdatedBy());
         payable.setUpdatedAt(LocalDateTime.now());
@@ -1202,6 +1217,11 @@ public class PayablesService {
             try {
                 Payable payable = payableRepository.findById(payableId)
                     .orElseThrow(() -> new RuntimeException("Payable not found"));
+                // Only an approved bill is owed; a draft or one awaiting approval cannot be netted.
+                if (payable.getStatus() != PayableStatus.APPROVED) {
+                    throw new BusinessException(payable.getPayableNumber() + " is " + payable.getStatus()
+                        + "; only approved payables can be netted");
+                }
 
                 NettingEntry entry = nettingService.addPayableToCycle(request.getNettingCycleId(), payable);
 
@@ -1274,6 +1294,7 @@ public class PayablesService {
         if (payable.getStatus() != PayableStatus.DRAFT) {
             throw new RuntimeException("Only draft payables can be submitted for approval. Current status: " + payable.getStatus());
         }
+        requireSubmittable(payable);
 
         payable.setStatus(PayableStatus.PENDING_APPROVAL);
         payable.setUpdatedBy(submittedBy);
@@ -1303,7 +1324,8 @@ public class PayablesService {
         payable.setApprovedBy(approvedBy);
         payable.setApprovedAt(LocalDateTime.now());
         if (notes != null && !notes.isEmpty()) {
-            payable.setNotes(notes);
+            // Added to, not written over: the notes field also holds the creator's internal notes.
+            payable.setNotes(payable.getNotes() == null || payable.getNotes().isBlank() ? notes : payable.getNotes() + "\n" + notes);
         }
         payable.setUpdatedBy(approvedBy);
         payable.setUpdatedAt(LocalDateTime.now());
@@ -1471,6 +1493,62 @@ public class PayablesService {
         return fxRateService.convert(amount, p.getCurrencyCode(), ccy);
     }
 
+    /**
+     * The amount owed. The gross amount is VAT-inclusive (what the vendor's invoice totals), so
+     * taxAmount is the VAT share already inside it, recorded for reporting -- adding it again
+     * would bill the VAT twice.
+     */
+    static BigDecimal netOf(Payable p) {
+        return nz(p.getGrossAmount())
+            .subtract(nz(p.getDiscountAmount()))
+            .subtract(nz(p.getWithholdingTax()));
+    }
+
+    private static BigDecimal nz(BigDecimal v) {
+        return v != null ? v : BigDecimal.ZERO;
+    }
+
+    /** A payable is created or edited as a draft or as submitted for approval; never past that. */
+    private static PayableStatus requestedStatus(String status, PayableStatus otherwise) {
+        if (status == null) return otherwise;
+        PayableStatus s = PayableStatus.valueOf(status);
+        if (s != PayableStatus.DRAFT && s != PayableStatus.PENDING_APPROVAL) {
+            throw new BusinessException("A payable can be saved as DRAFT or PENDING_APPROVAL, not " + s);
+        }
+        return s;
+    }
+
+    /**
+     * POBO intent: the paying (treasury) entity pays on behalf of the owning entity. The route
+     * stays DIRECT -- the POBO request / treasury approval workflow (requestPobo) moves it to
+     * POBO, and that workflow only accepts DIRECT payables.
+     */
+    private static void applyPobo(Payable p, Boolean isPobo, UUID payingEntityId, String payingEntityCode) {
+        boolean pobo = Boolean.TRUE.equals(isPobo);
+        p.setIsPobo(pobo);
+        p.setPaymentViaEntityId(pobo ? payingEntityId : null);
+        p.setPaymentViaEntityCode(pobo ? payingEntityCode : null);
+        p.setBehalfOfEntity(pobo ? p.getOwningEntityName() : null);
+    }
+
+    /** What an approver needs before a payable can go for approval. Drafts may be incomplete. */
+    private static void requireSubmittable(Payable p) {
+        List<String> missing = new ArrayList<>();
+        if (p.getInvoiceNumber() == null || p.getInvoiceNumber().isBlank()) missing.add("invoice number");
+        if (p.getGrossAmount() == null || p.getGrossAmount().signum() <= 0) missing.add("an amount above zero");
+        if (p.getDueDate() == null) missing.add("due date");
+        if (p.getPartyId() == null && p.getVendorName() == null) missing.add("vendor");
+        if (p.getVirtualAccountId() == null) missing.add("source account");
+        if (Boolean.TRUE.equals(p.getIsPobo())) {
+            if (p.getOwningEntityId() == null) missing.add("owning entity (POBO)");
+            if (p.getPaymentViaEntityId() == null) missing.add("paying entity (POBO)");
+            else if (p.getPaymentViaEntityId().equals(p.getOwningEntityId())) missing.add("a paying entity other than the owning entity (POBO)");
+        }
+        if (!missing.isEmpty()) {
+            throw new BusinessException("Cannot submit for approval: needs " + String.join(", ", missing));
+        }
+    }
+
     private String generatePayableNumber(UUID corporateId) {
         return "PAY-" + System.currentTimeMillis() + "-" + 
             corporateId.toString().substring(0, 4).toUpperCase();
@@ -1588,6 +1666,8 @@ public class PayablesService {
             // Metadata
             .description(p.getDescription())
             .notes(p.getNotes())
+            .vendorReference(p.getVendorReference())
+            .isPobo(p.getIsPobo())
             .hasInvoiceDocument(p.getHasInvoiceDocument())
             .documentCount(p.getDocumentCount())
             // Audit

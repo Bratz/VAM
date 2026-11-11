@@ -2472,6 +2472,8 @@ export interface PayablePhase2 {
   paymentViaEntityId?: string;
   paymentViaEntityCode?: string;
   paymentRouteDescription?: string;
+  isPobo?: boolean;
+  vendorReference?: string;
   
   // POBO
   poboRequestId?: string;
@@ -2603,7 +2605,7 @@ export interface CreatePayableRequest {
   invoiceNumber: string;
   grossAmount: number;
   currencyCode: string;
-  dueDate: string;
+  dueDate?: string;   // a draft may not have one yet
   owningEntityId?: string;
   owningEntityCode?: string;
   owningEntityName?: string;
@@ -2635,8 +2637,13 @@ export interface CreatePayableRequest {
   description?: string;
   notes?: string;
   netAmount?: number;
-  status?: string;
+  status?: 'DRAFT' | 'PENDING_APPROVAL';
   createdBy?: string;
+  virtualAccountId?: string;
+  vendorReference?: string;
+  isPobo?: boolean;
+  paymentViaEntityId?: string;
+  paymentViaEntityCode?: string;
 }
 
 // POBO Types
