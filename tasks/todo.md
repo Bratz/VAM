@@ -1,6 +1,6 @@
 # Active Work / Status Tracker
 
-## Planned: Bank statement intake (spec: docs/specs/bank-statement-intake.md, decisions D1–D8)
+## ✅ Bank statement intake (spec: docs/specs/bank-statement-intake.md, decisions D1–D8)
 Phases in order, reported after each; commit and push only when the user says so. Statements are whole documents, not
 rows, so they get their own intake service and log; the row-based File Ingest Pipeline only displays the log.
 Plan defaults the spec left open (say if wrong): a statement for an account fed by CORE_BANKING is stored but does
@@ -149,8 +149,15 @@ two GETs above.
 - [x] 6.2 Localhost: drop MT940 + camt.053 + MT942 sample files (for real external demo accounts, e.g. Helios /
       Albion / Mercator at Chase / Lloyds / Deutsche) into the inbox and post one via the endpoint; check balances,
       snapshots, lines, flags, duplicates, the log; back up and restore data.
-- [ ] 6.3 vam-five: post sample statements via the intake endpoint after deploy (inbox volume optional there); demo
+- [x] 6.3 vam-five: post sample statements via the intake endpoint after deploy (inbox volume optional there); demo
       walkthrough note.
+
+6.3 done (12 Nov, after 017c033 deployed): posted to vam-five via POST /api/v1/statements/intake — MT940 11 Nov for
+Helios NY at BofA (IBAN US33BOFA…, failing check digits, matched), MT940 11 Nov for Albion Manchester at Barclays
+(BARCGB22/23456702), camt.053.001.08 11 Nov for Mercator at Commerzbank (DE89…3001), MT942 12 Nov 10:30 for Helios NY.
+All APPLIED, no flags. Liquidity: the three accounts fresh with last statement 11 Nov (stale count 63 → 60); BofA booked
+6,219,974.50 / available 6,254,500.00 as of 12 Nov 10:30. Demo note: they go stale again on 13 Nov unless an 12 Nov
+end-of-day statement is posted (next statement opens at the previous closing, or it is flagged a break).
 
 Phase 6 done (6.1, 6.2; 781 tests, tsc + lint clean): acceptance → tests: 1 `StatementIntakeServiceTest.acceptance1_*`
 + `MultiBankLiquidityViewServiceTest` (row shows the shadow's bank balance, assertion added); 2 `acceptance2_*` (both);
