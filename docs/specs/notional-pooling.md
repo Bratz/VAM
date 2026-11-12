@@ -1,6 +1,6 @@
 # Notional pooling — specification
 
-Status: **decided** (2026-11-11). Decisions D1–D11 were taken in an interview; they are marked in the text and listed
+Status: **implemented** (2026-11-12). Decisions D1–D11 were taken in an interview; they are marked in the text and listed
 at the end. Review that led to it: read-only code + data review, 11 Nov 2026.
 
 ## 1. Why

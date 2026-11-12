@@ -447,6 +447,39 @@ applied; or **Return** it to the payer with a reason.
 
 ---
 
+## 12. Notional pooling: interest on the net, posted at month end (≈4 min)
+
+Rehearsed on **localhost** (with the vam-five home bank) on **12 Nov 2026**; vam-five holds the same data (history built
+by the catch-up on 12 Nov) but this step is not yet recorded there. Spec: `docs/specs/notional-pooling.md`.
+One currency, one legal entity, accounts at the home bank only (Emirates NBD on vam-five); credit and debit balances
+offset and interest is paid on the net.
+
+**Prerequisite (data):** the demo pools were re-seeded on 12 Nov (migration V53). Only **POOL-BRTO-AED** is open on
+vam-five; the Albion, Helios, Al Mawarid and Mercator pools are closed because their accounts are at other banks —
+notional pooling cannot cross banks (talking point).
+
+### 12.1 The pool
+**Notional Pooling**, corporate **Brato**. The headline reads per currency: *Pooled net AED 14.6M*, *Pooling benefit,
+Nov 2026 to date AED 0.00*. The card: net at the last run (end of day 11 Nov), credit 3.2% / debit 5.2%, last day's
+interest AED 1,283.51. **View details**: header BRTO0000001, legal entity BRTO-AE, rates from the interest engine
+(ACT/365 for AED), floor and member limits.
+
+### 12.2 Daily runs
+**Daily runs** lists one run per day since 20 Jun (built by the catch-up): net, pooled interest, benefit, flags.
+Click a date for its members' end-of-day balances and their shares. Weekend dates show *earlier balance used* — they
+take Friday's. Re-running a date changes nothing.
+
+Why the benefit is 0.00: both Brato accounts are always in credit, so pooling adds nothing over each earning on its own.
+The benefit appears when a member is overdrawn: its debit balance is offset by the others' credit instead of paying
+the debit rate (spec acceptance 3: +1,000,000 and −400,000 at 3% / 6% → benefit 32.88 a day).
+
+### 12.3 Month end
+**Postings → Post month: Oct 2026.** One interest credit per member on its statement, *"Pool interest POOL-BRTO-AED Oct
+2026"*, totalling the month's daily pooled interest (the rounding remainder to the header). Posting again posts
+nothing. A posted day can be **Corrected**: the old run is kept as superseded and only the difference is posted.
+
+---
+
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
@@ -461,6 +494,8 @@ applied; or **Return** it to the payer with a reason.
 | `GET/POST /api/v1/pobo/enrolments`, `POST /api/v1/pobo/cutover?dryRun=` | POBO enrolments; repair IHB positions |
 | `GET /api/v1/pobo/enrolments/awaiting-fx`, `GET /api/v1/cobo/awaiting-fx`, `POST /api/v1/cobo/awaiting-fx/{id}/post\|return` | In-house FX queues above the live-price limit |
 | `GET /api/v1/fx/payments/indicative` | Indicative settle amount for a cross-currency enrolment (books nothing) |
+| `POST/GET /api/v1/pooling/{id}/runs?from=&to=`, `POST /api/v1/pooling/runs/catch-up?from=` | Daily pool runs; build history |
+| `POST/GET /api/v1/pooling/{id}/postings?month=`, `POST /api/v1/pooling/{id}/runs/{date}/correct` | Month-end posting; corrections |
 | `POST /api/v1/receivables/{id}/request-to-pay/send` | Send a Request to Pay: pay link, VIBAN, pain.013, outbox email |
 | `GET /api/v1/receivables/{id}/request-to-pay/message` | The last pain.013 sent for the invoice |
 | `GET /api/v1/outbox?corporateId=` · `?relatedId=` | The simulated outbox, for a corporate or one invoice |

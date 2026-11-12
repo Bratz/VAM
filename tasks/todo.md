@@ -166,7 +166,7 @@ Seen, not changed (pre-existing): collection/VIBAN fees on treasury's account ar
 (the settlement VA its program resolves to); a POBO payout can take treasury's bank account below zero (only the
 subsidiary's IHB headroom is checked, not treasury's own funds).
 
-## Planned: Notional pooling (spec: docs/specs/notional-pooling.md, decisions D1–D11)
+## ✅ Notional pooling (spec: docs/specs/notional-pooling.md, decisions D1–D11)
 Starts after in-house FX is committed (both touch tasks/todo.md and frontend/src/services/api.ts). Phases in order,
 reported after each; commit and push only when the user says so. Money/ledger risks first.
 
@@ -362,10 +362,16 @@ Left for 6: no screen for the catch-up (ops endpoint, no auth beyond the API's);
 after "Run dates" until the pool is reopened; a demo pool for any other geography needs its accounts at that home bank.
 
 ### Phase 6 — verification
-- [ ] 6.1 Spec acceptance 1–7 as tests; full suite; typecheck.
-- [ ] 6.2 Localhost: restart then create two pools; run a week of dates; re-run a date; month-end post; member
+- [x] 6.1 Spec acceptance 1–7 as tests; full suite; typecheck.
+- [x] 6.2 Localhost: restart then create two pools; run a week of dates; re-run a date; month-end post; member
       statement lines; refusals (other currency / bank / entity); per-currency totals. Back up and restore data.
-- [ ] 6.3 Demo walkthrough step for notional pooling.
+- [x] 6.3 Demo walkthrough step for notional pooling.
+Phase 6 done (12 Nov): acceptance 1 referenceComesFromTheDatabaseSequence (+ live after restarts); 2 rerun_returnsThe…
++ postingTwice_changesNothing; 3 acceptance3_…; 4 monthPosting_… + movementHasALedgerRow_…; 5 addMemberRefuses…; 6
+eachPoolKeepsItsOwnFigures_currenciesAreNeverAdded + noFeeIsPosted…; 7 breaches_… . Localhost covered per phase (live
+notes above). vam-five: V53 applied on deploy (BRTO active, others closed), catch-up built 145 BRTO runs (same
+figures as local). Walkthrough step 12. Frontend lint fixed (bb0179f); Storybook PaymentRouteOptions render failures
+(pre-existing since ≤ 6 Nov) handed to a separate fix.
 
 ## ✅ POBO through the In-House Bank (spec: docs/specs/pobo-in-house-bank.md, decisions D1–D10)
 Same shape as the COBO work. Phases are applied in order; nothing is committed or pushed until the user says so.
