@@ -5234,6 +5234,11 @@ export interface ShadowAccount {
   bankAvailableBalance: number;
   bankBalanceAt?: string;
   balanceDataSource: 'CORE_BANKING' | 'SWIFT_MT940' | 'SWIFT_MT942' | 'OPEN_BANKING' | 'MANUAL';
+  /** What ShadowAccountController actually sends for the balance source (it has no `balanceDataSource`). */
+  dataSource?: string;
+  /** Statement-fed shadows only (absent otherwise): latest applied end-of-day statement date (yyyy-MM-dd) and stale per D6. */
+  lastStatementDate?: string;
+  stale?: boolean;
   /** Null while the shadow is not in any program yet. */
   programId?: string | null;
   parentAccountId?: string;
@@ -8251,9 +8256,13 @@ export interface ShadowSummary {
   bankBalanceCommitted: number;
   bankBalanceEffective: number;
   balanceDataSource?: string;
+  /** As-of of the bank balance (statement-fed: the statement's date or intraday report time). */
+  bankBalanceAt?: string;
   lastBalanceRefreshAt?: string;
   lastBalanceRefreshStatus: 'SUCCESS' | 'FAILED' | 'STALE' | 'NEVER';
   stale: boolean;
+  /** Statement-fed shadows: latest applied end-of-day statement date (yyyy-MM-dd); absent when none. */
+  lastStatementDate?: string;
 }
 
 interface MultiBankCurrencyBucket {

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.052.001.04">
+  <BkToCstmrAcctRpt>
+    <GrpHdr>
+      <MsgId>DB052-20261112-1405</MsgId>
+      <CreDtTm>2026-11-12T14:05:00+01:00</CreDtTm>
+    </GrpHdr>
+    <Rpt>
+      <Id>DB052-20261112-1405-DE94</Id>
+      <RptPgntn>
+        <PgNb>1</PgNb>
+        <LastPgInd>true</LastPgInd>
+      </RptPgntn>
+      <ElctrncSeqNb>4</ElctrncSeqNb>
+      <CreDtTm>2026-11-12T14:05:00+01:00</CreDtTm>
+      <Acct>
+        <Id><IBAN>DE94500700100123456789</IBAN></Id>
+        <Ccy>EUR</Ccy>
+        <Svcr><FinInstnId><BICFI>DEUTDEFF</BICFI></FinInstnId></Svcr>
+      </Acct>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>ITBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="EUR">262950.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><DtTm>2026-11-12T14:00:00</DtTm></Dt>
+      </Bal>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>ITAV</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="EUR">262400.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><DtTm>2026-11-12T14:00:00</DtTm></Dt>
+      </Bal>
+      <Ntry>
+        <Amt Ccy="EUR">500.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>PDNG</Sts>
+        <ValDt><Dt>2026-11-12</Dt></ValDt>
+        <AcctSvcrRef>DB052-1</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><EndToEndId>E2E-INTRA-1</EndToEndId></Refs>
+            <RmtInf><Ustrd>Kuehne Logistik advance</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Rpt>
+  </BkToCstmrAcctRpt>
+</Document>

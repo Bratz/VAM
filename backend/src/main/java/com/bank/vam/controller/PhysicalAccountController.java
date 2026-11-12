@@ -629,14 +629,24 @@ public class PhysicalAccountController {
     @Operation(summary = "Sync all accounts")
     public ResponseEntity<Map<String, Object>> syncAllAccounts(
             @RequestParam(required = false) UUID corporateId) {
-        throw new BusinessException("Not available: balance sync — no bank connection is implemented for physical accounts");
+        throw new BusinessException("Not available: balance sync — no bank connection is implemented for physical accounts"
+                + " (statement-fed accounts are updated by bank statements)");
     }
 
     /** No bank adapter fetches physical account balances, so a sync would only restamp the old figures. */
     private static BusinessException notConnected(PhysicalAccount account) {
+        if (STATEMENT_FED.contains(account.getDataSource())) {
+            return new BusinessException("Not available: " + account.getAccountNumber() + " (" + account.getBankName()
+                    + ") is updated by bank statements, not a live connection");
+        }
         return new BusinessException("Not available: no bank connection for " + account.getAccountNumber()
                 + " (" + account.getBankName() + ")");
     }
+
+    /** The physical sources a statement-fed shadow maps from (BalanceDataSource.statementFed). */
+    private static final Set<PhysicalAccount.DataSource> STATEMENT_FED = EnumSet.of(PhysicalAccount.DataSource.SWIFT_MT940,
+            PhysicalAccount.DataSource.SWIFT_MT942, PhysicalAccount.DataSource.SWIFT_CAMT053, PhysicalAccount.DataSource.SWIFT_CAMT052,
+            PhysicalAccount.DataSource.HOST_TO_HOST, PhysicalAccount.DataSource.SFTP_IMPORT);
 
     // ========================================================================
     // TREASURY CONFIGURATION

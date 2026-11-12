@@ -35,7 +35,8 @@ import java.util.UUID;
  * applies the result to the shadow, and stamps {@code lastBalanceRefreshAt} +
  * {@code lastBalanceRefreshStatus}. Falls back to {@link StubAdapter} when no
  * dedicated adapter is registered for the source (v1: everything except
- * CORE_BANKING).
+ * CORE_BANKING). Statement-fed shadows ({@link BalanceDataSource#statementFed()}) are never refreshed here — bank
+ * statements update them (spec R14).
  *
  * Scheduled job {@link #refreshAllStaleShadows()} runs every
  * {@code vam.multi-bank.refresh-cadence-minutes} and refreshes any shadow whose
@@ -116,7 +117,7 @@ public class BalanceRefreshService {
         int failed = 0;
         int skipped = 0;
         for (VirtualAccount shadow : shadows) {
-            if (!isStale(shadow)) {
+            if (statementFed(shadow) || !isStale(shadow)) {
                 skipped++;
                 continue;
             }
@@ -146,6 +147,10 @@ public class BalanceRefreshService {
             log.debug("Skipping refresh for non-mirror VA {} ({})",
                     shadow.getVaNumber(), shadow.getAccountCategory());
             return null;
+        }
+        if (statementFed(shadow)) {   // R14: bank statements update it; there is nothing to poll, so no "not connected" stamp
+            log.debug("Skipping refresh for statement-fed shadow {} ({})", shadow.getVaNumber(), shadow.getBalanceDataSource());
+            return shadow.getLastBalanceRefreshStatus() != null ? shadow.getLastBalanceRefreshStatus() : BalanceRefreshStatus.NEVER;
         }
 
         ShadowBalanceAdapter adapter = resolveAdapter(shadow.getBalanceDataSource());
@@ -253,6 +258,10 @@ public class BalanceRefreshService {
             return stub;
         }
         return adapters.getOrDefault(source, stub);
+    }
+
+    private static boolean statementFed(VirtualAccount shadow) {
+        return shadow.getBalanceDataSource() != null && shadow.getBalanceDataSource().statementFed();
     }
 
     private boolean isStale(VirtualAccount shadow) {

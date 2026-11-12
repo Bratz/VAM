@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<camt:Document xmlns:camt="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <camt:BkToCstmrStmt>
+    <camt:GrpHdr>
+      <camt:MsgId>LL053-20261111</camt:MsgId>
+      <camt:CreDtTm>2026-11-11T23:05:12.345+00:00</camt:CreDtTm>
+    </camt:GrpHdr>
+    <camt:Stmt>
+      <camt:Id>LL053-20261111-GB07</camt:Id>
+      <camt:StmtPgntn>
+        <camt:PgNb>1</camt:PgNb>
+        <camt:LastPgInd>true</camt:LastPgInd>
+      </camt:StmtPgntn>
+      <camt:ElctrncSeqNb>312</camt:ElctrncSeqNb>
+      <camt:CreDtTm>2026-11-11T23:05:12.345+00:00</camt:CreDtTm>
+      <camt:Acct>
+        <camt:Id>
+          <camt:IBAN>GB07LOYD30963412345678</camt:IBAN>
+        </camt:Id>
+        <camt:Ccy>GBP</camt:Ccy>
+        <camt:Svcr>
+          <camt:FinInstnId>
+            <camt:BICFI>LOYDGB2L</camt:BICFI>
+            <camt:Othr><camt:Id>309634</camt:Id></camt:Othr>
+          </camt:FinInstnId>
+        </camt:Svcr>
+      </camt:Acct>
+      <camt:Bal>
+        <camt:Tp><camt:CdOrPrtry><camt:Cd>OPBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+        <camt:Amt Ccy="GBP">125000.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Dt><camt:Dt>2026-11-10</camt:Dt></camt:Dt>
+      </camt:Bal>
+      <camt:Bal>
+        <camt:Tp><camt:CdOrPrtry><camt:Cd>CLBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+        <camt:CdtLine><camt:Incl>false</camt:Incl><camt:Amt Ccy="GBP">50000.00</camt:Amt></camt:CdtLine>
+        <camt:Amt Ccy="GBP">127600.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Dt><camt:DtTm>2026-11-11T23:00:00</camt:DtTm></camt:Dt>
+      </camt:Bal>
+      <camt:Bal>
+        <camt:Tp><camt:CdOrPrtry><camt:Cd>CLAV</camt:Cd></camt:CdOrPrtry></camt:Tp>
+        <camt:Amt Ccy="GBP">127500.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Dt><camt:Dt>2026-11-11</camt:Dt></camt:Dt>
+      </camt:Bal>
+      <camt:Ntry>
+        <camt:Amt Ccy="GBP">3000.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+        <camt:BookgDt><camt:DtTm>2026-11-11T09:12:00</camt:DtTm></camt:BookgDt>
+        <camt:ValDt><camt:Dt>2026-11-11</camt:Dt></camt:ValDt>
+        <camt:AcctSvcrRef>LL053-1</camt:AcctSvcrRef>
+        <camt:BkTxCd>
+          <camt:Domn><camt:Cd>PMNT</camt:Cd><camt:Fmly><camt:Cd>RCDT</camt:Cd><camt:SubFmlyCd>BOOK</camt:SubFmlyCd></camt:Fmly></camt:Domn>
+        </camt:BkTxCd>
+        <camt:NtryDtls>
+          <camt:TxDtls>
+            <camt:Refs>
+              <camt:AcctSvcrRef>LL053-1-1</camt:AcctSvcrRef>
+              <camt:EndToEndId>E2E-HEL-1</camt:EndToEndId>
+            </camt:Refs>
+            <camt:Amt Ccy="GBP">1000.00</camt:Amt>
+            <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+            <camt:RmtInf><camt:Ustrd>Helios Trading INV-2026-0450</camt:Ustrd></camt:RmtInf>
+          </camt:TxDtls>
+          <camt:TxDtls>
+            <camt:Refs>
+              <camt:AcctSvcrRef>LL053-1-2</camt:AcctSvcrRef>
+              <camt:EndToEndId>NOTPROVIDED</camt:EndToEndId>
+            </camt:Refs>
+            <camt:Amt Ccy="GBP">2000.00</camt:Amt>
+            <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+            <camt:RmtInf><camt:Ustrd>Helios Trading INV-2026-0451</camt:Ustrd></camt:RmtInf>
+          </camt:TxDtls>
+        </camt:NtryDtls>
+      </camt:Ntry>
+      <camt:Ntry>
+        <camt:Amt Ccy="GBP">400.00</camt:Amt>
+        <camt:CdtDbtInd>DBIT</camt:CdtDbtInd>
+        <camt:RvslInd>true</camt:RvslInd>
+        <camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+        <camt:BookgDt><camt:Dt>2026-11-11</camt:Dt></camt:BookgDt>
+        <camt:ValDt><camt:Dt>2026-11-10</camt:Dt></camt:ValDt>
+        <camt:AcctSvcrRef>LL053-2</camt:AcctSvcrRef>
+        <camt:BkTxCd>
+          <camt:Prtry><camt:Cd>NRVS</camt:Cd></camt:Prtry>
+        </camt:BkTxCd>
+        <camt:AddtlNtryInf>Reversal of credit LL052-9</camt:AddtlNtryInf>
+      </camt:Ntry>
+    </camt:Stmt>
+    <camt:Stmt>
+      <camt:Id>CH053-20261111</camt:Id>
+      <camt:ElctrncSeqNb>78</camt:ElctrncSeqNb>
+      <camt:CreDtTm>2026-11-11T23:05:12</camt:CreDtTm>
+      <camt:Acct>
+        <camt:Id>
+          <camt:Othr><camt:Id>000123456789</camt:Id></camt:Othr>
+        </camt:Id>
+        <camt:Ccy>USD</camt:Ccy>
+        <camt:Svcr>
+          <camt:FinInstnId><camt:BICFI>CHASUS33</camt:BICFI></camt:FinInstnId>
+        </camt:Svcr>
+      </camt:Acct>
+      <camt:Bal>
+        <camt:Tp><camt:CdOrPrtry><camt:Cd>PRCD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+        <camt:Amt Ccy="USD">1500.00</camt:Amt>
+        <camt:CdtDbtInd>DBIT</camt:CdtDbtInd>
+        <camt:Dt><camt:Dt>2026-11-10</camt:Dt></camt:Dt>
+      </camt:Bal>
+      <camt:Bal>
+        <camt:Tp><camt:CdOrPrtry><camt:Cd>CLBD</camt:Cd></camt:CdOrPrtry></camt:Tp>
+        <camt:Amt Ccy="USD">8500.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Dt><camt:Dt>2026-11-11</camt:Dt></camt:Dt>
+      </camt:Bal>
+      <camt:Ntry>
+        <camt:Amt Ccy="USD">10000.00</camt:Amt>
+        <camt:CdtDbtInd>CRDT</camt:CdtDbtInd>
+        <camt:Sts><camt:Cd>BOOK</camt:Cd></camt:Sts>
+        <camt:BookgDt><camt:Dt>2026-11-11</camt:Dt></camt:BookgDt>
+        <camt:ValDt><camt:Dt>2026-11-11</camt:Dt></camt:ValDt>
+        <camt:AcctSvcrRef>CH20261111A1</camt:AcctSvcrRef>
+        <camt:NtryDtls>
+          <camt:TxDtls>
+            <camt:Refs>
+              <camt:PmtInfId>PMTINF-77</camt:PmtInfId>
+              <camt:EndToEndId>E2E-US-7781</camt:EndToEndId>
+            </camt:Refs>
+            <camt:RmtInf><camt:Ustrd>INVOICE 7781</camt:Ustrd></camt:RmtInf>
+          </camt:TxDtls>
+        </camt:NtryDtls>
+      </camt:Ntry>
+    </camt:Stmt>
+  </camt:BkToCstmrStmt>
+</camt:Document>

@@ -3,6 +3,7 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.service.treasury.ShadowAccountService;
+import com.bank.vam.statement.StatementFreshness;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ import java.util.stream.Collectors;
 public class ShadowAccountController {
 
     private final ShadowAccountService shadowAccountService;
+    private final StatementFreshness statementFreshness;
 
     // ========================================================================
     // QUERY APIs - By Legal Entity
@@ -410,6 +413,8 @@ public class ShadowAccountController {
     // ========================================================================
 
     private ShadowAccountDto toDto(VirtualAccount va) {
+        // ponytail: one statement query per statement-fed shadow in list endpoints (as childCount); batch via of(list) if lists grow
+        StatementFreshness.Freshness freshness = statementFreshness.of(va, LocalDate.now());
         return ShadowAccountDto.builder()
             .id(va.getId())
             .vaNumber(va.getVaNumber())
@@ -433,6 +438,8 @@ public class ShadowAccountController {
             .bankBalanceAt(va.getBankBalanceAt())
             .dataSource(va.getBalanceDataSource() != null ? va.getBalanceDataSource().name() : null)
             .childCount((int) shadowAccountService.getChildCount(va.getId()))
+            .lastStatementDate(freshness != null ? freshness.lastStatementDate() : null)
+            .stale(freshness != null ? freshness.stale() : null)
             .createdAt(va.getCreatedAt())
             .updatedAt(va.getUpdatedAt())
             .build();
@@ -493,6 +500,9 @@ public class ShadowAccountController {
         private LocalDateTime bankBalanceAt;
         private String dataSource;
         private Integer childCount;
+        /** Statement-fed shadows only (else null): latest applied end-of-day statement date, and stale per D6. */
+        private LocalDate lastStatementDate;
+        private Boolean stale;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

@@ -8,7 +8,8 @@ import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
-import { formatCurrency, cn } from '../utils';
+import { formatCurrency, formatDate, cn } from '../utils';
+import { AccountStatementLines } from '../components/statements/Statements';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -1730,7 +1731,12 @@ const PhysicalAccountsPage: React.FC = () => {
                 );
               }
               const onHold = shadow.bankBalance - shadow.bankAvailableBalance;
-              const isStale = shadow.bankBalanceAt ? (Date.now() - new Date(shadow.bankBalanceAt).getTime()) > 60 * 60 * 1000 : true;
+              // Statement-fed (the backend sends `stale` only then): stale per D6 — no end-of-day statement for the
+              // last business day — not the 1-hour live-connection rule, which a statement's 23:59 as-of always trips.
+              const statementFed = shadow.stale !== undefined;
+              const isStale = statementFed ? !!shadow.stale
+                : shadow.bankBalanceAt ? (Date.now() - new Date(shadow.bankBalanceAt).getTime()) > 60 * 60 * 1000 : true;
+              const source = shadow.dataSource ?? shadow.balanceDataSource;
               return (
                 <div className="p-4 bg-success-50 border border-success-200 rounded-lg dark:bg-success-500/10 dark:border-success-500/30 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1752,12 +1758,18 @@ const PhysicalAccountsPage: React.FC = () => {
                     <div><p className="caption">On Hold</p><p className="font-semibold text-warning-600 dark:text-warning-300">{onHold > 0 ? formatCurrency(onHold, shadow.currencyCode) : '—'}</p></div>
                   </div>
                   <div className="flex items-center justify-between caption">
-                    <span className="flex items-center gap-1"><Database className="w-3 h-3" />{SHADOW_DATA_SOURCE_LABELS[shadow.balanceDataSource] || shadow.balanceDataSource}</span>
-                    {shadow.bankBalanceAt && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Last synced: {new Date(shadow.bankBalanceAt).toLocaleString()}</span>}
+                    <span className="flex items-center gap-1"><Database className="w-3 h-3" />
+                      {statementFed
+                        ? `Updated by bank statements · last statement ${shadow.lastStatementDate ? formatDate(`${shadow.lastStatementDate}T00:00:00`) : 'none yet'}`
+                        : SHADOW_DATA_SOURCE_LABELS[source] || source}
+                    </span>
+                    {shadow.bankBalanceAt && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{statementFed ? 'As of' : 'Last synced'}: {new Date(shadow.bankBalanceAt).toLocaleString()}</span>}
                   </div>
                 </div>
               );
             })()}
+
+            <AccountStatementLines physicalAccountId={selectedAccount.id} currency={selectedAccount.currency} />
 
             <div className="flex gap-3 pt-4 border-t">
               <Button variant="outline" className="flex-1" leftIcon={<Settings className="w-4 h-4" />}>Configure</Button>

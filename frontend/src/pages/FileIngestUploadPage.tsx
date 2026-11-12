@@ -47,6 +47,7 @@ import { Stepper } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
 import { formatFileSize } from '../utils';
 import { useNavigation } from '../hooks/useNavigation';
+import { StatementIntakeLog } from '../components/statements/Statements';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -701,6 +702,9 @@ const FileIngestUploadPage: React.FC = () => {
           </div>
         </Card>
       )}
+
+      {/* R2a: statements the bank delivers are listed here as source "Bank (automatic)", read-only (D7). */}
+      {!job && <StatementIntakeLog />}
 
       {job && (
         <>

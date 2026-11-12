@@ -138,6 +138,12 @@ vam:
       email: ${JIRA_EMAIL:}
       api-token: ${JIRA_API_TOKEN:}
       project-key: ${JIRA_PROJECT_KEY:KAN}
+  # Bank statement intake (docs/specs/bank-statement-intake.md R2): the folder the bank's integration drops
+  # MT940 / MT942 / camt.053 / camt.052 files into, polled every poll-ms; taken-in files move to processed/,
+  # unreadable ones to failed/ (+ <name>.reason.txt). Blank = poller off. POST /api/v1/statements/intake works either way.
+  statements:
+    inbox: ${VAM_STATEMENTS_INBOX:}
+    poll-ms: ${VAM_STATEMENTS_POLL_MS:300000}
   # Treasury Copilot — stub-only AI prototype (no LLM connection)
   ai:
     copilot:

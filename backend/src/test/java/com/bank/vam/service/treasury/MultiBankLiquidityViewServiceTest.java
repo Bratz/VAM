@@ -12,6 +12,8 @@ import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
 import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository.TrendRow;
+import com.bank.vam.statement.StatementFreshness;
+import com.bank.vam.statement.StatementFreshness.Freshness;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -38,8 +40,11 @@ class MultiBankLiquidityViewServiceTest {
     private final LegalEntityRepository legalEntityRepository = mock(LegalEntityRepository.class);
     private final ShadowBalanceSnapshotRepository snapshotRepository = mock(ShadowBalanceSnapshotRepository.class);
 
+    private final StatementFreshness statementFreshness = mock(StatementFreshness.class);
+
     private final MultiBankLiquidityViewService service = new MultiBankLiquidityViewService(
-            vaRepository, homeBankProperties, multiBankProperties, legalEntityRepository, snapshotRepository);
+            vaRepository, homeBankProperties, multiBankProperties, legalEntityRepository, snapshotRepository,
+            statementFreshness);
 
     private static final UUID ENTITY_ID = UUID.randomUUID();
 
@@ -90,6 +95,26 @@ class MultiBankLiquidityViewServiceTest {
         assertEquals("Unassigned", shadowSummary.getOwningEntityName());
         assertNull(shadowSummary.getOwningEntityCountry());
         verify(legalEntityRepository, never()).findAllById(any());
+    }
+
+    @Test
+    void statementFedShadowTakesStaleAndLastStatementDateFromTheStatementRule() {
+        VirtualAccount s = shadow(null);
+        s.setLastBalanceRefreshAt(java.time.LocalDateTime.now());   // fresh by the refresh threshold
+        s.setLastBalanceRefreshStatus(VirtualAccount.BalanceRefreshStatus.FAILED);   // old stub stamp
+        LocalDate thu = LocalDate.of(2026, 11, 12);
+        when(vaRepository.findByAccountCategory(AccountCategory.PHYSICAL_MIRROR)).thenReturn(List.of(s));
+        when(statementFreshness.of(eq(List.of(s)), any())).thenReturn(java.util.Map.of(s.getId(), new Freshness(thu, true)));
+
+        LiquiditySummary summary = service.getSummary(null);
+
+        ShadowSummary row = summary.getBanks().get(0).getCurrencies().get(0).getShadows().get(0);
+        assertTrue(row.isStale());
+        assertEquals(thu, row.getLastStatementDate());
+        assertEquals(BigDecimal.TEN, row.getBankBalance());   // acceptance 1: the shadow's bank balance, as a statement set it
+        assertEquals(1, summary.getStaleCount());
+        assertEquals("STALE", row.getLastBalanceRefreshStatus());   // the statement rule, not the old FAILED stamp
+        assertEquals(0, summary.getNeverRefreshedCount());
     }
 
     @Test

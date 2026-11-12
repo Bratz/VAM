@@ -1100,7 +1100,16 @@ public class VirtualAccount extends BaseEntity {
         OPEN_BANKING,   // Open Banking APIs
         HOST_TO_HOST,   // H2H file transfer
         API,            // External API
-        MANUAL          // Manual entry
+        MANUAL;         // Manual entry
+
+        /**
+         * Fed by bank statements (spec R14): the physical sources SWIFT_MT940/CAMT053, SWIFT_MT942/CAMT052,
+         * HOST_TO_HOST and SFTP_IMPORT map here. Not polled by the 15-minute refresh (no adapter, it would only stamp
+         * "not connected"); freshness is the D6 statement rule instead ({@code StatementFreshness}).
+         */
+        public boolean statementFed() {
+            return this == SWIFT_MT940 || this == SWIFT_MT942 || this == HOST_TO_HOST;
+        }
     }
 
     /**

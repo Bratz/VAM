@@ -100,6 +100,15 @@ public class CutoffCalendarService {
         return isWeekend(date);
     }
 
+    /** The business day before {@code date} on the currency's clearing calendar (market weekend + bank holidays). */
+    @Transactional(readOnly = true)
+    public LocalDate previousBusinessDay(String currency, LocalDate date) {
+        String calendarCode = calendarCodeFor(currency);
+        LocalDate d = date.minusDays(1);
+        while (isHoliday(calendarCode, d)) d = d.minusDays(1);
+        return d;
+    }
+
     /**
      * Apply the active market profile's weekend rule.
      * SAT_SUN — global default (UK/EU/US/SG/UAE post-2022).

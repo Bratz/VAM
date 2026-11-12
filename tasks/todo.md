@@ -1,5 +1,189 @@
 # Active Work / Status Tracker
 
+## Planned: Bank statement intake (spec: docs/specs/bank-statement-intake.md, decisions D1–D8)
+Phases in order, reported after each; commit and push only when the user says so. Statements are whole documents, not
+rows, so they get their own intake service and log; the row-based File Ingest Pipeline only displays the log.
+Plan defaults the spec left open (say if wrong): a statement for an account fed by CORE_BANKING is stored but does
+not overwrite its balance (the core banking system stays the source there; flagged "statement for a CBS-fed account");
+break flag = opening booked ≠ the previous applied end-of-day closing booked (R8, continuity) only; closing booked − the
+shadow's bank balance just before applying is kept as an informational `differenceToPlatform` (revised in Phase 3: on
+an external account that difference is just the bank's own day movements, so flagging it marked nearly every statement).
+
+### Phase 1 — parsers (D1)
+- [x] 1.1 One normalised model: account (IBAN, else account number + BIC), currency, kind END_OF_DAY / INTRADAY,
+      statement id, sequence/page, statement date, opening/closing booked, closing available, interim balance, lines
+      (value date, booking date, amount, credit/debit, bank ref, end-to-end id, remittance text).
+- [x] 1.2 MT940 / MT942 parser (:20: :25: :28C: :60F/M: :61: :86: :62F/M: :64: :65: / MT942 :34F: :13D: :90D/C:),
+      tolerant of bank variants (optional tags, multi-line :86:, structured ?20.. subfields, several statements per
+      file, {1:}{2:}{4:} SWIFT envelope or bare).
+- [x] 1.3 camt.053 / camt.052 parser (Stmt/Rpt, Bal Tp CLBD/CLAV/OPBD/PRCD/ITBD, Ntry + NtryDtls/TxDtls, several
+      statements per file, namespaces .001.02–.001.08).
+- [x] 1.4 Tests with sample files per format and variant (golden normalised output).
+
+Phase 1 done: `com.bank.vam.statement.parse` — `StatementParser.parse(byte[], fileName)` → `ParseResult` (statements +
+errors; a statement error carries its 1-based index and id, a file error has none), format from content. Model
+`ParsedStatement` / `ParsedLine` (records; signed balances, positive line amounts + C/D + reversal flag, currency
+scale enforced — extra decimals are an error). `MtParser` + `Mt86` (German ?NN, SWIFT /EREF/ /REMI/, SEPA EREF+/KREF+/SVWZ+),
+`CamtParser` on the hardened `collections.IsoXml` (made public; + `parse(byte[])`, `child(...)` direct-child chain).
+Not handled (ponytail comments): :65: forward available, :21:, statement-level :86:, entry status BOOK/PDNG/INFO, camt
+OPAV/FWAV, account number with glued currency, :13D:/CreDtTm offsets (local time kept). 11 tests, samples in
+`backend/src/test/resources/statements/`. For Phase 2: MT942 has no balances (only :90D/C: totals) unless the bank adds
+:62:/:64:; intraday available = interimAvailable ?: closingAvailable. Duplicate key = account (iban ?: bic+accountNumber)
++ format kind + statementId + sequenceNumber/pageNumber + statementDate + closingBooked (intraday: reportedAt instead).
+
+### Phase 2 — intake service and effects (R3–R13, D3, D4, D8)
+- [x] 2.1 Entities/tables (ddl-auto): `bank_statement_files`, `bank_statements`, `bank_statement_lines` (spec §4).
+- [x] 2.2 Account matching (IBAN, else account number + BIC) among physical accounts → their shadow; currency check;
+      unknown/mismatch → that statement REFUSED with reason, the rest of the file proceeds.
+- [x] 2.3 Duplicates (account + statement id/sequence + date + closing), sequence gaps, opening ≠ previous closing,
+      older-than-latest → flags (R5–R8).
+- [x] 2.4 End of day (D4): shadow bankBalance / bankAvailableBalance / as-of from closing booked / available, physical
+      account follows; break recorded; `shadow_balance_snapshot` upsert for the statement date (older statements:
+      snapshot only, balance untouched).
+- [x] 2.5 Intraday (D8): available/interim + as-of only, lines PROVISIONAL; the day's end-of-day statement supersedes
+      them (same bank ref → SUPERSEDED, others dropped).
+- [x] 2.6 Tests: acceptance 1–5, 8 of the spec on the service.
+
+Phase 2 done (768 tests): `com.bank.vam.statement` — entities `BankStatementFile` / `BankStatement` / `BankStatementLine`
+(+ repositories; UUID columns, no JPA relations, ddl-auto, no migration). Entry point
+`StatementIntakeService.intake(byte[], fileName, Channel INBOX|API)` → `IntakeResult` (fileId, file status PROCESSED /
+FAILED + error, applied / duplicates / refused counts, `StatementResult` per statement: status, reason, gap / breakFlag /
+differenceToPlatform / older / cbsFed). Not @Transactional itself: the file row is saved first, each statement then runs in its
+own REQUIRES_NEW `TransactionTemplate`; one that throws is stored REFUSED "not applied: …". Unreadable statements →
+REFUSED rows; unreadable file → file FAILED, no statement rows. Matching: IBAN (`findByIban`), else `findByAccountNumber`
+(unique), BIC must be `sameBank` when both sides have one (statement without BIC: account number alone), no corporate
+scope (the system submits). No shadow (PHYSICAL_MIRROR by `linkedPhysicalAccountId`) → REFUSED. Duplicate key = matched
+physical account id + kind + statementId + sequence + page + date + closing booked (intraday: reportedAt), checked against
+APPLIED rows only, so a refused statement re-sent later is taken. Previous (gap, opening break) = latest APPLIED of the
+same kind with an earlier date; older = before the latest APPLIED end-of-day date (intraday: on or before). CBS-fed =
+physical data source CORE_BANKING or INTERNAL_API (both map to the CORE_BANKING shadow source): status APPLIED + cbsFed,
+lines FINAL, no balance / snapshot. End of day sets shadow bankBalance / bankAvailableBalance (CLAV else CLBD) / as-of
+(statement date 23:59:59) and also the shadow's ledger current / available (as a refresh does), physical current /
+ledger / available / balanceAsOf / sync SYNCED, snapshot upsert (effective = available − committed; older: available).
+Intraday: available = ITAV ?: CLAV ?: ITBD (an MT942 with only :90: totals moves nothing), as-of = :13D:; lines
+PROVISIONAL (SUPERSEDED at once when its day already has an end-of-day statement). An applied end-of-day statement marks
+ALL provisional lines of the account up to its date SUPERSEDED (kept, not deleted; no bank-reference comparison needed).
+Not done (ponytail comments): duplicate key not a unique index (one file at a time); page 2+ not opening-checked;
+`lastBalanceRefreshAt/Status` untouched (Phase 4). Revised at the start of Phase 3: the break flag comes from the
+continuity check (R8) alone; the closing − prior-shadow-balance difference (was `breakAmount`, set the flag too, so nearly
+every external statement flagged) is now `differenceToPlatform` (column `difference_to_platform`), informational only.
+
+### Phase 3 — automatic channels (D2, D7)
+- [x] 3.1 Inbox poller: `vam.statements.inbox` (+ cadence, default 5 min; disabled when unset), file → intake →
+      move to `processed/` or `failed/` (reason file beside it); one file at a time, idempotent on re-drop.
+- [x] 3.2 `POST /api/v1/statements/intake` (raw file body or multipart; system callers only — service credentials
+      where sign-in is on), same service, returns the per-statement result.
+- [x] 3.3 Alert bank operations (existing NotificationService) on an unreadable file or refused statements.
+- [x] 3.4 OCI: `deploy/oci/docker-compose.yml` volume for the inbox (+ env var), documented.
+
+Phase 3 done: `StatementInbox` — `vam.statements.inbox` (env `VAM_STATEMENTS_INBOX`, blank by default = off) polled every
+`vam.statements.poll-ms` (env `VAM_STATEMENTS_POLL_MS`, default 300000, fixed delay, under the `vam.scheduling.enabled`
+master switch); regular files sorted by name, one at a time, skipping names starting `.` or ending `.tmp` / `.part`;
+taken in → `processed/`, file FAILED or exception → `failed/` + `<name>.reason.txt`; a name clash gets a
+`.yyyyMMddHHmmssSSS` suffix; a file that cannot be moved stays and is taken in again (duplicates). `StatementIntakeController`
+`POST /api/v1/statements/intake`: raw body (octet-stream / text/plain / application/xml / text/xml; name from `?fileName=`
+or `X-File-Name`, else "statement") or multipart `file`; returns `ApiResponse<IntakeResult>` (200 also for a FAILED file —
+the status is in the result). Auth: the backend has no role model or sign-in today (SecurityConfig permitAll; the
+inbound ISO endpoints are open the same way), so the endpoint is open like them — `ponytail:` note names the upgrade
+(service credentials / client-credentials scope on this path when sign-in is turned on); no screen calls it (D7). Alerts:
+in `StatementIntakeService` itself, so both channels raise them — one `SYSTEM_ALERT` per file via
+`NotificationService.notifyOnce` with corporateId null (only the bank's all-corporates bell shows it), ERROR for a FAILED
+file, WARNING for refused statements (counts + statement id — reason per refused one), referenceId = file id, no action
+link yet. OCI: env `VAM_STATEMENTS_INBOX=/data/statements-inbox` + named volume `statements_inbox`; the root Dockerfile
+creates `/data/statements-inbox` owned by appuser so the fresh volume is writable (a mount point missing from the image
+comes up root-owned). Delivering files into it on the VM: the volume's host path or `docker compose cp`. For Phase 5: the
+alert's action link (`actionUrl`) once the intake log has a page; no controller test (no MockMvc pattern in the repo).
+
+### Phase 4 — freshness (R14, D6)
+- [x] 4.1 BalanceRefreshService skips statement-sourced shadows (no more "not connected" stamps every 15 min).
+- [x] 4.2 Stale = no END_OF_DAY statement for the last business day (weekends skipped); flag on the shadow.
+
+Phase 4 done (778 tests): skipped sources = `BalanceDataSource.statementFed()` — SWIFT_MT940 (physical MT940 / camt.053),
+SWIFT_MT942 (MT942 / camt.052), HOST_TO_HOST (H2H / SFTP_IMPORT); OPEN_BANKING / API / MANUAL still go to the stub
+("not connected" stays true there). `BalanceRefreshService`: the scheduled loop counts them as skipped and the private
+`refresh(shadow)` returns their current status untouched, so force-refresh / refresh-if-stale don't stamp them either.
+Intake now stamps `lastBalanceRefreshAt` / `SUCCESS` when a statement moves the shadow's balance (end of day, intraday).
+Physical `/{id}/sync` on a statement-fed account answers "… is updated by bank statements, not a live connection";
+`/sync-all` names it in its message. Stale (D6), on read, nothing stored: `StatementFreshness.of(shadows, today)` →
+`Map<shadowId, Freshness(lastStatementDate, stale)>` (statement-fed only; one grouped query `latestDates`), stale =
+no APPLIED END_OF_DAY statement dated ≥ `CutoffCalendarService.previousBusinessDay(currency, today)` (new: market-profile
+weekend + `bank_holidays` on the currency's clearing calendar — ponytail: stands in for a per-corporate calendar).
+For Phase 5: `MultiBankLiquidityDto.ShadowSummary.stale` now follows D6 for statement-fed shadows (so `staleCount` too)
++ new `lastStatementDate`; `ShadowAccountController.ShadowAccountDto` + `lastStatementDate` / `stale` (null when not
+statement-fed). Jackson drops nulls, so an absent `lastStatementDate` means none. Old FAILED stamps on statement-fed
+shadows stay until their first statement arrives — show `stale`, not the refresh status, for them.
+
+### Phase 5 — screens (R2a, R11, R15, R16)
+- [x] 5.1 Intake log read-only: in the File Ingest Pipeline list as source "Bank (automatic)" if that is a small
+      adapter over `bank_statement_files`, else a "Bank statements" tab on the Bank Accounts page — pick the smaller.
+- [x] 5.2 Account (physical / shadow) view: statement lines newest first with their statement, flags (gap, break,
+      stale, CBS-fed).
+- [x] 5.3 Multi-bank liquidity: per account balance, as-of, source, stale/gap/break flags.
+- [x] 5.4 No upload screen anywhere (D7).
+
+Phase 5 done (778 tests; tsc + lint clean): reads on `StatementIntakeController` — `GET /api/v1/statements/files?limit=50`
+(max 200, newest first, each file with its statements in file order: entity JSON, nulls dropped) and
+`GET /api/v1/statements/lines?physicalAccountId=` (the account's last 30 APPLIED statements newest first + their lines,
+max 500, value date desc; refused/duplicate ones live in the log); ponytail notes on both caps and on the log having no
+corporate scope (no role model yet). Frontend `services/statementApi.ts` + `components/statements/Statements.tsx`
+(`StatementIntakeLog`, `AccountStatementLines`, shared flag badges Intraday / Gap / Break / Older / Core banking fed).
+5.1: a read-only "Bank (automatic)" card on the File Ingest Pipeline page under Recent Uploads (shown while no upload
+job is open), each file expandable to its statements (account, id, date, status, reason, flags) — not an adapter into
+the jobs list: a job opens a stage stepper / staged rows / FX release built around `IngestJob`, which a statement file
+has none of, so mapping it would be the bigger change; the card keeps R2a / acceptance 9 ("listed as Bank (automatic)
+in the File Ingest Pipeline") literal, and the alert's `actionUrl` is now `file-ingest` ("Open intake log").
+5.2: Bank Accounts → account details modal: statement-fed shadows read "Updated by bank statements · last statement
+<date>" and the Stale badge follows `stale` (D6) instead of the 1-hour live rule a 23:59 statement as-of always tripped;
+below it the account's statements (date, id, closing, flags) each with its lines (value date, FINAL / PROVISIONAL /
+SUPERSEDED, signed amount, reference, details). Also fixed there: the modal read `balanceDataSource` /
+`lastSyncStatus`, which ShadowAccountDto never sends (it sends `dataSource`), so the source line was always blank.
+5.3: `ShadowSummary` + `bankBalanceAt`; for statement-fed shadows `lastBalanceRefreshStatus` is now STALE / SUCCESS from
+the statement rule (so an old stub FAILED stamp no longer shows or counts under Failed / Never chips); `FreshnessPill`
+(all four per-account tables) adds a caption: source · as of, or "Last statement <date> / none yet" when statement-fed.
+Gap/break per account skipped on liquidity (needs a per-shadow latest-statement query; they show on the account view
+and in the log). 5.4: grep — nothing in `frontend/src` references `/statements/intake`; the only statement calls are the
+two GETs above.
+
+### Phase 6 — verification
+- [x] 6.1 Spec acceptance 1–10 as tests; full suite; typecheck.
+- [x] 6.2 Localhost: drop MT940 + camt.053 + MT942 sample files (for real external demo accounts, e.g. Helios /
+      Albion / Mercator at Chase / Lloyds / Deutsche) into the inbox and post one via the endpoint; check balances,
+      snapshots, lines, flags, duplicates, the log; back up and restore data.
+- [ ] 6.3 vam-five: post sample statements via the intake endpoint after deploy (inbox volume optional there); demo
+      walkthrough note.
+
+Phase 6 done (6.1, 6.2; 781 tests, tsc + lint clean): acceptance → tests: 1 `StatementIntakeServiceTest.acceptance1_*`
++ `MultiBankLiquidityViewServiceTest` (row shows the shadow's bank balance, assertion added); 2 `acceptance2_*` (both);
+3 `acceptance3_*` (inbox then API → duplicate); 4 `acceptance4_*`; 5 `acceptance5_*` + `unreadableStatementsRefused_*`;
+6 `StatementFedRefreshSkipTest` + `StatementFreshnessTest`; 7 new `StatementIntakeControllerTest` (lines with their
+statement); 8 `acceptance8_*`; 9 `StatementInboxTest` + `acceptance3_*`; 10 grep — no `/statements/intake` caller in
+`frontend/src`, no STATEMENTS upload domain (the "Statements" nav page is the pre-existing VA statement generator).
+Defect fixed: an MT940 `:25:` IBAN failing mod-97 is read as an account number, so it never matched the account
+stored with that IBAN — 12 of the 15 statement-fed demo accounts have such IBANs (US33BOFA…, DE89…3001, SA10…, AE07…,
+GB29…), only camt matched them. `StatementIntakeService.take` now falls back to `findByIban(accountNumber)`; test
+`mt940IbanFailingCheckDigits_stillMatchesTheAccountStoredWithIt`.
+Live (own backend on 8099, UK profile, real Postgres; scheduling off, `StatementInbox.poll()` driven every 10 s by a
+scratch launcher so no sweeps / pool runs / refreshes ran twice beside the user's 8053; Vite on 3099): Helios NY at
+BofA (8765432101), Mercator Brands at Commerzbank (0070066678002), Al Mawarid at SNB (CORE_BANKING). Inbox: MT940
+Helios 11 Nov → shadow + physical 6,219,999.50 / avl 6,200,000 / as-of 11-11 23:59:59, snapshot 11-11, FINAL lines;
+camt.053 Mercator + unknown IBAN → 1 applied, 1 refused, WARNING alert; garbage → `failed/` + reason file, ERROR alert;
+same camt re-dropped → duplicate + refused, `processed/` name clash got the timestamp suffix. API: MT942 Helios 12 Nov
+10:30 → available 6,309,999.50 + as-of 10:30, booked untouched, 2 PROVISIONAL lines; then the 12 Nov MT940 via the
+inbox → booked 6,337,499.50, snapshot 11-12, both provisional lines SUPERSEDED (the one it doesn't repeat too); 5 Nov
+MT940 → older, 11-05 snapshot 6,000,000, balance untouched; Mercator MT940 :28C: 50→52 opening 2,104,000 vs 2,105,000
+→ gap + break, applied; Al Mawarid → APPLIED cbsFed, balance and snapshots untouched; Helios 11 Nov re-posted →
+DUPLICATE. GET /files and /lines, shadow DTO (`lastStatementDate`, `stale` false), liquidity summary (2 fresh, 13
+statement-fed stale "none yet"), `/sync` on Helios ("updated by bank statements"); UI: File Ingest "Bank (automatic)"
+card with Gap / Break badges, account modal "Updated by bank statements · last statement 12 Nov 2026" with lines per
+statement (Intraday / SUPERSEDED / Older), liquidity By Bank "Last statement" captions. All four touched tables
+restored from bk6_* copies (zero-row diff both ways), statement rows and the 4 alerts deleted, no other table touched.
+For 6.3 (vam-five, UAE data — re-check the accounts there): post for accounts whose PHYSICAL data source is not
+CORE_BANKING / INTERNAL_API, or the statement is stored as "Core banking fed" and moves nothing — locally Al Mawarid
+SNB / Riyad / Al Rajhi and Al Mawarid Gulf FZE (EBILAEAD) are CORE_BANKING although their shadows say SWIFT_MT940.
+Good picks: Helios NY BofA 8765432101 (USD), Mercator Brands Commerzbank DE89370400440532013001 (EUR, camt or MT940),
+Albion Barclays 23456702 (GBP). Opening balance of the first statement = the account's current bank balance, statement
+date = last business day (else it shows stale). Needs this fix deployed for MT940s carrying those demo IBANs.
+
 ## ✅ In-house FX for POBO and COBO (spec: docs/specs/ihb-fx.md, decisions D1–D8)
 Same shape as POBO/COBO: phases in order, reported after each; commit and push only when the user says so.
 Design: back-to-back (D3) = convert on treasury's **settle-currency** account with the FX module that already exists

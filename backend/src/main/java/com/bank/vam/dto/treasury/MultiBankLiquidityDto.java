@@ -75,9 +75,14 @@ public class MultiBankLiquidityDto {
         private BigDecimal bankBalanceCommitted;
         private BigDecimal bankBalanceEffective;
         private String balanceDataSource;
+        /** As-of of the bank balance (statement-fed: the statement's date / intraday report time). */
+        private LocalDateTime bankBalanceAt;
         private LocalDateTime lastBalanceRefreshAt;
         private String lastBalanceRefreshStatus;
+        /** Statement-fed: no end-of-day statement for the last business day (D6); otherwise: refresh threshold passed. */
         private boolean stale;
+        /** Latest applied end-of-day statement date; null when none or not statement-fed. */
+        private java.time.LocalDate lastStatementDate;
     }
 
     /** One day's aggregated bank balance for a currency, for the liquidity trend chart. */

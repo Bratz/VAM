@@ -11,6 +11,8 @@ import com.bank.vam.entity.treasury.ShadowBalanceSnapshot;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
+import com.bank.vam.statement.StatementFreshness;
+import com.bank.vam.statement.StatementFreshness.Freshness;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +30,8 @@ import java.util.stream.Collectors;
  *
  * Aggregates PHYSICAL_MIRROR shadow VAs by (bank BIC, currency) and tags
  * home-bank-held buckets distinctly from external ones. Computes staleness
- * relative to the configured freshness threshold.
+ * relative to the configured freshness threshold; a statement-fed shadow is
+ * stale by the statement rule instead (spec D6, {@link StatementFreshness}).
  */
 @Slf4j
 @Service
@@ -40,6 +43,7 @@ public class MultiBankLiquidityViewService {
     private final MultiBankProperties multiBankProperties;
     private final LegalEntityRepository legalEntityRepository;
     private final ShadowBalanceSnapshotRepository snapshotRepository;
+    private final StatementFreshness statementFreshness;
 
     @Transactional(readOnly = true)
     public LiquiditySummary getSummary(UUID corporateId) {
@@ -72,19 +76,17 @@ public class MultiBankLiquidityViewService {
         int externalShadowCount = 0;
         int staleCount = 0;
         int neverCount = 0;
+        Map<UUID, Freshness> freshness = statementFreshness.of(shadows, LocalDate.now());
 
         // Group: bankBic → currency → list of shadows
         Map<String, Map<String, List<ShadowSummary>>> grouped = new LinkedHashMap<>();
 
         for (VirtualAccount s : shadows) {
-            ShadowSummary summary = toShadowSummary(s, entitiesById);
+            ShadowSummary summary = toShadowSummary(s, entitiesById, freshness.get(s.getId()));
             if (summary.isHomeBankHeld()) homeShadowCount++;
             else externalShadowCount++;
             if (summary.isStale()) staleCount++;
-            if (s.getLastBalanceRefreshStatus() == null
-                    || s.getLastBalanceRefreshStatus() == BalanceRefreshStatus.NEVER) {
-                neverCount++;
-            }
+            if (BalanceRefreshStatus.NEVER.name().equals(summary.getLastBalanceRefreshStatus())) neverCount++;
 
             String bic = summary.getBankBic() != null ? summary.getBankBic() : "UNKNOWN";
             grouped.computeIfAbsent(bic, k -> new LinkedHashMap<>())
@@ -152,7 +154,7 @@ public class MultiBankLiquidityViewService {
                 .build();
     }
 
-    private ShadowSummary toShadowSummary(VirtualAccount s, Map<UUID, LegalEntity> entitiesById) {
+    private ShadowSummary toShadowSummary(VirtualAccount s, Map<UUID, LegalEntity> entitiesById, Freshness freshness) {
         String homeBic = homeBankProperties.getBic();
         boolean isHome = s.isHomeBankHeld(homeBic);
         LegalEntity entity = s.getOwningEntityId() != null ? entitiesById.get(s.getOwningEntityId()) : null;
@@ -176,10 +178,16 @@ public class MultiBankLiquidityViewService {
                 .bankBalanceCommitted(s.getBankBalanceCommitted())
                 .bankBalanceEffective(s.getBankBalanceEffective())
                 .balanceDataSource(s.getBalanceDataSource() != null ? s.getBalanceDataSource().name() : null)
+                .bankBalanceAt(s.getBankBalanceAt())
                 .lastBalanceRefreshAt(s.getLastBalanceRefreshAt())
-                .lastBalanceRefreshStatus(s.getLastBalanceRefreshStatus() != null
+                // Statement-fed: the statement rule (D6) is its refresh status — an old FAILED stamp from the
+                // live-connection stub it was polled by before is not the account's state.
+                .lastBalanceRefreshStatus(freshness != null
+                        ? (freshness.stale() ? BalanceRefreshStatus.STALE : BalanceRefreshStatus.SUCCESS).name()
+                        : s.getLastBalanceRefreshStatus() != null
                         ? s.getLastBalanceRefreshStatus().name() : BalanceRefreshStatus.NEVER.name())
-                .stale(isStale(s))
+                .stale(freshness != null ? freshness.stale() : isStale(s))
+                .lastStatementDate(freshness != null ? freshness.lastStatementDate() : null)
                 .build();
     }
 

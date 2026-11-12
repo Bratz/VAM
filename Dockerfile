@@ -42,7 +42,10 @@ COPY --from=build /app/target/*.jar app.jar
 COPY database/dump/vam_db_full.sql.gz /app/seed/vam_db_full.sql.gz
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY backend/sandbox-run.sh /app/sandbox-run.sh
-RUN chown -R appuser:appgroup /app && chmod +x /app/docker-entrypoint.sh /app/sandbox-run.sh
+# /data/statements-inbox: the bank statement inbox (deploy/oci volume). Made here so the named volume starts owned by
+# appuser — a mount point missing from the image comes up root-owned and the poller could not move files out of it.
+RUN mkdir -p /data/statements-inbox && chown -R appuser:appgroup /app /data/statements-inbox && \
+    chmod +x /app/docker-entrypoint.sh /app/sandbox-run.sh
 USER appuser
 
 # App default is 8053; most PaaS inject PORT and route to it — honored in the
