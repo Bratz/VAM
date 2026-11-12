@@ -1407,7 +1407,44 @@ export const poolingApi = {
   addMembersBulk: (poolId: string, accountIds: string[]) => apiClient.post<ApiResponse<BulkAddMembersResponse>>(`/pooling/${poolId}/members/bulk`, { accountIds }).then(r => r.data),
   removeMember: (poolId: string, memberId: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${poolId}/members/${memberId}`).then(r => r.data),
   calculateInterest: (poolId: string) => apiClient.post<ApiResponse<CalculateInterestResponse>>(`/pooling/${poolId}/calculate`).then(r => r.data),
+  /** Stored daily runs, newest first (default: the last 31 days). */
+  getRuns: (poolId: string, from?: string, to?: string) =>
+    apiClient.get<ApiResponse<PoolRun[]>>(`/pooling/${poolId}/runs`, { params: { from, to } }).then(r => r.data),
+  /** Runs value dates from..to (before today, at most 92 days); dates already run come back unchanged. */
+  runDates: (poolId: string, from: string, to: string) =>
+    apiClient.post<ApiResponse<PoolRun[]>>(`/pooling/${poolId}/runs`, null, { params: { from, to } }).then(r => r.data),
 };
+
+/** A pool's daily run for one value date. Interest is signed: credit +, debit −. */
+export interface PoolRun {
+  id: string;
+  valueDate: string;
+  status: 'CALCULATED' | 'POSTED';
+  poolNet: number;
+  interestRate: number;
+  pooledInterest: number;
+  standaloneInterest: number;
+  benefit: number;
+  residue: number;
+  creditRate: number;
+  debitRate: number;
+  dayCount: string;
+  floorBreach: boolean;
+  limitBreaches: number;
+  snapshotsMissing: number;
+  lines: PoolRunLine[];
+}
+
+export interface PoolRunLine {
+  accountId: string;
+  accountNumber: string;
+  balance: number;
+  balanceAsOf?: string;
+  snapshotMissing: boolean;
+  standaloneInterest: number;
+  allocatedInterest: number;
+  debitLimitBreach: boolean;
+}
 
 // ============================================================================
 // NETTING API

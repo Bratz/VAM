@@ -43,6 +43,7 @@ public class NotionalPoolService {
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final InterestConfigurationService interestConfigurationService;
     private final InterestConfigurationRepository interestConfigurationRepository;
+    private final PoolInterestCalculationRepository runRepository;
 
     /** An old pool's debit rate when only its free-typed credit rate is known: credit + this, % a year (a default). */
     static final BigDecimal DEFAULT_DEBIT_SPREAD = new BigDecimal("2.00");
@@ -522,6 +523,9 @@ public class NotionalPoolService {
                 .orElseThrow(() -> new ResourceNotFoundException("Notional pool not found: " + id));
         if (pool.getStatus() == NotionalPool.PoolStatus.ACTIVE) {
             throw new BusinessException("Cannot delete active pool. Close it first.");
+        }
+        if (runRepository.existsByPoolId(id)) {
+            throw new BusinessException("Pool " + pool.getPoolReference() + " has daily runs; they are history, so it stays (closed)");
         }
         poolRepository.delete(pool);
         // Its rate config belongs to it alone (target POOL, target id = the pool); left behind it stayed ACTIVE on the

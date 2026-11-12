@@ -235,16 +235,39 @@ Interest Configuration page; POOL-ALBN-GBP and POOL-MERC-EUR keep members of oth
 (API only); AddMember has no debit-limit field (set it in Edit).
 
 ### Phase 3 — daily runs (D4, D5, D6, R9, R13)
-- [ ] 3.1 `pool_interest_calculations` (use the existing entity, drop its approval statuses' use per D11) + new
+- [x] 3.1 `pool_interest_calculations` (use the existing entity, drop its approval statuses' use per D11) + new
       `pool_interest_lines` (member, EOD balance, snapshot date used, standalone interest, allocated interest).
-- [ ] 3.2 Run(pool, valueDate): members' EOD balances from shadow_balance_snapshot (as_of = value date, else the last
+- [x] 3.2 Run(pool, valueDate): members' EOD balances from shadow_balance_snapshot (as_of = value date, else the last
       earlier one, flagged); pooled interest on the net (credit/debit rate); standalone per member; benefit = pooled −
       Σ standalone; allocation pro rata (credit interest to members in credit by credit balance; debit interest to
       members in debit by debit balance), residue to the header; limit/floor breaches flagged. Idempotent per
       (pool, date) via a unique constraint.
-- [ ] 3.3 Scheduler after end of day (one run per active pool for yesterday) + manual run for a date range (catch-up).
-- [ ] 3.4 Tests: acceptance 2 and 3 of the spec (the +1,000,000 / −400,000 example), pro rata both signs, residue,
+- [x] 3.3 Scheduler after end of day (one run per active pool for yesterday) + manual run for a date range (catch-up).
+- [x] 3.4 Tests: acceptance 2 and 3 of the spec (the +1,000,000 / −400,000 example), pro rata both signs, residue,
       missing snapshot, re-run unchanged.
+
+Phase 3 live-checked (12 Nov): V51 applied; NP-0001 and POOL-HEL-USD run 4–10 Nov (7 runs each, rates + day count
+stored), re-run returns the same 7, history OK, today refused; HEL lines used 5/6/9/10 Nov snapshots and Friday's for
+the weekend (flagged), 1 Oct for the 4th (flagged); Daily runs section in the pool detail shows them. Found and fixed:
+the benefit was pooled − Σ rounded standalone, so three members in credit at one rate showed −0.01 — now from the
+engine's unrounded (4 dp) figures, rounded once (test with HEL's balances). Live runs deleted after. 720 tests.
+Phase 3 done (12 Nov, not yet live-checked): `PoolRunService` + `PoolRunScheduler`. A run = `pool_interest_calculations`
+(existing entity reworked: calculation_date = value date, pool_balance = net, gross_interest = pooled interest,
+interest_rate = rate applied to the net; new standalone_interest, benefit, residue, credit_rate, debit_rate (incl.
+penalty), day_count, floor_breach; status CALCULATED → POSTED in Phase 4, no approval) + new `pool_interest_lines` (account,
+balance, balance_as_of, snapshot_missing, standalone, allocated, debit_limit_breach). V51: unique (pool_id,
+calculation_date) `uq_pool_calc_pool_date` (also on the entity for fresh DBs), drops approved_by/approved_at/net_interest
+(table was empty, no status CHECK). Balance = `shadow_balance_snapshot.bank_balance` (the bank's ledger balance as last
+refreshed that day; not bank_balance_effective = available − committed sweeps, a sweep-headroom figure) for as_of = value
+date, else the latest earlier (flagged), else 0 (flagged). Members on the date: joined ≤ date < left. Amounts to the cent,
+signed (credit +, debit −); shares rounded toward zero, residue to the header (largest sharer if the header was not a
+member that day). Re-run returns the stored run. Scheduler `vam.pooling.run-cron` (default 00:45) runs ACTIVE pools for
+yesterday; POST/GET /api/v1/pooling/{id}/runs?from=&to= (before today, ≤ 92 days; dates with no member get no run).
+Pool's last_calculation_date follows the runs. Deleting a pool with runs is refused. Pool detail: "Daily runs" (last 31
+days: date, net, pooled, benefit, flags) + Run dates. 719 tests (+9), tsc clean.
+Left for 4+: posting (status, posted_at, a posted ref on the line); correction = new run + reversal (unique (pool, date)
+means the corrected run needs either a superseded flag or a run version in the key); tiers are not copied onto the run;
+retired /calculate endpoint and `calculateInterest` in api.ts still present; no per-member line view in the UI.
 
 ### Phase 4 — month-end posting (D5, D11)
 - [ ] 4.1 Month end (scheduler on the 1st for the previous month, + manual): Σ allocated per member → one interest

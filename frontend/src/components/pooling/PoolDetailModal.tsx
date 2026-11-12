@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle } from 'lucide-react';
-import { Button, Badge, StatusIconBadge } from '../ui';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play } from 'lucide-react';
+import { Button, Badge, Input, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
-import { NotionalPool } from '../../services/api';
+import { NotionalPool, PoolRun, poolingApi } from '../../services/api';
 import toast from 'react-hot-toast';
 import { VirtualizedAccountList, VirtualizedAccountRow } from '../va/VirtualizedAccountList';
 
@@ -200,6 +200,8 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
         </div>
       )}
 
+      <DailyRuns pool={pool} />
+
       {/* Pool Info Footer */}
       <div className="mt-6 pt-4 border-t grid grid-cols-3 gap-4 text-body-sm">
         <div>
@@ -228,5 +230,102 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
         <Button variant="outline" onClick={onClose}>Close</Button>
       </div>
     </Modal>
+  );
+};
+
+/** Local YYYY-MM-DD of yesterday: the latest date a run can take (today's balances are not final). */
+const yesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toLocaleDateString('en-CA');
+};
+
+/** The pool's stored daily runs (last 31 days) and a catch-up run for a date range. */
+const DailyRuns: React.FC<{ pool: NotionalPool }> = ({ pool }) => {
+  const [runs, setRuns] = useState<PoolRun[]>([]);
+  const [from, setFrom] = useState(yesterday);
+  const [to, setTo] = useState(yesterday);
+  const [running, setRunning] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setRuns((await poolingApi.getRuns(pool.id)).data ?? []);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load daily runs');
+    }
+  }, [pool.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const runDates = async () => {
+    setRunning(true);
+    try {
+      const done = (await poolingApi.runDates(pool.id, from, to)).data ?? [];
+      toast.success(`${done.length} run${done.length === 1 ? '' : 's'} for ${from}${to !== from ? ` to ${to}` : ''}`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message || 'Run failed');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const money = (v: number) => formatCurrency(v ?? 0, pool.poolCurrency);
+
+  return (
+    <div className="mt-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+        <div>
+          <h4 className="font-medium text-primary-900 dark:text-neutral-50">Daily runs</h4>
+          <p className="caption">End-of-day balances; pooled interest on the net. Benefit = pooled − standalone. Not yet posted.</p>
+        </div>
+        <div className="flex items-end gap-2">
+          <Input id="pool-run-from" label="From" type="date" value={from} max={yesterday()} onChange={(e) => setFrom(e.target.value)} />
+          <Input id="pool-run-to" label="To" type="date" value={to} max={yesterday()} onChange={(e) => setTo(e.target.value)} />
+          <Button size="sm" variant="outline" onClick={runDates} disabled={running || !from || !to}
+                  leftIcon={running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}>
+            Run dates
+          </Button>
+        </div>
+      </div>
+      {runs.length === 0 ? (
+        <p className="caption">No runs in the last 31 days.</p>
+      ) : (
+        <div className="max-h-64 overflow-y-auto border border-edge rounded-lg">
+          <table className="w-full text-body-sm">
+            <thead className="text-neutral-500 dark:text-neutral-400 text-left sticky top-0 bg-surface-card">
+              <tr>
+                <th className="px-3 py-2 font-medium">Value date</th>
+                <th className="px-3 py-2 font-medium text-right">Net</th>
+                <th className="px-3 py-2 font-medium text-right">Pooled interest</th>
+                <th className="px-3 py-2 font-medium text-right">Benefit</th>
+                <th className="px-3 py-2 font-medium">Flags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map(r => (
+                <tr key={r.id} className="border-t border-edge">
+                  <td className="px-3 py-2 font-mono whitespace-nowrap">{r.valueDate}</td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{money(r.poolNet)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap"
+                      title={`${r.interestRate}% ${r.dayCount} (credit ${r.creditRate}% / debit ${r.debitRate}%)`}>
+                    {money(r.pooledInterest)}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-success-700 dark:text-success-300">{money(r.benefit)}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {r.floorBreach && <Badge variant="error" size="sm">Floor breach</Badge>}
+                      {r.limitBreaches > 0 && <Badge variant="error" size="sm">{r.limitBreaches} over limit</Badge>}
+                      {r.snapshotsMissing > 0 && <Badge variant="warning" size="sm">{r.snapshotsMissing} earlier balance{r.snapshotsMissing === 1 ? '' : 's'}</Badge>}
+                      {r.status === 'POSTED' && <Badge variant="success" size="sm">Posted</Badge>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 };

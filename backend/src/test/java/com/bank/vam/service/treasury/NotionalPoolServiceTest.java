@@ -54,7 +54,8 @@ class NotionalPoolServiceTest {
         home.setBic(HOME_BIC);
         service = new NotionalPoolService(pools, members, vas, mock(PhysicalAccountRepository.class), home,
                 mock(AuditLogService.class), mock(MarketProfileProperties.class),
-                new InterestConfigurationService(configs), configs);
+                new InterestConfigurationService(configs), configs,
+                mock(com.bank.vam.repository.treasury.PoolInterestCalculationRepository.class));
         when(pools.save(any())).thenAnswer(i -> {
             NotionalPool p = i.getArgument(0);
             if (p.getId() == null) p.setId(UUID.randomUUID());

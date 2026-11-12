@@ -162,6 +162,16 @@ public class NotionalPoolDto {
         private List<MemberInterestAllocation> memberAllocations;
     }
 
+    /** A daily run (spec R10). Interest signed: credit +, debit −. */
+    public record Run(UUID id, LocalDate valueDate, String status, BigDecimal poolNet, BigDecimal interestRate,
+                      BigDecimal pooledInterest, BigDecimal standaloneInterest, BigDecimal benefit, BigDecimal residue,
+                      BigDecimal creditRate, BigDecimal debitRate, String dayCount, boolean floorBreach,
+                      int limitBreaches, int snapshotsMissing, List<RunLine> lines) {}
+
+    public record RunLine(UUID accountId, String accountNumber, BigDecimal balance, LocalDate balanceAsOf,
+                          boolean snapshotMissing, BigDecimal standaloneInterest, BigDecimal allocatedInterest,
+                          boolean debitLimitBreach) {}
+
     @Data
     public static class MemberInterestAllocation {
         private UUID memberId;

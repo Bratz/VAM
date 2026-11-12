@@ -15,6 +15,9 @@ public interface ShadowBalanceSnapshotRepository extends JpaRepository<ShadowBal
 
     Optional<ShadowBalanceSnapshot> findByShadowVaIdAndAsOf(UUID shadowVaId, LocalDate asOf);
 
+    /** The snapshot for {@code asOf}, else the latest earlier one. */
+    Optional<ShadowBalanceSnapshot> findFirstByShadowVaIdAndAsOfLessThanEqualOrderByAsOfDesc(UUID shadowVaId, LocalDate asOf);
+
     /** Projection for {@link #findTrend}. */
     interface TrendRow {
         LocalDate getAsOf();

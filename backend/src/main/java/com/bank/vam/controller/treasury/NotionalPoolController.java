@@ -3,12 +3,15 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.NotionalPoolDto;
 import com.bank.vam.service.treasury.NotionalPoolService;
+import com.bank.vam.service.treasury.PoolRunService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +22,7 @@ import java.util.UUID;
 public class NotionalPoolController {
 
     private final NotionalPoolService poolService;
+    private final PoolRunService runService;
 
     @GetMapping
     @Operation(summary = "Get all notional pools")
@@ -84,6 +88,22 @@ public class NotionalPoolController {
     @Operation(summary = "Close an active or suspended pool; its members leave")
     public ResponseEntity<ApiResponse<NotionalPoolDto.Response>> closePool(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(poolService.closePool(id), "Pool closed"));
+    }
+
+    @PostMapping("/{id}/runs")
+    @Operation(summary = "Daily runs for value dates from..to (catch-up, at most 92 days, before today); dates already run are returned unchanged")
+    public ResponseEntity<ApiResponse<List<NotionalPoolDto.Run>>> runDates(@PathVariable UUID id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(runService.runRange(id, from, to)));
+    }
+
+    @GetMapping("/{id}/runs")
+    @Operation(summary = "Stored daily runs, newest first (default: the last 31 days)")
+    public ResponseEntity<ApiResponse<List<NotionalPoolDto.Run>>> runs(@PathVariable UUID id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(runService.history(id, from, to)));
     }
 
     @PostMapping("/{id}/calculate")
