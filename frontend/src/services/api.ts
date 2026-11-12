@@ -1274,7 +1274,14 @@ export interface NotionalPool {
   // backfills them from their members' accounts.
   corporateId?: string;
   programId?: string;
+  // Phase 2 structure: one legal entity, a header member, rates from the interest engine, a debit floor.
+  legalEntityId?: string;
+  headerAccountId?: string;
+  interestConfigurationId?: string;
+  poolFloor?: number;
+  rates?: PoolRates;
   targetBalance?: number;
+  /** Retired: a display copy of rates.effectiveCreditRate. */
   interestRate: number;
   interestCalculationMethod: 'DAILY_AVERAGE' | 'MONTH_END' | 'TIER_BASED';
   totalBalance: number;
@@ -1298,8 +1305,26 @@ export interface PoolMember {
   currentBalance: number;
   contributionPercent: number;
   interestAllocation: number;
-  status: 'ACTIVE' | 'SUSPENDED' | 'REMOVED';
+  /** The largest debit balance this member may run; absent = no limit. */
+  debitLimit?: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   joinedDate: string;
+  leftDate?: string;
+}
+
+/** A pool's rates (% a year), held in its InterestConfiguration (target POOL). */
+export interface PoolRates {
+  creditBaseRate?: number;
+  creditSpread?: number;
+  debitBaseRate?: number;
+  debitSpread?: number;
+  dayCountConvention?: string;
+  tierConfig?: string;
+  // Response only
+  effectiveCreditRate?: number;
+  effectiveDebitRate?: number;
+  /** Made up by the application (an old pool's debit rate), not agreed. */
+  systemDefault?: boolean;
 }
 
 export interface CalculateInterestResponse {
@@ -1328,12 +1353,27 @@ export interface CreatePoolRequest {
   // them null and then failed the pickers that filter on them.
   corporateId?: string;
   programId?: string;
+  legalEntityId: string;
+  /** One of members. */
+  headerAccountId: string;
+  poolFloor?: number;
+  rates: PoolRates;
   targetBalance?: number;
-  interestRate: number;
-  interestCalculationMethod: 'DAILY_AVERAGE' | 'MONTH_END' | 'TIER_BASED';
+  interestCalculationMethod?: 'DAILY_AVERAGE' | 'MONTH_END' | 'TIER_BASED';
   effectiveFrom?: string;
   effectiveTo?: string;
-  members?: AddMemberRequest[];
+  members: AddMemberRequest[];
+}
+
+export interface UpdatePoolRequest {
+  poolName?: string;
+  targetBalance?: number;
+  headerAccountId?: string;
+  /** Always applied: null removes the floor. */
+  poolFloor: number | null;
+  rates?: PoolRates;
+  /** Member id -> debit limit; null removes it. */
+  memberDebitLimits?: Record<string, number | null>;
 }
 
 export interface AddMemberRequest {
@@ -1341,6 +1381,7 @@ export interface AddMemberRequest {
   accountNumber: string;
   entityCode: string;
   entityName: string;
+  debitLimit?: number;
 }
 
 interface BulkAddMembersSkip {
@@ -1358,7 +1399,9 @@ export const poolingApi = {
   getActivePools: () => apiClient.get<ApiResponse<NotionalPool[]>>('/pooling/active').then(r => r.data),
   getPoolById: (id: string) => apiClient.get<ApiResponse<NotionalPool>>(`/pooling/${id}`).then(r => r.data),
   createPool: (data: CreatePoolRequest) => apiClient.post<ApiResponse<NotionalPool>>('/pooling', data).then(r => r.data),
-  updatePool: (id: string, data: Partial<CreatePoolRequest>) => apiClient.put<ApiResponse<NotionalPool>>(`/pooling/${id}`, data).then(r => r.data),
+  updatePool: (id: string, data: UpdatePoolRequest) => apiClient.put<ApiResponse<NotionalPool>>(`/pooling/${id}`, data).then(r => r.data),
+  suspendPool: (id: string) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${id}/suspend`).then(r => r.data),
+  closePool: (id: string) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${id}/close`).then(r => r.data),
   deletePool: (id: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${id}`).then(r => r.data),
   addMember: (poolId: string, data: AddMemberRequest) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${poolId}/members`, data).then(r => r.data),
   addMembersBulk: (poolId: string, accountIds: string[]) => apiClient.post<ApiResponse<BulkAddMembersResponse>>(`/pooling/${poolId}/members/bulk`, { accountIds }).then(r => r.data),

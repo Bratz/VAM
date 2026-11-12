@@ -290,11 +290,10 @@ public class SimulatorActivationService {
         if (ccy != null && !ccy.isBlank()) {
             req.setPoolCurrency(ccy);
         }
-        if (p.hasNonNull("poolRatePct")) {
-            req.setInterestRate(p.get("poolRatePct").decimalValue());
-        } else {
-            req.setInterestRate(BigDecimal.ZERO);
-        }
+        // The scenario's one rate is the credit rate; the debit base follows it and the day count the currency's.
+        NotionalPoolDto.Rates rates = new NotionalPoolDto.Rates();
+        rates.setCreditBaseRate(p.hasNonNull("poolRatePct") ? p.get("poolRatePct").decimalValue() : BigDecimal.ZERO);
+        req.setRates(rates);
         if (p.hasNonNull("targetBalance")) {
             req.setTargetBalance(p.get("targetBalance").decimalValue());
         }

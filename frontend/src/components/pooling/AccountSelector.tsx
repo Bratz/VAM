@@ -2,17 +2,21 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, Check, Building2 } from 'lucide-react';
 import { Input, Badge, Skeleton } from '../ui';
 import { cn, formatCompactCurrency } from '../../utils';
-import { virtualAccountsApi, VirtualAccount, AddMemberRequest } from '../../services/api';
+import { multiBankLiquidityApi, ShadowSummary, AddMemberRequest } from '../../services/api';
 
 // ============================================================================
 // ACCOUNT SELECTOR FOR POOL MEMBERS
 // Reusable account picker shared by CreatePoolModal and AddMemberModal.
+// Offers what a pool can take: the corporate's home-bank shadows (PHYSICAL_MIRROR) in the pool's currency and,
+// once chosen, of its legal entity. The backend's membership rule stays authoritative (inactive or already-pooled
+// accounts are refused there).
 // ============================================================================
 export interface AccountSelectorProps {
   selectedAccounts: AddMemberRequest[];
   onSelect: (accounts: AddMemberRequest[]) => void;
   currency: string;
   corporateId?: string;
+  entityId?: string;
   excludeAccountIds?: string[];
 }
 
@@ -21,9 +25,10 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
   onSelect,
   currency,
   corporateId,
+  entityId,
   excludeAccountIds = []
 }) => {
-  const [accounts, setAccounts] = useState<VirtualAccount[]>([]);
+  const [accounts, setAccounts] = useState<ShadowSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -37,7 +42,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
   const lastFetchKeyRef = useRef('');
 
   useEffect(() => {
-    const fetchKey = `${currency}-${corporateId || 'all'}`;
+    const fetchKey = `${currency}-${corporateId || 'all'}-${entityId || 'any'}`;
 
     // Only fetch if dependencies changed or we haven't fetched yet
     if (hasFetchedRef.current && lastFetchKeyRef.current === fetchKey) {
@@ -47,16 +52,12 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
     const fetchAccounts = async () => {
       try {
         setLoading(true);
-        const response = await virtualAccountsApi.getAll();
+        const response = await multiBankLiquidityApi.getSummary(corporateId || undefined);
         if (response.success) {
-          // Filter by currency and corporate
-          const filtered = (response.data || []).filter(acc => {
-            // Match currency (check both currency and currencyCode fields)
-            const currencyMatch = acc.currency === currency || acc.currencyCode === currency;
-            // Match corporate if specified
-            const corporateMatch = !corporateId || acc.corporateId === corporateId;
-            return currencyMatch && corporateMatch;
-          });
+          const filtered = (response.data?.banks || [])
+            .flatMap(b => b.currencies)
+            .flatMap(c => c.shadows)
+            .filter(s => s.homeBankHeld && s.currencyCode === currency && (!entityId || s.owningEntityId === entityId));
           setAccounts(filtered);
           hasFetchedRef.current = true;
           lastFetchKeyRef.current = fetchKey;
@@ -68,37 +69,31 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
       }
     };
     fetchAccounts();
-  }, [currency, corporateId]);
+  }, [currency, corporateId, entityId]);
 
+  const term = searchTerm.toLowerCase();
   const filteredAccounts = accounts.filter(acc =>
     // Exclude already added accounts
-    !stableExcludeIds.includes(acc.id) &&
+    !stableExcludeIds.includes(acc.vaId) &&
     // Apply search filter
-    (acc.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    acc.vaNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    acc.vaName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    acc.accountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    acc.entityCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    acc.corporateName?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (acc.vaNumber?.toLowerCase().includes(term) ||
+    acc.vaName?.toLowerCase().includes(term) ||
+    acc.bankAccountNumber?.toLowerCase().includes(term) ||
+    acc.owningEntityCode?.toLowerCase().includes(term) ||
+    acc.owningEntityName?.toLowerCase().includes(term))
   );
 
-  const toggleAccount = (account: VirtualAccount) => {
-    const isSelected = selectedAccounts.some(a => a.accountId === account.id);
+  const toggleAccount = (account: ShadowSummary) => {
+    const isSelected = selectedAccounts.some(a => a.accountId === account.vaId);
     if (isSelected) {
-      onSelect(selectedAccounts.filter(a => a.accountId !== account.id));
+      onSelect(selectedAccounts.filter(a => a.accountId !== account.vaId));
     } else {
-      // Use correct VirtualAccount field names
-      const accountNumber = account.vaNumber || account.accountNumber || '';
-      const entityName = account.owningEntityName || account.vaName || account.corporateName || 'Unknown Entity';
-      // entityCode is limited to 20 chars in database - use entityCode field or truncate ID
-      const rawEntityCode = account.entityCode || account.owningEntityId || account.corporateId || accountNumber.substring(0, 8);
-      const entityCode = rawEntityCode.substring(0, 20);
-
+      // The backend takes the number and entity code from the account itself; these are display labels.
       onSelect([...selectedAccounts, {
-        accountId: account.id,
-        accountNumber: accountNumber,
-        entityCode: entityCode,
-        entityName: entityName
+        accountId: account.vaId,
+        accountNumber: account.vaNumber,
+        entityCode: (account.owningEntityCode || '').substring(0, 20),
+        entityName: account.owningEntityName || account.vaName || 'Unknown Entity'
       }]);
     }
   };
@@ -139,19 +134,18 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
         {filteredAccounts.length === 0 ? (
           <div className="text-center py-6 body-sm">
             <Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
-            No {currency} accounts available
+            No home-bank {currency} accounts{entityId ? ' of this legal entity' : ''}
           </div>
         ) : (
           filteredAccounts.map(account => {
-            const isSelected = selectedAccounts.some(a => a.accountId === account.id);
-            // Use correct VirtualAccount field names for display
-            const displayName = account.vaName || account.owningEntityName || account.corporateName || 'Unnamed Account';
-            const displayNumber = account.vaNumber || account.accountNumber || account.id;
-            const entityInfo = account.owningEntityName || account.corporateName || '';
+            const isSelected = selectedAccounts.some(a => a.accountId === account.vaId);
+            const displayName = account.vaName || account.owningEntityName || 'Unnamed Account';
+            const displayNumber = account.vaNumber || account.vaId;
+            const entityInfo = account.owningEntityName || '';
 
             return (
               <button
-                key={account.id}
+                key={account.vaId}
                 type="button"
                 onClick={() => toggleAccount(account)}
                 className={cn(
@@ -176,11 +170,9 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                 </div>
                 <div className="text-right">
                   <p className="body-strong">
-                    {formatCompactCurrency(account.availableBalance || 0, currency)}
+                    {formatCompactCurrency(account.bankBalance || 0, currency)}
                   </p>
-                  <Badge variant={account.status === 'ACTIVE' ? 'success' : 'warning'} size="sm">
-                    {account.status}
-                  </Badge>
+                  {account.stale && <Badge variant="warning" size="sm">Stale</Badge>}
                 </div>
               </button>
             );

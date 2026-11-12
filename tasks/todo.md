@@ -197,15 +197,42 @@ Left: suspend/close buttons and api.ts types (`PoolMember.status` 'REMOVED' vs I
 members who left → 5.2; simulator scorer still charges pool fees → 5.4; no un-suspend endpoint.
 
 ### Phase 2 — structure and rates (D1–D3, D7, D8)
-- [ ] 2.1 `notional_pools`: header_account_id (mandatory, a member), legal_entity_id, interest_configuration_id, pool
+- [x] 2.1 `notional_pools`: header_account_id (mandatory, a member), legal_entity_id, interest_configuration_id, pool
       floor; `pool_members.debit_limit`. Entity columns via ddl-auto.
-- [ ] 2.2 InterestConfiguration target type POOL: the enum value + a Flyway migration that widens chk_ic_target_type
+- [x] 2.2 InterestConfiguration target type POOL: the enum value + a Flyway migration that widens chk_ic_target_type
       (CHECK constraints don't follow the enum). Create/edit pool creates/links its config (credit/debit base + spread,
       day count default by currency, optional tiers); the free-typed rate is retired.
-- [ ] 2.3 Verify InterestConfigurationService.calculateDailyInterest uses the debit rate for a negative balance and the
+- [x] 2.3 Verify InterestConfigurationService.calculateDailyInterest uses the debit rate for a negative balance and the
       config's day count and tiers; fix there if not (it serves the IHB too — keep IHB tests green).
-- [ ] 2.4 Create/edit pool UI: entity, currency, header picker (from members), rates, limits; AccountSelector filtered
+- [x] 2.4 Create/edit pool UI: entity, currency, header picker (from members), rates, limits; AccountSelector filtered
       by entity + currency + home bank.
+
+Phase 2 live-checked (12 Nov): V50 applied; startup backfill gave all 7 pools a header, entity and system-default rates
+(USD/EUR ACT/360, others ACT/365, debit = credit + 2%); NP-0015 created with POOL config 4.30−0.25 / 4.30+1.50 ACT/360,
+floor and member limit; edit updated the same config (ACT/365, header moved); non-member header and removing the header
+refused; suspend/close/delete; no balance moved; create form shows the new fields. Found and fixed: deleting a pool left
+its POOL interest config ACTIVE (orphaned) — now deleted with the pool. 710 tests, tsc clean.
+Phase 2 done (12 Nov, not yet live-checked): pools carry legal_entity_id (set at create, else the first member's;
+`admit()` checks the column, `poolEntityId()` gone), header_account_id (an active member; create defaults it to the
+first member; changing it to a non-member or removing the header is refused), interest_configuration_id, pool_floor and
+pool_members.debit_limit (both positive debit amounts, null = none) — all ddl-auto. A pool needs a member and a credit
+base rate at create. V50 widens chk_ic_target_type with POOL. Rates go through InterestConfigurationService.create/
+update (target POOL, INTERNAL; day count by currency: ACT/365 for GBP/AED/SAR/QAR/KWD/BHD/OMR/SGD/INR/HKD/AUD/NZD/ZAR,
+else ACT/360); those paths now keep the base rates, day count, tiers and dates they were sent (they were dropped: every
+config came out ACT/360 at base 0 — the Interest Configuration page's create was affected too). interest_rate is a
+display copy of the effective credit rate (GetPoolsTool, simulator, BalanceStructureService still read it). Existing
+pools backfilled on startup (`NotionalPoolService.backfillPoolStructure`, ApplicationReadyEvent — not Flyway, which runs
+before ddl-auto adds the columns): header = earliest-joined active member, entity = the header's, rates = credit at the
+old interest_rate, debit = credit + 2.00 %, marked system-default and named so. calculateDailyInterest already used the
+debit rate (+ penalty) and the day count; fixed: tiers were ignored (now banded, credit side only) and ACT/ACT counted
+360 (now 365). The IHB does not use that engine (IhbUnifiedService has its own ACT/360 calc) — unaffected. UI: create/
+edit modal (entity, currency, rates, day count by currency, floor, header among the members, member debit limits),
+AccountSelector = the corporate's home-bank shadows of the pool's currency and entity, Edit / Suspend / Close Pool in
+the pool detail, PoolMember.status 'INACTIVE'. 709 tests (+12), tsc clean.
+Left for 3+: rate edits change the config in place (version it when runs exist); POOL configs also show on the
+Interest Configuration page; POOL-ALBN-GBP and POOL-MERC-EUR keep members of other entities than their header's until
+5.3; the calculation-method field is no longer asked on create (engine ignores it); tiers have no editor in the pool UI
+(API only); AddMember has no debit-limit field (set it in Edit).
 
 ### Phase 3 — daily runs (D4, D5, D6, R9, R13)
 - [ ] 3.1 `pool_interest_calculations` (use the existing entity, drop its approval statuses' use per D11) + new

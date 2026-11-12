@@ -263,7 +263,8 @@ public class InterestConfiguration extends BaseEntity {
         LEGAL_ENTITY,
         PROGRAM,
         CURRENCY,       // Default for a currency
-        CORPORATE       // Corporate-wide default
+        CORPORATE,      // Corporate-wide default
+        POOL            // A notional pool's rates (target_id = notional_pools.id)
     }
 
     public enum CompoundingFrequency {
@@ -347,7 +348,8 @@ public class InterestConfiguration extends BaseEntity {
      */
     public int getDayCountBasis() {
         if (dayCountConvention == null) return 360;
-        if (dayCountConvention.contains("365")) return 365;
+        // ponytail: ACT/ACT has no date here, so it uses 365; 366 in a leap year needs the value date passed in.
+        if (dayCountConvention.contains("365") || dayCountConvention.equals("ACT/ACT")) return 365;
         if (dayCountConvention.contains("366")) return 366;
         return 360;
     }

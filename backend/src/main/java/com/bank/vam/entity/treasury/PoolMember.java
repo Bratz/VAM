@@ -49,6 +49,10 @@ public class PoolMember {
     @Column(name = "weight", precision = 12, scale = 4)
     private BigDecimal weight = BigDecimal.ONE;
 
+    /** The largest debit balance this member may run in the pool (R13), a positive amount; null = no limit. */
+    @Column(name = "debit_limit", precision = 18, scale = 2)
+    private BigDecimal debitLimit;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20)
     private MemberStatus status = MemberStatus.ACTIVE;

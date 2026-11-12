@@ -19,7 +19,13 @@ public class NotionalPoolDto {
         private String poolCurrency;
         private UUID corporateId;
         private UUID programId;
+        private UUID legalEntityId;
+        private UUID headerAccountId;
+        private UUID interestConfigurationId;
+        private BigDecimal poolFloor;
+        private Rates rates;
         private BigDecimal targetBalance;
+        /** Retired: a display copy of {@code rates.effectiveCreditRate}. */
         private BigDecimal interestRate;
         private NotionalPool.InterestCalculationMethod interestCalculationMethod;
         private NotionalPool.AllocationMethod allocationMethod;
@@ -46,9 +52,29 @@ public class NotionalPoolDto {
         private BigDecimal contributionPercent;
         private BigDecimal interestAllocation;
         private BigDecimal weight;
+        private BigDecimal debitLimit;
         private PoolMember.MemberStatus status;
         private LocalDate joinedDate;
         private LocalDate leftDate;
+    }
+
+    /**
+     * The pool's rates, held in its InterestConfiguration (R7), % a year. On a request: the credit base rate is
+     * required; a missing debit base takes the credit base, a missing day count the currency's default; tierConfig
+     * is the config's banded tiers JSON. The effective rates and systemDefault are filled on a response only.
+     */
+    @Data
+    public static class Rates {
+        private BigDecimal creditBaseRate;
+        private BigDecimal creditSpread;
+        private BigDecimal debitBaseRate;
+        private BigDecimal debitSpread;
+        private String dayCountConvention;
+        private String tierConfig;
+        private BigDecimal effectiveCreditRate;
+        private BigDecimal effectiveDebitRate;
+        /** Made up by the application (an old pool's debit rate), not agreed: screens show it as a default. */
+        private boolean systemDefault;
     }
 
     @Data
@@ -57,8 +83,13 @@ public class NotionalPoolDto {
         private String poolCurrency;
         private UUID corporateId;
         private UUID programId;
+        /** The pool's legal entity; when absent, its header's. */
+        private UUID legalEntityId;
+        /** One of {@code members}; when absent, the first. */
+        private UUID headerAccountId;
+        private BigDecimal poolFloor;
+        private Rates rates;
         private BigDecimal targetBalance;
-        private BigDecimal interestRate;
         private NotionalPool.InterestCalculationMethod interestCalculationMethod;
         private NotionalPool.AllocationMethod allocationMethod;
         private LocalDate effectiveFrom;
@@ -73,6 +104,7 @@ public class NotionalPoolDto {
         private String entityCode;
         private String entityName;
         private BigDecimal weight;
+        private BigDecimal debitLimit;
     }
 
     @Data
@@ -104,7 +136,17 @@ public class NotionalPoolDto {
     public static class UpdateRequest {
         private String poolName;
         private BigDecimal targetBalance;
-        private BigDecimal interestRate;
+        /** An active member's account id. */
+        private UUID headerAccountId;
+        /**
+         * Always applied: null removes the floor.
+         * ponytail: whole-form semantics, unlike the fields around it — the edit form is the only caller and sends it.
+         */
+        private BigDecimal poolFloor;
+        /** Fields given replace the pool's config's; absent ones stay. */
+        private Rates rates;
+        /** Member id → debit limit; an entry replaces that member's limit, a null value removes it. */
+        private java.util.Map<UUID, BigDecimal> memberDebitLimits;
         private NotionalPool.InterestCalculationMethod interestCalculationMethod;
         private NotionalPool.AllocationMethod allocationMethod;
     }

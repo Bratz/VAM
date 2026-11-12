@@ -74,8 +74,10 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember })
           <p className="font-medium text-neutral-700 dark:text-neutral-200">{pool.memberCount ?? members.length}</p>
         </div>
         <div>
-          <p className="caption">Rate</p>
-          <p className="font-medium text-neutral-700 dark:text-neutral-200">{pool.interestRate}%</p>
+          <p className="caption">Credit / Debit</p>
+          <p className="font-medium text-neutral-700 dark:text-neutral-200">
+            {pool.rates ? `${pool.rates.effectiveCreditRate ?? 0}% / ${pool.rates.effectiveDebitRate ?? 0}%` : `${pool.interestRate}%`}
+          </p>
         </div>
         <div>
           <p className="caption">Method</p>

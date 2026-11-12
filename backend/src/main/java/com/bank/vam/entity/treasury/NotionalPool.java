@@ -77,6 +77,22 @@ public class NotionalPool extends BaseEntity {
     @Column(name = "program_id")
     private UUID programId;
 
+    /** The one legal entity every member belongs to (R4), set at create. */
+    @Column(name = "legal_entity_id")
+    private UUID legalEntityId;
+
+    /** The header account (R2): an active member's account id; the pool reports against it. */
+    @Column(name = "header_account_id")
+    private UUID headerAccountId;
+
+    /** The pool's rates (R7): an {@code interest_configurations} row with target type POOL. */
+    @Column(name = "interest_configuration_id")
+    private UUID interestConfigurationId;
+
+    /** The largest debit the pool's net may reach (R13), a positive amount; null = no floor. Breaches are flagged. */
+    @Column(name = "pool_floor", precision = 18, scale = 2)
+    private BigDecimal poolFloor;
+
     @OneToMany(mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PoolMember> members = new ArrayList<>();
 

@@ -74,6 +74,19 @@ public class InterestConfigurationService {
 
     private final InterestConfigurationRepository repository;
 
+    private static final List<String> DAY_COUNTS = List.of("ACT/360", "ACT/365", "30/360", "ACT/ACT");
+
+    /** Money-market currencies that count ACT/365; every other currency counts ACT/360 (USD, EUR, CHF, JPY, ...). */
+    private static final java.util.Set<String> ACT_365_CURRENCIES = java.util.Set.of(
+            "GBP", "AED", "SAR", "QAR", "KWD", "BHD", "OMR", "SGD", "INR", "HKD", "AUD", "NZD", "ZAR");
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    /** The day count a new config in {@code currency} defaults to. */
+    public static String defaultDayCount(String currency) {
+        return currency != null && ACT_365_CURRENCIES.contains(currency.toUpperCase()) ? "ACT/365" : "ACT/360";
+    }
+
     // ========================================================================
     // EXTERNAL RATES (READ-ONLY FOR CORPORATE)
     // ========================================================================
@@ -433,13 +446,15 @@ public class InterestConfigurationService {
             throw new BusinessException("Cannot modify external (bank) configuration");
         }
 
-        // Validate convention
-        if (!List.of("ACT/360", "ACT/365", "30/360", "ACT/ACT").contains(dayCountConvention)) {
+        config.setDayCountConvention(validDayCount(dayCountConvention));
+        return repository.save(config);
+    }
+
+    private static String validDayCount(String dayCountConvention) {
+        if (!DAY_COUNTS.contains(dayCountConvention)) {
             throw new BusinessException("Invalid day count convention: " + dayCountConvention);
         }
-
-        config.setDayCountConvention(dayCountConvention);
-        return repository.save(config);
+        return dayCountConvention;
     }
 
     /**
@@ -547,7 +562,9 @@ public class InterestConfigurationService {
     // ========================================================================
 
     /**
-     * Calculate daily interest for a balance.
+     * One day's interest on {@code balance}, as a positive amount: the effective credit rate for a credit balance
+     * (or its tiers, when the config is tiered), the effective debit rate plus any penalty rate for a debit balance;
+     * divided by the config's day-count basis.
      */
     public BigDecimal calculateDailyInterest(InterestConfiguration config, BigDecimal balance) {
         if (balance == null || balance.compareTo(BigDecimal.ZERO) == 0) {
@@ -557,9 +574,14 @@ public class InterestConfigurationService {
         BigDecimal rate;
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
             // Credit interest (positive balance)
-            if (config.getCreditMinBalance() != null && 
+            if (config.getCreditMinBalance() != null &&
                 balance.compareTo(config.getCreditMinBalance()) < 0) {
                 return BigDecimal.ZERO; // Below minimum
+            }
+            if (Boolean.TRUE.equals(config.getIsTiered()) && config.getTierConfig() != null) {
+                return tieredAnnualInterest(config.getTierConfig(), balance)
+                    .divide(new BigDecimal(config.getDayCountBasis()), 10, RoundingMode.HALF_UP)
+                    .setScale(4, RoundingMode.HALF_UP);
             }
             rate = config.getEffectiveCreditRate();
         } else {
@@ -583,6 +605,36 @@ public class InterestConfigurationService {
             .divide(new BigDecimal(dayBasis), 10, RoundingMode.HALF_UP);
 
         return dailyInterest.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * A year's interest on a credit balance under banded tiers ({@code tier_config}, e.g.
+     * {@code [{"min":0,"max":100000,"rate":2.5},{"min":100000,"rate":3.0}]}, rates in % a year): each slice of the
+     * balance earns its own band's rate, so crossing a band never lowers the interest.
+     * ponytail: tiers price credit balances only; a debit balance uses the debit rate.
+     */
+    private static BigDecimal tieredAnnualInterest(String tierConfig, BigDecimal balance) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (com.fasterxml.jackson.databind.JsonNode tier : parseTiers(tierConfig)) {
+            BigDecimal min = tier.path("min").decimalValue();
+            if (balance.compareTo(min) <= 0) continue;
+            BigDecimal top = tier.hasNonNull("max") ? balance.min(tier.get("max").decimalValue()) : balance;
+            total = total.add(top.subtract(min).multiply(tier.path("rate").decimalValue()));
+        }
+        return total.divide(new BigDecimal(100), 10, RoundingMode.HALF_UP);
+    }
+
+    private static com.fasterxml.jackson.databind.JsonNode parseTiers(String tierConfig) {
+        try {
+            com.fasterxml.jackson.databind.JsonNode tiers = JSON.readTree(tierConfig);
+            if (tiers == null || !tiers.isArray()) throw new BusinessException("Tier config must be a JSON array");
+            for (com.fasterxml.jackson.databind.JsonNode t : tiers) {
+                if (!t.path("rate").isNumber()) throw new BusinessException("Each tier needs a numeric rate: " + t);
+            }
+            return tiers;
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new BusinessException("Tier config is not valid JSON: " + e.getOriginalMessage());
+        }
     }
 
     /**
@@ -681,7 +733,7 @@ public class InterestConfigurationService {
             throw new BusinessException("External configurations can only be synced from CBS");
         }
 
-        return createInternalConfig(
+        InterestConfiguration config = createInternalConfig(
             request.getCorporateId(),
             request.getTargetId(),
             request.getTargetType(),
@@ -691,6 +743,28 @@ public class InterestConfigurationService {
             request.getCreditSpread() != null ? request.getCreditSpread() : BigDecimal.ZERO,
             request.getDebitSpread() != null ? request.getDebitSpread() : BigDecimal.ZERO
         );
+        // The request's base rates, day count, tiers and dates were dropped here (every config came out ACT/360 at
+        // base 0). Each applies when given; effective = base + spread, as @PrePersist/@PreUpdate compute it anyway.
+        boolean followsBank = request.getTargetId() != null
+                && getExternalConfigForTarget(request.getTargetId(), request.getCurrencyCode()).isPresent();
+        if (!followsBank) {   // with a bank rate, the base is the bank's (as in update)
+            if (request.getCreditBaseRate() != null) config.setCreditBaseRate(request.getCreditBaseRate());
+            if (request.getDebitBaseRate() != null) config.setDebitBaseRate(request.getDebitBaseRate());
+        }
+        if (request.getDayCountConvention() != null) config.setDayCountConvention(validDayCount(request.getDayCountConvention()));
+        if (request.getIsTiered() != null) config.setIsTiered(request.getIsTiered());
+        if (request.getTierConfig() != null) config.setTierConfig(validTiers(request.getTierConfig()));
+        if (request.getEffectiveFrom() != null) config.setEffectiveFrom(request.getEffectiveFrom());
+        if (request.getEffectiveTo() != null) config.setEffectiveTo(request.getEffectiveTo());
+        config.calculateEffectiveRates();
+        return repository.save(config);
+    }
+
+    /** A tier config to store: blank clears it; anything else must parse (see {@link #tieredAnnualInterest}). */
+    private static String validTiers(String tierConfig) {
+        if (tierConfig.isBlank()) return null;
+        parseTiers(tierConfig);
+        return tierConfig;
     }
 
     @Transactional
@@ -738,7 +812,14 @@ public class InterestConfigurationService {
             InterestConfiguration ext = externalOpt.get();
             config.setEffectiveCreditRate(ext.getEffectiveCreditRate().add(config.getCreditSpread()));
             config.setEffectiveDebitRate(ext.getEffectiveDebitRate().add(config.getDebitSpread()));
+        } else {
+            // No bank rate to follow: the request's base rates (dropped until now) apply; effective = base + spread.
+            if (request.getCreditBaseRate() != null) config.setCreditBaseRate(request.getCreditBaseRate());
+            if (request.getDebitBaseRate() != null) config.setDebitBaseRate(request.getDebitBaseRate());
+            config.calculateEffectiveRates();
         }
+        if (request.getIsTiered() != null) config.setIsTiered(request.getIsTiered());
+        if (request.getTierConfig() != null) config.setTierConfig(validTiers(request.getTierConfig()));
 
         return repository.save(config);
     }

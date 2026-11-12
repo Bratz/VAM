@@ -48,7 +48,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
 
   // Memoize existing account IDs to prevent infinite loops
   const existingAccountIds = useMemo(
-    () => pool.members?.map(m => m.accountId) || [],
+    () => pool.members?.filter(m => m.status === 'ACTIVE').map(m => m.accountId) || [], // one who left may rejoin
     [pool.members]
   );
 
@@ -133,6 +133,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
             onSelect={setSelectedMembers}
             currency={pool.poolCurrency}
             corporateId={corporateId}
+            entityId={pool.legalEntityId}
             excludeAccountIds={existingAccountIds}
           />
         )}

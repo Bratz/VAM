@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent } from 'lucide-react';
+import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle } from 'lucide-react';
 import { Button, Badge, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
@@ -16,6 +16,9 @@ export interface PoolDetailModalProps {
   pool: NotionalPool;
   onRemoveMember: (poolId: string, memberId: string) => Promise<void>;
   onAddMember: () => void;
+  onEditPool: () => void;
+  onSuspendPool: (poolId: string) => Promise<unknown>;
+  onClosePool: (poolId: string) => Promise<unknown>;
 }
 
 export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
@@ -23,9 +26,13 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
   onClose,
   pool,
   onRemoveMember,
-  onAddMember
+  onAddMember,
+  onEditPool,
+  onSuspendPool,
+  onClosePool,
 }) => {
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [changingStatus, setChangingStatus] = useState(false);
   const [removeTargetId, setRemoveTargetId] = useState('');
   // Members who left keep their row (dated history); the pool is its current members.
   const members = useMemo(() => (pool.members || []).filter(m => m.status === 'ACTIVE'), [pool.members]);
@@ -43,6 +50,23 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
     })),
     [members, pool.poolCurrency]
   );
+
+  const header = members.find(m => m.accountId === pool.headerAccountId);
+  const rates = pool.rates;
+  const open = pool.status !== 'CLOSED';
+
+  const changeStatus = async (action: (poolId: string) => Promise<unknown>, question: string, done: string) => {
+    if (!confirm(question)) return;
+    setChangingStatus(true);
+    try {
+      await action(pool.id);
+      toast.success(done);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to change the pool');
+    } finally {
+      setChangingStatus(false);
+    }
+  };
 
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('Remove this member from the pool? It leaves today; its history is kept.')) return;
@@ -73,6 +97,26 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
               </Badge>
             </div>
           </div>
+          {open && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={onEditPool} leftIcon={<Pencil className="w-4 h-4" />}>
+                Edit
+              </Button>
+              {pool.status === 'ACTIVE' && (
+                <Button size="sm" variant="outline" disabled={changingStatus}
+                        onClick={() => changeStatus(onSuspendPool, 'Suspend this pool? Its members stay; it can still be closed.', 'Pool suspended')}
+                        leftIcon={<PauseCircle className="w-4 h-4" />}>
+                  Suspend
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" disabled={changingStatus}
+                      className="text-error-600 dark:text-error-300 hover:bg-error-50 dark:hover:bg-error-500/10"
+                      onClick={() => changeStatus(onClosePool, 'Close this pool? Every member leaves today (history is kept); a closed pool cannot be reopened.', 'Pool closed')}
+                      leftIcon={changingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}>
+                Close Pool
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-4 gap-4">
@@ -83,8 +127,13 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             </p>
           </div>
           <div>
-            <p className="caption">Interest Rate</p>
-            <p className="section-title">{pool.interestRate}%</p>
+            <p className="caption">Credit / Debit Rate</p>
+            <p className="section-title">
+              {rates ? `${rates.effectiveCreditRate ?? 0}% / ${rates.effectiveDebitRate ?? 0}%` : `${pool.interestRate}%`}
+            </p>
+            {rates && (
+              <p className="caption">{rates.dayCountConvention}{rates.systemDefault ? ' · default rates' : ''}</p>
+            )}
           </div>
           <div>
             <p className="caption">YTD Savings</p>
@@ -101,10 +150,18 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
 
       {/* Members Section */}
       <div className="mb-4 flex items-center justify-between">
-        <h4 className="font-medium text-primary-900 dark:text-neutral-50">Pool Members</h4>
-        <Button size="sm" variant="outline" onClick={onAddMember} leftIcon={<UserPlus className="w-4 h-4" />}>
-          Add Member
-        </Button>
+        <div>
+          <h4 className="font-medium text-primary-900 dark:text-neutral-50">Pool Members</h4>
+          <p className="caption">
+            Header: <span className="font-mono">{header?.accountNumber || '—'}</span>
+            {pool.poolFloor != null && <> · Debit floor {formatCurrency(pool.poolFloor, pool.poolCurrency)}</>}
+          </p>
+        </div>
+        {open && (
+          <Button size="sm" variant="outline" onClick={onAddMember} leftIcon={<UserPlus className="w-4 h-4" />}>
+            Add Member
+          </Button>
+        )}
       </div>
 
       <VirtualizedAccountList items={memberRows} selectable={false} height={320} />
@@ -112,7 +169,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       {/* Per-member removal lives outside the (read-only) virtualized list —
           a trash icon per row doesn't scale to thousands of members, so this
           is a deliberate select-then-remove control instead. */}
-      {members.length > 0 && (
+      {open && members.length > 0 && (
         <div className="flex items-center gap-2 mt-3">
           <select
             value={removeTargetId}
@@ -121,8 +178,9 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           >
             <option value="">Select a member to remove…</option>
             {members.map((member) => (
-              <option key={member.id} value={member.id}>
-                {member.entityName} — {member.accountNumber}
+              // The header can't leave until another is chosen (Edit).
+              <option key={member.id} value={member.id} disabled={member.accountId === pool.headerAccountId}>
+                {member.entityName} — {member.accountNumber}{member.accountId === pool.headerAccountId ? ' (header)' : ''}
               </option>
             ))}
           </select>

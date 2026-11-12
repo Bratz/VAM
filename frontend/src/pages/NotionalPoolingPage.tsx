@@ -103,6 +103,9 @@ const NotionalPoolingPage: React.FC = () => {
     fetchPools,
     fetchPoolById,
     createPool,
+    updatePool,
+    suspendPool,
+    closePool,
     addMember,
     addMembersBulk,
     removeMember
@@ -118,6 +121,7 @@ const NotionalPoolingPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Load corporates and programs on mount
   useEffect(() => {
@@ -352,6 +356,18 @@ const NotionalPoolingPage: React.FC = () => {
             pool={selectedPool}
             onRemoveMember={removeMember}
             onAddMember={() => { setShowDetailModal(false); setShowAddMemberModal(true); }}
+            onEditPool={() => { setShowDetailModal(false); setShowEditModal(true); }}
+            onSuspendPool={suspendPool}
+            onClosePool={closePool}
+          />
+
+          <CreatePoolModal
+            isOpen={showEditModal}
+            onClose={() => { setShowEditModal(false); setShowDetailModal(true); }}
+            onSave={createPool}
+            pool={selectedPool}
+            onUpdate={updatePool}
+            corporateId={selectedPool.corporateId || selectedCorporateId}
           />
 
           <AddMemberModal

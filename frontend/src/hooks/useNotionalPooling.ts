@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { poolingApi, NotionalPool, CreatePoolRequest, AddMemberRequest, BulkAddMembersResponse } from '../services/api';
+import { poolingApi, NotionalPool, CreatePoolRequest, UpdatePoolRequest, AddMemberRequest, BulkAddMembersResponse } from '../services/api';
 
 export const useNotionalPooling = () => {
   const [pools, setPools] = useState<NotionalPool[]>([]);
@@ -48,17 +48,21 @@ export const useNotionalPooling = () => {
     throw new Error('Failed to create pool');
   }, []);
 
-  const updatePool = useCallback(async (poolId: string, data: Partial<CreatePoolRequest>) => {
-    const response = await poolingApi.updatePool(poolId, data);
-    if (response.success) {
-      setPools(prev => prev.map(p => p.id === poolId ? response.data : p));
-      if (selectedPool?.id === poolId) {
-        setSelectedPool(response.data);
-      }
-      return response.data;
-    }
-    throw new Error('Failed to update pool');
-  }, [selectedPool]);
+  const updatePool = useCallback(async (poolId: string, data: UpdatePoolRequest) => {
+    await poolingApi.updatePool(poolId, data);
+    // The update response carries no fresh balances; re-read the pool like the other edits do.
+    return fetchPoolById(poolId);
+  }, [fetchPoolById]);
+
+  const suspendPool = useCallback(async (poolId: string) => {
+    await poolingApi.suspendPool(poolId);
+    return fetchPoolById(poolId);
+  }, [fetchPoolById]);
+
+  const closePool = useCallback(async (poolId: string) => {
+    await poolingApi.closePool(poolId);
+    return fetchPoolById(poolId);
+  }, [fetchPoolById]);
 
   const deletePool = useCallback(async (id: string) => {
     await poolingApi.deletePool(id);
@@ -118,6 +122,8 @@ export const useNotionalPooling = () => {
     fetchPoolById,
     createPool,
     updatePool,
+    suspendPool,
+    closePool,
     deletePool,
     addMember,
     addMembersBulk,

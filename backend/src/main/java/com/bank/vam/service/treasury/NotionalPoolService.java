@@ -1,17 +1,24 @@
 package com.bank.vam.service.treasury;
 
 import com.bank.vam.config.HomeBankProperties;
+import com.bank.vam.dto.credit.InterestConfigurationDto;
 import com.bank.vam.dto.treasury.NotionalPoolDto;
+import com.bank.vam.entity.BaseEntity;
 import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.entity.credit.InterestConfiguration;
 import com.bank.vam.entity.treasury.*;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.credit.InterestConfigurationRepository;
 import com.bank.vam.repository.treasury.*;
 import com.bank.vam.service.audit.AuditLogService;
+import com.bank.vam.service.credit.InterestConfigurationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,20 +41,32 @@ public class NotionalPoolService {
     private final HomeBankProperties homeBankProperties;
     private final AuditLogService auditLog;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final InterestConfigurationService interestConfigurationService;
+    private final InterestConfigurationRepository interestConfigurationRepository;
+
+    /** An old pool's debit rate when only its free-typed credit rate is known: credit + this, % a year (a default). */
+    static final BigDecimal DEFAULT_DEBIT_SPREAD = new BigDecimal("2.00");
 
     // No pool fees in v1 (spec D9/R12): the per-calculation management fee and the joining fee are gone.
 
     @Transactional(readOnly = true)
     public List<NotionalPoolDto.Response> getAllPools() {
-        return poolRepository.findAll().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        return toResponses(poolRepository.findAll());
     }
 
     @Transactional(readOnly = true)
     public List<NotionalPoolDto.Response> getActivePools() {
-        return poolRepository.findAllActiveWithMembers().stream()
-                .map(this::toResponse)
+        return toResponses(poolRepository.findAllActiveWithMembers());
+    }
+
+    /** One batch read of the pools' rate configs instead of one per pool. */
+    private List<NotionalPoolDto.Response> toResponses(List<NotionalPool> pools) {
+        List<UUID> configIds = pools.stream().map(NotionalPool::getInterestConfigurationId).filter(Objects::nonNull).toList();
+        Map<UUID, InterestConfiguration> configs = configIds.isEmpty() ? Map.of()
+                : interestConfigurationRepository.findAllById(configIds).stream()
+                        .collect(Collectors.toMap(InterestConfiguration::getId, c -> c));
+        return pools.stream()
+                .map(p -> toResponse(p, p.getInterestConfigurationId() == null ? null : configs.get(p.getInterestConfigurationId())))
                 .collect(Collectors.toList());
     }
 
@@ -104,6 +123,12 @@ public class NotionalPoolService {
 
     @Transactional
     public NotionalPoolDto.Response createPool(NotionalPoolDto.CreateRequest request) {
+        if (request.getMembers() == null || request.getMembers().isEmpty()) {
+            throw new BusinessException("A pool needs at least one member: its header account");
+        }
+        if (request.getRates() == null || request.getRates().getCreditBaseRate() == null) {
+            throw new BusinessException("A pool needs its credit base rate");
+        }
         NotionalPool pool = new NotionalPool();
         pool.setPoolReference(String.format("NP-%04d", poolRepository.nextPoolNumber()));
         pool.setPoolName(request.getPoolName());
@@ -114,8 +139,11 @@ public class NotionalPoolService {
         pool.setCorporateId(request.getCorporateId());
         pool.setProgramId(request.getProgramId());
         pool.setTargetBalance(request.getTargetBalance());
-        pool.setInterestRate(request.getInterestRate());
-        pool.setInterestCalculationMethod(request.getInterestCalculationMethod());
+        pool.setLegalEntityId(request.getLegalEntityId()); // null: the first member's (admit)
+        pool.setPoolFloor(nonNegative(request.getPoolFloor(), "Pool floor"));
+        if (request.getInterestCalculationMethod() != null) { // the create screen no longer asks; the entity's default stays
+            pool.setInterestCalculationMethod(request.getInterestCalculationMethod());
+        }
         pool.setAllocationMethod(request.getAllocationMethod() != null
                 ? request.getAllocationMethod()
                 : NotionalPool.AllocationMethod.CONTRIBUTION_PERCENT);
@@ -125,47 +153,48 @@ public class NotionalPoolService {
 
         // Add members and fetch their current balances
         BigDecimal totalBalance = BigDecimal.ZERO;
-        Map<UUID, VirtualAccount> accountsById = Map.of();
-        if (request.getMembers() != null) {
-            // Batch-fetch all candidate accounts in one query instead of one findById
-            // per member (N+1) — used for both eligibility checks and balance lookup.
-            List<UUID> accountIds = request.getMembers().stream()
-                    .map(NotionalPoolDto.MemberRequest::getAccountId)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            accountsById = vaRepository.findAllById(accountIds).stream()
-                    .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
-            Set<UUID> pooled = accountsInAPool(accountIds);
-            UUID entityId = null;
+        // Batch-fetch all candidate accounts in one query instead of one findById
+        // per member (N+1) — used for both eligibility checks and balance lookup.
+        List<UUID> accountIds = request.getMembers().stream()
+                .map(NotionalPoolDto.MemberRequest::getAccountId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        Map<UUID, VirtualAccount> accountsById = vaRepository.findAllById(accountIds).stream()
+                .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
+        Set<UUID> pooled = accountsInAPool(accountIds);
 
-            for (NotionalPoolDto.MemberRequest memberReq : request.getMembers()) {
-                VirtualAccount va = requireAccountForPool(memberReq.getAccountId(), memberReq.getAccountNumber(), accountsById);
-                entityId = admit(pool, va, memberReq.getAccountNumber(), entityId, pooled);
+        for (NotionalPoolDto.MemberRequest memberReq : request.getMembers()) {
+            VirtualAccount va = requireAccountForPool(memberReq.getAccountId(), memberReq.getAccountNumber(), accountsById);
+            admit(pool, va, memberReq.getAccountNumber(), pooled);
 
-                PoolMember member = new PoolMember();
-                member.setPool(pool);
-                member.setAccountId(memberReq.getAccountId());
-                // From the account, not the request (a request by id alone failed on the NOT NULL account number;
-                // client-sent codes stored truncated UUIDs).
-                member.setAccountNumber(va.getVaNumber());
-                member.setEntityCode(va.getOwningEntityCode() != null ? va.getOwningEntityCode() : memberReq.getEntityCode());
-                member.setEntityName(memberReq.getEntityName());
-                member.setJoinedDate(LocalDate.now());
-                member.setStatus(PoolMember.MemberStatus.ACTIVE);
-                member.setWeight(memberReq.getWeight() != null ? memberReq.getWeight() : BigDecimal.ONE);
+            PoolMember member = new PoolMember();
+            member.setPool(pool);
+            member.setAccountId(memberReq.getAccountId());
+            // From the account, not the request (a request by id alone failed on the NOT NULL account number;
+            // client-sent codes stored truncated UUIDs).
+            member.setAccountNumber(va.getVaNumber());
+            member.setEntityCode(va.getOwningEntityCode() != null ? va.getOwningEntityCode() : memberReq.getEntityCode());
+            member.setEntityName(memberReq.getEntityName());
+            member.setJoinedDate(LocalDate.now());
+            member.setStatus(PoolMember.MemberStatus.ACTIVE);
+            member.setWeight(memberReq.getWeight() != null ? memberReq.getWeight() : BigDecimal.ONE);
+            member.setDebitLimit(nonNegative(memberReq.getDebitLimit(), "Debit limit"));
 
-                // Fetch actual account balance (bankBalance for mirrors)
-                BigDecimal accountBalance = resolveAccountBalance(va);
-                member.setCurrentBalance(accountBalance);
-                totalBalance = totalBalance.add(accountBalance);
+            // Fetch actual account balance (bankBalance for mirrors)
+            BigDecimal accountBalance = resolveAccountBalance(va);
+            member.setCurrentBalance(accountBalance);
+            totalBalance = totalBalance.add(accountBalance);
 
-                pool.getMembers().add(member);
-            }
-            pool.setMemberCount(pool.getMembers().size());
-            pool.setTotalBalance(totalBalance);
+            pool.getMembers().add(member);
         }
+        pool.setMemberCount(pool.getMembers().size());
+        pool.setTotalBalance(totalBalance);
+        // ponytail: no header given (the simulator doesn't pick one) = the first member
+        setHeader(pool, request.getHeaderAccountId() != null ? request.getHeaderAccountId()
+                : request.getMembers().get(0).getAccountId());
 
         pool = poolRepository.save(pool);
+        InterestConfiguration rates = saveRates(pool, request.getRates());
         mirrorPoolMembershipBulk(pool.getMembers(), accountsById, pool.getId(), pool.getPoolReference());
 
         auditLog.record("POOL_CREATED", "NotionalPool", pool.getId(), pool.getCorporateId(),
@@ -175,20 +204,32 @@ public class NotionalPoolService {
                         "poolCurrency", pool.getPoolCurrency(),
                         "allocationMethod", pool.getAllocationMethod() != null ? pool.getAllocationMethod().name() : "CONTRIBUTION_PERCENT",
                         "memberCount", pool.getMemberCount(),
-                        "interestRate", pool.getInterestRate()));
+                        "creditRate", rates.getEffectiveCreditRate(),
+                        "debitRate", rates.getEffectiveDebitRate(),
+                        "dayCount", rates.getDayCountConvention()));
 
         log.info("Created notional pool: {} - {}", pool.getPoolReference(), pool.getPoolName());
-        return toResponse(pool);
+        return toResponse(pool, rates);
     }
 
     @Transactional
     public NotionalPoolDto.Response updatePool(UUID id, NotionalPoolDto.UpdateRequest request) {
-        NotionalPool pool = poolRepository.findById(id)
+        NotionalPool pool = poolRepository.findByIdWithMembers(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notional pool not found: " + id));
+        assertOpen(pool);
 
         if (request.getPoolName() != null) pool.setPoolName(request.getPoolName());
         if (request.getTargetBalance() != null) pool.setTargetBalance(request.getTargetBalance());
-        if (request.getInterestRate() != null) pool.setInterestRate(request.getInterestRate());
+        if (request.getHeaderAccountId() != null) setHeader(pool, request.getHeaderAccountId());
+        pool.setPoolFloor(nonNegative(request.getPoolFloor(), "Pool floor"));
+        if (request.getMemberDebitLimits() != null) {
+            List<PoolMember> active = activeMembers(pool);
+            request.getMemberDebitLimits().forEach((memberId, limit) -> active.stream()
+                    .filter(m -> memberId.equals(m.getId())).findFirst()
+                    .orElseThrow(() -> new BusinessException("No active member " + memberId + " in pool " + pool.getPoolReference()))
+                    .setDebitLimit(nonNegative(limit, "Debit limit")));
+        }
+        InterestConfiguration rates = saveRates(pool, request.getRates());
         if (request.getInterestCalculationMethod() != null) {
             pool.setInterestCalculationMethod(request.getInterestCalculationMethod());
         }
@@ -196,18 +237,20 @@ public class NotionalPoolService {
             pool.setAllocationMethod(request.getAllocationMethod());
         }
 
-        pool = poolRepository.save(pool);
+        NotionalPool saved = poolRepository.save(pool);
 
-        auditLog.record("POOL_UPDATED", "NotionalPool", pool.getId(), pool.getCorporateId(),
-                "Updated pool " + pool.getPoolReference(),
+        auditLog.record("POOL_UPDATED", "NotionalPool", saved.getId(), saved.getCorporateId(),
+                "Updated pool " + saved.getPoolReference(),
                 Map.of(
-                        "poolReference", pool.getPoolReference(),
-                        "allocationMethod", pool.getAllocationMethod() != null ? pool.getAllocationMethod().name() : "CONTRIBUTION_PERCENT",
-                        "interestRate", pool.getInterestRate(),
-                        "targetBalance", pool.getTargetBalance() != null ? pool.getTargetBalance() : BigDecimal.ZERO));
+                        "poolReference", saved.getPoolReference(),
+                        "allocationMethod", saved.getAllocationMethod() != null ? saved.getAllocationMethod().name() : "CONTRIBUTION_PERCENT",
+                        "creditRate", rates != null ? rates.getEffectiveCreditRate() : "",
+                        "debitRate", rates != null ? rates.getEffectiveDebitRate() : "",
+                        "headerAccountId", saved.getHeaderAccountId() != null ? saved.getHeaderAccountId() : "",
+                        "targetBalance", saved.getTargetBalance() != null ? saved.getTargetBalance() : BigDecimal.ZERO));
 
-        log.info("Updated notional pool: {} (allocation={})", pool.getPoolReference(), pool.getAllocationMethod());
-        return toResponse(pool);
+        log.info("Updated notional pool: {} (allocation={})", saved.getPoolReference(), saved.getAllocationMethod());
+        return toResponse(saved, rates);
     }
 
     @Transactional
@@ -221,7 +264,7 @@ public class NotionalPoolService {
         }
         VirtualAccount va = vaRepository.findById(request.getAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("Pool member VA not found: " + request.getAccountId()));
-        admit(pool, va, request.getAccountNumber(), poolEntityId(pool), accountsInAPool(List.of(va.getId())));
+        admit(pool, va, request.getAccountNumber(), accountsInAPool(List.of(va.getId())));
 
         PoolMember member = new PoolMember();
         member.setPool(pool);
@@ -232,6 +275,7 @@ public class NotionalPoolService {
         member.setJoinedDate(LocalDate.now());
         member.setStatus(PoolMember.MemberStatus.ACTIVE);
         member.setWeight(request.getWeight() != null ? request.getWeight() : BigDecimal.ONE);
+        member.setDebitLimit(nonNegative(request.getDebitLimit(), "Debit limit"));
 
         // Fetch actual account balance (bankBalance for mirrors)
         BigDecimal accountBalance = resolveAccountBalance(va);
@@ -286,7 +330,6 @@ public class NotionalPoolService {
                     .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
 
             Set<UUID> pooled = accountsInAPool(requestedIds);
-            UUID entityId = poolEntityId(pool);
             Set<UUID> seenInRequest = new HashSet<>();
             BigDecimal addedBalance = BigDecimal.ZERO;
 
@@ -302,7 +345,7 @@ public class NotionalPoolService {
                 }
                 // Same rules as addMember; a refusal skips this account instead of failing the batch.
                 try {
-                    entityId = admit(pool, va, va.getVaNumber(), entityId, pooled);
+                    admit(pool, va, va.getVaNumber(), pooled);
                 } catch (BusinessException e) {
                     skipped.add(new NotionalPoolDto.SkippedMember(accountId, e.getMessage()));
                     continue;
@@ -363,6 +406,10 @@ public class NotionalPoolService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "No active member " + memberId + " in pool " + pool.getPoolReference()));
+        if (member.getAccountId().equals(pool.getHeaderAccountId())) {
+            throw new BusinessException(member.getAccountNumber() + " is the header account of pool "
+                    + pool.getPoolReference() + "; choose another header first");
+        }
 
         // Leaving is dated, never a delete (R3): the row stays as history.
         leave(member);
@@ -477,6 +524,11 @@ public class NotionalPoolService {
             throw new BusinessException("Cannot delete active pool. Close it first.");
         }
         poolRepository.delete(pool);
+        // Its rate config belongs to it alone (target POOL, target id = the pool); left behind it stayed ACTIVE on the
+        // Interest Configuration page.
+        if (pool.getInterestConfigurationId() != null) {
+            interestConfigurationRepository.deleteById(pool.getInterestConfigurationId());
+        }
         log.info("Deleted notional pool: {}", pool.getPoolReference());
     }
 
@@ -511,29 +563,12 @@ public class NotionalPoolService {
     }
 
     /**
-     * The pool's legal entity: the owning entity of its active members (R4).
-     * ponytail: derived from the members until notional_pools gets legal_entity_id (Phase 2); the first member sets it.
-     */
-    private UUID poolEntityId(NotionalPool pool) {
-        List<UUID> ids = activeMembers(pool).stream().map(PoolMember::getAccountId).filter(Objects::nonNull).toList();
-        if (ids.isEmpty()) {
-            return null;
-        }
-        return vaRepository.findAllById(ids).stream()
-                .map(VirtualAccount::getOwningEntityId)
-                .filter(Objects::nonNull)
-                .findFirst().orElse(null);
-    }
-
-    /**
      * Membership rules (R1, R3, R4), the one place every add path goes through: an active home-bank
      * PHYSICAL_MIRROR, in the pool's currency, of the pool's corporate and legal entity, in no other pool.
-     * A pool without a corporate (e.g. the simulator's) takes its first member's. Adds the account to
-     * {@code pooled} so a repeat in the same request is refused too.
-     *
-     * @return the pool's legal entity after this member (the member's, when the pool had none yet)
+     * A pool without a corporate or legal entity (e.g. the simulator's) takes its first member's. Adds the
+     * account to {@code pooled} so a repeat in the same request is refused too.
      */
-    private UUID admit(NotionalPool pool, VirtualAccount va, String label, UUID poolEntityId, Set<UUID> pooled) {
+    private void admit(NotionalPool pool, VirtualAccount va, String label, Set<UUID> pooled) {
         if (label == null) label = va.getVaNumber(); // the request may name the account by id only
         assertPoolEligible(va, label);
         if (!va.getCurrencyCode().equalsIgnoreCase(pool.getPoolCurrency())) {
@@ -546,9 +581,9 @@ public class NotionalPoolService {
         if (va.getOwningEntityId() == null) {
             throw new BusinessException(label + " has no owning legal entity; a pool is for one legal entity");
         }
-        if (poolEntityId != null && !poolEntityId.equals(va.getOwningEntityId())) {
+        if (pool.getLegalEntityId() != null && !pool.getLegalEntityId().equals(va.getOwningEntityId())) {
             throw new BusinessException(label + " belongs to another legal entity (" + va.getOwningEntityCode()
-                    + ") than the members of pool " + pool.getPoolReference());
+                    + ") than pool " + pool.getPoolReference());
         }
         if (!pooled.add(va.getId())) {
             throw new BusinessException(label + " is already a member of a notional pool");
@@ -556,7 +591,129 @@ public class NotionalPoolService {
         if (pool.getCorporateId() == null) {
             pool.setCorporateId(va.getCorporateId());
         }
-        return va.getOwningEntityId();
+        if (pool.getLegalEntityId() == null) {
+            pool.setLegalEntityId(va.getOwningEntityId());
+        }
+    }
+
+    /** The header (R2) is one of the pool's active members. */
+    private static void setHeader(NotionalPool pool, UUID accountId) {
+        if (activeMembers(pool).stream().noneMatch(m -> accountId.equals(m.getAccountId()))) {
+            throw new BusinessException("The header account must be an active member of pool " + pool.getPoolReference());
+        }
+        pool.setHeaderAccountId(accountId);
+    }
+
+    private static BigDecimal nonNegative(BigDecimal amount, String what) {
+        if (amount != null && amount.signum() < 0) {
+            throw new BusinessException(what + " is a debit amount and can't be negative: " + amount);
+        }
+        return amount;
+    }
+
+    /**
+     * The pool's rates (R7) through the interest engine's own create/update: the first call creates its POOL config
+     * (credit base required; debit base defaults to the credit base, day count to the currency's), later calls update
+     * the fields given. The effective credit rate is copied into the retired interest_rate column, which GetPoolsTool,
+     * the simulator and BalanceStructureService still read.
+     * ponytail: an edit changes the config in place; once daily runs exist (Phase 3), re-running a past date would use
+     * the new rates — version the config then (expire + new, effective-dated).
+     */
+    private InterestConfiguration saveRates(NotionalPool pool, NotionalPoolDto.Rates r) {
+        if (r == null) {
+            return pool.getInterestConfigurationId() == null ? null
+                    : interestConfigurationRepository.findById(pool.getInterestConfigurationId()).orElse(null);
+        }
+        InterestConfiguration config;
+        if (pool.getInterestConfigurationId() == null) {
+            if (r.getCreditBaseRate() == null) {
+                throw new BusinessException("A pool needs its credit base rate");
+            }
+            config = interestConfigurationService.create(InterestConfigurationDto.CreateRequest.builder()
+                    .corporateId(pool.getCorporateId())
+                    .configName("Pool " + pool.getPoolReference())
+                    .configType(InterestConfiguration.ConfigType.INTERNAL)
+                    .targetId(pool.getId())
+                    .targetType(InterestConfiguration.TargetType.POOL)
+                    .currencyCode(pool.getPoolCurrency())
+                    .creditBaseRate(r.getCreditBaseRate())
+                    .creditSpread(r.getCreditSpread())
+                    .debitBaseRate(r.getDebitBaseRate() != null ? r.getDebitBaseRate() : r.getCreditBaseRate())
+                    .debitSpread(r.getDebitSpread())
+                    .dayCountConvention(r.getDayCountConvention() != null ? r.getDayCountConvention()
+                            : InterestConfigurationService.defaultDayCount(pool.getPoolCurrency()))
+                    .isTiered(r.getTierConfig() != null && !r.getTierConfig().isBlank())
+                    .tierConfig(r.getTierConfig())
+                    .effectiveFrom(pool.getEffectiveFrom())
+                    .effectiveTo(pool.getEffectiveTo())
+                    .build());
+            pool.setInterestConfigurationId(config.getId());
+        } else {
+            config = interestConfigurationService.update(pool.getInterestConfigurationId(),
+                    InterestConfigurationDto.UpdateRequest.builder()
+                            .creditBaseRate(r.getCreditBaseRate())
+                            .creditSpread(r.getCreditSpread())
+                            .debitBaseRate(r.getDebitBaseRate())
+                            .debitSpread(r.getDebitSpread())
+                            .dayCountConvention(r.getDayCountConvention())
+                            .isTiered(r.getTierConfig() == null ? null : !r.getTierConfig().isBlank())
+                            .tierConfig(r.getTierConfig())
+                            .build());
+        }
+        pool.setInterestRate(config.getEffectiveCreditRate());
+        return config;
+    }
+
+    /**
+     * Pools from before Phase 2 get their structure once, on startup: header = the earliest-joined active member;
+     * legal entity = the header's (else any member's); rates = a POOL config with the old free-typed interest_rate as
+     * credit rate and debit = credit + {@link #DEFAULT_DEBIT_SPREAD}, marked a system default and named so. Members of
+     * another entity than the header's stay until the demo pools are re-seeded (plan 5.3).
+     * ponytail: a startup pass, not a Flyway migration — Flyway runs before Hibernate adds the new columns, and the
+     * config goes through the interest engine (day count by currency). Idempotent: a pool with all three is skipped.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void backfillPoolStructure() {
+        for (NotionalPool p : poolRepository.findAll()) {
+            if (p.getLegalEntityId() != null && p.getHeaderAccountId() != null && p.getInterestConfigurationId() != null) {
+                continue;
+            }
+            try {
+                backfill(poolRepository.findByIdWithMembers(p.getId()).orElseThrow());
+            } catch (Exception e) {
+                log.error("Could not backfill pool {}: {}", p.getPoolReference(), e.getMessage());
+            }
+        }
+    }
+
+    void backfill(NotionalPool pool) {
+        List<PoolMember> byJoining = pool.getMembers().stream()
+                .sorted(Comparator.comparing(PoolMember::getJoinedDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(PoolMember::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        if (pool.getHeaderAccountId() == null) {
+            byJoining.stream().filter(m -> m.getStatus() == PoolMember.MemberStatus.ACTIVE).findFirst()
+                    .ifPresent(m -> pool.setHeaderAccountId(m.getAccountId()));
+        }
+        if (pool.getLegalEntityId() == null) {
+            UUID from = pool.getHeaderAccountId() != null ? pool.getHeaderAccountId()
+                    : byJoining.isEmpty() ? null : byJoining.get(0).getAccountId();
+            if (from != null) {
+                vaRepository.findById(from).map(VirtualAccount::getOwningEntityId).ifPresent(pool::setLegalEntityId);
+            }
+        }
+        if (pool.getInterestConfigurationId() == null && pool.getCorporateId() != null) {
+            NotionalPoolDto.Rates r = new NotionalPoolDto.Rates();
+            r.setCreditBaseRate(pool.getInterestRate() != null ? pool.getInterestRate() : BigDecimal.ZERO);
+            r.setDebitSpread(DEFAULT_DEBIT_SPREAD);
+            InterestConfiguration config = saveRates(pool, r);
+            config.setConfigName("Pool " + pool.getPoolReference() + " (credit from its old rate; debit = credit + "
+                    + DEFAULT_DEBIT_SPREAD + "%, a default)");
+            interestConfigurationRepository.save(BaseEntity.systemDefault(config));
+        }
+        poolRepository.save(pool);
+        log.info("Backfilled pool {}: header {}, entity {}, rates {}", pool.getPoolReference(),
+                pool.getHeaderAccountId(), pool.getLegalEntityId(), pool.getInterestConfigurationId());
     }
 
     /**
@@ -610,6 +767,11 @@ public class NotionalPoolService {
     }
 
     private NotionalPoolDto.Response toResponse(NotionalPool pool) {
+        return toResponse(pool, pool.getInterestConfigurationId() == null ? null
+                : interestConfigurationRepository.findById(pool.getInterestConfigurationId()).orElse(null));
+    }
+
+    private NotionalPoolDto.Response toResponse(NotionalPool pool, InterestConfiguration config) {
         NotionalPoolDto.Response dto = new NotionalPoolDto.Response();
         dto.setId(pool.getId());
         dto.setPoolReference(pool.getPoolReference());
@@ -617,6 +779,23 @@ public class NotionalPoolService {
         dto.setPoolCurrency(pool.getPoolCurrency());
         dto.setCorporateId(pool.getCorporateId());
         dto.setProgramId(pool.getProgramId());
+        dto.setLegalEntityId(pool.getLegalEntityId());
+        dto.setHeaderAccountId(pool.getHeaderAccountId());
+        dto.setInterestConfigurationId(pool.getInterestConfigurationId());
+        dto.setPoolFloor(pool.getPoolFloor());
+        if (config != null) {
+            NotionalPoolDto.Rates r = new NotionalPoolDto.Rates();
+            r.setCreditBaseRate(config.getCreditBaseRate());
+            r.setCreditSpread(config.getCreditSpread());
+            r.setDebitBaseRate(config.getDebitBaseRate());
+            r.setDebitSpread(config.getDebitSpread());
+            r.setDayCountConvention(config.getDayCountConvention());
+            r.setTierConfig(config.getTierConfig());
+            r.setEffectiveCreditRate(config.getEffectiveCreditRate());
+            r.setEffectiveDebitRate(config.getEffectiveDebitRate());
+            r.setSystemDefault(config.isSystemDefault());
+            dto.setRates(r);
+        }
         dto.setTargetBalance(pool.getTargetBalance());
         dto.setInterestRate(pool.getInterestRate());
         dto.setInterestCalculationMethod(pool.getInterestCalculationMethod());
@@ -650,6 +829,7 @@ public class NotionalPoolService {
         dto.setContributionPercent(member.getContributionPercent());
         dto.setInterestAllocation(member.getInterestAllocation());
         dto.setWeight(member.getWeight());
+        dto.setDebitLimit(member.getDebitLimit());
         dto.setStatus(member.getStatus());
         dto.setJoinedDate(member.getJoinedDate());
         dto.setLeftDate(member.getLeftDate());
