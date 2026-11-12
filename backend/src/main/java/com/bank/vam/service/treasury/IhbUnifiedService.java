@@ -22,6 +22,7 @@ import com.bank.vam.repository.credit.InterestConfigurationRepository;
 import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.treasury.*;
+import com.bank.vam.service.credit.InterestConfigurationService;
 import com.bank.vam.service.tax.TaxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +53,9 @@ public class IhbUnifiedService {
 
     /** rateSource of a figure taken from a built-in default rate, not one the bank or corporate set. */
     static final String RATE_DEFAULT = "DEFAULT";
+    /** Built-in IHB rates for an account with none configured; kept, but every accrual/posting on them says so. */
+    static final BigDecimal DEFAULT_CREDIT_RATE = new BigDecimal("2.50");
+    static final BigDecimal DEFAULT_DEBIT_RATE = new BigDecimal("5.00");
 
     private final LegalEntityRepository legalEntityRepository;
     private final VirtualAccountRepository virtualAccountRepository;
@@ -975,21 +979,29 @@ public class IhbUnifiedService {
             return null;
         }
 
-        // Get interest configuration
-        int dayBasis = 360; // Default ACT/360
+        // Day count: the account's interest configuration's convention when it carries one, else the currency's
+        // market default (ACT/365 for GBP, AED, SGD, ...; ACT/360 otherwise). Was 360 for every currency.
+        int dayBasis = Optional.ofNullable(va.getInternalInterestConfigId())
+            .flatMap(interestConfigRepository::findById)
+            .map(InterestConfiguration::getDayCountBasis)
+            .orElse("ACT/365".equals(InterestConfigurationService.defaultDayCount(va.getCurrencyCode())) ? 365 : 360);
         BigDecimal rate;
         String interestType;
         boolean defaultRate = (balance.signum() > 0 ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate()) == null;
 
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
             // Credit position - earns interest
-            rate = va.getEffectiveCreditRate() != null ? va.getEffectiveCreditRate() : new BigDecimal("2.50");
+            rate = va.getEffectiveCreditRate() != null ? va.getEffectiveCreditRate() : DEFAULT_CREDIT_RATE;
             interestType = "CREDIT";
         } else {
             // Debit position - pays interest
-            rate = va.getEffectiveDebitRate() != null ? va.getEffectiveDebitRate() : new BigDecimal("5.00");
+            rate = va.getEffectiveDebitRate() != null ? va.getEffectiveDebitRate() : DEFAULT_DEBIT_RATE;
             interestType = "DEBIT";
             balance = balance.abs();
+        }
+        if (defaultRate) {
+            log.info("IHB interest on {} accrued at the default {} rate {}% (no rate configured)",
+                va.getVaNumber(), interestType.toLowerCase(), rate);
         }
 
         // Daily interest = Balance * Rate / (100 * DayBasis)
@@ -1103,12 +1115,18 @@ public class IhbUnifiedService {
         // One INTEREST row whichever way the net went: the amount is the absolute movement and the
         // direction is already in balanceBefore -> balanceAfter. Gross and WHT stay in the result
         // DTO rather than being split across rows, because a single posting moved the balance once.
+        // A side accrued on the built-in rate says so, so the posting reads as a labelled default.
+        // ponytail: judged on the rate configured now, not per accrual day; a rate set mid-month labels the whole month.
+        String defaults = (creditGross.signum() > 0 && va.getEffectiveCreditRate() == null
+                ? " (default rate " + DEFAULT_CREDIT_RATE + "% — no rate configured)" : "")
+            + (debitGross.signum() > 0 && va.getEffectiveDebitRate() == null
+                ? " (default rate " + DEFAULT_DEBIT_RATE + "% — no rate configured)" : "");
         if (netInterest.signum() != 0) {
             ledger(va, Transaction.MovementType.INTEREST, netInterest.abs(), balanceBefore, null, null,
                 "IHB_INTEREST",
                 (netInterest.signum() > 0 ? "Credit" : "Debit") + " interest posted"
                     + " (gross credit " + creditGross + ", gross debit " + debitGross
-                    + (whtApplied ? ", WHT " + creditWht.add(debitWht) : "") + ")");
+                    + (whtApplied ? ", WHT " + creditWht.add(debitWht) : "") + ")" + defaults);
         }
 
         log.info("Posted interest to IHB account {}: gross credit={}, gross debit={}, " +
@@ -2193,7 +2211,7 @@ public class IhbUnifiedService {
             .effectiveCreditRate(creditRate)
             .effectiveDebitRate(debitRate)
             .penaltyRate(penaltyRate)
-            .dayCountConvention("ACT/360")
+            .dayCountConvention(InterestConfigurationService.defaultDayCount(request.getCurrencyCode()))
             .compoundingFrequency(InterestConfiguration.CompoundingFrequency.DAILY)
             .postingFrequency(InterestConfiguration.PostingFrequency.MONTHLY)
             .status(InterestConfiguration.ConfigStatus.ACTIVE)

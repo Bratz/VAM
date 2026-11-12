@@ -241,12 +241,15 @@ public class SweepService {
             }
             for (SweepRuleDto.SourceAccountRequest sourceReq : request.getSourceAccounts()) {
                 SweepRuleSource source = new SweepRuleSource();
+                VirtualAccount srcVa = vaById.get(sourceReq.getAccountId());
                 source.setRule(rule);
                 source.setAccountId(sourceReq.getAccountId());
-                source.setAccountNumber(sourceReq.getAccountNumber());
-                source.setEntityCode(sourceReq.getEntityCode());
+                // From the account, not the request: a request naming the account by id alone failed on the NOT NULL
+                // account number (500), as pool members did.
+                source.setAccountNumber(srcVa != null ? srcVa.getVaNumber() : sourceReq.getAccountNumber());
+                source.setEntityCode(srcVa != null && srcVa.getOwningEntityCode() != null ? srcVa.getOwningEntityCode() : sourceReq.getEntityCode());
                 source.setEntityName(sourceReq.getEntityName());
-                source.setCurrencyCode(sourceReq.getCurrencyCode());
+                source.setCurrencyCode(srcVa != null ? srcVa.getCurrencyCode() : sourceReq.getCurrencyCode());
                 source.setBankName(sourceReq.getBankName());
                 rule.getSourceAccounts().add(source);
 
@@ -264,6 +267,7 @@ public class SweepService {
         // Fail loudly here instead, same as the source-account check above.
         VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId())
                 .orElseThrow(() -> new BusinessException("Target account not found: " + request.getTargetAccountId()));
+        rule.setTargetAccountNumber(targetVa.getVaNumber()); // from the account, not the request
         hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
         assertCanHoldSweptCash(targetVa, request.getTargetAccountNumber());
         // No assertPooledOrMirrored() on the target: a dedicated Treasury pool/root
@@ -509,29 +513,26 @@ public class SweepService {
 
             for (SweepRuleSource source : rule.getSourceAccounts()) {
                 SweepExecution execution;
+                VirtualAccount target = targetVa;
                 try {
-                    // Per-source REQUIRES_NEW transaction. Any SQL failure
-                    // here rolls back ONLY this source's work — the loop
-                    // continues with a fresh transaction on the next source.
+                    // Per-source REQUIRES_NEW transaction. Any failure here
+                    // rolls back ONLY this source's work — its transfer and
+                    // intercompany leg together — and the loop continues with
+                    // a fresh transaction on the next source.
                     execution = perSourceTx.execute(status ->
-                            executeSweep(rule, source, sourceVaById, targetVa, legalEntityById));
+                            executeSweep(rule, source, sourceVaById, target, legalEntityById));
                 } catch (Exception ex) {
                     log.error("Sweep iteration failed for source {} of rule '{}': {}",
                             source.getAccountNumber(), rule.getRuleName(), ex.getMessage(), ex);
-                    // Synthesise an in-memory FAILED row for the response. We
-                    // don't try to persist it — that would need yet another
-                    // transaction and the caller only needs the aggregate.
-                    execution = new SweepExecution();
-                    execution.setRuleName(rule.getRuleName());
-                    execution.setSourceAccountNumber(source.getAccountNumber());
-                    execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
-                    execution.setSweepAmount(BigDecimal.ZERO);
-                    execution.setErrorMessage("Sweep iteration failed: " + ex.getMessage());
+                    execution = recordFailedExecution(rule, source, "Sweep iteration failed: " + ex.getMessage());
+                    // The rolled-back transfer may already have credited the in-memory target shared by every
+                    // source of this rule; the next source's save would persist that. Re-read it.
+                    targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
                 }
                 executions.add(toExecutionResponse(execution));
                 processedCount++;
 
-                if (execution.getStatus() == SweepExecution.ExecutionStatus.SUCCESS) {
+                if (execution.isSuccess()) { // SUCCESS or SETTLED: executed sweeps are saved SETTLED, so == SUCCESS counted them as skipped
                     successCount++;
                     totalSwept = totalSwept.add(execution.getSweepAmount());
                 } else if (execution.getStatus() == SweepExecution.ExecutionStatus.FAILED) {
@@ -571,6 +572,60 @@ public class SweepService {
         return response;
     }
 
+    private SweepExecution newExecution(SweepRule rule, SweepRuleSource source) {
+        SweepExecution execution = new SweepExecution();
+        execution.setExecutionReference(generateExecutionReference());
+        execution.setRule(rule);
+        execution.setRuleName(rule.getRuleName());
+        execution.setSourceAccountId(source.getAccountId());
+        execution.setSourceAccountNumber(source.getAccountNumber());
+        execution.setSourceEntityCode(source.getEntityCode());
+        execution.setTargetAccountId(rule.getTargetAccountId());
+        execution.setTargetAccountNumber(rule.getTargetAccountNumber());
+        execution.setTargetEntityCode(rule.getTargetEntityCode());
+        execution.setCurrencyCode(rule.getCurrencyCode());
+        return execution;
+    }
+
+    /**
+     * A source whose transaction rolled back is recorded FAILED with the reason, in a fresh transaction (the
+     * source's own is gone). If even that save fails, the in-memory row still goes into the response.
+     */
+    private SweepExecution recordFailedExecution(SweepRule rule, SweepRuleSource source, String reason) {
+        SweepExecution execution = newExecution(rule, source);
+        execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
+        execution.setSweepAmount(BigDecimal.ZERO);
+        execution.setErrorMessage(reason);
+        try {
+            return perSourceTx.execute(status -> executionRepository.save(execution));
+        } catch (Exception e) {
+            log.error("Could not record failed sweep execution for {}: {}", source.getAccountNumber(), e.getMessage());
+            return execution;
+        }
+    }
+
+    /**
+     * Why the intercompany leg of an IHB cross-entity sweep could not be posted on {@code ihbCurrent}, or null when
+     * it can. Checked before any cash moves: the subsidiary's active IHB current account in the rule currency, linked
+     * to treasury's IC Payable (surplus) or IC Receivable (deficit funding) mirror, which must exist and be active —
+     * the same things TransactionService.postSweep*IntercompanyLeg requires.
+     */
+    private String intercompanyLegRefusal(VirtualAccount ihbCurrent, LegalEntity subsidiary, String currency, boolean surplus) {
+        String mirror = surplus ? "IC Payable" : "IC Receivable";
+        if (ihbCurrent == null) {
+            return subsidiary.getEntityCode() + " has no active " + currency + " IHB current account, so the "
+                + "intercompany position could not be recorded; nothing was moved";
+        }
+        UUID mirrorId = surplus ? ihbCurrent.getIcPayableVaId() : ihbCurrent.getIcReceivableVaId();
+        VirtualAccount mirrorVa = mirrorId != null ? virtualAccountRepository.findById(mirrorId).orElse(null) : null;
+        if (mirrorVa == null || mirrorVa.getStatus() != VirtualAccount.VaStatus.ACTIVE) {
+            return "IHB current account " + ihbCurrent.getVaNumber() + " has no active " + mirror + " at treasury"
+                + (mirrorId == null ? " linked" : " (" + mirrorId + ")") + ", so the intercompany position could not "
+                + "be recorded; nothing was moved";
+        }
+        return null;
+    }
+
     /**
      * Execute a single sweep from source to target account.
      *
@@ -585,17 +640,9 @@ public class SweepService {
                                          Map<UUID, VirtualAccount> sourceVaById,
                                          VirtualAccount targetVa,
                                          Map<UUID, LegalEntity> legalEntityById) {
-        SweepExecution execution = new SweepExecution();
-        execution.setExecutionReference(generateExecutionReference());
-        execution.setRule(rule);
-        execution.setRuleName(rule.getRuleName());
-        execution.setSourceAccountId(source.getAccountId());
-        execution.setSourceAccountNumber(source.getAccountNumber());
-        execution.setSourceEntityCode(source.getEntityCode());
-        execution.setTargetAccountId(rule.getTargetAccountId());
-        execution.setTargetAccountNumber(rule.getTargetAccountNumber());
-        execution.setTargetEntityCode(rule.getTargetEntityCode());
-        execution.setCurrencyCode(rule.getCurrencyCode());
+        SweepExecution execution = newExecution(rule, source);
+        // Set just before the transfer: from there on a failure must undo the whole source (see the catch below).
+        boolean cashMoving = false;
 
         try {
             // Get source VA - gracefully handle missing/deleted VAs.
@@ -697,12 +744,40 @@ public class SweepService {
                     log.warn("Sweep blocked for {} - insufficient available balance: {} < {}",
                         source.getAccountNumber(), availableBalance, sweepAmount);
                 } else {
+                    // Cross-entity IHB-configured pair (same gate the old IhbDeposit creation used): the
+                    // subsidiary's claim on treasury is recorded by the intercompany leg below, so its IHB
+                    // current account and IC Payable link are checked BEFORE any cash moves. Treasury must
+                    // never hold the subsidiary's cash with no claim recorded (R10).
+                    // ponytail: cross-entity sweeps between entities that are NOT IHB-configured still move
+                    // cash with no intercompany record, as before; out of scope here.
+                    LegalEntity sourceEntity = sourceVa.getOwningEntityId() != null ?
+                        legalEntityById.get(sourceVa.getOwningEntityId()) : null;
+                    LegalEntity targetEntity = targetVa != null && targetVa.getOwningEntityId() != null ?
+                        legalEntityById.get(targetVa.getOwningEntityId()) : null;
+                    VirtualAccount ihbCurrentVa = null;
+                    if (sourceEntity != null && targetEntity != null
+                            && sourceEntity.isIhbEnabled() && targetEntity.canLend()) {
+                        ihbCurrentVa = virtualAccountRepository
+                            .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
+                            .orElse(null);
+                        String refusal = intercompanyLegRefusal(ihbCurrentVa, sourceEntity, rule.getCurrencyCode(), true);
+                        if (refusal != null) {
+                            execution.setSweepAmount(BigDecimal.ZERO);
+                            execution.setBalanceAfter(sourceVa.getCurrentBalance());
+                            execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
+                            execution.setErrorMessage(refusal);
+                            log.warn("Sweep refused for {} before any cash moved: {}", source.getAccountNumber(), refusal);
+                            return executionRepository.save(execution);
+                        }
+                    }
+
                     // Move the real cash immediately (previously deferred to
                     // an EOD IhbSettlementService.runSettlement() that had no
                     // caller anywhere in the codebase — sweeps only ever
                     // committed availableBalance, never actually moved
                     // currentBalance). Mirrors how deficit funding already
                     // moves cash immediately via the same executeTransfer().
+                    cashMoving = true;
                     boolean transferSuccess = executeTransfer(
                         sourceVa, targetVa, sweepAmount, rule.getCurrencyCode(),
                         execution.getExecutionReference(), "Cash concentration sweep - " + rule.getRuleName()
@@ -720,28 +795,12 @@ public class SweepService {
 
                         rule.setTotalSwept(rule.getTotalSwept().add(sweepAmount));
 
-                        // Post the intercompany-position mirror on top of the
-                        // real transfer above, for cross-entity IHB-configured
-                        // pairs only (same gate the old IhbDeposit creation
-                        // used) — see TransactionService.postSweepSurplusIntercompanyLeg.
-                        // Best-effort: a failure here doesn't undo the real
-                        // transfer that already succeeded above.
-                        LegalEntity sourceEntity = sourceVa.getOwningEntityId() != null ?
-                            legalEntityById.get(sourceVa.getOwningEntityId()) : null;
-                        LegalEntity targetEntity = targetVa != null && targetVa.getOwningEntityId() != null ?
-                            legalEntityById.get(targetVa.getOwningEntityId()) : null;
-                        if (sourceEntity != null && targetEntity != null
-                                && sourceEntity.isIhbEnabled() && targetEntity.canLend()) {
-                            try {
-                                virtualAccountRepository
-                                    .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
-                                    .filter(VirtualAccount::hasIcPayable)
-                                    .ifPresent(ihbCurrentVa -> transactionService.postSweepSurplusIntercompanyLeg(
-                                        ihbCurrentVa, sweepAmount, execution.getExecutionReference(), LocalDate.now()));
-                            } catch (Exception e) {
-                                log.error("Failed to post sweep intercompany leg for {}: {}",
-                                    execution.getExecutionReference(), e.getMessage(), e);
-                            }
+                        // The intercompany-position mirror on top of the real transfer above — see
+                        // TransactionService.postSweepSurplusIntercompanyLeg. Not best-effort: if it throws,
+                        // the catch below rethrows and the per-source transaction rolls the transfer back too.
+                        if (ihbCurrentVa != null) {
+                            transactionService.postSweepSurplusIntercompanyLeg(
+                                ihbCurrentVa, sweepAmount, execution.getExecutionReference(), LocalDate.now());
                         }
 
                         // Post sweep fee
@@ -755,6 +814,10 @@ public class SweepService {
                 }
             }
         } catch (Exception e) {
+            // Once cash has started moving, a failure (transfer or intercompany leg) must not leave half of it
+            // committed: leave through executeRules' per-source transaction, which rolls the whole source back and
+            // records it FAILED.
+            if (cashMoving) throw e;
             log.error("Sweep execution failed for source {}: {}", source.getAccountNumber(), e.getMessage(), e);
             execution.setSweepAmount(BigDecimal.ZERO);
             execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
@@ -777,8 +840,11 @@ public class SweepService {
      *
      * This is the reverse of sweep: instead of surplus going to Treasury,
      * Treasury lends to deficit accounts.
+     *
+     * <p>Not {@code @Transactional}: like {@link #executeRules}, each source runs in its own
+     * {@code REQUIRES_NEW} transaction, so a failed intercompany leg rolls back that source's transfer
+     * only. Under one run-wide transaction it marked the whole run rollback-only.
      */
-    @Transactional
     public SweepRuleDto.DeficitFundingResponse runDeficitFunding(SweepRuleDto.DeficitFundingRequest request) {
         List<SweepRule> rules;
         if (request.getRuleIds() != null && !request.getRuleIds().isEmpty()) {
@@ -823,8 +889,21 @@ public class SweepService {
                             .collect(Collectors.toMap(LegalEntity::getId, Function.identity()));
 
             for (SweepRuleSource source : rule.getSourceAccounts()) {
-                SweepRuleDto.DeficitFundingResult result =
-                        executeDeficitFunding(rule, source, sourceVaById, targetVa, legalEntityById);
+                SweepRuleDto.DeficitFundingResult result;
+                VirtualAccount treasuryVa = targetVa;
+                try {
+                    result = perSourceTx.execute(status ->
+                            executeDeficitFunding(rule, source, sourceVaById, treasuryVa, legalEntityById));
+                } catch (Exception ex) {
+                    log.error("Deficit funding failed for {}: {}", source.getAccountNumber(), ex.getMessage(), ex);
+                    result = new SweepRuleDto.DeficitFundingResult();
+                    result.setSourceAccountNumber(source.getAccountNumber());
+                    result.setSourceEntityCode(source.getEntityCode());
+                    result.setFundedAmount(BigDecimal.ZERO);
+                    result.setMessage("Error (nothing moved): " + ex.getMessage());
+                    // Same as executeRules: the rolled-back transfer may have debited the shared in-memory treasury VA.
+                    targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
+                }
                 results.add(result);
 
                 if (result.isFunded()) {
@@ -859,6 +938,7 @@ public class SweepService {
         result.setSourceEntityCode(source.getEntityCode());
         result.setFunded(false);
         result.setFundedAmount(BigDecimal.ZERO);
+        boolean cashMoving = false;
 
         try {
             // Only TARGET_BALANCE rules support deficit funding
@@ -909,9 +989,28 @@ public class SweepService {
                 return result;
             }
 
-            // Check borrower's credit limit
-            if (!sourceEntity.canBorrowAmount(deficit)) {
-                result.setMessage("Borrower credit limit exceeded. Available: " + sourceEntity.getAvailableIhbLimit());
+            if (!sourceEntity.canBorrow()) {
+                result.setMessage(sourceEntity.getEntityCode() + " is not permitted to borrow from the IHB");
+                return result;
+            }
+
+            // The subsidiary's IHB current account carries the claim (the intercompany leg below debits it), so it
+            // must exist and be linked before any cash moves.
+            VirtualAccount ihbCurrentVa = virtualAccountRepository
+                    .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
+                    .orElse(null);
+            String refusal = intercompanyLegRefusal(ihbCurrentVa, sourceEntity, rule.getCurrencyCode(), false);
+            if (refusal != null) {
+                result.setMessage(refusal);
+                return result;
+            }
+
+            // Borrower's credit headroom, the same rule POBO uses: IHB current balance + credit limit. The entity's
+            // ihbCurrentExposure (LegalEntity.canBorrowAmount) is never updated anywhere, so it checked each top-up
+            // alone; the IHB current balance falls with every top-up's intercompany leg, so this one is cumulative.
+            String overLimit = com.bank.vam.service.pobo.PoboEnrolmentService.headroomRefusal(ihbCurrentVa, deficit);
+            if (overLimit != null) {
+                result.setMessage(overLimit);
                 return result;
             }
 
@@ -924,6 +1023,7 @@ public class SweepService {
 
             // Execute the reverse transfer: Treasury → Source (deficit account)
             String executionRef = generateExecutionReference();
+            cashMoving = true;
             boolean transferSuccess = executeTransfer(
                     targetVa,   // FROM Treasury
                     sourceVa,   // TO deficit account
@@ -938,19 +1038,10 @@ public class SweepService {
                 return result;
             }
 
-            // Post the intercompany-position mirror on top of the real
-            // transfer above, for cross-entity IHB-configured pairs only —
-            // see TransactionService.postSweepDeficitIntercompanyLeg.
-            // Best-effort: a failure here doesn't undo the real transfer.
-            try {
-                virtualAccountRepository
-                    .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
-                    .filter(VirtualAccount::hasIcReceivable)
-                    .ifPresent(ihbCurrentVa -> transactionService.postSweepDeficitIntercompanyLeg(
-                        ihbCurrentVa, deficit, executionRef, LocalDate.now()));
-            } catch (Exception e) {
-                log.error("Failed to post deficit-funding intercompany leg for {}: {}", executionRef, e.getMessage(), e);
-            }
+            // The intercompany-position mirror on top of the real transfer above — see
+            // TransactionService.postSweepDeficitIntercompanyLeg. If it throws, the catch below rethrows and
+            // runDeficitFunding's per-source transaction rolls the transfer back too.
+            transactionService.postSweepDeficitIntercompanyLeg(ihbCurrentVa, deficit, executionRef, LocalDate.now());
 
             result.setFunded(true);
             result.setFundedAmount(deficit);
@@ -963,6 +1054,7 @@ public class SweepService {
                     sourceEntity.getEntityCode(), source.getAccountNumber());
 
         } catch (Exception e) {
+            if (cashMoving) throw e; // undo the whole source, transfer included (see runDeficitFunding)
             log.error("Deficit funding failed for {}: {}", source.getAccountNumber(), e.getMessage(), e);
             result.setMessage("Error: " + e.getMessage());
         }
@@ -1122,50 +1214,47 @@ public class SweepService {
     private boolean executeTransfer(VirtualAccount sourceVa, VirtualAccount targetVa,
                                     BigDecimal amount, String currency,
                                     String executionReference, String description) {
-        try {
-            BigDecimal sourceAvailable = sourceVa.getAvailableBalance() != null
-                ? sourceVa.getAvailableBalance()
-                : sourceVa.getCurrentBalance();
-                
-            if (sourceAvailable == null || sourceAvailable.compareTo(amount) < 0) {
-                log.warn("Insufficient balance for sweep: available={}, required={}", 
-                    sourceAvailable, amount);
-                return false;
-            }
+        // No catch: a failure part-way (balances changed, ledger rows not written) must reach the caller, which
+        // rolls the whole source back. Swallowed into "false", the half-done transfer was committed.
+        BigDecimal sourceAvailable = sourceVa.getAvailableBalance() != null
+            ? sourceVa.getAvailableBalance()
+            : sourceVa.getCurrentBalance();
             
-            BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
-            BigDecimal targetBalanceBefore = targetVa.getCurrentBalance();
-            
-            // Debit source
-            sourceVa.setCurrentBalance(sourceVa.getCurrentBalance().subtract(amount));
-            if (sourceVa.getAvailableBalance() != null) {
-                sourceVa.setAvailableBalance(sourceVa.getAvailableBalance().subtract(amount));
-            }
-            mirrorIfHomeBankShadow(sourceVa, amount.negate());
-
-            // Credit target
-            targetVa.setCurrentBalance(targetVa.getCurrentBalance().add(amount));
-            if (targetVa.getAvailableBalance() != null) {
-                targetVa.setAvailableBalance(targetVa.getAvailableBalance().add(amount));
-            }
-            mirrorIfHomeBankShadow(targetVa, amount);
-
-            virtualAccountRepository.save(sourceVa);
-            virtualAccountRepository.save(targetVa);
-            
-            // Create transaction records
-            createSweepTransactions(
-                sourceVa, targetVa, 
-                amount, currency,
-                sourceBalanceBefore, targetBalanceBefore,
-                executionReference, description
-            );
-            
-            return true;
-        } catch (Exception e) {
-            log.error("Transfer failed: {}", e.getMessage(), e);
+        if (sourceAvailable == null || sourceAvailable.compareTo(amount) < 0) {
+            log.warn("Insufficient balance for sweep: available={}, required={}", 
+                sourceAvailable, amount);
             return false;
         }
+        
+        BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
+        BigDecimal targetBalanceBefore = targetVa.getCurrentBalance();
+        
+        // Debit source
+        sourceVa.setCurrentBalance(sourceVa.getCurrentBalance().subtract(amount));
+        if (sourceVa.getAvailableBalance() != null) {
+            sourceVa.setAvailableBalance(sourceVa.getAvailableBalance().subtract(amount));
+        }
+        mirrorIfHomeBankShadow(sourceVa, amount.negate());
+
+        // Credit target
+        targetVa.setCurrentBalance(targetVa.getCurrentBalance().add(amount));
+        if (targetVa.getAvailableBalance() != null) {
+            targetVa.setAvailableBalance(targetVa.getAvailableBalance().add(amount));
+        }
+        mirrorIfHomeBankShadow(targetVa, amount);
+
+        virtualAccountRepository.save(sourceVa);
+        virtualAccountRepository.save(targetVa);
+        
+        // Create transaction records
+        createSweepTransactions(
+            sourceVa, targetVa, 
+            amount, currency,
+            sourceBalanceBefore, targetBalanceBefore,
+            executionReference, description
+        );
+        
+        return true;
     }
 
     /**
