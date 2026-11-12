@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play, Send, RotateCcw } from 'lucide-react';
-import { Button, Badge, Input, StatusIconBadge } from '../ui';
+import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play, Send, RefreshCw } from 'lucide-react';
+import { Button, Badge, DataTable, Input, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
 import { NotionalPool, PoolPosting, PoolRun, poolingApi } from '../../services/api';
@@ -368,6 +368,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
         <p className="caption">No runs in the last 31 days.</p>
       ) : (
         <div className="max-h-64 overflow-y-auto border border-edge rounded-lg">
+          {/* eslint-disable-next-line no-restricted-syntax -- expandable rows: a run opens its per-member lines */}
           <table className="w-full text-body-sm">
             <thead className="text-neutral-500 dark:text-neutral-400 text-left sticky top-0 bg-surface-card">
               <tr>
@@ -404,7 +405,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
                     {r.status === 'POSTED' && (
                       <Button size="sm" variant="ghost" disabled={running}
                               onClick={(e) => { e.stopPropagation(); correct(r.valueDate); }}
-                              leftIcon={<RotateCcw className="w-4 h-4" />}>
+                              leftIcon={<RefreshCw className="w-4 h-4" />}>
                         Correct
                       </Button>
                     )}
@@ -413,6 +414,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
                 {openRunId === r.id && (
                   <tr className="bg-surface-page">
                     <td colSpan={6} className="px-3 py-2">
+                      {/* eslint-disable-next-line no-restricted-syntax -- the expanded row's member lines, nested in a run row */}
                       <table className="w-full text-caption">
                         <thead className="text-neutral-500 dark:text-neutral-400 text-left">
                           <tr>
@@ -464,33 +466,21 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
           </Button>
         </div>
       </div>
-      {postings.length === 0 ? (
-        <p className="caption">Nothing posted yet.</p>
-      ) : (
-        <div className="max-h-48 overflow-y-auto border border-edge rounded-lg">
-          <table className="w-full text-body-sm">
-            <thead className="text-neutral-500 dark:text-neutral-400 text-left sticky top-0 bg-surface-card">
-              <tr>
-                <th className="px-3 py-2 font-medium">Month</th>
-                <th className="px-3 py-2 font-medium text-right">Total</th>
-                <th className="px-3 py-2 font-medium">Posted at</th>
-              </tr>
-            </thead>
-            <tbody>
-              {postings.map(p => (
-                <tr key={p.correlationId} className="border-t border-edge"
-                    title={p.members.map(m => `${m.accountNumber}: ${money(m.amount)} (${m.reference})`).join('\n')}>
-                  <td className="px-3 py-2 font-mono whitespace-nowrap">
-                    {p.month}{p.kind === 'CORRECTION' && <Badge variant="info" size="sm" className="ml-2">Correction {p.valueDate}</Badge>}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{money(p.total)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{p.postedAt?.replace('T', ' ').slice(0, 16)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        data={postings}
+        keyExtractor={(p) => p.correlationId}
+        emptyTitle="Nothing posted yet"
+        columns={[
+          { key: 'month', header: 'Month', render: (_, p) => (
+            <span className="font-mono whitespace-nowrap"
+                  title={p.members.map(m => `${m.accountNumber}: ${money(m.amount)} (${m.reference})`).join('\n')}>
+              {p.month}{p.kind === 'CORRECTION' && <Badge variant="info" size="sm" className="ml-2">Correction {p.valueDate}</Badge>}
+            </span>
+          ) },
+          { key: 'total', header: 'Total', align: 'right', render: (_, p) => <span className="tabular-nums">{money(p.total)}</span> },
+          { key: 'postedAt', header: 'Posted at', render: (_, p) => p.postedAt?.replace('T', ' ').slice(0, 16) ?? '' },
+        ]}
+      />
     </div>
   );
 };

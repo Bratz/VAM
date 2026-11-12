@@ -55,7 +55,7 @@ export const FirmQuotePanel: React.FC<Props> = ({ corporateId, entityId, pair, s
       return s - 1;
     }), 1000);
     return () => clearInterval(id);
-  }, [quote?.id, quote?.status, quote?.quotedAt]);
+  }, [quote?.id, quote?.status, quote?.quotedAt, quote?.secondsRemaining]);
 
   const run = async (what: 'request' | 'counter' | 'accept', fn: () => Promise<void>) => {
     setBusy(what);

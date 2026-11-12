@@ -211,7 +211,6 @@ const calculateDueDate = (invoiceDate: string, paymentTerms: string): string => 
 };
 
 // A party as the customer picker shows it. Credit figures are not loaded (0 = unknown, and hidden).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- party DTO from partiesApi is untyped here
 const toCustomer = (p: any): Customer => ({
   id: p.id,
   name: p.displayName || p.legalName || 'Unknown',
