@@ -48,12 +48,6 @@ export const DEFAULT_SCORE_CONSTANTS: ScoreConstants = {
   consentModerateDays: 30,
   consentSevereRate: 0.005,
   consentModerateRate: 0.002,
-  // R3 — verbatim from NotionalPoolService: POOL_MANAGEMENT_FEE_RATE
-  // 0.01%/mo (×12 = 0.12%/yr), POOL_MANAGEMENT_FEE_MIN $100/mo
-  // (×12 = $1,200/yr), POOL_MEMBERSHIP_FEE $25 flat/member.
-  poolMgmtFeeAnnualPct: 0.12,
-  poolMgmtFeeMinAnnual: 1200,
-  poolMembershipFeeFlat: 25,
 };
 
 export function makeConstants(
@@ -268,7 +262,7 @@ export function computeScore(input: ScoreInputs): ScoreResult {
     },
     {
       label: 'Notional-pool fee',
-      value: `management ${c.poolMgmtFeeAnnualPct}%/yr of pool balance (0.01%/mo) · min $${c.poolMgmtFeeMinAnnual.toLocaleString()}/yr · $${c.poolMembershipFeeFlat} flat per member`,
+      value: 'none — pools carry no management or joining fee (pooling spec D9)',
       source: 'NotionalPoolService',
     },
   );

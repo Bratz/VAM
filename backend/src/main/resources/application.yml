@@ -50,6 +50,9 @@ spring:
     enabled: true
     baseline-on-migrate: true
     baseline-version: "13"   # quoted: avoid YAML int-parsing ambiguity
+    # ${homebankbic} in a migration = the home bank's BIC (V53 keeps only home-bank pool members).
+    placeholders:
+      homebankbic: ${vam.home-bank.bic}
 
   # Jackson
   jackson:

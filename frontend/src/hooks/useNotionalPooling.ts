@@ -59,6 +59,11 @@ export const useNotionalPooling = () => {
     return fetchPoolById(poolId);
   }, [fetchPoolById]);
 
+  const resumePool = useCallback(async (poolId: string) => {
+    await poolingApi.resumePool(poolId);
+    return fetchPoolById(poolId);
+  }, [fetchPoolById]);
+
   const closePool = useCallback(async (poolId: string) => {
     await poolingApi.closePool(poolId);
     return fetchPoolById(poolId);
@@ -103,19 +108,10 @@ export const useNotionalPooling = () => {
     fetchPools();
   }, [fetchPools]);
 
-  const stats = {
-    totalPools: pools.length,
-    activePools: pools.filter(p => p.status === 'ACTIVE').length,
-    totalBalance: pools.reduce((s, p) => s + (p.totalBalance || 0), 0),
-    totalSavings: pools.reduce((s, p) => s + (p.interestSavingsYtd || 0), 0),
-    totalMembers: pools.reduce((s, p) => s + (p.memberCount || p.members?.length || 0), 0),
-  };
-
   return {
     pools,
     loading,
     error,
-    stats,
     selectedPool,
     setSelectedPool,
     fetchPools,
@@ -123,6 +119,7 @@ export const useNotionalPooling = () => {
     createPool,
     updatePool,
     suspendPool,
+    resumePool,
     closePool,
     deletePool,
     addMember,

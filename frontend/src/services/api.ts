@@ -1285,9 +1285,10 @@ export interface NotionalPool {
   interestRate: number;
   interestCalculationMethod: 'DAILY_AVERAGE' | 'MONTH_END' | 'TIER_BASED';
   totalBalance: number;
-  interestSavingsYtd: number;
   memberCount: number;
   status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
+  /** From the pool's daily runs, in its currency (never summed across currencies). */
+  figures?: PoolFigures;
   effectiveFrom?: string;
   effectiveTo?: string;
   lastCalculationDate?: string;
@@ -1304,12 +1305,26 @@ export interface PoolMember {
   entityName: string;
   currentBalance: number;
   contributionPercent: number;
-  interestAllocation: number;
   /** The largest debit balance this member may run; absent = no limit. */
   debitLimit?: number;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
   joinedDate: string;
   leftDate?: string;
+}
+
+/**
+ * A pool's figures from its current runs. Month and year are those of asOf (yesterday, the latest run date).
+ * Benefit = pooled − standalone interest (the value of pooling). Interest signed: credit +, debit −.
+ */
+export interface PoolFigures {
+  asOf: string;
+  lastRunDate?: string;
+  lastRunNet?: number;
+  /** The last run's pooled interest: the latest day's accrual. */
+  lastRunPooledInterest?: number;
+  mtdPooledInterest: number;
+  mtdBenefit: number;
+  ytdBenefit: number;
 }
 
 /** A pool's rates (% a year), held in its InterestConfiguration (target POOL). */
@@ -1383,6 +1398,7 @@ export const poolingApi = {
   createPool: (data: CreatePoolRequest) => apiClient.post<ApiResponse<NotionalPool>>('/pooling', data).then(r => r.data),
   updatePool: (id: string, data: UpdatePoolRequest) => apiClient.put<ApiResponse<NotionalPool>>(`/pooling/${id}`, data).then(r => r.data),
   suspendPool: (id: string) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${id}/suspend`).then(r => r.data),
+  resumePool: (id: string) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${id}/resume`).then(r => r.data),
   closePool: (id: string) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${id}/close`).then(r => r.data),
   deletePool: (id: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${id}`).then(r => r.data),
   addMember: (poolId: string, data: AddMemberRequest) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${poolId}/members`, data).then(r => r.data),

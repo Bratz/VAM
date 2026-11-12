@@ -737,33 +737,34 @@ WHERE  va.linked_physical_account_id = pa.id
 -- ============================================================================
 -- 6. NOTIONAL POOLS — one home-currency pool per MNC
 -- ============================================================================
--- interest_rate is an ANNUAL PERCENT: NotionalPoolService.calculateInterest
--- divides by 36500, so 3.5 = 3.5%/yr. Store the percent number (5.1000),
--- NOT the decimal fraction (0.0510) — the fraction under-prices interest
--- 100× on the live engine AND the simulator. (Corrected 2026-05-16.)
+-- interest_rate is an ANNUAL PERCENT (5.1000 = 5.1%/yr): on first start the
+-- pool service turns it into the pool's POOL interest configuration (credit
+-- rate; debit = credit + 2%, a default). interest_savings_ytd is 0: a pool's
+-- figures come from its daily runs (POST /api/v1/pooling/runs/catch-up builds
+-- them over the snapshot history), never from a stored counter (spec D10).
 INSERT INTO notional_pools (
     id, pool_reference, pool_name, pool_currency, target_balance, total_balance,
     member_count, interest_rate, interest_calculation_method, interest_savings_ytd,
     status, effective_from, last_calculation_date, created_at, updated_at
 ) VALUES
     ('aa000001-5000-0000-0000-000000000001', 'POOL-MERC-EUR', 'Mercator EUR Notional Pool',
-     'EUR', 0.00, 9862000.00, 4, 2.5000, 'DAILY_AVERAGE', 184000.00,
+     'EUR', 0.00, 9862000.00, 4, 2.5000, 'DAILY_AVERAGE', 0.00,
      'ACTIVE', '2010-01-01', CURRENT_DATE - 1, NOW() - INTERVAL '7 years', NOW()),
 
     ('bb000002-5000-0000-0000-000000000001', 'POOL-MAWR-SAR', 'Al Mawarid SAR Notional Pool',
-     'SAR', 0.00, 24665000.00, 3, 4.1000, 'DAILY_AVERAGE', 612000.00,
+     'SAR', 0.00, 24665000.00, 3, 4.1000, 'DAILY_AVERAGE', 0.00,
      'ACTIVE', '2005-01-01', CURRENT_DATE - 1, NOW() - INTERVAL '10 years', NOW()),
 
     ('cc000003-5000-0000-0000-000000000001', 'POOL-ALBN-GBP', 'Albion GBP Notional Pool',
-     'GBP', 0.00, 13770000.00, 3, 4.7500, 'DAILY_AVERAGE', 392000.00,
+     'GBP', 0.00, 13770000.00, 3, 4.7500, 'DAILY_AVERAGE', 0.00,
      'ACTIVE', '2010-04-01', CURRENT_DATE - 1, NOW() - INTERVAL '10 years', NOW()),
 
     ('dd000004-5000-0000-0000-000000000001', 'POOL-HEL-USD',  'Helios USD Notional Pool',
-     'USD', 0.00, 25337000.00, 3, 5.1000, 'DAILY_AVERAGE', 798000.00,
+     'USD', 0.00, 25337000.00, 3, 5.1000, 'DAILY_AVERAGE', 0.00,
      'ACTIVE', '2013-07-01', CURRENT_DATE - 1, NOW() - INTERVAL '5 years', NOW()),
 
     ('ee000005-5000-0000-0000-000000000001', 'POOL-BRTO-AED', 'Brato AED Notional Pool',
-     'AED', 0.00, 17155000.00, 3, 3.2000, 'DAILY_AVERAGE', 165000.00,
+     'AED', 0.00, 17155000.00, 3, 3.2000, 'DAILY_AVERAGE', 0.00,
      'ACTIVE', '2017-01-01', CURRENT_DATE - 1, NOW() - INTERVAL '3 years', NOW())
 ON CONFLICT (pool_reference) DO NOTHING;
 
@@ -785,77 +786,196 @@ INSERT INTO pool_members (
     -- MNC 1 EUR — Mercator (header + 3 members)
     ('aa000001-6000-0000-0000-000000000001', 'aa000001-5000-0000-0000-000000000001',
      'aa000001-4000-0000-0000-000000000001', 'MERC0000001', 'MERC-DE', 'Mercator Brands Holding SE',
-     5125000.00, 52.00, 23100.00, 'ACTIVE', CURRENT_DATE - INTERVAL '7 years',
+     5125000.00, 52.00, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '7 years',
      NOW() - INTERVAL '7 years', NOW(), 'system'),
     ('aa000001-6000-0000-0000-000000000002', 'aa000001-5000-0000-0000-000000000001',
      'aa000001-4000-0000-0000-000000000002', 'MERC0000002', 'MERC-DE', 'Mercator Brands Holding SE',
-     2040000.00, 21.00,  8650.00, 'ACTIVE', CURRENT_DATE - INTERVAL '7 years',
+     2040000.00, 21.00,  0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '7 years',
      NOW() - INTERVAL '7 years', NOW(), 'system'),
     ('aa000001-6000-0000-0000-000000000003', 'aa000001-5000-0000-0000-000000000001',
      'aa000001-4000-0000-0000-000000000003', 'MERC0000003', 'MERC-FR', 'Mercator France SAS',
-     1485000.00, 15.00,  6210.00, 'ACTIVE', CURRENT_DATE - INTERVAL '6 years',
+     1485000.00, 15.00,  0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '6 years',
      NOW() - INTERVAL '6 years', NOW(), 'system'),
     ('aa000001-6000-0000-0000-000000000004', 'aa000001-5000-0000-0000-000000000001',
      'aa000001-4000-0000-0000-000000000004', 'MERC0000004', 'MERC-IT', 'Mercator Italia S.r.l.',
-     1212000.00, 12.00,  5080.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
+     1212000.00, 12.00,  0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
      NOW() - INTERVAL '5 years', NOW(), 'system'),
 
     -- MNC 2 SAR — Al Mawarid (header + 2 members)
     ('bb000002-6000-0000-0000-000000000001', 'bb000002-5000-0000-0000-000000000001',
      'bb000002-4000-0000-0000-000000000001', 'MAWR0000001', 'MAWR-SA', 'Al Mawarid Trading Group JSC',
-     12450000.00, 50.50, 71450.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
+     12450000.00, 50.50, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
      NOW() - INTERVAL '10 years', NOW(), 'system'),
     ('bb000002-6000-0000-0000-000000000002', 'bb000002-5000-0000-0000-000000000001',
      'bb000002-4000-0000-0000-000000000002', 'MAWR0000002', 'MAWR-SA', 'Al Mawarid Trading Group JSC',
-     8200000.00, 33.25, 46930.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
+     8200000.00, 33.25, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
      NOW() - INTERVAL '10 years', NOW(), 'system'),
     ('bb000002-6000-0000-0000-000000000003', 'bb000002-5000-0000-0000-000000000001',
      'bb000002-4000-0000-0000-000000000003', 'MAWR0000003', 'MAWR-SA', 'Al Mawarid Trading Group JSC',
-     4015000.00, 16.25, 22980.00, 'ACTIVE', CURRENT_DATE - INTERVAL '9 years',
+     4015000.00, 16.25, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '9 years',
      NOW() - INTERVAL '9 years', NOW(), 'system'),
 
     -- MNC 3 GBP — Albion (header + 2 members)
     ('cc000003-6000-0000-0000-000000000001', 'cc000003-5000-0000-0000-000000000001',
      'cc000003-4000-0000-0000-000000000001', 'ALBN0000001', 'ALBN-GB', 'Albion Industrial PLC',
-     8210000.00, 59.60, 49530.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
+     8210000.00, 59.60, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
      NOW() - INTERVAL '10 years', NOW(), 'system'),
     ('cc000003-6000-0000-0000-000000000002', 'cc000003-5000-0000-0000-000000000001',
      'cc000003-4000-0000-0000-000000000002', 'ALBN0000002', 'ALBN-EN', 'Albion Engineering Ltd',
-     3520000.00, 25.60, 21240.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
+     3520000.00, 25.60, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '10 years',
      NOW() - INTERVAL '10 years', NOW(), 'system'),
     ('cc000003-6000-0000-0000-000000000003', 'cc000003-5000-0000-0000-000000000001',
      'cc000003-4000-0000-0000-000000000003', 'ALBN0000003', 'ALBN-EN', 'Albion Engineering Ltd',
-     2040000.00, 14.80, 12320.00, 'ACTIVE', CURRENT_DATE - INTERVAL '9 years',
+     2040000.00, 14.80, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '9 years',
      NOW() - INTERVAL '9 years', NOW(), 'system'),
 
     -- MNC 4 USD — Helios (header + 2 members)
     ('dd000004-6000-0000-0000-000000000001', 'dd000004-5000-0000-0000-000000000001',
      'dd000004-4000-0000-0000-000000000001', 'HEL0000001',  'HEL-US', 'Helios Global Inc.',
-     15280000.00, 60.30, 99230.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
+     15280000.00, 60.30, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
      NOW() - INTERVAL '5 years', NOW(), 'system'),
     ('dd000004-6000-0000-0000-000000000002', 'dd000004-5000-0000-0000-000000000001',
      'dd000004-4000-0000-0000-000000000002', 'HEL0000002',  'HEL-US', 'Helios Global Inc.',
-     6045000.00, 23.85, 39280.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
+     6045000.00, 23.85, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '5 years',
      NOW() - INTERVAL '5 years', NOW(), 'system'),
     ('dd000004-6000-0000-0000-000000000003', 'dd000004-5000-0000-0000-000000000001',
      'dd000004-4000-0000-0000-000000000003', 'HEL0000003',  'HEL-US', 'Helios Global Inc.',
-     4012000.00, 15.85, 26010.00, 'ACTIVE', CURRENT_DATE - INTERVAL '4 years',
+     4012000.00, 15.85, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '4 years',
      NOW() - INTERVAL '4 years', NOW(), 'system'),
 
     -- MNC 5 AED — Brato (header + 2 members)
     ('ee000005-6000-0000-0000-000000000001', 'ee000005-5000-0000-0000-000000000001',
      'ee000005-4000-0000-0000-000000000001', 'BRTO0000001', 'BRTO-AE', 'Brato Logistics LLC',
-     10120000.00, 59.00, 22600.00, 'ACTIVE', CURRENT_DATE - INTERVAL '3 years',
+     10120000.00, 59.00, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '3 years',
      NOW() - INTERVAL '3 years', NOW(), 'system'),
     ('ee000005-6000-0000-0000-000000000002', 'ee000005-5000-0000-0000-000000000001',
      'ee000005-4000-0000-0000-000000000002', 'BRTO0000002', 'BRTO-AE', 'Brato Logistics LLC',
-     4520000.00, 26.35, 10090.00, 'ACTIVE', CURRENT_DATE - INTERVAL '3 years',
+     4520000.00, 26.35, 0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '3 years',
      NOW() - INTERVAL '3 years', NOW(), 'system'),
     ('ee000005-6000-0000-0000-000000000003', 'ee000005-5000-0000-0000-000000000001',
      'ee000005-4000-0000-0000-000000000003', 'BRTO0000003', 'BRTO-AE', 'Brato Logistics LLC',
-     2515000.00, 14.65,  5610.00, 'ACTIVE', CURRENT_DATE - INTERVAL '2 years',
+     2515000.00, 14.65,  0.00, 'ACTIVE', CURRENT_DATE - INTERVAL '2 years',
      NOW() - INTERVAL '2 years', NOW(), 'system')
 ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- 7b. ELIGIBLE MEMBERS ONLY (spec R18, D10) — the same block as Flyway
+--     V53__notional_pools_reseed_eligible_members.sql, which see. Notional
+--     pooling is single-bank: a member must be held at the home bank, so this
+--     keeps the members the pool service would admit under the deployment's
+--     home-bank BIC (psql -v home_bank_bic=..., default EBILAEADXXX = the
+--     backend's default vam.home-bank.bic), one currency, corporate and legal
+--     entity, with a header; the rest leave (rows kept). Each MNC banks at its
+--     own country's banks, so under EBILAEADXXX only POOL-BRTO-AED keeps
+--     members (BRTO0000001 header + BRTO0000002); the other four close.
+-- ============================================================================
+\if :{?home_bank_bic}
+\else
+\set home_bank_bic EBILAEADXXX
+\endif
+SELECT set_config('vam.home_bank_bic', :'home_bank_bic', false);
+
+DO $$
+DECLARE
+    home      text := upper(trim(current_setting('vam.home_bank_bic')));
+    has_hdr   boolean;
+    has_runs  boolean;
+    p         record;
+    cur_hdr   uuid;
+    hdr       uuid;
+    ent       uuid;
+    elig      uuid[];
+    leaving   uuid[];
+BEGIN
+    IF to_regclass('public.notional_pools') IS NULL OR to_regclass('public.pool_members') IS NULL THEN
+        RETURN;
+    END IF;
+    IF length(home) = 8 THEN
+        home := home || 'XXX';
+    END IF;
+    has_hdr := EXISTS (SELECT 1 FROM information_schema.columns
+                       WHERE table_schema = 'public' AND table_name = 'notional_pools' AND column_name = 'header_account_id');
+    has_runs := to_regclass('public.pool_interest_calculations') IS NOT NULL
+                AND to_regclass('public.pool_interest_lines') IS NOT NULL;
+
+    FOR p IN SELECT id, pool_reference, pool_currency, corporate_id FROM notional_pools
+             WHERE status <> 'CLOSED'
+               AND pool_reference IN ('NP-0001', 'NP-0002',
+                                      'POOL-ALBN-GBP', 'POOL-BRTO-AED', 'POOL-HEL-USD', 'POOL-MAWR-SAR', 'POOL-MERC-EUR')
+             ORDER BY pool_reference
+    LOOP
+        hdr := NULL;
+        ent := NULL;
+        IF p.pool_reference LIKE 'POOL-%' THEN
+            -- Active members the pool service would admit, entity aside.
+            SELECT array_agg(m.account_id) INTO elig
+              FROM pool_members m JOIN virtual_accounts v ON v.id = m.account_id
+             WHERE m.pool_id = p.id AND m.status = 'ACTIVE'
+               AND v.status = 'ACTIVE' AND v.account_category = 'PHYSICAL_MIRROR'
+               AND upper(v.currency_code) = upper(p.pool_currency)
+               AND v.corporate_id = p.corporate_id
+               AND v.owning_entity_id IS NOT NULL
+               AND (CASE WHEN length(trim(v.bank_swift)) = 8 THEN upper(trim(v.bank_swift)) || 'XXX'
+                         ELSE upper(trim(v.bank_swift)) END) = home
+               AND NOT EXISTS (SELECT 1 FROM pool_members o
+                               WHERE o.account_id = m.account_id AND o.status = 'ACTIVE' AND o.pool_id <> p.id);
+
+            cur_hdr := NULL;
+            IF has_hdr THEN
+                EXECUTE 'SELECT header_account_id FROM notional_pools WHERE id = $1' INTO cur_hdr USING p.id;
+            END IF;
+            SELECT m.account_id, v.owning_entity_id INTO hdr, ent
+              FROM pool_members m JOIN virtual_accounts v ON v.id = m.account_id
+             WHERE m.pool_id = p.id AND m.status = 'ACTIVE' AND m.account_id = ANY (coalesce(elig, '{}'))
+             ORDER BY (m.account_id = cur_hdr) DESC NULLS LAST, m.joined_date NULLS LAST, m.created_at NULLS LAST, m.account_id
+             LIMIT 1;
+        END IF;
+
+        -- Leaving: everyone in NP-0001/0002 and in a pool with no qualifying member; else who doesn't qualify or is
+        -- of another entity than the header's.
+        SELECT array_agg(m.id) INTO leaving
+          FROM pool_members m JOIN virtual_accounts v ON v.id = m.account_id
+         WHERE m.pool_id = p.id AND m.status = 'ACTIVE'
+           AND (hdr IS NULL OR NOT (m.account_id = ANY (elig) AND v.owning_entity_id = ent));
+        -- (a member whose account row is gone is left alone; no such member exists in the demo data)
+
+        IF leaving IS NOT NULL THEN
+            -- Their physical accounts are no longer flagged as pooled (as NotionalPoolService.leave).
+            UPDATE physical_accounts pa
+               SET pooling_enabled = false, pool_id = NULL, pool_reference = NULL
+              FROM pool_members m JOIN virtual_accounts v ON v.id = m.account_id
+             WHERE m.id = ANY (leaving) AND pa.id = v.physical_account_id AND (pa.pool_id IS NULL OR pa.pool_id = p.id);
+            UPDATE pool_members
+               SET status = 'INACTIVE',
+                   left_date = CASE WHEN hdr IS NULL THEN CURRENT_DATE ELSE coalesce(joined_date, CURRENT_DATE) END,
+                   updated_at = now()
+             WHERE id = ANY (leaving);
+            IF has_runs THEN
+                DELETE FROM pool_interest_lines WHERE calculation_id IN
+                    (SELECT id FROM pool_interest_calculations WHERE pool_id = p.id AND status = 'CALCULATED');
+                DELETE FROM pool_interest_calculations WHERE pool_id = p.id AND status = 'CALCULATED';
+                UPDATE notional_pools SET last_calculation_date = (SELECT max(calculation_date) FROM pool_interest_calculations
+                                                                   WHERE pool_id = p.id AND status <> 'SUPERSEDED')
+                 WHERE id = p.id;
+            END IF;
+        END IF;
+
+        IF hdr IS NULL THEN
+            UPDATE notional_pools SET status = 'CLOSED', effective_to = CURRENT_DATE, updated_at = now() WHERE id = p.id;
+        ELSIF has_hdr THEN
+            EXECUTE 'UPDATE notional_pools SET header_account_id = $2, legal_entity_id = $3 WHERE id = $1' USING p.id, hdr, ent;
+        END IF;
+        UPDATE notional_pools
+           SET interest_savings_ytd = 0,
+               member_count = (SELECT count(*) FROM pool_members WHERE pool_id = p.id AND status = 'ACTIVE'),
+               updated_at = now()
+         WHERE id = p.id;
+        UPDATE pool_members SET interest_allocation = 0 WHERE pool_id = p.id;
+
+        RAISE NOTICE 'Pool %: % (header %, % left)', p.pool_reference,
+            CASE WHEN hdr IS NULL THEN 'closed' ELSE 'kept' END, hdr, coalesce(cardinality(leaving), 0);
+    END LOOP;
+END $$;
 
 -- ============================================================================
 -- 8. SWEEP RULES — two per MNC (mix of ZBA / TARGET_BALANCE / THRESHOLD /
@@ -1323,8 +1443,8 @@ WHERE  va_number = 'MERC0000003';
 --   SELECT corporate_id, legal_name, incorporation_country
 --   FROM corporates WHERE corporate_id LIKE 'MNC-%' ORDER BY corporate_id;
 --
---   -- Five home-currency notional pools:
---   SELECT pool_reference, pool_currency, member_count, total_balance
+--   -- Five home-currency notional pools (those with no home-bank member CLOSED, see 7b):
+--   SELECT pool_reference, pool_currency, status, member_count
 --   FROM notional_pools WHERE pool_reference LIKE 'POOL-%' ORDER BY pool_reference;
 --
 --   -- Ten sweep rules across the four sweep types:

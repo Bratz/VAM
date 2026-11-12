@@ -35,6 +35,7 @@ public class BalanceStructureService {
     private final IhbEntityRepository ihbEntityRepository;
     private final NotionalPoolRepository notionalPoolRepository;
     private final PoolMemberRepository poolMemberRepository;
+    private final PoolInterestCalculationRepository poolRunRepository;
     private final SweepRuleRepository sweepRuleRepository;
     private final NettingEntryRepository nettingEntryRepository;
     private final ExceptionTransactionRepository exceptionTransactionRepository;
@@ -159,7 +160,7 @@ public class BalanceStructureService {
                 .subtract(hierarchy.getIntercompanyPayable()))
             // From the notional pools these accounts are in: null when none (the page shows "-").
             .poolRate(stats.poolRate())
-            .monthlyInterestAllocation(stats.poolInterest)
+            .monthlyInterestAllocation(poolInterestMonthToDate(stats.poolAccountIds, reportingCurrency))
             .unconvertedCurrencies(hierarchy.getUnconvertedCurrencies())
             .reportingCurrency(reportingCurrency)
             .totalEntities(stats.entityCount)
@@ -745,8 +746,6 @@ public class BalanceStructureService {
             .participatesInSweep(sweepRule != null)
             .sweepTarget(sweepRule != null && sweepRule.getTargetAccountId() != null ? sweepRule.getTargetAccountId().toString() : null)
             .interestRate(poolMember != null ? poolMember.getPool().getInterestRate() : null)
-            .interestAllocation(poolMember != null && poolMember.getInterestAllocation() != null
-                ? convertToReporting(poolMember.getInterestAllocation(), poolMember.getPool().getPoolCurrency(), reportingCurrency) : null)
             // NEW: Additional metadata for special VAs
             .primaryViban(va.getViban())
             .baseCurrency(va.getBaseCurrency())
@@ -852,6 +851,17 @@ public class BalanceStructureService {
         return map;
     }
 
+    /**
+     * The "Pool interest" KPI (R16): interest allocated to these pool members by the daily runs, month to date (the
+     * month of the latest runnable date, as on the pool screens), each pool's currency converted to the reporting one.
+     */
+    private BigDecimal poolInterestMonthToDate(Set<UUID> poolAccountIds, String reportingCurrency) {
+        if (poolAccountIds.isEmpty()) return BigDecimal.ZERO;
+        java.time.LocalDate asOf = PoolRunService.figuresAsOf();
+        return sumConverted(poolRunRepository.sumAllocatedByCurrency(poolAccountIds,
+                PoolInterestCalculation.CalculationStatus.SUPERSEDED, asOf.withDayOfMonth(1), asOf), reportingCurrency);
+    }
+
     private SummaryStats calculateStats(HierarchyNode node) {
         SummaryStats stats = new SummaryStats();
         stats.currencies = new ArrayList<>();
@@ -874,7 +884,7 @@ public class BalanceStructureService {
                 stats.rateWeight = stats.rateWeight.add(weight);
                 stats.anyRate = node.getInterestRate();
             }
-            if (node.getInterestAllocation() != null) stats.poolInterest = stats.poolInterest.add(node.getInterestAllocation());
+            stats.poolAccountIds.add(UUID.fromString(node.getId())); // only account nodes pool; their id is the VA's
         }
         if (node.isParticipatesInSweep()) stats.sweepParticipants++;
         if (node.isParticipatesInNetting()) stats.nettingParticipants++;
@@ -911,7 +921,7 @@ public class BalanceStructureService {
         BigDecimal rateWeighted = BigDecimal.ZERO;
         BigDecimal rateWeight = BigDecimal.ZERO;
         BigDecimal anyRate;
-        BigDecimal poolInterest = BigDecimal.ZERO;
+        Set<UUID> poolAccountIds = new HashSet<>();
 
         /** Balance-weighted rate of the pools these accounts are in; null when they're in none. */
         BigDecimal poolRate() {

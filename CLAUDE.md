@@ -174,7 +174,7 @@ cd backend
 mvn clean install -DskipTests
 mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\Temp -DVAM_MARKET_PROFILE=UK -DVAM_HOME_BANK_BIC=HBUKGB4BXXX"
 ```
-(No `dev` profile — there is no `application-dev.yml` in the repo, so `-Dspring-boot.run.profiles=dev` was always a no-op. The command above is also what the OCI deployment's env vars mirror, just as JVM `-D` flags instead of container env vars — see `deploy/oci/docker-compose.yml`.)
+(No `dev` profile — there is no `application-dev.yml` in the repo, so `-Dspring-boot.run.profiles=dev` was always a no-op. The OCI deployment (vam-five) does NOT run this: it sets `VAM_MARKET_PROFILE: UAE` and `VAM_HOME_BANK_BIC: EBILAEADXXX` in `deploy/oci/docker-compose.yml`. To match it locally, start the `backend-uae` launch configuration (same flags with UAE / EBILAEADXXX). The home bank decides which accounts are pool-eligible, and migration V53 used it to re-seed the demo pools.)
 
 > **JDK 21 on Windows / AVD / RDP — Tomcat "Unable to establish loopback connection".**
 > After the Java 17→21 upgrade, on locked-down Windows sessions (Azure Virtual Desktop, RDP) where AF_UNIX sockets are disabled, the backend fails at startup with

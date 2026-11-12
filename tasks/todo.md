@@ -308,14 +308,58 @@ home-bank posting does; a fresh database built by ddl-auto alone has no partial 
 the guard); no per-member line view; rate edits still change the config in place.
 
 ### Phase 5 — screens and data (R15–R18, D10)
-- [ ] 5.1 NotionalPoolingPage: totals per currency (no cross-currency sum, no "AED" label); list shows run-dated
+- [x] 5.1 NotionalPoolingPage: totals per currency (no cross-currency sum, no "AED" label); list shows run-dated
       figures; pool detail: members with EOD balance, today's accrual, month-to-date interest and benefit, run history,
       breaches; "Savings" means benefit only.
-- [ ] 5.2 Hierarchy "Pool interest" KPI = month-to-date, labelled; copilot GetPoolsTool fields follow.
-- [ ] 5.3 Data (D10): close NP-0001/0002; re-seed the demo pools (seed SQL + a Flyway data migration for existing
+- [x] 5.2 Hierarchy "Pool interest" KPI = month-to-date, labelled; copilot GetPoolsTool fields follow.
+- [x] 5.3 Data (D10): close NP-0001/0002; re-seed the demo pools (seed SQL + a Flyway data migration for existing
       environments) with eligible members — home bank, one currency, one entity, a header — and build their figures by
       running the daily calculation over the snapshot history (no hard-coded YTD). Check vam-five's pools too.
-- [ ] 5.4 Simulator "activate" creates pools that pass the new checks (or says why not).
+- [x] 5.4 Simulator "activate" creates pools that pass the new checks (or says why not).
+
+Phase 5 live-checked (12 Nov): user chose "close ineligible" for D10 (demo corporates bank in their own countries; one
+home bank). Local started once with the `backend-uae` launch config (EBILAEADXXX, as vam-five) so V53 matched vam-five:
+POOL-BRTO-AED ACTIVE with BRTO0000001 (header) + BRTO0000002, BRTO0000003 (HSBC ME) left as of its joined date;
+ALBN/HEL/MAWR/MERC and NP-0001/0002 CLOSED (members INACTIVE today, history kept); YTD figures 0. Catch-up from
+2026-06-20: 145 BRTO runs to 11 Nov, pooled AED 186,143.49, benefit 0.00 (both members always in credit — benefit
+needs a member in debit), 41 days on an earlier snapshot. Page: per-currency hero ("Pooled net AED 14.6M", benefit
+MTD/YTD), card net at last run, 3.2%/5.2%, last day AED 1,283.51. 737 tests, tsc clean.
+After deploy on vam-five: V53 runs by itself; then POST /api/v1/pooling/runs/catch-up?from=2026-06-20.
+Phase 5 done (12 Nov, not yet live-checked): figures from runs, never stored counters — `PoolRunService.figures`:
+per pool (so per currency) last run date / net / pooled interest (the latest day's accrual), month-to-date pooled
+interest and benefit, year-to-date benefit; month and year are those of yesterday (the latest run date, so on the 1st
+"month to date" is the month just ended). On the pool response as `figures` (list + single read, one query for all
+pools); `interestSavingsYtd` and members' `interestAllocation` dropped from the DTOs and api.ts (columns stay, unused).
+Page: hero = pooled net (each open pool's last run) and MTD benefit, one line per currency, YTD per currency in the
+sub-line — nothing summed across currencies, no "AED"; card: net at last run + date, benefit MTD/YTD, last day's
+interest; detail: net/last day/MTD interest/MTD and YTD benefit, breaches this month (days with a floor or limit
+flag), members' balances = their end-of-day balance in the last run (else live, labelled), click a run for its member
+lines (balance, as-of, standalone, allocated, flags, posting ref), Resume on a suspended pool (POST /{id}/resume,
+SUSPENDED → ACTIVE). Hierarchy KPI "Pool interest (month to date)" = Σ allocated interest of the hierarchy's pool
+members in this month's current runs, converted to the reporting currency (`sumAllocatedByCurrency`); nodes no longer
+carry the stale interest_allocation. GetPoolsTool: active members only (count + detail list), header, entity, rates
+(credit/debit/day count), floor, figures; its "calculations are never stored" comment replaced. Simulator activate:
+the pool service's checks apply (header = first member, entity = its, rates = a POOL config at the scenario's rate); a
+refusal reads "Notional pool '<name>' can't be activated: <reason>"; no rate = refused (was 0%); scorer no longer
+charges the removed pool fees (bankFees, constants, assumption line says none, D9).
+Data: V53 (+ copy in database/migrations; the seed ends with the same block, `psql -v home_bank_bic=…`, default
+EBILAEADXXX). Eligibility depends on the configured home bank (Flyway placeholder `homebankbic` =
+`vam.home-bank.bic`, application.yml) because each demo MNC banks at its own country's banks: under EBILAEADXXX
+(vam-five, UAE default) POOL-BRTO-AED keeps BRTO0000001 (header) + BRTO0000002, BRTO0000003 (HSBC ME) leaves; ALBN,
+HEL, MAWR, MERC have no Emirates NBD account in their currency → CLOSED (members leave today). Under HBUKGB4BXXX (local)
+only POOL-ALBN-GBP stays, with ALBN0000003 (HSBC UK, 1.78 GBP, entity ALBN-EN → the pool's entity moves to ALBN-EN);
+BRTO closes too. Members that don't qualify leave dated their joined_date (a re-seed: the history runs never count
+them); NP-0001/0002 closed (members leave today). interest_savings_ytd and interest_allocation set to 0; CALCULATED runs
+of a pool whose membership changed deleted (POSTED stay). Previewed read-only on the local DB for both BICs; the block
+runs in a READ ONLY transaction up to its first write and every write EXPLAINs. History: POST
+/api/v1/pooling/runs/catch-up?from=&to= (ops; every ACTIVE pool, 92-day chunks, per-pool result/error).
+**After deploy (coordinator)**: check `flyway_schema_history` has V53 and the pools' status/members; then
+`POST /api/v1/pooling/runs/catch-up?from=2026-06-20` (the first shadow snapshot; earlier dates would be flagged zero
+balances) on localhost and on vam-five. Local: V53 under HBUKGB4BXXX closes POOL-BRTO-AED (the Phase 4 live-check pool)
+— start once with `-DVAM_HOME_BANK_BIC=EBILAEADXXX` if local should match vam-five. 737 tests (+10: figures MTD/YTD/last run per pool, catch-up
+chunking and refusals, GetPoolsTool active members, simulator activation valid pool / refusal / no rate), tsc clean.
+Left for 6: no screen for the catch-up (ops endpoint, no auth beyond the API's); the detail's figures don't refresh
+after "Run dates" until the pool is reopened; a demo pool for any other geography needs its accounts at that home bank.
 
 ### Phase 6 — verification
 - [ ] 6.1 Spec acceptance 1–7 as tests; full suite; typecheck.

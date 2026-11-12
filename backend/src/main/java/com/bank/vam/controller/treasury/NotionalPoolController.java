@@ -4,6 +4,7 @@ import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.NotionalPoolDto;
 import com.bank.vam.service.treasury.NotionalPoolService;
 import com.bank.vam.service.treasury.PoolPostingService;
+import com.bank.vam.service.treasury.PoolRunScheduler;
 import com.bank.vam.service.treasury.PoolRunService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +27,7 @@ public class NotionalPoolController {
     private final NotionalPoolService poolService;
     private final PoolRunService runService;
     private final PoolPostingService postingService;
+    private final PoolRunScheduler runScheduler;
 
     @GetMapping
     @Operation(summary = "Get all notional pools")
@@ -87,6 +89,12 @@ public class NotionalPoolController {
         return ResponseEntity.ok(ApiResponse.success(poolService.suspendPool(id), "Pool suspended"));
     }
 
+    @PostMapping("/{id}/resume")
+    @Operation(summary = "Resume a suspended pool (SUSPENDED -> ACTIVE); missed dates are caught up by a run")
+    public ResponseEntity<ApiResponse<NotionalPoolDto.Response>> resumePool(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(poolService.resumePool(id), "Pool resumed"));
+    }
+
     @PostMapping("/{id}/close")
     @Operation(summary = "Close an active or suspended pool; its members leave")
     public ResponseEntity<ApiResponse<NotionalPoolDto.Response>> closePool(@PathVariable UUID id) {
@@ -99,6 +107,14 @@ public class NotionalPoolController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(ApiResponse.success(runService.runRange(id, from, to)));
+    }
+
+    @PostMapping("/runs/catch-up")
+    @Operation(summary = "Ops: run every ACTIVE pool from..to (default yesterday) in 92-day chunks; builds history after a re-seed")
+    public ResponseEntity<ApiResponse<List<NotionalPoolDto.CatchUp>>> catchUp(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(runScheduler.catchUp(from, to)));
     }
 
     @GetMapping("/{id}/runs")

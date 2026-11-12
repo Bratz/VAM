@@ -30,8 +30,9 @@ public class NotionalPoolDto {
         private NotionalPool.InterestCalculationMethod interestCalculationMethod;
         private NotionalPool.AllocationMethod allocationMethod;
         private BigDecimal totalBalance;
-        private BigDecimal interestSavingsYtd;
         private Integer memberCount;
+        /** From the pool's runs (R15); set on the list and the single-pool read. */
+        private Figures figures;
         private NotionalPool.PoolStatus status;
         private LocalDate effectiveFrom;
         private LocalDate effectiveTo;
@@ -50,7 +51,6 @@ public class NotionalPoolDto {
         private String entityName;
         private BigDecimal currentBalance;
         private BigDecimal contributionPercent;
-        private BigDecimal interestAllocation;
         private BigDecimal weight;
         private BigDecimal debitLimit;
         private PoolMember.MemberStatus status;
@@ -156,6 +156,17 @@ public class NotionalPoolDto {
                       BigDecimal pooledInterest, BigDecimal standaloneInterest, BigDecimal benefit, BigDecimal residue,
                       BigDecimal creditRate, BigDecimal debitRate, String dayCount, boolean floorBreach,
                       int limitBreaches, int snapshotsMissing, LocalDateTime postedAt, List<RunLine> lines) {}
+
+    /**
+     * A pool's figures from its current runs, never from stored counters (R9, R15), in the pool's currency. The
+     * month and year are those of {@code asOf} (yesterday: the latest date a run can take). Interest signed: credit +,
+     * debit −; lastRun* are null when the pool has no run.
+     */
+    public record Figures(LocalDate asOf, LocalDate lastRunDate, BigDecimal lastRunNet, BigDecimal lastRunPooledInterest,
+                          BigDecimal mtdPooledInterest, BigDecimal mtdBenefit, BigDecimal ytdBenefit) {}
+
+    /** One pool's catch-up: the runs it has from..to, or why it failed. */
+    public record CatchUp(String poolReference, int runs, String error) {}
 
     public record RunLine(UUID accountId, String accountNumber, BigDecimal balance, LocalDate balanceAsOf,
                           boolean snapshotMissing, BigDecimal standaloneInterest, BigDecimal allocatedInterest,

@@ -45,6 +45,7 @@ public class NotionalPoolService {
     private final InterestConfigurationRepository interestConfigurationRepository;
     private final PoolInterestCalculationRepository runRepository;
     private final PoolPostingService postingService;
+    private final PoolRunService runService;
 
     /** An old pool's debit rate when only its free-typed credit rate is known: credit + this, % a year (a default). */
     static final BigDecimal DEFAULT_DEBIT_SPREAD = new BigDecimal("2.00");
@@ -67,9 +68,16 @@ public class NotionalPoolService {
         Map<UUID, InterestConfiguration> configs = configIds.isEmpty() ? Map.of()
                 : interestConfigurationRepository.findAllById(configIds).stream()
                         .collect(Collectors.toMap(InterestConfiguration::getId, c -> c));
-        return pools.stream()
+        return withFigures(pools.stream()
                 .map(p -> toResponse(p, p.getInterestConfigurationId() == null ? null : configs.get(p.getInterestConfigurationId())))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+    }
+
+    /** The pools' figures from their runs (R15) — one query for the lot. */
+    private List<NotionalPoolDto.Response> withFigures(List<NotionalPoolDto.Response> responses) {
+        Map<UUID, NotionalPoolDto.Figures> figures = runService.figures(responses.stream().map(NotionalPoolDto.Response::getId).toList());
+        responses.forEach(r -> r.setFigures(figures.get(r.getId())));
+        return responses;
     }
 
     @Transactional
@@ -80,7 +88,7 @@ public class NotionalPoolService {
         // Refresh member balances from actual accounts
         refreshMemberBalances(pool);
 
-        return toResponse(pool);
+        return withFigures(List.of(toResponse(pool))).get(0);
     }
 
     /**
@@ -482,6 +490,17 @@ public class NotionalPoolService {
         return changeStatus(pool, NotionalPool.PoolStatus.SUSPENDED, "POOL_SUSPENDED");
     }
 
+    /** SUSPENDED → ACTIVE: the daily runs pick it up again; dates missed while suspended are caught up by a run. */
+    @Transactional
+    public NotionalPoolDto.Response resumePool(UUID id) {
+        NotionalPool pool = poolRepository.findByIdWithMembers(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Notional pool not found: " + id));
+        if (pool.getStatus() != NotionalPool.PoolStatus.SUSPENDED) {
+            throw new BusinessException("Only a SUSPENDED pool can be resumed; " + pool.getPoolReference() + " is " + pool.getStatus());
+        }
+        return changeStatus(pool, NotionalPool.PoolStatus.ACTIVE, "POOL_RESUMED");
+    }
+
     /**
      * ACTIVE or SUSPENDED → CLOSED (R5). What is accrued and unposted is posted first (through yesterday); then every
      * member leaves (dated, rows kept) so its account can join another pool.
@@ -799,7 +818,6 @@ public class NotionalPoolService {
         dto.setInterestCalculationMethod(pool.getInterestCalculationMethod());
         dto.setAllocationMethod(pool.getAllocationMethod());
         dto.setTotalBalance(pool.getTotalBalance());
-        dto.setInterestSavingsYtd(pool.getInterestSavingsYtd());
         dto.setMemberCount(pool.getMemberCount());
         dto.setStatus(pool.getStatus());
         dto.setEffectiveFrom(pool.getEffectiveFrom());
@@ -825,7 +843,6 @@ public class NotionalPoolService {
         dto.setEntityName(member.getEntityName());
         dto.setCurrentBalance(member.getCurrentBalance());
         dto.setContributionPercent(member.getContributionPercent());
-        dto.setInterestAllocation(member.getInterestAllocation());
         dto.setWeight(member.getWeight());
         dto.setDebitLimit(member.getDebitLimit());
         dto.setStatus(member.getStatus());

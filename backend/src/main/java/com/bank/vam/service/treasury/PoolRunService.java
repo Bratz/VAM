@@ -77,6 +77,50 @@ public class PoolRunService {
                 .map(PoolRunService::toDto).toList();
     }
 
+    /** The date pool figures are as of: yesterday, the latest value date a run can take. */
+    public static LocalDate figuresAsOf() {
+        return LocalDate.now().minusDays(1);
+    }
+
+    /** Each pool's figures from its current runs (R15), one query for all; a pool without runs gets empty figures. */
+    @Transactional(readOnly = true)
+    public Map<UUID, NotionalPoolDto.Figures> figures(Collection<UUID> poolIds) {
+        if (poolIds.isEmpty()) return Map.of();
+        LocalDate asOf = figuresAsOf();
+        // ponytail: loads the year's run rows (no lines) per call — a few hundred per pool; aggregate in SQL if it grows.
+        Map<UUID, List<PoolInterestCalculation>> byPool = new HashMap<>();
+        runRepository.findByPoolIdInAndStatusNotAndValueDateBetween(poolIds, PoolInterestCalculation.CalculationStatus.SUPERSEDED,
+                        asOf.withDayOfYear(1).minusDays(31), asOf) // a month back so a last run in December still shows
+                .forEach(r -> byPool.computeIfAbsent(r.getPool().getId(), k -> new ArrayList<>()).add(r));
+        Map<UUID, NotionalPoolDto.Figures> out = new HashMap<>();
+        for (UUID id : poolIds) out.put(id, figures(byPool.getOrDefault(id, List.of()), asOf));
+        return out;
+    }
+
+    /**
+     * Figures of one pool from its current runs: the last run's date, net and pooled interest (the latest day's
+     * accrual); Σ pooled interest and Σ benefit over {@code asOf}'s month, Σ benefit over its year. "Savings" is the
+     * benefit only (R9).
+     */
+    static NotionalPoolDto.Figures figures(List<PoolInterestCalculation> runs, LocalDate asOf) {
+        LocalDate monthStart = asOf.withDayOfMonth(1), yearStart = asOf.withDayOfYear(1);
+        PoolInterestCalculation last = null;
+        BigDecimal mtdPooled = BigDecimal.ZERO, mtdBenefit = BigDecimal.ZERO, ytdBenefit = BigDecimal.ZERO;
+        for (PoolInterestCalculation r : runs) {
+            LocalDate d = r.getValueDate();
+            if (d.isAfter(asOf)) continue;
+            if (last == null || d.isAfter(last.getValueDate())) last = r;
+            if (d.isBefore(yearStart)) continue;
+            ytdBenefit = ytdBenefit.add(nz(r.getBenefit()));
+            if (d.isBefore(monthStart)) continue;
+            mtdPooled = mtdPooled.add(nz(r.getPooledInterest()));
+            mtdBenefit = mtdBenefit.add(nz(r.getBenefit()));
+        }
+        return new NotionalPoolDto.Figures(asOf, last == null ? null : last.getValueDate(),
+                last == null ? null : last.getPoolNet(), last == null ? null : last.getPooledInterest(),
+                mtdPooled, mtdBenefit, ytdBenefit);
+    }
+
     /** One value date: the stored run if there is one (idempotent, R10), else a new one; empty if no member that day. */
     private Optional<PoolInterestCalculation> run(NotionalPool pool, InterestConfiguration config, LocalDate date) {
         Optional<PoolInterestCalculation> stored = runRepository.findByPoolIdAndValueDateAndStatusNot(pool.getId(), date,

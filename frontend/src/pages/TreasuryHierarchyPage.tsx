@@ -3917,7 +3917,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         <StatTile
           layout="row"
           tone="warning"
-          label="Pool Interest"
+          label="Pool interest (month to date)"
           value={<TileAmount value={displaySummary.monthlyInterestAllocation || 0} currency={reportingCurrency} />}
           icon={<Banknote className="w-5 h-5" />}
           delay="0.3s"

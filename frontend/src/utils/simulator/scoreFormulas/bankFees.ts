@@ -95,34 +95,9 @@ export function bankFees(input: ScoreInputs): PerCurrencyLine {
   const { proposedShadows, proposedRules, accountsById, constants } = input;
   const configs = input.chargeConfigs ?? [];
   const line = emptyLine(
-    'New routing fees from the bank’s configured charge schedule (rail → charge type; FIXED + PERCENTAGE; TIERED deferred). Plus notional-pool management + membership fees (real NotionalPoolService constants).',
+    'New routing fees from the bank’s configured charge schedule (rail → charge type; FIXED + PERCENTAGE; TIERED deferred). Notional pools carry no fee (pooling spec D9).',
   );
   const byLocalId = new Map(proposedShadows.map((s) => [s.localId, s]));
-
-  // R3 — notional-pool fees, independent of the bank charge schedule. The
-  // management fee is on the pool's GROSS member balance (matches the live
-  // engine, which sums member balances irrespective of any sweep residual)
-  // floored at the annual minimum; plus a flat membership fee per member.
-  // Live baseline = 0 (a proposed pool is new — Phase-3-diff caveat).
-  for (const pool of input.proposedPools ?? []) {
-    const members = pool.memberLocalIds ?? [];
-    if (members.length === 0) continue;
-    const grossBal = members.reduce((sum, id) => {
-      const sh = byLocalId.get(id);
-      const acc = sh ? accountOf(sh, accountsById) : undefined;
-      return sum + (acc?.currentBalance ?? 0);
-    }, 0);
-    const mgmt = Math.max(
-      grossBal * (constants.poolMgmtFeeAnnualPct / 100),
-      constants.poolMgmtFeeMinAnnual,
-    );
-    const membership = constants.poolMembershipFeeFlat * members.length;
-    addAmount(
-      line.proposed,
-      pool.poolCurrency || constants.baseCurrency,
-      mgmt + membership,
-    );
-  }
 
   if (configs.length === 0) return line;
 

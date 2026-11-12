@@ -5,6 +5,7 @@ import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
 import { NotionalPool, corporatesApi, programsApi } from '../services/api';
+import { formatCurrency } from '../utils';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -105,6 +106,7 @@ const NotionalPoolingPage: React.FC = () => {
     createPool,
     updatePool,
     suspendPool,
+    resumePool,
     closePool,
     addMember,
     addMembersBulk,
@@ -187,10 +189,26 @@ const NotionalPoolingPage: React.FC = () => {
   const filteredStats = useMemo(() => ({
     totalPools: filteredPools.length,
     activePools: filteredPools.filter(p => p.status === 'ACTIVE').length,
-    totalBalance: filteredPools.reduce((s, p) => s + (p.totalBalance || 0), 0),
-    totalSavings: filteredPools.reduce((s, p) => s + (p.interestSavingsYtd || 0), 0),
-    totalMembers: filteredPools.reduce((s, p) => s + (p.memberCount || p.members?.length || 0), 0),
+    totalMembers: filteredPools.reduce((s, p) => s + (p.memberCount || 0), 0),
   }), [filteredPools]);
+
+  // Money figures per currency, from each pool's daily runs (R15): never added across currencies. Net = the last
+  // run's net of the open pools; benefit (pooled − standalone) month and year to date of every pool.
+  const byCurrency = useMemo(() => {
+    const totals = new Map<string, { currency: string; net: number; mtdBenefit: number; ytdBenefit: number }>();
+    for (const p of filteredPools) {
+      const f = p.figures;
+      if (!f?.lastRunDate) continue;
+      const t = totals.get(p.poolCurrency) ?? { currency: p.poolCurrency, net: 0, mtdBenefit: 0, ytdBenefit: 0 };
+      if (p.status !== 'CLOSED') t.net += f.lastRunNet ?? 0;
+      t.mtdBenefit += f.mtdBenefit;
+      t.ytdBenefit += f.ytdBenefit;
+      totals.set(p.poolCurrency, t);
+    }
+    return [...totals.values()].sort((a, b) => a.currency.localeCompare(b.currency));
+  }, [filteredPools]);
+  const asOf = filteredPools.find(p => p.figures)?.figures?.asOf;
+  const monthLabel = asOf ? new Date(`${asOf}T00:00:00`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '';
 
   const handleViewPool = async (pool: NotionalPool) => {
     try {
@@ -271,22 +289,28 @@ const NotionalPoolingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Headline figures — Total Pooled (aggregate balance under pooling)
-          alongside Total Savings (the interest benefit it earns). Treasurer's
-          first read, matching the hero+strip hierarchy used by Cash
-          Concentration (Total Swept) and Intercompany Dashboard (POBO
-          Volume) — this page previously rendered all five metrics as an
-          equal-weight strip with no visual hierarchy. Counts demoted below. */}
+      {/* Headline figures from the daily runs, one line per currency (a pool has one currency; currencies are
+          never added). Counts demoted below. */}
       <HeroMetricCard
         primary={{
-          label: 'Total Pooled',
-          value: <TileAmount value={filteredStats.totalBalance} currency="AED" />,
-          sub: 'Aggregate balance across all pools',
+          label: 'Pooled net',
+          value: byCurrency.length ? (
+            <span className="flex flex-col">
+              {byCurrency.map(t => <TileAmount key={t.currency} value={t.net} currency={t.currency} />)}
+            </span>
+          ) : 'No runs yet',
+          sub: "Each open pool's net at its last daily run, per currency",
         }}
         secondary={{
-          label: 'Total Savings',
-          value: <TileAmount value={filteredStats.totalSavings} currency="AED" />,
-          sub: 'Interest benefit from pooling',
+          label: `Pooling benefit, ${monthLabel || 'month'} to date`,
+          value: byCurrency.length ? (
+            <span className="flex flex-col">
+              {byCurrency.map(t => <TileAmount key={t.currency} value={t.mtdBenefit} currency={t.currency} />)}
+            </span>
+          ) : '—',
+          sub: byCurrency.length
+            ? `Year to date: ${byCurrency.map(t => formatCurrency(t.ytdBenefit, t.currency)).join(' · ')}. Benefit = pooled − standalone interest.`
+            : 'Benefit = pooled − standalone interest, from the daily runs',
         }}
         icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
@@ -358,6 +382,7 @@ const NotionalPoolingPage: React.FC = () => {
             onAddMember={() => { setShowDetailModal(false); setShowAddMemberModal(true); }}
             onEditPool={() => { setShowDetailModal(false); setShowEditModal(true); }}
             onSuspendPool={suspendPool}
+            onResumePool={resumePool}
             onClosePool={closePool}
           />
 

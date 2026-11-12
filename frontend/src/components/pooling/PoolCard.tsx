@@ -24,6 +24,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember })
   const [expanded, setExpanded] = useState(false);
   // Members who left keep their row (dated history); the card shows the current ones.
   const members = (pool.members || []).filter(m => m.status === 'ACTIVE');
+  const f = pool.figures;
 
   return (
     <Card className="hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all group">
@@ -51,19 +52,21 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember })
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid — from the daily runs, not stored totals */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-surface-page rounded-lg p-3">
-          <p className="label">Pool Balance</p>
+          <p className="label">Net at last run</p>
           <p className="section-title mt-0.5">
-            <TileAmount value={pool.totalBalance || 0} currency={pool.poolCurrency} />
+            {f?.lastRunDate ? <TileAmount value={f.lastRunNet ?? 0} currency={pool.poolCurrency} /> : '—'}
           </p>
+          <p className="caption">{f?.lastRunDate ? `End of day ${f.lastRunDate}` : 'No run yet'}</p>
         </div>
         <div className="bg-success-50 dark:bg-success-500/10 rounded-lg p-3">
-          <p className="label">Savings YTD</p>
+          <p className="label">Benefit MTD</p>
           <p className="text-body-lg font-semibold text-success-700 dark:text-success-300 mt-0.5">
-            <TileAmount value={pool.interestSavingsYtd || 0} currency={pool.poolCurrency} />
+            <TileAmount value={f?.mtdBenefit ?? 0} currency={pool.poolCurrency} />
           </p>
+          <p className="caption">YTD {formatCompactCurrency(f?.ytdBenefit ?? 0, pool.poolCurrency)}</p>
         </div>
       </div>
 
@@ -80,9 +83,9 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember })
           </p>
         </div>
         <div>
-          <p className="caption">Method</p>
-          <p className="font-medium text-neutral-700 dark:text-neutral-200 text-caption truncate">
-            {pool.interestCalculationMethod?.replace('_', ' ')}
+          <p className="caption">Last day's interest</p>
+          <p className="font-medium text-neutral-700 dark:text-neutral-200">
+            {f?.lastRunDate ? formatCompactCurrency(f.lastRunPooledInterest ?? 0, pool.poolCurrency) : '—'}
           </p>
         </div>
       </div>

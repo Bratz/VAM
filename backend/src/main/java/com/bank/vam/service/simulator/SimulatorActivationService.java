@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -290,9 +289,13 @@ public class SimulatorActivationService {
         if (ccy != null && !ccy.isBlank()) {
             req.setPoolCurrency(ccy);
         }
-        // The scenario's one rate is the credit rate; the debit base follows it and the day count the currency's.
+        // The scenario's one rate is the credit rate of the pool's POOL interest config; the debit base follows it and
+        // the day count the currency's. No rate, no pool: a 0% pool is not what the scenario was scored on.
+        if (!p.hasNonNull("poolRatePct")) {
+            throw new BusinessException("Notional pool '" + poolName + "' can't be activated: it has no rate.");
+        }
         NotionalPoolDto.Rates rates = new NotionalPoolDto.Rates();
-        rates.setCreditBaseRate(p.hasNonNull("poolRatePct") ? p.get("poolRatePct").decimalValue() : BigDecimal.ZERO);
+        rates.setCreditBaseRate(p.get("poolRatePct").decimalValue());
         req.setRates(rates);
         if (p.hasNonNull("targetBalance")) {
             req.setTargetBalance(p.get("targetBalance").decimalValue());
@@ -306,7 +309,14 @@ public class SimulatorActivationService {
 
         // @Transactional (REQUIRED) — joins activate()'s tx: ANY failure
         // (incl. assertPoolEligible) rolls the whole activation back.
-        notionalPoolService.createPool(req);
+        // The pool service applies the live checks (R1–R4): every member an active home-bank mirror in the pool's
+        // currency, of one corporate and ONE legal entity (the first member's), in no other pool; the header is the
+        // first member. A refusal names the pool and the reason.
+        try {
+            notionalPoolService.createPool(req);
+        } catch (BusinessException e) {
+            throw new BusinessException("Notional pool '" + poolName + "' can't be activated: " + e.getMessage());
+        }
         return 1;
     }
 

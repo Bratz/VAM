@@ -372,13 +372,6 @@ export interface ScoreConstants {
   consentModerateDays: number;
   consentSevereRate: number;
   consentModerateRate: number;
-  // ---- R3: notional-pool fees (mirror the real NotionalPoolService) ----
-  /** Pool management fee, % of pool balance per YEAR (0.01%/mo ×12). */
-  poolMgmtFeeAnnualPct: number;
-  /** Pool management fee annual floor (min $100/mo ×12 = $1,200). */
-  poolMgmtFeeMinAnnual: number;
-  /** Flat membership fee per member (one-off; charged in the year-1 annual). */
-  poolMembershipFeeFlat: number;
 }
 
 export interface SourceQualityMetric {
