@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { poolingApi, NotionalPool, CreatePoolRequest, AddMemberRequest, CalculateInterestResponse, BulkAddMembersResponse } from '../services/api';
+import { poolingApi, NotionalPool, CreatePoolRequest, AddMemberRequest, BulkAddMembersResponse } from '../services/api';
 
 export const useNotionalPooling = () => {
   const [pools, setPools] = useState<NotionalPool[]>([]);
@@ -95,16 +95,6 @@ export const useNotionalPooling = () => {
     await fetchPoolById(poolId);
   }, [fetchPoolById]);
 
-  const calculateInterest = useCallback(async (poolId: string): Promise<CalculateInterestResponse> => {
-    const response = await poolingApi.calculateInterest(poolId);
-    if (response.success) {
-      // Refresh pools to get updated balances and savings
-      await fetchPools();
-      return response.data;
-    }
-    throw new Error('Failed to calculate interest');
-  }, [fetchPools]);
-
   useEffect(() => {
     fetchPools();
   }, [fetchPools]);
@@ -131,7 +121,6 @@ export const useNotionalPooling = () => {
     deletePool,
     addMember,
     addMembersBulk,
-    removeMember,
-    calculateInterest
+    removeMember
   };
 };

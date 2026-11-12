@@ -16,6 +16,10 @@ import java.util.UUID;
 public interface NotionalPoolRepository extends JpaRepository<NotionalPool, UUID> {
     
     Optional<NotionalPool> findByPoolReference(String poolReference);
+
+    /** Next pool number (NP-nnnn) from the database sequence (V49) — survives restarts, unlike a static counter. */
+    @Query(value = "SELECT nextval('notional_pool_ref_seq')", nativeQuery = true)
+    long nextPoolNumber();
     
     @Query("SELECT p FROM NotionalPool p LEFT JOIN FETCH p.members WHERE p.id = :id")
     Optional<NotionalPool> findByIdWithMembers(@Param("id") UUID id);

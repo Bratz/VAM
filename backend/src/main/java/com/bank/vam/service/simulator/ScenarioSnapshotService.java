@@ -133,6 +133,9 @@ public class ScenarioSnapshotService {
         for (NotionalPool pool : notionalPoolRepository.findAllActiveWithMembers()) {
             List<String> memberPhys = new ArrayList<>();
             for (PoolMember m : pool.getMembers()) {
+                if (m.getStatus() != PoolMember.MemberStatus.ACTIVE) {
+                    continue;  // left the pool; the row is history
+                }
                 UUID phys = vaToPhys.get(m.getAccountId());
                 if (phys != null) {
                     memberPhys.add(phys.toString());

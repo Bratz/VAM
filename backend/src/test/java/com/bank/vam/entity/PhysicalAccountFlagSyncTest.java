@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * unsynchronized systems — enrolling a real PoolMember never touched poolingEnabled/poolId,
  * so the Physical Accounts dashboard's "Pooling Enabled" stat and ?poolingEnabled= filter
  * silently disagreed with actual pool membership. This is the regression guard for keeping
- * them in sync: unlike enablePooling()/enableSweepAsParticipant(), these must NOT re-check
+ * them in sync: unlike enableSweepAsParticipant(), these must NOT re-check
  * poolingEligible/sweepEligible — that gate is a separate, unrelated onboarding flag, and by
  * the time NotionalPoolService/SweepService call these, their own real eligibility check
  * (VA category + home-bank BIC) has already run.
@@ -24,7 +24,7 @@ class PhysicalAccountFlagSyncTest {
 
     private PhysicalAccount account() {
         // poolingEligible/sweepEligible intentionally left false — proves markPoolMember/
-        // markSweepParticipant don't consult them (unlike enablePooling/enableSweepAsParticipant).
+        // markSweepParticipant don't consult them (unlike enableSweepAsParticipant).
         return PhysicalAccount.builder()
                 .poolingEligible(false)
                 .sweepEligible(false)

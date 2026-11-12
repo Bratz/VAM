@@ -345,7 +345,7 @@ public class SimulatorActivationService {
                 : notionalPoolRepository.findAllActiveWithMembers()) {
             Set<UUID> set = new HashSet<>();
             for (PoolMember m : pool.getMembers()) {
-                if (m.getAccountId() == null) {
+                if (m.getAccountId() == null || m.getStatus() != PoolMember.MemberStatus.ACTIVE) {
                     continue;
                 }
                 VirtualAccount va =

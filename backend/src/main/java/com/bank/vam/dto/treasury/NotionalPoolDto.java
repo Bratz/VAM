@@ -48,6 +48,7 @@ public class NotionalPoolDto {
         private BigDecimal weight;
         private PoolMember.MemberStatus status;
         private LocalDate joinedDate;
+        private LocalDate leftDate;
     }
 
     @Data

@@ -642,44 +642,8 @@ public class PhysicalAccountController {
     // TREASURY CONFIGURATION
     // ========================================================================
 
-    @PostMapping("/{id}/pooling/enable")
-    @Operation(summary = "Enable notional pooling for account")
-    public ResponseEntity<Map<String, Object>> enablePooling(
-            @PathVariable UUID id,
-            @RequestBody PoolingConfigRequest request) {
-        
-        PhysicalAccount account = physicalAccountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Physical account not found: " + id));
-        
-        account.enablePooling(request.poolId, request.poolReference);
-        PhysicalAccount saved = physicalAccountRepository.save(account);
-        
-        log.info("Enabled pooling for account: {} - pool: {}", account.getAccountNumber(), request.poolReference);
-        
-        return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "data", toAccountResponse(saved),
-                "message", "Pooling enabled for account"
-        ));
-    }
-
-    @PostMapping("/{id}/pooling/disable")
-    @Operation(summary = "Disable notional pooling for account")
-    public ResponseEntity<Map<String, Object>> disablePooling(@PathVariable UUID id) {
-        PhysicalAccount account = physicalAccountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Physical account not found: " + id));
-        
-        account.disablePooling();
-        PhysicalAccount saved = physicalAccountRepository.save(account);
-        
-        log.info("Disabled pooling for account: {}", account.getAccountNumber());
-        
-        return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "data", toAccountResponse(saved),
-                "message", "Pooling disabled for account"
-        ));
-    }
+    // Pooling enable/disable endpoints retired: they set poolId without a pool member row. Pool membership
+    // (and these flags, via PhysicalAccount.markPoolMember) is written only by NotionalPoolService.
 
     @PostMapping("/{id}/sweep/enable")
     @Operation(summary = "Enable cash sweep for account")
@@ -1029,8 +993,6 @@ public class PhysicalAccountController {
     ) {}
 
     public record StatusUpdateRequest(String status) {}
-
-    public record PoolingConfigRequest(UUID poolId, String poolReference) {}
 
     public record SweepConfigRequest(UUID sweepRuleId, String role) {}
 }

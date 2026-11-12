@@ -45,7 +45,8 @@ public class SimulatorPoolService {
                     physId, VirtualAccount.AccountCategory.PHYSICAL_MIRROR)
                 .ifPresent(va -> {
                     List<PoolMember> members =
-                        poolMemberRepository.findByAccountId(va.getId());
+                        poolMemberRepository.findByAccountIdInAndStatus(
+                            List.of(va.getId()), PoolMember.MemberStatus.ACTIVE);
                     if (!members.isEmpty()
                             && members.get(0).getPool() != null) {
                         var pool = members.get(0).getPool();

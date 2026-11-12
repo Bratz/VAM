@@ -171,17 +171,30 @@ Starts after in-house FX is committed (both touch tasks/todo.md and frontend/src
 reported after each; commit and push only when the user says so. Money/ledger risks first.
 
 ### Phase 1 — stop the damage
-- [ ] 1.1 Pool reference from the database (Postgres sequence via a Flyway migration in backend/src/main/resources/db/
+- [x] 1.1 Pool reference from the database (Postgres sequence via a Flyway migration in backend/src/main/resources/db/
       migration + mirror in database/migrations, starting after the highest existing NP-/POOL- number); drop the static
       AtomicInteger. Simulator activation keeps working.
-- [ ] 1.2 Remove the per-click management fee and the joining fee (D9) and their ledger postings.
-- [ ] 1.3 Retire the "Calculate Interest" button's YTD/allocation increments (replaced in Phase 3); until then the
+- [x] 1.2 Remove the per-click management fee and the joining fee (D9) and their ledger postings.
+- [x] 1.3 Retire the "Calculate Interest" button's YTD/allocation increments (replaced in Phase 3); until then the
       button is hidden, not left double-counting.
-- [ ] 1.4 Backend membership checks (R1, R3, R4): same currency as the pool, home-bank PHYSICAL_MIRROR, same corporate
+- [x] 1.4 Backend membership checks (R1, R3, R4): same currency as the pool, home-bank PHYSICAL_MIRROR, same corporate
       and the pool's legal entity, not already in a pool (single and bulk add); member leave sets left_date and status
       instead of deleting; pool SUSPEND / CLOSE endpoints.
-- [ ] 1.5 One writer for membership: PhysicalAccountController pooling enable/disable either goes through the pool
+- [x] 1.5 One writer for membership: PhysicalAccountController pooling enable/disable either goes through the pool
       service or is retired (pick the smaller; flags follow membership).
+
+Phase 1 done (11 Nov; built in a worktree, merged after the in-house FX commit): V49 sequence `notional_pool_ref_seq`
+(starts after the highest NP-n; POOL-* unaffected) feeds NP-%04d; both fees and their postings gone; Calculate refuses
+("replaced by daily runs") and its button is gone; one `admit()` for create/add/bulk (active, home-bank PHYSICAL_MIRROR,
+pool currency, corporate, one legal entity, not already pooled); leave = INACTIVE + left_date (row kept); suspend/close
+endpoints (no buttons yet); PhysicalAccountController pooling enable/disable retired (unused). Live, after two
+restarts: NP-0011/NP-0012 created; refusals; no fee; close + delete. Found live and fixed: (1) home-bank check compared
+BICs literally — HBUKGB4B (39 local shadows) vs configured HBUKGB4BXXX were "external", so pools refused them, sweeps
+wanted mandates and multi-bank liquidity counted them external; now one `HomeBankProperties.sameBank` (8-char BIC =
+11-char …XXX) used by `VirtualAccount.isHomeBankHeld` and `HomeBankProperties.matches`; (2) a member added by account
+id alone hit NOT NULL account_number (500): number/entity code now come from the account. 697 tests.
+Left: suspend/close buttons and api.ts types (`PoolMember.status` 'REMOVED' vs INACTIVE) → Phase 2/5; GetPoolsTool counts
+members who left → 5.2; simulator scorer still charges pool fees → 5.4; no un-suspend endpoint.
 
 ### Phase 2 — structure and rates (D1–D3, D7, D8)
 - [ ] 2.1 `notional_pools`: header_account_id (mandatory, a member), legal_entity_id, interest_configuration_id, pool

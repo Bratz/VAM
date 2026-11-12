@@ -10,6 +10,7 @@ import java.util.UUID;
 public interface PoolMemberRepository extends JpaRepository<PoolMember, UUID> {
     List<PoolMember> findByPoolId(UUID poolId);
     List<PoolMember> findByAccountId(UUID accountId);
+    List<PoolMember> findByAccountIdInAndStatus(java.util.Collection<UUID> accountIds, PoolMember.MemberStatus status);
 
     /** Active members of a corporate's active notional pools, with their pool (rate, currency). */
     @org.springframework.data.jpa.repository.Query("SELECT m FROM PoolMember m JOIN FETCH m.pool p WHERE p.corporateId = :corporateId AND p.status = 'ACTIVE' AND m.status = 'ACTIVE'")

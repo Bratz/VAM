@@ -3,7 +3,7 @@ import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent } from
 import { Button, Badge, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
-import { NotionalPool, CalculateInterestResponse } from '../../services/api';
+import { NotionalPool } from '../../services/api';
 import toast from 'react-hot-toast';
 import { VirtualizedAccountList, VirtualizedAccountRow } from '../va/VirtualizedAccountList';
 
@@ -15,7 +15,6 @@ export interface PoolDetailModalProps {
   onClose: () => void;
   pool: NotionalPool;
   onRemoveMember: (poolId: string, memberId: string) => Promise<void>;
-  onCalculateInterest: (poolId: string) => Promise<CalculateInterestResponse>;
   onAddMember: () => void;
 }
 
@@ -24,30 +23,29 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
   onClose,
   pool,
   onRemoveMember,
-  onCalculateInterest,
   onAddMember
 }) => {
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [removeTargetId, setRemoveTargetId] = useState('');
-  const [calculating, setCalculating] = useState(false);
-  const [interestResult, setInterestResult] = useState<CalculateInterestResponse | null>(null);
+  // Members who left keep their row (dated history); the pool is its current members.
+  const members = useMemo(() => (pool.members || []).filter(m => m.status === 'ACTIVE'), [pool.members]);
 
   // PoolMember -> VirtualizedAccountRow: field names differ (accountNumber/
   // entityName vs. vaNumber/vaName), and members don't carry their own
   // currency, so the pool's currency is used for every row.
   const memberRows: VirtualizedAccountRow[] = useMemo(
-    () => (pool.members || []).map(m => ({
+    () => members.map(m => ({
       id: m.id,
       vaNumber: m.accountNumber,
       vaName: m.entityName,
       currencyCode: pool.poolCurrency,
       balance: m.currentBalance,
     })),
-    [pool.members, pool.poolCurrency]
+    [members, pool.poolCurrency]
   );
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Remove this member from the pool?')) return;
+    if (!confirm('Remove this member from the pool? It leaves today; its history is kept.')) return;
 
     setRemovingMemberId(memberId);
     try {
@@ -58,19 +56,6 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       toast.error(err.message || 'Failed to remove member');
     } finally {
       setRemovingMemberId(null);
-    }
-  };
-
-  const handleCalculateInterest = async () => {
-    setCalculating(true);
-    try {
-      const result = await onCalculateInterest(pool.id);
-      setInterestResult(result);
-      toast.success('Interest calculated successfully');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to calculate interest');
-    } finally {
-      setCalculating(false);
     }
   };
 
@@ -88,14 +73,6 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
               </Badge>
             </div>
           </div>
-          <Button
-            size="sm"
-            onClick={handleCalculateInterest}
-            disabled={calculating}
-            leftIcon={calculating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />}
-          >
-            Calculate Interest
-          </Button>
         </div>
 
         <div className="grid grid-cols-4 gap-4">
@@ -117,55 +94,10 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           </div>
           <div>
             <p className="caption">Members</p>
-            <p className="section-title">{pool.members?.length || 0}</p>
+            <p className="section-title">{members.length}</p>
           </div>
         </div>
       </div>
-
-      {/* Interest Calculation Result */}
-      {interestResult && (
-        <div className="bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Calculator className="w-5 h-5 text-success-600 dark:text-success-300" />
-            <h4 className="font-medium text-success-800 dark:text-success-300">Interest Calculation Result</h4>
-            <span className="caption-success">{interestResult.calculationDate}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <p className="caption-success">Pool Balance</p>
-              <p className="font-semibold text-success-800 dark:text-success-300">
-                {formatCurrency(interestResult.poolBalance, pool.poolCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="caption-success">Gross Interest</p>
-              <p className="font-semibold text-success-800 dark:text-success-300">
-                {formatCurrency(interestResult.grossInterest, pool.poolCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="caption-success">Net Interest</p>
-              <p className="font-semibold text-success-800 dark:text-success-300">
-                {formatCurrency(interestResult.netInterest, pool.poolCurrency)}
-              </p>
-            </div>
-          </div>
-          {interestResult.memberAllocations && interestResult.memberAllocations.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-caption font-medium text-success-700 dark:text-success-300 mb-2">Member Allocations:</p>
-              {interestResult.memberAllocations.map((alloc) => (
-                <div key={alloc.memberId} className="flex justify-between text-body-sm bg-white/50 dark:bg-primary-900/50 rounded-lg px-3 py-2">
-                  <span className="text-success-800 dark:text-success-300">{alloc.entityCode}</span>
-                  <span className="text-success-700 dark:text-success-300">{alloc.contributionPercent.toFixed(2)}%</span>
-                  <span className="font-medium text-success-800 dark:text-success-300">
-                    {formatCurrency(alloc.interestAllocation, pool.poolCurrency)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Members Section */}
       <div className="mb-4 flex items-center justify-between">
@@ -180,7 +112,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       {/* Per-member removal lives outside the (read-only) virtualized list —
           a trash icon per row doesn't scale to thousands of members, so this
           is a deliberate select-then-remove control instead. */}
-      {pool.members && pool.members.length > 0 && (
+      {members.length > 0 && (
         <div className="flex items-center gap-2 mt-3">
           <select
             value={removeTargetId}
@@ -188,7 +120,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             className="flex-1 h-9 rounded-lg border border-edge bg-surface-card text-body-sm px-2 text-neutral-700 dark:text-neutral-200"
           >
             <option value="">Select a member to remove…</option>
-            {pool.members.map((member) => (
+            {members.map((member) => (
               <option key={member.id} value={member.id}>
                 {member.entityName} — {member.accountNumber}
               </option>

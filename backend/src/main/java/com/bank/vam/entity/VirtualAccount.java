@@ -1164,7 +1164,7 @@ public class VirtualAccount extends BaseEntity {
         if (!isPhysicalMirror() || homeBankBic == null || bankSwift == null) {
             return false;
         }
-        return homeBankBic.equalsIgnoreCase(bankSwift);
+        return com.bank.vam.config.HomeBankProperties.sameBank(homeBankBic, bankSwift);
     }
 
     /**

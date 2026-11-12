@@ -67,15 +67,27 @@ public class NotionalPoolController {
     }
 
     @DeleteMapping("/{poolId}/members/{memberId}")
-    @Operation(summary = "Remove member from pool")
+    @Operation(summary = "Member leaves the pool (dated; the row is kept)")
     public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable UUID poolId, @PathVariable UUID memberId) {
         poolService.removeMember(poolId, memberId);
         return ResponseEntity.ok(ApiResponse.success(null, "Member removed"));
     }
 
+    @PostMapping("/{id}/suspend")
+    @Operation(summary = "Suspend an active pool")
+    public ResponseEntity<ApiResponse<NotionalPoolDto.Response>> suspendPool(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(poolService.suspendPool(id), "Pool suspended"));
+    }
+
+    @PostMapping("/{id}/close")
+    @Operation(summary = "Close an active or suspended pool; its members leave")
+    public ResponseEntity<ApiResponse<NotionalPoolDto.Response>> closePool(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(poolService.closePool(id), "Pool closed"));
+    }
+
     @PostMapping("/{id}/calculate")
-    @Operation(summary = "Calculate interest for pool")
+    @Operation(summary = "Retired: refuses — pool interest is replaced by daily runs")
     public ResponseEntity<ApiResponse<NotionalPoolDto.CalculateInterestResponse>> calculateInterest(
             @PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(poolService.calculateInterest(id)));

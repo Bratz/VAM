@@ -29,6 +29,19 @@ public class HomeBankProperties {
     // overridden for a per-geography demo.
 
     public boolean matches(String otherBic) {
-        return bic != null && otherBic != null && bic.equalsIgnoreCase(otherBic);
+        return sameBank(bic, otherBic);
+    }
+
+    /**
+     * Same institution and branch: an 8-character BIC is the head office, the same as its 11-character form ending
+     * "XXX" (HBUKGB4B == HBUKGB4BXXX). A literal compare treated the home bank's own accounts as external.
+     */
+    public static boolean sameBank(String a, String b) {
+        return a != null && b != null && bic11(a).equals(bic11(b));
+    }
+
+    private static String bic11(String bic) {
+        String s = bic.trim().toUpperCase();
+        return s.length() == 8 ? s + "XXX" : s;
     }
 }

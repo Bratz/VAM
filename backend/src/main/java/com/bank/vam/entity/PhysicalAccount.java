@@ -690,27 +690,6 @@ public class PhysicalAccount extends BaseEntity {
     }
 
     /**
-     * Enable pooling
-     */
-    public void enablePooling(UUID poolId, String poolReference) {
-        if (!isPoolingEligible()) {
-            throw new IllegalStateException("Account is not eligible for pooling");
-        }
-        this.poolingEnabled = true;
-        this.poolId = poolId;
-        this.poolReference = poolReference;
-    }
-
-    /**
-     * Disable pooling
-     */
-    public void disablePooling() {
-        this.poolingEnabled = false;
-        this.poolId = null;
-        this.poolReference = null;
-    }
-
-    /**
      * Enable sweep as header
      */
     public void enableSweepAsHeader(UUID sweepRuleId) {

@@ -105,8 +105,7 @@ const NotionalPoolingPage: React.FC = () => {
     createPool,
     addMember,
     addMembersBulk,
-    removeMember,
-    calculateInterest
+    removeMember
   } = useNotionalPooling();
 
   // Corporate & Program selector state
@@ -119,7 +118,6 @@ const NotionalPoolingPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [calculatingPoolId, setCalculatingPoolId] = useState<string | null>(null);
 
   // Load corporates and programs on mount
   useEffect(() => {
@@ -204,18 +202,6 @@ const NotionalPoolingPage: React.FC = () => {
   const handleAddMemberClick = (pool: NotionalPool) => {
     setSelectedPool(pool);
     setShowAddMemberModal(true);
-  };
-
-  const handleCalculateInterest = async (poolId: string) => {
-    setCalculatingPoolId(poolId);
-    try {
-      await calculateInterest(poolId);
-      toast.success('Interest calculated successfully');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to calculate interest');
-    } finally {
-      setCalculatingPoolId(null);
-    }
   };
 
   // Toolbar actions in the Aperture Layout header.
@@ -343,9 +329,7 @@ const NotionalPoolingPage: React.FC = () => {
               key={pool.id}
               pool={pool}
               onView={() => handleViewPool(pool)}
-              onCalculateInterest={() => handleCalculateInterest(pool.id)}
               onAddMember={() => handleAddMemberClick(pool)}
-              isCalculating={calculatingPoolId === pool.id}
             />
           ))}
         </div>
@@ -367,7 +351,6 @@ const NotionalPoolingPage: React.FC = () => {
             onClose={() => { setShowDetailModal(false); setSelectedPool(null); }}
             pool={selectedPool}
             onRemoveMember={removeMember}
-            onCalculateInterest={calculateInterest}
             onAddMember={() => { setShowDetailModal(false); setShowAddMemberModal(true); }}
           />
 

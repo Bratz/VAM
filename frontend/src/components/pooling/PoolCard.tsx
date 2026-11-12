@@ -3,8 +3,6 @@ import {
   Layers,
   Eye,
   UserPlus,
-  Calculator,
-  Loader2,
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
@@ -19,13 +17,13 @@ import { NotionalPool } from '../../services/api';
 export interface PoolCardProps {
   pool: NotionalPool;
   onView: () => void;
-  onCalculateInterest: () => void;
   onAddMember: () => void;
-  isCalculating: boolean;
 }
 
-export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInterest, onAddMember, isCalculating }) => {
+export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember }) => {
   const [expanded, setExpanded] = useState(false);
+  // Members who left keep their row (dated history); the card shows the current ones.
+  const members = (pool.members || []).filter(m => m.status === 'ACTIVE');
 
   return (
     <Card className="hover:shadow-md hover:border-primary-200 dark:hover:border-primary-700 transition-all group">
@@ -50,19 +48,6 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
           <Button variant="ghost" size="sm" onClick={onAddMember} title="Add Member">
             <UserPlus className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCalculateInterest}
-            disabled={isCalculating}
-            title="Calculate Interest"
-          >
-            {isCalculating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Calculator className="w-4 h-4" />
-            )}
-          </Button>
         </div>
       </div>
 
@@ -86,7 +71,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
       <div className="grid grid-cols-3 gap-2 text-body-sm mb-3">
         <div>
           <p className="caption">Members</p>
-          <p className="font-medium text-neutral-700 dark:text-neutral-200">{pool.memberCount || pool.members?.length || 0}</p>
+          <p className="font-medium text-neutral-700 dark:text-neutral-200">{pool.memberCount ?? members.length}</p>
         </div>
         <div>
           <p className="caption">Rate</p>
@@ -101,19 +86,19 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
       </div>
 
       {/* Members Section (Expandable) */}
-      {pool.members && pool.members.length > 0 && (
+      {members.length > 0 && (
         <>
           <button
             onClick={() => setExpanded(!expanded)}
             className="w-full flex items-center justify-between py-2 border-t border-edge-subtle body-sm hover:text-primary-700 dark:hover:text-neutral-200 transition-colors"
           >
-            <span className="font-medium">View Members ({pool.members.length})</span>
+            <span className="font-medium">View Members ({members.length})</span>
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
           {expanded && (
             <div className="space-y-2 pt-2">
-              {pool.members.slice(0, 5).map((member) => (
+              {members.slice(0, 5).map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface-page rounded-lg text-body-sm">
                   <div>
                     <p className="font-medium text-primary-900 dark:text-neutral-50">{member.entityName}</p>
@@ -127,12 +112,12 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
                   </div>
                 </div>
               ))}
-              {pool.members.length > 5 && (
+              {members.length > 5 && (
                 <button
                   onClick={onView}
                   className="w-full text-center text-body-sm text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:hover:text-neutral-200 py-2"
                 >
-                  View all {pool.members.length} members
+                  View all {members.length} members
                 </button>
               )}
             </div>
@@ -141,7 +126,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
       )}
 
       {/* Empty Members State */}
-      {(!pool.members || pool.members.length === 0) && (
+      {members.length === 0 && (
         <div className="border-t border-edge-subtle pt-3 mt-3">
           <button
             onClick={onAddMember}
