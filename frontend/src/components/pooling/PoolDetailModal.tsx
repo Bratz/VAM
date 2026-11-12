@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play } from 'lucide-react';
+import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play, Send, RotateCcw } from 'lucide-react';
 import { Button, Badge, Input, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
-import { NotionalPool, PoolRun, poolingApi } from '../../services/api';
+import { NotionalPool, PoolPosting, PoolRun, poolingApi } from '../../services/api';
 import toast from 'react-hot-toast';
 import { VirtualizedAccountList, VirtualizedAccountRow } from '../va/VirtualizedAccountList';
 
@@ -240,35 +240,65 @@ const yesterday = () => {
   return d.toLocaleDateString('en-CA');
 };
 
-/** The pool's stored daily runs (last 31 days) and a catch-up run for a date range. */
+/** Local YYYY-MM of last month: the latest month that can be posted (closing the pool posts the current one). */
+const lastMonth = () => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return d.toLocaleDateString('en-CA').slice(0, 7);
+};
+
+/** The pool's stored daily runs (last 31 days), a catch-up run for a date range, corrections and month postings. */
 const DailyRuns: React.FC<{ pool: NotionalPool }> = ({ pool }) => {
   const [runs, setRuns] = useState<PoolRun[]>([]);
+  const [postings, setPostings] = useState<PoolPosting[]>([]);
   const [from, setFrom] = useState(yesterday);
   const [to, setTo] = useState(yesterday);
+  const [month, setMonth] = useState(lastMonth);
   const [running, setRunning] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setRuns((await poolingApi.getRuns(pool.id)).data ?? []);
+      const [r, p] = await Promise.all([poolingApi.getRuns(pool.id), poolingApi.getPostings(pool.id)]);
+      setRuns(r.data ?? []);
+      setPostings(p.data ?? []);
     } catch (err: any) {
       toast.error(err.message || 'Failed to load daily runs');
     }
   }, [pool.id]);
 
-  useEffect(() => { load(); }, [load]);
-
-  const runDates = async () => {
+  /** Runs an action with the busy flag, a toast and a reload. */
+  const act = async (action: () => Promise<string>, failed: string) => {
     setRunning(true);
     try {
-      const done = (await poolingApi.runDates(pool.id, from, to)).data ?? [];
-      toast.success(`${done.length} run${done.length === 1 ? '' : 's'} for ${from}${to !== from ? ` to ${to}` : ''}`);
+      toast.success(await action());
       await load();
     } catch (err: any) {
-      toast.error(err.message || 'Run failed');
+      toast.error(err.message || failed);
     } finally {
       setRunning(false);
     }
   };
+
+  const postMonth = () => act(async () => {
+    const done = (await poolingApi.postMonth(pool.id, month)).data ?? [];
+    return done.length ? `${month} posted` : `Nothing to post for ${month}`;
+  }, 'Posting failed');
+
+  const correct = (date: string) => {
+    if (!confirm(`Correct ${date}? Its run is superseded by a new one from today's data; the difference is posted now.`)) return;
+    act(async () => {
+      await poolingApi.correctRun(pool.id, date);
+      return `${date} corrected`;
+    }, 'Correction failed');
+  };
+
+  useEffect(() => { load(); }, [load]);
+
+  const runDates = () => act(async () => {
+    const done = (await poolingApi.runDates(pool.id, from, to)).data ?? [];
+    return `${done.length} run${done.length === 1 ? '' : 's'} for ${from}${to !== from ? ` to ${to}` : ''}`;
+  }, 'Run failed');
 
   const money = (v: number) => formatCurrency(v ?? 0, pool.poolCurrency);
 
@@ -277,7 +307,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool }> = ({ pool }) => {
       <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
         <div>
           <h4 className="font-medium text-primary-900 dark:text-neutral-50">Daily runs</h4>
-          <p className="caption">End-of-day balances; pooled interest on the net. Benefit = pooled − standalone. Not yet posted.</p>
+          <p className="caption">End-of-day balances; pooled interest on the net. Benefit = pooled − standalone. Posted at month end.</p>
         </div>
         <div className="flex items-end gap-2">
           <Input id="pool-run-from" label="From" type="date" value={from} max={yesterday()} onChange={(e) => setFrom(e.target.value)} />
@@ -300,6 +330,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool }> = ({ pool }) => {
                 <th className="px-3 py-2 font-medium text-right">Pooled interest</th>
                 <th className="px-3 py-2 font-medium text-right">Benefit</th>
                 <th className="px-3 py-2 font-medium">Flags</th>
+                <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody>
@@ -318,8 +349,58 @@ const DailyRuns: React.FC<{ pool: NotionalPool }> = ({ pool }) => {
                       {r.limitBreaches > 0 && <Badge variant="error" size="sm">{r.limitBreaches} over limit</Badge>}
                       {r.snapshotsMissing > 0 && <Badge variant="warning" size="sm">{r.snapshotsMissing} earlier balance{r.snapshotsMissing === 1 ? '' : 's'}</Badge>}
                       {r.status === 'POSTED' && <Badge variant="success" size="sm">Posted</Badge>}
+                      {r.status === 'SUPERSEDED' && <Badge variant="neutral" size="sm">Superseded</Badge>}
                     </div>
                   </td>
+                  <td className="px-3 py-2 text-right">
+                    {r.status === 'POSTED' && (
+                      <Button size="sm" variant="ghost" disabled={running} onClick={() => correct(r.valueDate)}
+                              leftIcon={<RotateCcw className="w-4 h-4" />}>
+                        Correct
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-end justify-between gap-3 mt-6 mb-3">
+        <div>
+          <h4 className="font-medium text-primary-900 dark:text-neutral-50">Postings</h4>
+          <p className="caption">One interest movement per member a month, on its statement; corrections post the difference.</p>
+        </div>
+        <div className="flex items-end gap-2">
+          <Input id="pool-post-month" label="Month" type="month" value={month} max={lastMonth()} onChange={(e) => setMonth(e.target.value)} />
+          <Button size="sm" variant="outline" onClick={postMonth} disabled={running || !month}
+                  leftIcon={running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}>
+            Post month
+          </Button>
+        </div>
+      </div>
+      {postings.length === 0 ? (
+        <p className="caption">Nothing posted yet.</p>
+      ) : (
+        <div className="max-h-48 overflow-y-auto border border-edge rounded-lg">
+          <table className="w-full text-body-sm">
+            <thead className="text-neutral-500 dark:text-neutral-400 text-left sticky top-0 bg-surface-card">
+              <tr>
+                <th className="px-3 py-2 font-medium">Month</th>
+                <th className="px-3 py-2 font-medium text-right">Total</th>
+                <th className="px-3 py-2 font-medium">Posted at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {postings.map(p => (
+                <tr key={p.correlationId} className="border-t border-edge"
+                    title={p.members.map(m => `${m.accountNumber}: ${money(m.amount)} (${m.reference})`).join('\n')}>
+                  <td className="px-3 py-2 font-mono whitespace-nowrap">
+                    {p.month}{p.kind === 'CORRECTION' && <Badge variant="info" size="sm" className="ml-2">Correction {p.valueDate}</Badge>}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">{money(p.total)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{p.postedAt?.replace('T', ' ').slice(0, 16)}</td>
                 </tr>
               ))}
             </tbody>

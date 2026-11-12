@@ -270,11 +270,42 @@ means the corrected run needs either a superseded flag or a run version in the k
 retired /calculate endpoint and `calculateInterest` in api.ts still present; no per-member line view in the UI.
 
 ### Phase 4 — month-end posting (D5, D11)
-- [ ] 4.1 Month end (scheduler on the 1st for the previous month, + manual): Σ allocated per member → one interest
+- [x] 4.1 Month end (scheduler on the 1st for the previous month, + manual): Σ allocated per member → one interest
       movement per member on the ledger (credit or debit; ledger rows, statement line "Pool interest <pool> <month>"),
       runs marked posted; idempotent per (pool, month).
-- [ ] 4.2 Correction: re-running a posted date makes a new run and a reversing + new posting, never an edit.
-- [ ] 4.3 Tests: Σ postings = Σ daily pooled interest; posting twice changes nothing; correction path.
+- [x] 4.2 Correction: re-running a posted date makes a new run and a reversing + new posting, never an edit.
+- [x] 4.3 Tests: Σ postings = Σ daily pooled interest; posting twice changes nothing; correction path.
+
+Phase 4 live-checked (12 Nov, POOL-BRTO-AED, whole-table balance diff): V52 applied (partial unique index, old
+constraint gone); Post Oct 2026 ran the 31 dates then posted AED 46,624.00 = Σ daily pooled, one INTEREST row per member
+("Pool interest POOL-BRTO-AED Oct 2026"), shadow + physical moved together for the CORE_BANKING members, the MT940
+member's physical did not (known gap); posting again changed nothing; Nov refused. Rate edited 3.20 → 4.20, correct
+15 Oct: old run SUPERSEDED (1,504.00), new POSTED (1,974.00), only the difference posted (470.00). Close: 1–11 Nov run
+and posted (21,714.00 = 11 × 1,974.00). All restored after. 727 tests, tsc clean.
+Phase 4 done (12 Nov, not yet live-checked): `PoolPostingService`. Month posting (pool, month): for an ACTIVE pool the
+month's missing dates are run first (through month end, never today); then the month's CALCULATED runs are locked
+(SELECT … FOR UPDATE) and Σ allocated per member → one movement per non-zero member, value-dated the last date covered,
+"Pool interest <ref> <Mon yyyy>"; runs → POSTED + posted_at, each line → `posting_reference` (its member's movement; null
+when the member's total was zero). Posting again finds no CALCULATED run → nothing. A movement = FxPosting's pattern on
+the member's home-bank shadow: `applyShadowMovement` (ledger + available + bank balance), `CoreBankingBalance.follow`
+(the physical account, for CORE_BANKING mirrors as every other home-bank posting), one va_movements row (credit →
+INTEREST, debit interest → DEBIT so the statement shows a debit; EXTERNAL, channel NOTIONAL_POOL, source_type
+POOL_INTEREST / POOL_INTEREST_CORRECTION, source_reference = pool id, one correlation id per posting). No contra row:
+the other side is the bank's interest expense/income, which no VA represents (settlement VAs are the corporate's own
+fee accounts). Scheduler `vam.pooling.post-cron` (default 01:15 on the 1st) posts last month for ACTIVE and SUSPENDED
+pools; a SUSPENDED pool posts its existing runs but gets no missing dates run (the daily scheduler skips it too).
+POST /api/v1/pooling/{id}/postings?month=yyyy-MM (past months only), GET …/postings (from the ledger, grouped per
+posting). Close (R5) posts first: yesterday's month through yesterday plus any earlier month with CALCULATED runs.
+Correction POST …/runs/{date}/correct: old run → SUPERSEDED (kept), new run from today's data; if the old was POSTED,
+each member's (new − old) is posted at once ("Pool interest correction <ref> <date>") and the new run is POSTED with
+those refs; an unposted run is just replaced. V52: uq_pool_calc_pool_date dropped, partial unique index
+uq_pool_calc_pool_date_current (pool_id, calculation_date) WHERE status <> 'SUPERSEDED'; the entity no longer declares
+the unique constraint (ddl-auto's update would otherwise drop and re-add it). Retired /calculate endpoint,
+`calculateInterest`, CalculateInterestResponse/MemberInterestAllocation (Java + api.ts) removed. UI: Posted/Superseded
+badges, Correct on a posted run, Postings list + Post month. 727 tests (+7), tsc clean.
+Left for 5+: non-CORE_BANKING members (SWIFT_MT940 mirrors) move their shadow but not the physical account, as every
+home-bank posting does; a fresh database built by ddl-auto alone has no partial unique index (the service's lookup is
+the guard); no per-member line view; rate edits still change the config in place.
 
 ### Phase 5 — screens and data (R15–R18, D10)
 - [ ] 5.1 NotionalPoolingPage: totals per currency (no cross-currency sum, no "AED" label); list shows run-dated

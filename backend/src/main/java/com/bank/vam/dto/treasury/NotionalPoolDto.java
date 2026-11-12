@@ -151,33 +151,23 @@ public class NotionalPoolDto {
         private NotionalPool.AllocationMethod allocationMethod;
     }
 
-    @Data
-    public static class CalculateInterestResponse {
-        private UUID poolId;
-        private LocalDate calculationDate;
-        private BigDecimal poolBalance;
-        private BigDecimal interestRate;
-        private BigDecimal grossInterest;
-        private BigDecimal netInterest;
-        private List<MemberInterestAllocation> memberAllocations;
-    }
-
     /** A daily run (spec R10). Interest signed: credit +, debit −. */
     public record Run(UUID id, LocalDate valueDate, String status, BigDecimal poolNet, BigDecimal interestRate,
                       BigDecimal pooledInterest, BigDecimal standaloneInterest, BigDecimal benefit, BigDecimal residue,
                       BigDecimal creditRate, BigDecimal debitRate, String dayCount, boolean floorBreach,
-                      int limitBreaches, int snapshotsMissing, List<RunLine> lines) {}
+                      int limitBreaches, int snapshotsMissing, LocalDateTime postedAt, List<RunLine> lines) {}
 
     public record RunLine(UUID accountId, String accountNumber, BigDecimal balance, LocalDate balanceAsOf,
                           boolean snapshotMissing, BigDecimal standaloneInterest, BigDecimal allocatedInterest,
-                          boolean debitLimitBreach) {}
+                          boolean debitLimitBreach, String postingReference) {}
 
-    @Data
-    public static class MemberInterestAllocation {
-        private UUID memberId;
-        private String entityCode;
-        private BigDecimal balance;
-        private BigDecimal contributionPercent;
-        private BigDecimal interestAllocation;
-    }
+    /**
+     * One posting of pool interest (R11a): the month's (kind MONTH, value date = the last date it covers) or a
+     * correction's (kind CORRECTION, value date = the corrected date). Amounts signed: credit +, debit −.
+     */
+    public record Posting(String correlationId, String kind, String month, LocalDate valueDate, LocalDateTime postedAt,
+                          BigDecimal total, List<PostingLine> members) {}
+
+    public record PostingLine(UUID accountId, String accountNumber, BigDecimal amount, String reference) {}
+
 }

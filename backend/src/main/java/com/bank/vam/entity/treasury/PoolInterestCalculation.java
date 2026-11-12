@@ -14,12 +14,15 @@ import java.util.UUID;
 /**
  * One pool's daily run for one value date (spec R10, D5): the net, the pooled interest on it, the standalone interest
  * the members would have had, the benefit, and the rates used — stored, so a later rate edit never changes history.
- * Interest amounts are signed: credit interest positive, debit interest negative. One run per (pool, value date).
+ * Interest amounts are signed: credit interest positive, debit interest negative. One current (not SUPERSEDED) run per
+ * (pool, value date): the partial unique index uq_pool_calc_pool_date_current (V52). It is not declared here — JPA
+ * can't express a partial index, and ddl-auto would re-add the old full unique constraint if it were.
+ * ponytail: a database built by ddl-auto alone (no V52 on an existing table) has no such index; the service's
+ * lookup-before-insert is then the only guard.
  */
 @Data
 @Entity
-@Table(name = "pool_interest_calculations", uniqueConstraints =
-        @UniqueConstraint(name = "uq_pool_calc_pool_date", columnNames = {"pool_id", "calculation_date"}))
+@Table(name = "pool_interest_calculations")
 public class PoolInterestCalculation {
 
     @Id
@@ -88,8 +91,11 @@ public class PoolInterestCalculation {
     @EqualsAndHashCode.Exclude
     private List<PoolInterestLine> lines = new ArrayList<>();
 
-    /** No approval step (D11): a run is CALCULATED; the month-end posting (Phase 4) marks it POSTED. */
+    /**
+     * No approval step (D11): a run is CALCULATED; the month-end posting marks it POSTED. A correction (R11a) marks
+     * the old run SUPERSEDED and stores a new one for the date — never an edit.
+     */
     public enum CalculationStatus {
-        CALCULATED, POSTED
+        CALCULATED, POSTED, SUPERSEDED
     }
 }

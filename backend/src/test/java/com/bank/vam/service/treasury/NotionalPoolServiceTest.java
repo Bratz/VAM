@@ -44,6 +44,7 @@ class NotionalPoolServiceTest {
     private final PoolMemberRepository members = mock(PoolMemberRepository.class);
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final InterestConfigurationRepository configs = mock(InterestConfigurationRepository.class);
+    private final PoolPostingService postings = mock(PoolPostingService.class);
     private final Map<UUID, VirtualAccount> accounts = new HashMap<>();
     private final Map<UUID, InterestConfiguration> savedConfigs = new HashMap<>();
     private NotionalPoolService service;
@@ -55,7 +56,7 @@ class NotionalPoolServiceTest {
         service = new NotionalPoolService(pools, members, vas, mock(PhysicalAccountRepository.class), home,
                 mock(AuditLogService.class), mock(MarketProfileProperties.class),
                 new InterestConfigurationService(configs), configs,
-                mock(com.bank.vam.repository.treasury.PoolInterestCalculationRepository.class));
+                mock(com.bank.vam.repository.treasury.PoolInterestCalculationRepository.class), postings);
         when(pools.save(any())).thenAnswer(i -> {
             NotionalPool p = i.getArgument(0);
             if (p.getId() == null) p.setId(UUID.randomUUID());
@@ -118,11 +119,8 @@ class NotionalPoolServiceTest {
     // ---- 1.3 calculate ----
 
     @Test
-    void calculateInterestRefusesInsteadOfAddingToTheYtd() {
-        assertThatThrownBy(() -> service.calculateInterest(UUID.randomUUID()))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("daily runs");
-        verify(pools, never()).save(any());
+    void theRetiredCalculateInterestIsGone_poolInterestComesFromDailyRuns() {
+        assertThat(Arrays.stream(NotionalPoolService.class.getMethods())).noneMatch(m -> m.getName().equals("calculateInterest"));
     }
 
     // ---- 1.4 membership ----
@@ -254,9 +252,10 @@ class NotionalPoolServiceTest {
     }
 
     @Test
-    void anActivePoolClosesDirectly() {
+    void anActivePoolClosesDirectly_afterPostingWhatItAccrued() {
         NotionalPool pool = pool("GBP", CORP);
         assertThat(service.closePool(pool.getId()).getStatus()).isEqualTo(NotionalPool.PoolStatus.CLOSED);
+        verify(postings).postAccrued(pool); // R5: accrued interest posted before the pool closes
     }
 
     // ---- phase 2: header (R2) ----

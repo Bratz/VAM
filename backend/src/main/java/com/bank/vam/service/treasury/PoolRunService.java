@@ -23,7 +23,7 @@ import java.util.*;
 /**
  * Daily notional pool runs (spec R6, R8–R11, R13; D4–D6): per pool and value date, each member's end-of-day balance,
  * pooled interest on the net, the standalone interest each member would have had, the benefit, and the pooled
- * interest allocated pro rata. Stored once per (pool, date); nothing is posted here (month-end posting is Phase 4).
+ * interest allocated pro rata. Stored once per (pool, date); nothing is posted here (PoolPostingService posts).
  */
 @Slf4j
 @Service
@@ -79,7 +79,8 @@ public class PoolRunService {
 
     /** One value date: the stored run if there is one (idempotent, R10), else a new one; empty if no member that day. */
     private Optional<PoolInterestCalculation> run(NotionalPool pool, InterestConfiguration config, LocalDate date) {
-        Optional<PoolInterestCalculation> stored = runRepository.findByPoolIdAndValueDate(pool.getId(), date);
+        Optional<PoolInterestCalculation> stored = runRepository.findByPoolIdAndValueDateAndStatusNot(pool.getId(), date,
+                PoolInterestCalculation.CalculationStatus.SUPERSEDED);
         if (stored.isPresent()) return stored;
         List<PoolMember> members = pool.getMembers().stream().filter(m -> memberOn(m, date)).toList();
         if (members.isEmpty()) return Optional.empty();
@@ -171,15 +172,15 @@ public class PoolRunService {
         return residue;
     }
 
-    private static NotionalPoolDto.Run toDto(PoolInterestCalculation r) {
+    static NotionalPoolDto.Run toDto(PoolInterestCalculation r) {
         List<NotionalPoolDto.RunLine> lines = r.getLines().stream().map(l -> new NotionalPoolDto.RunLine(
                 l.getAccountId(), l.getAccountNumber(), l.getBalance(), l.getBalanceAsOf(), l.isSnapshotMissing(),
-                l.getStandaloneInterest(), l.getAllocatedInterest(), l.isDebitLimitBreach())).toList();
+                l.getStandaloneInterest(), l.getAllocatedInterest(), l.isDebitLimitBreach(), l.getPostingReference())).toList();
         return new NotionalPoolDto.Run(r.getId(), r.getValueDate(), r.getStatus().name(), r.getPoolNet(),
                 r.getInterestRate(), r.getPooledInterest(), r.getStandaloneInterest(), r.getBenefit(), r.getResidue(),
                 r.getCreditRate(), r.getDebitRate(), r.getDayCount(), Boolean.TRUE.equals(r.getFloorBreach()),
                 (int) lines.stream().filter(NotionalPoolDto.RunLine::debitLimitBreach).count(),
-                (int) lines.stream().filter(NotionalPoolDto.RunLine::snapshotMissing).count(), lines);
+                (int) lines.stream().filter(NotionalPoolDto.RunLine::snapshotMissing).count(), r.getPostedAt(), lines);
     }
 
     private static BigDecimal nz(BigDecimal v) {

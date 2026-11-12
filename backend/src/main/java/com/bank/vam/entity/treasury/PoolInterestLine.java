@@ -52,4 +52,8 @@ public class PoolInterestLine {
     /** The balance was below −debit limit (R13). */
     @Column(name = "debit_limit_breach", nullable = false)
     private boolean debitLimitBreach;
+
+    /** Reference of the ledger movement that posted this line (the month's, or a correction's); null until posted. */
+    @Column(name = "posting_reference", length = 50)
+    private String postingReference;
 }

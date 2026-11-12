@@ -1327,24 +1327,6 @@ export interface PoolRates {
   systemDefault?: boolean;
 }
 
-export interface CalculateInterestResponse {
-  poolId: string;
-  calculationDate: string;
-  poolBalance: number;
-  interestRate: number;
-  grossInterest: number;
-  netInterest: number;
-  memberAllocations: MemberInterestAllocation[];
-}
-
-interface MemberInterestAllocation {
-  memberId: string;
-  entityCode: string;
-  balance: number;
-  contributionPercent: number;
-  interestAllocation: number;
-}
-
 export interface CreatePoolRequest {
   poolName: string;
   poolCurrency: string;
@@ -1406,20 +1388,38 @@ export const poolingApi = {
   addMember: (poolId: string, data: AddMemberRequest) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${poolId}/members`, data).then(r => r.data),
   addMembersBulk: (poolId: string, accountIds: string[]) => apiClient.post<ApiResponse<BulkAddMembersResponse>>(`/pooling/${poolId}/members/bulk`, { accountIds }).then(r => r.data),
   removeMember: (poolId: string, memberId: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${poolId}/members/${memberId}`).then(r => r.data),
-  calculateInterest: (poolId: string) => apiClient.post<ApiResponse<CalculateInterestResponse>>(`/pooling/${poolId}/calculate`).then(r => r.data),
   /** Stored daily runs, newest first (default: the last 31 days). */
   getRuns: (poolId: string, from?: string, to?: string) =>
     apiClient.get<ApiResponse<PoolRun[]>>(`/pooling/${poolId}/runs`, { params: { from, to } }).then(r => r.data),
   /** Runs value dates from..to (before today, at most 92 days); dates already run come back unchanged. */
   runDates: (poolId: string, from: string, to: string) =>
     apiClient.post<ApiResponse<PoolRun[]>>(`/pooling/${poolId}/runs`, null, { params: { from, to } }).then(r => r.data),
+  /** Supersedes the date's run with a new one; if it was posted, the difference is posted now. */
+  correctRun: (poolId: string, date: string) =>
+    apiClient.post<ApiResponse<PoolRun>>(`/pooling/${poolId}/runs/${date}/correct`).then(r => r.data),
+  /** Posts a past month (YYYY-MM); posting it again posts nothing new. Returns the month's postings. */
+  postMonth: (poolId: string, month: string) =>
+    apiClient.post<ApiResponse<PoolPosting[]>>(`/pooling/${poolId}/postings`, null, { params: { month } }).then(r => r.data),
+  /** Interest postings (month and corrections), newest first. */
+  getPostings: (poolId: string) => apiClient.get<ApiResponse<PoolPosting[]>>(`/pooling/${poolId}/postings`).then(r => r.data),
 };
+
+/** One posting of pool interest: a month's, or a correction's for one date. Amounts signed: credit +, debit −. */
+export interface PoolPosting {
+  correlationId: string;
+  kind: 'MONTH' | 'CORRECTION';
+  month: string;
+  valueDate: string;
+  postedAt: string;
+  total: number;
+  members: { accountId: string; accountNumber: string; amount: number; reference: string }[];
+}
 
 /** A pool's daily run for one value date. Interest is signed: credit +, debit −. */
 export interface PoolRun {
   id: string;
   valueDate: string;
-  status: 'CALCULATED' | 'POSTED';
+  status: 'CALCULATED' | 'POSTED' | 'SUPERSEDED';
   poolNet: number;
   interestRate: number;
   pooledInterest: number;
@@ -1432,6 +1432,7 @@ export interface PoolRun {
   floorBreach: boolean;
   limitBreaches: number;
   snapshotsMissing: number;
+  postedAt?: string;
   lines: PoolRunLine[];
 }
 
@@ -1444,6 +1445,7 @@ export interface PoolRunLine {
   standaloneInterest: number;
   allocatedInterest: number;
   debitLimitBreach: boolean;
+  postingReference?: string;
 }
 
 // ============================================================================

@@ -44,6 +44,7 @@ public class NotionalPoolService {
     private final InterestConfigurationService interestConfigurationService;
     private final InterestConfigurationRepository interestConfigurationRepository;
     private final PoolInterestCalculationRepository runRepository;
+    private final PoolPostingService postingService;
 
     /** An old pool's debit rate when only its free-typed credit rate is known: credit + this, % a year (a default). */
     static final BigDecimal DEFAULT_DEBIT_SPREAD = new BigDecimal("2.00");
@@ -470,14 +471,6 @@ public class NotionalPoolService {
         });
     }
 
-    /**
-     * Retired (plan 1.3): each click added one day's interest on the current total to the YTD figure and the
-     * members' allocations, so a second click double-counted. Pool interest comes from the daily runs (Phase 3).
-     */
-    public NotionalPoolDto.CalculateInterestResponse calculateInterest(UUID poolId) {
-        throw new BusinessException("Manual pool interest calculation is retired: it is replaced by daily runs.");
-    }
-
     /** ACTIVE → SUSPENDED (R5). Members stay; a suspended pool can still be closed. */
     @Transactional
     public NotionalPoolDto.Response suspendPool(UUID id) {
@@ -490,8 +483,8 @@ public class NotionalPoolService {
     }
 
     /**
-     * ACTIVE or SUSPENDED → CLOSED (R5). Every member leaves (dated, rows kept) so its account can join another pool.
-     * ponytail: nothing is accrued yet to post on close — the month-end posting (Phase 4) adds that step here.
+     * ACTIVE or SUSPENDED → CLOSED (R5). What is accrued and unposted is posted first (through yesterday); then every
+     * member leaves (dated, rows kept) so its account can join another pool.
      */
     @Transactional
     public NotionalPoolDto.Response closePool(UUID id) {
@@ -500,6 +493,7 @@ public class NotionalPoolService {
         if (pool.getStatus() != NotionalPool.PoolStatus.ACTIVE && pool.getStatus() != NotionalPool.PoolStatus.SUSPENDED) {
             throw new BusinessException("Only an ACTIVE or SUSPENDED pool can be closed; " + pool.getPoolReference() + " is " + pool.getStatus());
         }
+        postingService.postAccrued(pool);
         activeMembers(pool).forEach(this::leave);
         pool.setEffectiveTo(LocalDate.now());
         refreshMemberBalances(pool);

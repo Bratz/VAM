@@ -193,6 +193,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     // ISO 20022 SUPPORT METHODS
     // ============================================================================
 
+    /** Movements on these accounts posted for one source (e.g. a notional pool's interest: its id), newest first. */
+    List<Transaction> findByVaIdInAndSourceReferenceOrderByTransactionDateDesc(java.util.Collection<UUID> vaIds, String sourceReference);
+
     /**
      * Find by correlation ID (endToEndId in ISO 20022) - returns single transaction
      */

@@ -53,7 +53,7 @@ class PoolRunServiceTest {
         config.setDayCountConvention("ACT/365");
         when(configs.findById(config.getId())).thenReturn(Optional.of(config));
         when(pools.findByIdWithMembers(pool.getId())).thenReturn(Optional.of(pool));
-        when(runs.findByPoolIdAndValueDate(eqId(), any())).thenAnswer(i -> Optional.ofNullable(stored.get(i.getArgument(1))));
+        when(runs.findByPoolIdAndValueDateAndStatusNot(eqId(), any(), any())).thenAnswer(i -> Optional.ofNullable(stored.get(i.getArgument(1))));
         when(runs.save(any())).thenAnswer(i -> {
             PoolInterestCalculation r = i.getArgument(0);
             r.setId(UUID.randomUUID());

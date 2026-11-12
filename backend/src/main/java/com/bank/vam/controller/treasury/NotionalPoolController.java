@@ -3,6 +3,7 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.NotionalPoolDto;
 import com.bank.vam.service.treasury.NotionalPoolService;
+import com.bank.vam.service.treasury.PoolPostingService;
 import com.bank.vam.service.treasury.PoolRunService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +25,7 @@ public class NotionalPoolController {
 
     private final NotionalPoolService poolService;
     private final PoolRunService runService;
+    private final PoolPostingService postingService;
 
     @GetMapping
     @Operation(summary = "Get all notional pools")
@@ -106,11 +109,24 @@ public class NotionalPoolController {
         return ResponseEntity.ok(ApiResponse.success(runService.history(id, from, to)));
     }
 
-    @PostMapping("/{id}/calculate")
-    @Operation(summary = "Retired: refuses — pool interest is replaced by daily runs")
-    public ResponseEntity<ApiResponse<NotionalPoolDto.CalculateInterestResponse>> calculateInterest(
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(poolService.calculateInterest(id)));
+    @PostMapping("/{id}/runs/{date}/correct")
+    @Operation(summary = "Correct a date: the run is superseded, a new one made; if it was posted, the difference is posted now")
+    public ResponseEntity<ApiResponse<NotionalPoolDto.Run>> correctRun(@PathVariable UUID id,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(ApiResponse.success(postingService.correct(id, date), "Run corrected"));
+    }
+
+    @PostMapping("/{id}/postings")
+    @Operation(summary = "Post a past month (yyyy-MM): missing dates run, one interest movement per member; posting again posts nothing new")
+    public ResponseEntity<ApiResponse<List<NotionalPoolDto.Posting>>> postMonth(@PathVariable UUID id,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
+        return ResponseEntity.ok(ApiResponse.success(postingService.postMonth(id, month)));
+    }
+
+    @GetMapping("/{id}/postings")
+    @Operation(summary = "Interest postings (month and corrections), newest first")
+    public ResponseEntity<ApiResponse<List<NotionalPoolDto.Posting>>> postings(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(postingService.history(id)));
     }
 
     @DeleteMapping("/{id}")
