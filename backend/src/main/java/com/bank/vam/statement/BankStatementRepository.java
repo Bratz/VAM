@@ -27,9 +27,24 @@ public interface BankStatementRepository extends JpaRepository<BankStatement, UU
     Optional<BankStatement> findFirstByPhysicalAccountIdAndKindAndStatusOrderByStatementDateDescCreatedAtDesc(
             UUID physicalAccountId, Kind kind, Status status);
 
+    /** The latest statement of a kind for a shadow (external sweeps size on the last APPLIED END_OF_DAY one, D6). */
+    Optional<BankStatement> findFirstByShadowVaIdAndKindAndStatusOrderByStatementDateDescCreatedAtDesc(
+            UUID shadowVaId, Kind kind, Status status);
+
     /** The previous statement of a kind before {@code date} (gap and opening-balance checks). */
     Optional<BankStatement> findFirstByPhysicalAccountIdAndKindAndStatusAndStatementDateLessThanOrderByStatementDateDescCreatedAtDesc(
             UUID physicalAccountId, Kind kind, Status status, LocalDate date);
+
+    /**
+     * An end-of-day statement taken in for the shadow after {@code after} that reset its ledger (APPLIED, not older than
+     * the latest, not CBS-fed): a failed external sweep then leaves the source's ledger as the statement set it.
+     */
+    boolean existsByShadowVaIdAndKindAndStatusAndOlderFalseAndCbsFedFalseAndCreatedAtAfter(
+            UUID shadowVaId, Kind kind, Status status, java.time.LocalDateTime after);
+
+    /** External sweeps: the shadow's applied, not CBS-fed statements of a kind dated on or after {@code from}. */
+    List<BankStatement> findByShadowVaIdAndKindAndStatusAndCbsFedFalseAndStatementDateGreaterThanEqual(
+            UUID shadowVaId, Kind kind, Status status, LocalDate from);
 
     List<BankStatement> findByPhysicalAccountIdAndKindAndStatementDateLessThanEqual(UUID physicalAccountId, Kind kind, LocalDate date);
 

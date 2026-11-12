@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  *    - Set by corporate treasury/CFO
  *    - Represents internal transfer pricing spreads
  *    - Corporate can CREATE, UPDATE, DELETE
- *    - Used for IHB loans, intercompany transactions
+ *    - Used for IHB current-account rates, intercompany transactions
  *    - SPREAD over/under external rates
  * 
  * BUSINESS RULES:

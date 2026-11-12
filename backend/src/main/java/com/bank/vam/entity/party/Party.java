@@ -363,7 +363,7 @@ public class Party extends BaseEntity {
         NETTING,
         /** Direct VA-to-VA transfer */
         DIRECT_TRANSFER,
-        /** Create IHB loan/deposit */
+        /** Settle through the IHB current accounts */
         IHB,
         /** Manual settlement outside system */
         MANUAL

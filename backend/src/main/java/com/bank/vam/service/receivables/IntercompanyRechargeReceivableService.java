@@ -25,13 +25,11 @@ import java.util.stream.Collectors;
  * Manages the relationship between:
  * - Receivables with COBO collection
  * - IntercompanyRecharge records created for fund forwarding
- * - IHB deposits for subsidiary crediting
  * 
  * WORKFLOW:
  * 1. Treasury collects on behalf of subsidiary (COBO)
  * 2. Create IntercompanyRecharge: Treasury → Subsidiary
  * 3. Link recharge to source receivable
- * 4. Optionally create IHB deposit for subsidiary
  * 
  * NOTE: This service adapts the POBO-oriented IntercompanyRecharge entity
  * for COBO receivables use case. The recharge represents funds that treasury

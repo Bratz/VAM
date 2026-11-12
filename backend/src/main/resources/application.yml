@@ -116,6 +116,10 @@ vam:
     default-freshness-threshold-minutes: 60
     # Scheduled refresh cadence for shadow balances (minutes)
     refresh-cadence-minutes: 15
+  # Sweeps from accounts at other banks (docs/specs/external-bank-sweeps.md, D8): flat charge per MT101 / pain.001
+  # instruction, in the account currency, on top of the standard sweep fee; charged to the home-bank target.
+  sweeps:
+    external-instruction-fee: ${VAM_SWEEPS_EXTERNAL_INSTRUCTION_FEE:25}
   # Cash-forecast nightly scheduler (Sprint 1 / T8)
   # `enabled` gates the @Scheduled trigger bean — false ⇒ trigger never
   # registers (verifiable by log absence). On-demand runs via the T9

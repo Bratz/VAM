@@ -1159,7 +1159,7 @@ public class CreditLimitController {
     // ========================================================================
 
     /**
-     * Record utilization on a limit (e.g., when IHB loan is drawn).
+     * Record utilization on a limit.
      * Propagates utilization up the hierarchy to Regional Treasury and Group Limit.
      */
     @PostMapping("/{limitId}/utilize")
@@ -1182,7 +1182,7 @@ public class CreditLimitController {
     }
 
     /**
-     * Release utilization (e.g., when IHB loan is repaid).
+     * Release utilization.
      * Propagates release up the hierarchy.
      */
     @PostMapping("/{limitId}/release")

@@ -49,7 +49,27 @@ class IhbSweepTargetTest {
 
         verify(entities).findByCorporateIdAndCanLendTrue(corporateB);
         verify(entities, never()).findByCanLendTrue();
-        verify(vas, never()).findByOwningEntityId(any());   // itself is no sweep target, so no rule
+        verify(rules, never()).save(any());   // itself is no sweep target, so no rule
+    }
+
+    @Test
+    void exposureIsTheDebitBalanceOfTheEntitysIhbCurrentAccountsInItsIhbCurrency() {
+        LegalEntity entity = new LegalEntity();
+        entity.setId(UUID.randomUUID());
+        entity.setIhbCurrency("AED");
+        when(vas.findByOwningEntityId(entity.getId())).thenReturn(List.of(
+            ihbAccount("AED", "-5000.00", true), ihbAccount("AED", "200.00", true),     // overdrawn + in credit
+            ihbAccount("USD", "-100.00", true), ihbAccount("AED", "-900.00", false)));  // other currency, not IHB
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, new java.math.BigDecimal("5000.00").compareTo(service.ihbDebitBalance(entity)));
+    }
+
+    private static com.bank.vam.entity.VirtualAccount ihbAccount(String ccy, String balance, boolean ihb) {
+        com.bank.vam.entity.VirtualAccount va = new com.bank.vam.entity.VirtualAccount();
+        va.setCurrencyCode(ccy);
+        va.setCurrentBalance(new java.math.BigDecimal(balance));
+        va.setIhbParticipant(ihb);
+        return va;
     }
 
     @Test
@@ -75,6 +95,57 @@ class IhbSweepTargetTest {
         org.assertj.core.api.Assertions.assertThat(someoneElses.getStatus()).isEqualTo(com.bank.vam.entity.treasury.SweepRule.SweepStatus.ACTIVE);
         org.assertj.core.api.Assertions.assertThat(notIhb.getStatus()).isEqualTo(com.bank.vam.entity.treasury.SweepRule.SweepStatus.ACTIVE);
         org.assertj.core.api.Assertions.assertThat(va.getIhbSweepEnabled()).isFalse();
+    }
+
+    @Test
+    void autoSweepLeavesAccountsAtAnotherBankOut() {
+        // External-bank sweeps D1, D10: an account at another bank is no IHB sweep source (it reaches treasury through
+        // its own entity's home-bank account first) and no IHB sweep target.
+        var market = mock(com.bank.vam.config.MarketProfileProperties.class);
+        when(market.getActiveHomeBankBic()).thenReturn("HBUKGB4BXXX");
+        IhbUnifiedService ihb = new IhbUnifiedService(entities, vas,
+            mock(com.bank.vam.repository.TransactionRepository.class),
+            mock(FeePostingService.class), rules,
+            mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class), mock(com.bank.vam.service.tax.TaxService.class),
+            market, mock(HierarchyNodeRepository.class),
+            mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class));
+
+        UUID corporate = UUID.randomUUID();
+        LegalEntity entity = new LegalEntity();
+        entity.setId(UUID.randomUUID());
+        entity.setCorporateId(corporate);
+        entity.setEntityCode("SUB");
+        LegalEntity treasury = new LegalEntity();
+        treasury.setId(UUID.randomUUID());
+        treasury.setCorporateId(corporate);
+        treasury.setEntityCode("TC");
+        when(entities.findById(entity.getId())).thenReturn(Optional.of(entity));
+        when(entities.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(entities.findByCorporateIdAndCanLendTrue(corporate)).thenReturn(List.of(treasury));
+
+        var treasuryAtBarclays = shadow("BARCGB22XXX");
+        var treasuryAtHome = shadow("HBUKGB4B");
+        when(vas.findByOwningEntityId(treasury.getId())).thenReturn(List.of(treasuryAtBarclays, treasuryAtHome));
+        var home = shadow("HBUKGB4BXXX");
+        var lloyds = shadow("LOYDGB2LXXX");
+        when(vas.findByOwningEntityId(entity.getId())).thenReturn(List.of(lloyds, home));
+
+        IhbDto.EnableIhbRequest req = new IhbDto.EnableIhbRequest();
+        req.setAutoEnrollAccounts(false);
+        ihb.enableIhb(entity.getId(), req);
+
+        var saved = org.mockito.ArgumentCaptor.forClass(com.bank.vam.entity.treasury.SweepRule.class);
+        verify(rules).save(saved.capture());
+        org.assertj.core.api.Assertions.assertThat(saved.getValue().getTargetAccountId()).isEqualTo(treasuryAtHome.getId());
+        org.assertj.core.api.Assertions.assertThat(saved.getValue().getSourceAccounts())
+            .extracting(com.bank.vam.entity.treasury.SweepRuleSource::getAccountId).containsExactly(home.getId());
+    }
+
+    private static com.bank.vam.entity.VirtualAccount shadow(String bic) {
+        var va = com.bank.vam.entity.VirtualAccount.builder().vaNumber("SH-" + bic).currencyCode("GBP").bankSwift(bic)
+            .accountCategory(com.bank.vam.entity.VirtualAccount.AccountCategory.PHYSICAL_MIRROR).build();
+        va.setId(UUID.randomUUID());
+        return va;
     }
 
     private static com.bank.vam.entity.treasury.SweepRule rule(String ref, UUID sourceAccountId) {

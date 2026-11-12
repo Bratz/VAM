@@ -1101,7 +1101,7 @@ ON CONFLICT DO NOTHING;
 -- ============================================================================
 -- 10. SWEEP EXECUTIONS — last 3 runs per sweep rule (yesterday, day-before, etc.)
 -- ============================================================================
--- One COMPLETED run yesterday, one COMPLETED 2 days ago, and one FAILED
+-- One SETTLED run yesterday, one SETTLED 2 days ago, and one FAILED
 -- example on the Brato Sharjah rule so the cockpit's attention inbox has a
 -- `sweep_failure` item to render.
 
@@ -1117,7 +1117,7 @@ INSERT INTO sweep_executions (
      'Mercator FR EUR ZBA → DE Header',
      'aa000001-4000-0000-0000-000000000003', 'MERC0000003', 'MERC-FR',
      'aa000001-4000-0000-0000-000000000001', 'MERC0000001', 'MERC-DE',
-     1485000.00, 'EUR', 1485000.00, 0.00, 'COMPLETED', NULL,
+     1485000.00, 'EUR', 1485000.00, 0.00, 'SETTLED', NULL,
      NOW() - INTERVAL '1 day' + TIME '18:00:00',
      NOW() - INTERVAL '1 day' + TIME '18:00:14',
      'BANCS-SWP-MERC-FR-401', 'SYNCED',
@@ -1126,7 +1126,7 @@ INSERT INTO sweep_executions (
      'Mercator FR EUR ZBA → DE Header',
      'aa000001-4000-0000-0000-000000000003', 'MERC0000003', 'MERC-FR',
      'aa000001-4000-0000-0000-000000000001', 'MERC0000001', 'MERC-DE',
-     1612000.00, 'EUR', 1612000.00, 0.00, 'COMPLETED', NULL,
+     1612000.00, 'EUR', 1612000.00, 0.00, 'SETTLED', NULL,
      NOW() - INTERVAL '2 days' + TIME '18:00:00',
      NOW() - INTERVAL '2 days' + TIME '18:00:11',
      'BANCS-SWP-MERC-FR-400', 'SYNCED',
@@ -1137,7 +1137,7 @@ INSERT INTO sweep_executions (
      'Al Mawarid Jeddah > 10M → Riyadh',
      'bb000002-4000-0000-0000-000000000002', 'MAWR0000002', 'MAWR-SA',
      'bb000002-4000-0000-0000-000000000001', 'MAWR0000001', 'MAWR-SA',
-     2150000.00, 'SAR', 10350000.00, 8200000.00, 'COMPLETED', NULL,
+     2150000.00, 'SAR', 10350000.00, 8200000.00, 'SETTLED', NULL,
      NOW() - INTERVAL '1 day' + TIME '17:30:00',
      NOW() - INTERVAL '1 day' + TIME '17:30:08',
      'BANCS-SWP-MAWR-JED-512', 'SYNCED',
@@ -1148,7 +1148,7 @@ INSERT INTO sweep_executions (
      'Albion Manchester Target 500k → London',
      'cc000003-4000-0000-0000-000000000002', 'ALBN0000002', 'ALBN-EN',
      'cc000003-4000-0000-0000-000000000001', 'ALBN0000001', 'ALBN-GB',
-     3020000.00, 'GBP', 3520000.00, 500000.00, 'COMPLETED', NULL,
+     3020000.00, 'GBP', 3520000.00, 500000.00, 'SETTLED', NULL,
      NOW() - INTERVAL '1 day' + TIME '18:00:00',
      NOW() - INTERVAL '1 day' + TIME '18:00:13',
      'BANCS-SWP-ALBN-MAN-820', 'SYNCED',
@@ -1159,7 +1159,7 @@ INSERT INTO sweep_executions (
      'Helios NY USD ZBA → SF Header',
      'dd000004-4000-0000-0000-000000000002', 'HEL0000002', 'HEL-US',
      'dd000004-4000-0000-0000-000000000001', 'HEL0000001', 'HEL-US',
-     6045000.00, 'USD', 6045000.00, 0.00, 'COMPLETED', NULL,
+     6045000.00, 'USD', 6045000.00, 0.00, 'SETTLED', NULL,
      NOW() - INTERVAL '1 day' + TIME '17:00:00',
      NOW() - INTERVAL '1 day' + TIME '17:00:09',
      'BANCS-SWP-HEL-NY-705', 'SYNCED',
@@ -1170,7 +1170,7 @@ INSERT INTO sweep_executions (
      'Brato Abu Dhabi ZBA → Dubai Header',
      'ee000005-4000-0000-0000-000000000002', 'BRTO0000002', 'BRTO-AE',
      'ee000005-4000-0000-0000-000000000001', 'BRTO0000001', 'BRTO-AE',
-     4520000.00, 'AED', 4520000.00, 0.00, 'COMPLETED', NULL,
+     4520000.00, 'AED', 4520000.00, 0.00, 'SETTLED', NULL,
      NOW() - INTERVAL '1 day' + TIME '18:00:00',
      NOW() - INTERVAL '1 day' + TIME '18:00:10',
      'BANCS-SWP-BRTO-AUH-441', 'SYNCED',

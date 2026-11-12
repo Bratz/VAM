@@ -202,11 +202,6 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
     Page<Payable> findPoboExecuted(Pageable pageable);
     
     /**
-     * Find POBO payments by IHB loan ID.
-     */
-    Optional<Payable> findByPoboIhbLoanId(UUID ihbLoanId);
-    
-    /**
      * Find POBO payments by recharge ID.
      */
     Optional<Payable> findByPoboRechargeId(UUID rechargeId);

@@ -49,7 +49,7 @@ class IhbSweepIntercompanyTest {
         mock(SweepRunBootstrap.class), mock(com.bank.vam.repository.treasury.SweepRunRepository.class),
         mock(com.bank.vam.config.HomeBankProperties.class),
         mock(com.bank.vam.repository.treasury.ExternalMandateRepository.class),
-        mock(com.bank.vam.repository.PhysicalAccountRepository.class), transactions);
+        mock(com.bank.vam.repository.PhysicalAccountRepository.class), transactions, mock(ExternalSweepService.class));
 
     private final LegalEntity subsidiary = entity("MNC-UAE");
     private final LegalEntity treasury = entity("MNC-TREASURY");

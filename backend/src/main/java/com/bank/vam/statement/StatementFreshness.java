@@ -51,6 +51,14 @@ public class StatementFreshness {
         return result;
     }
 
+    /**
+     * The same rule for a statement already in hand, whatever the shadow's balance source (external sweeps, D6): stale
+     * when there is none or it is dated before the last business day before {@code today}.
+     */
+    public boolean stale(LocalDate lastStatementDate, String currency, LocalDate today) {
+        return lastStatementDate == null || lastStatementDate.isBefore(calendar.previousBusinessDay(currency, today));
+    }
+
     /** One shadow; null when it is not statement-fed. */
     public Freshness of(VirtualAccount shadow, LocalDate today) {
         return of(List.of(shadow), today).get(shadow.getId());

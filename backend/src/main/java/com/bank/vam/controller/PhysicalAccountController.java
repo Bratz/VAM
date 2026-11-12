@@ -141,12 +141,11 @@ public class PhysicalAccountController {
         // long-standing comment on `getBankSummaries` at line ~172).
         //
         // An account is "home bank" iff its `bankCode` (SWIFT/BIC) matches
-        // the configured BIC, case-insensitive. Everything else is external.
+        // the configured BIC (HomeBankProperties.matches: case-insensitive, an
+        // 8-character BIC = its 11-character "XXX" form). Everything else is external.
         String configuredHomeBic = homeBank.getBic();
         long homeBankCount = accounts.stream()
-                .filter(a -> configuredHomeBic != null
-                          && a.getBankCode() != null
-                          && configuredHomeBic.equalsIgnoreCase(a.getBankCode()))
+                .filter(a -> homeBank.matches(a.getBankCode()))
                 .count();
         long externalBankCount = accounts.size() - homeBankCount;
 
@@ -179,9 +178,7 @@ public class PhysicalAccountController {
         // config string, so it stays consistent with the configured BIC.
         // Falls back to the BIC itself when no account carries that bank.
         String resolvedHomeBankName = accounts.stream()
-                .filter(a -> configuredHomeBic != null
-                          && a.getBankCode() != null
-                          && configuredHomeBic.equalsIgnoreCase(a.getBankCode()))
+                .filter(a -> homeBank.matches(a.getBankCode()))
                 .map(a -> a.getBankName())
                 .filter(n -> n != null)
                 .findFirst()
@@ -233,11 +230,7 @@ public class PhysicalAccountController {
             // account to INTERNAL, which makes every bank look like the home
             // bank in the UI. Derive it authoritatively from the configured BIC.
             // PhysicalAccount.bankCode is the SWIFT/BIC (see entity).
-            String configuredHomeBic = homeBank.getBic();
-            String thisBankBic = first.getBankCode();
-            boolean isHomeBank = configuredHomeBic != null
-                    && thisBankBic != null
-                    && configuredHomeBic.equalsIgnoreCase(thisBankBic);
+            boolean isHomeBank = homeBank.matches(first.getBankCode());
 
             Map<String, Object> summary = new LinkedHashMap<>();
             summary.put("bankCode", entry.getKey());

@@ -152,6 +152,8 @@ public class IhbUnifiedService {
             return;
         }
         
+        // Treasury's account and the entity's sources are home-bank accounts (external-bank sweeps D1, D10).
+        String homeBic = marketProfile.getActiveHomeBankBic();
         // Find treasury center's settlement VA
         UUID treasuryVaId = treasuryCenter.getSettlementVaId();
         VirtualAccount treasuryVa = null;
@@ -160,22 +162,27 @@ public class IhbUnifiedService {
         }
         if (treasuryVa == null) {
             // Try to find a VA owned by treasury center
-            List<VirtualAccount> treasuryVas = virtualAccountRepository.findByOwningEntityId(treasuryCenter.getId());
+            List<VirtualAccount> treasuryVas = virtualAccountRepository.findByOwningEntityId(treasuryCenter.getId()).stream()
+                    .filter(va -> !va.isOtherBankShadow(homeBic))
+                    .toList();
             if (!treasuryVas.isEmpty()) {
                 treasuryVa = treasuryVas.get(0);
             }
         }
         
-        if (treasuryVa == null) {
-            log.warn("Treasury Center {} has no settlement VA. Sweep rules not created.", 
+        if (treasuryVa == null || treasuryVa.isOtherBankShadow(homeBic)) {
+            log.warn("Treasury Center {} has no settlement VA at the home bank. Sweep rules not created.", 
                     treasuryCenter.getEntityCode());
             return;
         }
         
         // Find entity's virtual accounts: its cash, never an in-house account (IHB current / mirrors), which is a
         // position with treasury -- sweeping one self-swept it into treasury's account (POBO spec R16).
+        // Nor an account at another bank: it reaches treasury through a same-entity external sweep into the entity's
+        // home-bank account first (external-bank sweeps D10), never across entities straight from the other bank.
         List<VirtualAccount> entityVas = virtualAccountRepository.findByOwningEntityId(entity.getId()).stream()
                 .filter(va -> !SweepService.isInHouse(va))
+                .filter(va -> !va.isOtherBankShadow(homeBic))
                 .toList();
         if (entityVas.isEmpty()) {
             log.info("Entity {} has no virtual accounts. Sweep rules will be created when VAs are assigned.", 
@@ -288,8 +295,9 @@ public class IhbUnifiedService {
             throw new BusinessException("IHB not enabled for entity: " + entity.getEntityCode());
         }
         if (request.getCreditLimit() != null) {
-            if (request.getCreditLimit().compareTo(entity.getIhbCurrentExposure()) < 0) {
-                throw new BusinessException("New limit cannot be less than current exposure: " + entity.getIhbCurrentExposure());
+            BigDecimal drawn = ihbDebitBalance(entity);
+            if (request.getCreditLimit().compareTo(drawn) < 0) {
+                throw new BusinessException("New limit cannot be less than the IHB debit balance: " + drawn.toPlainString());
             }
             entity.setIhbCreditLimit(request.getCreditLimit());
             entity.setIhbAvailableLimit(entity.getAvailableIhbLimit());
@@ -312,11 +320,9 @@ public class IhbUnifiedService {
     public void disableIhb(UUID entityId) {
         LegalEntity entity = legalEntityRepository.findById(entityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entity not found: " + entityId));
-        if (entity.getIhbCurrentExposure() != null && entity.getIhbCurrentExposure().compareTo(BigDecimal.ZERO) > 0) {
-            throw new BusinessException("Cannot disable IHB: outstanding borrowings: " + entity.getIhbCurrentExposure());
-        }
-        if (entity.getTotalLentOut() != null && entity.getTotalLentOut().compareTo(BigDecimal.ZERO) > 0) {
-            throw new BusinessException("Cannot disable IHB: outstanding loans: " + entity.getTotalLentOut());
+        BigDecimal drawn = ihbDebitBalance(entity);
+        if (drawn.signum() > 0) {
+            throw new BusinessException("Cannot disable IHB: its IHB current accounts are overdrawn by " + drawn.toPlainString());
         }
         entity.disableIhb();
         legalEntityRepository.save(entity);
@@ -386,62 +392,6 @@ public class IhbUnifiedService {
         }
         
         return buildTreasuryRatesResponse(treasuryCenter);
-    }
-
-    /**
-     * Calculate indicative rate for a specific loan/deposit request.
-     */
-    @Transactional(readOnly = true)
-    public IhbDto.IndicativeRateResponse getIndicativeRate(
-            UUID treasuryCenterId, UUID entityId, IhbDto.IndicativeRateRequest request) {
-        
-        LegalEntity treasuryCenter = legalEntityRepository.findById(treasuryCenterId)
-                .orElseThrow(() -> new ResourceNotFoundException("Treasury Center not found"));
-        
-        LegalEntity entity = legalEntityRepository.findById(entityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Entity not found"));
-        
-        boolean isLending = "LENDING".equalsIgnoreCase(request.getRateType());
-        
-        // Base rate (could come from interest config or default)
-        BigDecimal baseRate = new BigDecimal("5.00"); // Default reference-rate level
-        String baseRateType = marketProfile.getDefaultBaseRateType();
-        
-        // Treasury spread
-        BigDecimal treasurySpread = isLending ? 
-                treasuryCenter.getLendingRateSpread() : 
-                treasuryCenter.getBorrowingRateSpread().negate(); // Negative for deposits
-        
-        // Entity spread (borrower pays extra, depositor gets less)
-        BigDecimal entitySpread = isLending ?
-                entity.getBorrowingRateSpread() :
-                entity.getLendingRateSpread().negate();
-        
-        // Effective rate
-        BigDecimal effectiveRate = baseRate.add(treasurySpread).add(entitySpread);
-        
-        // Estimated interest for tenor
-        BigDecimal estimatedInterest = BigDecimal.ZERO;
-        if (request.getAmount() != null && request.getTenorDays() != null) {
-            // Simple interest: Principal * Rate * Days / 360
-            estimatedInterest = request.getAmount()
-                    .multiply(effectiveRate)
-                    .multiply(new BigDecimal(request.getTenorDays()))
-                    .divide(new BigDecimal("36000"), 2, RoundingMode.HALF_UP);
-        }
-        
-        return IhbDto.IndicativeRateResponse.builder()
-                .baseRate(baseRate)
-                .baseRateType(baseRateType)
-                .treasurySpread(treasurySpread)
-                .entitySpread(entitySpread)
-                .effectiveRate(effectiveRate)
-                .estimatedInterest(estimatedInterest)
-                .currency(request.getCurrency() != null ? request.getCurrency() : treasuryCenter.getEffectiveIhbCurrency())
-                .tenorDays(request.getTenorDays())
-                .rateType(request.getRateType())
-                .rateSource(RATE_DEFAULT) // the 5.00 base above is built in, not a reference rate the bank set
-                .build();
     }
 
     /**
@@ -582,10 +532,6 @@ public class IhbUnifiedService {
 
         IhbDto.IhbStatsResponse stats = new IhbDto.IhbStatsResponse();
         stats.setTotalEntities((long) ihbEntities.size());
-        stats.setNetPosition(ihbEntities.stream()
-            .map(LegalEntity::getNetIhbPosition)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add));
         return stats;
     }
 
@@ -598,9 +544,6 @@ public class IhbUnifiedService {
         response.setEntityId(entityId);
         response.setEntityCode(entity.getEntityCode());
         response.setEntityName(entity.getEntityName());
-        response.setTotalLentOut(entity.getTotalLentOut());
-        response.setTotalDeposited(entity.getTotalDeposited());
-        response.setNetPosition(entity.getNetIhbPosition());
         response.setIhbCreditLimit(entity.getIhbCreditLimit());
         response.setIhbAvailableLimit(entity.getIhbAvailableLimit());
         response.setUtilizationPercent(entity.getIhbUtilizationPercent());
@@ -634,9 +577,15 @@ public class IhbUnifiedService {
         dto.setEntityCode(entity.getEntityCode());
         dto.setEntityName(entity.getEntityName());
         dto.setEntityType(mapEntityType(entity.getEntityType()));
-        dto.setCreditLimit(entity.getIhbCreditLimit());
-        dto.setCurrentExposure(entity.getIhbCurrentExposure());
-        dto.setAvailableLimit(entity.getIhbAvailableLimit());
+        // Exposure = what the entity has drawn on its IHB current accounts (their debit balance), not the stored
+        // ihbCurrentExposure, which nothing maintains since IHB loans were retired.
+        BigDecimal limit = entity.getIhbCreditLimit() != null ? entity.getIhbCreditLimit() : BigDecimal.ZERO;
+        BigDecimal exposure = ihbDebitBalance(entity);
+        BigDecimal utilisation = limit.signum() > 0
+                ? exposure.multiply(BigDecimal.valueOf(100)).divide(limit, 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        dto.setCreditLimit(limit);
+        dto.setCurrentExposure(exposure);
+        dto.setAvailableLimit(limit.subtract(exposure).max(BigDecimal.ZERO));
         dto.setLendingRateSpread(entity.getLendingRateSpread());
         dto.setBorrowingRateSpread(entity.getBorrowingRateSpread());
         dto.setSpreadsDefault(entity.getSpreadsDefault());
@@ -645,15 +594,25 @@ public class IhbUnifiedService {
         dto.setContactEmail(entity.getContactEmail());
         dto.setStatus(mapEntityStatus(entity.getStatus()));
         dto.setCreatedAt(entity.getCreatedAt());
-        dto.setTotalLentOut(entity.getTotalLentOut());
-        dto.setTotalDeposited(entity.getTotalDeposited());
-        dto.setNetIhbPosition(entity.getNetIhbPosition());
         dto.setSettlementVaId(entity.getSettlementVaId());
         dto.setIhbCurrency(entity.getEffectiveIhbCurrency());
-        dto.setUtilizationPercent(entity.getIhbUtilizationPercent());
-        dto.setLimitWarning(entity.isIhbLimitWarning());
-        dto.setLimitBreached(entity.isIhbLimitBreached());
+        dto.setUtilizationPercent(utilisation);
+        dto.setLimitWarning(utilisation.compareTo(BigDecimal.valueOf(80)) >= 0);
+        dto.setLimitBreached(utilisation.compareTo(BigDecimal.valueOf(100)) >= 0);
         return dto;
+    }
+
+    /**
+     * The debit balance of the entity's active IHB current accounts in its IHB currency: the sum of max(0, -balance).
+     * ponytail: accounts in other currencies are left out (the credit limit is in the IHB currency); convert them
+     * at the FX rate if entities start drawing in several currencies.
+     */
+    BigDecimal ihbDebitBalance(LegalEntity entity) {
+        String ccy = entity.getEffectiveIhbCurrency();
+        return virtualAccountRepository.findByOwningEntityId(entity.getId()).stream()
+                .filter(va -> va.isIhbParticipant() && va.isActive() && ccy != null && ccy.equals(va.getCurrencyCode()))
+                .map(va -> va.getCurrentBalance() != null ? va.getCurrentBalance().negate().max(BigDecimal.ZERO) : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private IhbEntity.EntityType mapEntityType(LegalEntity.EntityType type) {

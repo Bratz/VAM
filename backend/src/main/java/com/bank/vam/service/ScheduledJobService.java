@@ -170,7 +170,7 @@ public class ScheduledJobService {
 
     /**
      * Run deficit funding check daily at 6 AM.
-     * Provides IHB loans to accounts below target balance.
+     * Tops up accounts below target balance from treasury, booked on the IHB current account.
      */
     @Scheduled(cron = "0 0 6 * * *") // 6 AM daily
     @Async("taskExecutor")

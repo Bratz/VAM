@@ -110,7 +110,8 @@ public class OverdrawingSweepReversalService {
         return reversed;
     }
 
-    private Transaction movement(VirtualAccount va, Transaction.MovementType type, BigDecimal amount,
+    /** One leg of a compensating posting (also the failed external sweep legs, ExternalSweepService). */
+    static Transaction movement(VirtualAccount va, Transaction.MovementType type, BigDecimal amount,
                                  BigDecimal before, BigDecimal after, java.util.UUID counterparty,
                                  String correlationId, String description) {
         return Transaction.builder()

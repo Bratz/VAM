@@ -16,8 +16,7 @@ import java.util.UUID;
  * 1. Parent makes payment to external vendor
  * 2. System creates intercompany recharge to subsidiary
  * 3. Recharge can be settled via:
- *    - IHB Loan (subsidiary borrows from parent)
- *    - IHB Deposit Offset
+ *    - The IHB position (the payment is already on the IHB current account)
  *    - Netting in next cycle
  *    - Direct payment
  * 
@@ -28,7 +27,7 @@ import java.util.UUID;
  * 
  * VAM Integration:
  * - Links to Payables module
- * - Integrates with IHB loans/deposits
+ * - Integrates with IHB current accounts
  * - Supports netting cycles
  */
 @Entity
@@ -149,20 +148,6 @@ public class IntercompanyRecharge extends BaseEntity {
     private String armLengthNotes;
 
     // ========================================================================
-    // IHB INTEGRATION
-    // ========================================================================
-
-    @Column(name = "ihb_transaction_id")
-    private UUID ihbTransactionId;
-
-    @Column(name = "ihb_loan_id")
-    private UUID ihbLoanId;
-
-    @Column(name = "creates_intercompany_loan")
-    @Builder.Default
-    private Boolean createsIntercompanyLoan = false;
-
-    // ========================================================================
     // STATUS
     // ========================================================================
 
@@ -236,8 +221,7 @@ public class IntercompanyRecharge extends BaseEntity {
     }
 
     public enum SettlementMethod {
-        IHB_LOAN,               // Settled via IHB loan
-        IHB_DEPOSIT_OFFSET,     // Offset against deposit
+        IHB_DEPOSIT_OFFSET,     // Settled by the IHB position: the payment is already on the IHB current account
         NETTING,                // Included in netting cycle
         DIRECT_PAYMENT,         // Direct cash transfer
         REVERSAL                // Original payment reversed
@@ -326,15 +310,6 @@ public class IntercompanyRecharge extends BaseEntity {
         this.settledVia = method;
         this.settlementReference = reference;
         this.settlementDate = LocalDate.now();
-    }
-
-    /**
-     * Settle via IHB loan.
-     */
-    public void settleViaIhbLoan(UUID loanId, String loanReference) {
-        this.ihbLoanId = loanId;
-        this.createsIntercompanyLoan = true;
-        settle(SettlementMethod.IHB_LOAN, loanReference);
     }
 
     // ========================================================================

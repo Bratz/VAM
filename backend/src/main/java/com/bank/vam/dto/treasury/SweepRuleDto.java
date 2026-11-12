@@ -140,10 +140,6 @@ public class SweepRuleDto {
         private int skippedCount;
         private BigDecimal totalSwept;
         private List<ExecutionResponse> executions;
-
-        // IHB summary
-        private int ihbPositionsCreated;
-        private BigDecimal totalIhbDeposits;
     }
 
     // ========================================================================

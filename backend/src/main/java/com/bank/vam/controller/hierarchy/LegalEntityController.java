@@ -514,9 +514,6 @@ public class LegalEntityController {
             .borrowingRateSpread(entity.getBorrowingRateSpread())
             .spreadsDefault(entity.getSpreadsDefault())
             .ownershipDefault(entity.getOwnershipDefault())
-            .totalLentOut(entity.getTotalLentOut())
-            .totalDeposited(entity.getTotalDeposited())
-            .netIhbPosition(entity.getNetIhbPosition())
             .utilizationPercent(entity.getIhbUtilizationPercent())
             .limitWarning(entity.isIhbLimitWarning())
             .limitBreached(entity.isIhbLimitBreached())
@@ -724,9 +721,6 @@ public class LegalEntityController {
         private Boolean spreadsDefault;
         /** The ownership is the built-in 100%, not an entered figure; null when not known (older rows). */
         private Boolean ownershipDefault;
-        private BigDecimal totalLentOut;
-        private BigDecimal totalDeposited;
-        private BigDecimal netIhbPosition;
         private BigDecimal utilizationPercent;
         private Boolean limitWarning;
         private Boolean limitBreached;

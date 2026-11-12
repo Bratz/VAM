@@ -83,11 +83,6 @@ public interface NettingEntryRepository extends JpaRepository<NettingEntry, UUID
     Optional<NettingEntry> findByIntercompanyRechargeId(UUID rechargeId);
     
     /**
-     * Find entry by IHB transaction.
-     */
-    Optional<NettingEntry> findByIhbTransactionId(UUID ihbTransactionId);
-    
-    /**
      * Find all entries from payables in a cycle.
      */
     @Query("SELECT e FROM NettingEntry e WHERE e.cycle.id = :cycleId AND e.payableId IS NOT NULL")

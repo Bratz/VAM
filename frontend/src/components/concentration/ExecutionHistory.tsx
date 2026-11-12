@@ -4,6 +4,7 @@ import { Card, Button, Badge, DataTable } from '../ui';
 import { formatCurrency, formatRelativeTime } from '../../utils';
 import { Amount } from '../Amount';
 import { SweepExecution } from '../../services/api';
+import { executionStatus } from './constants';
 
 // ============================================================================
 // EXECUTION HISTORY TABLE
@@ -76,16 +77,8 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
           ) },
           { key: 'status', header: 'Status', minWidth: 130, render: (_v, exec) => (
             <>
-              <Badge
-                variant={
-                  exec.status === 'SUCCESS' ? 'success' :
-                  exec.status === 'FAILED' ? 'error' :
-                  exec.status === 'SKIPPED' ? 'warning' :
-                  'neutral'
-                }
-                size="sm"
-              >
-                {exec.status}
+              <Badge variant={executionStatus(exec.status).variant} size="sm">
+                {executionStatus(exec.status).label}
               </Badge>
               {/* Error message if failed */}
               {(exec as any).errorMessage && (

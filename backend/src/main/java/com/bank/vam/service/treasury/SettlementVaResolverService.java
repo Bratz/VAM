@@ -108,7 +108,10 @@ public class SettlementVaResolverService {
         org.springframework.transaction.support.TransactionTemplate own =
             new org.springframework.transaction.support.TransactionTemplate(transactionManager);
         own.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        return own.execute(status -> write.get());
+        Parked p = own.execute(status -> write.get());
+        // The Exception VA was read in that other transaction: a stale copy. Hand the caller its own transaction's copy,
+        // else a posting to it overwrites one already made there (an external sweep's two fees lost the first credit).
+        return new Parked(vaRepository.findById(p.exceptionVa().getId()).orElse(p.exceptionVa()), p.exception());
     }
 
     // Naming conventions

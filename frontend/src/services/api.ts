@@ -1227,12 +1227,35 @@ export interface SweepExecution {
   // BANCS integration
   bancsTransactionRef?: string;
   bancsSyncStatus?: string;
-  // IHB integration
-  ihbEnabled?: boolean;
-  ihbDepositId?: string;
-  ihbLoanId?: string;
-  ihbDepositReference?: string;
-  ihbInterestRate?: number;
+}
+
+/** External-bank sweeps R19: the request for transfer of an execution from an account at another bank. */
+export interface SweepInstruction {
+  id: string;
+  externalReference: string;
+  instructionFormat?: 'MT101' | 'PAIN_001';
+  messageText?: string;
+  amount: number;
+  currencyCode: string;
+  executionDate?: string;
+  instructedAt?: string;
+  /** INSTRUCTED = pending at the other bank, SETTLED = confirmed by its statement, REJECTED / EXPIRED = failed. */
+  status: 'PREPARED' | 'INSTRUCTED' | 'ACK_RECEIVED' | 'SETTLED' | 'REJECTED' | 'NACKED' | 'EXPIRED';
+  settledAt?: string;
+  confirmedByLineId?: string;
+  reconciliationRef?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  instructionFee?: number;
+  standardFeeRef?: string;
+  instructionFeeRef?: string;
+  targetCreditRef?: string;
+}
+
+export interface SweepInstructionView {
+  instruction: SweepInstruction;
+  confirmingLine: { id: string; valueDate?: string; bookingDate?: string; amount: number; bankReference?: string } | null;
+  standardFee: number | null;
 }
 
 export interface SweepRunStatus {
@@ -1258,6 +1281,11 @@ export const sweepingApi = {
   getRunStatus: (runId: string) => apiClient.get<ApiResponse<SweepRunStatus>>(`/sweeping/runs/${runId}`).then(r => r.data),
   // SweepController.getExecutionHistory returns ApiResponse<Page<ExecutionResponse>> -> data is paged, not a bare array
   getHistory: (ruleId?: string) => apiClient.get<ApiResponse<PaginatedResponse<SweepExecution>>>('/sweeping/history', { params: { ruleId } }).then(r => r.data),
+  /** null when the execution has no instruction (home-bank and IHB sweeps). */
+  getInstruction: (executionId: string) =>
+    apiClient.get<ApiResponse<SweepInstructionView | null>>(`/sweeping/executions/${executionId}/instruction`).then(r => r.data.data),
+  markRejected: (instructionId: string, reason: string) =>
+    apiClient.post<ApiResponse<SweepInstruction>>(`/sweeping/instructions/${instructionId}/reject`, { reason }).then(r => r.data.data),
 };
 
 // ============================================================================
@@ -1489,7 +1517,6 @@ interface NettingEntryResponse {
   payableId?: string;
   receivableId?: string;
   intercompanyRechargeId?: string;
-  ihbTransactionId?: string;
   sourceEntityId?: string;
   sourceEntityCode?: string;
   dueDate?: string;
@@ -1552,7 +1579,6 @@ interface PopulateCycleResponse {
   rechargesAdded: number;              // Total recharges (POBO + COBO)
   poboRechargesAdded?: number;         // POBO recharges (subsidiary owes treasury)
   coboRechargesAdded?: number;         // COBO recharges (treasury owes subsidiary)
-  ihbTransactionsAdded: number;
   totalAdded: number;
   totalEntries: number;
   totalGross: number;
@@ -1875,7 +1901,6 @@ interface ReceivablePhase3 {
   coboRequestStatus: CoboRequestStatus;
   coboTransactionRef?: string;
   coboRechargeId?: string;
-  coboIhbDepositId?: string;
   coboRequestedAt?: string;
   coboRequestedBy?: string;
   coboActionedAt?: string;
@@ -2752,7 +2777,6 @@ export interface PayablePhase2 {
   /** AWAITING_FX while treasury negotiates the rate (ihb-fx D7). */
   fxStatus?: string | null;
   fxStatusReason?: string | null;
-  poboIhbLoanId?: string;
   poboRechargeId?: string;
   poboRequestedAt?: string;
   poboRequestedBy?: string;
@@ -3701,7 +3725,6 @@ export interface BalanceNodeDetail {
     positionType: 'RECEIVABLE' | 'PAYABLE';
     amount: number;
     currencyCode: string;
-    loanReference?: string;
   }>;
   participatesInPooling: boolean;
   poolReference?: string;
@@ -5232,6 +5255,8 @@ export interface ShadowAccount {
   currencyCode: string;
   bankBalance: number;
   bankAvailableBalance: number;
+  /** Swept by an instruction the other bank's statement has not confirmed yet (external-bank sweeps). */
+  bankBalanceCommitted?: number;
   bankBalanceAt?: string;
   balanceDataSource: 'CORE_BANKING' | 'SWIFT_MT940' | 'SWIFT_MT942' | 'OPEN_BANKING' | 'MANUAL';
   /** What ShadowAccountController actually sends for the balance source (it has no `balanceDataSource`). */
@@ -5332,6 +5357,57 @@ export const shadowAccountApi = {
   // Delete
   delete: (shadowId: string) =>
     apiClient.delete<ApiResponse<void>>(`/treasury/shadow-accounts/${shadowId}`).then(r => r.data),
+};
+
+// ============================================================================
+// EXTERNAL AUTHORITY API — the corporate's authority for the home bank to instruct its account at another bank
+// (spec docs/specs/external-bank-sweeps.md R1, R2). Backend: ExternalAuthorityController.
+// ============================================================================
+
+export type AuthorityStatus = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'REVOKED';
+export type InstructionFormat = 'MT101' | 'PAIN_001';
+
+export interface ExternalAuthority {
+  id: string;
+  mandateReference: string;
+  shadowVaId: string;
+  instructionFormat: InstructionFormat;
+  status: AuthorityStatus;
+  /** yyyy-MM-dd */
+  validFrom?: string;
+  validTo?: string;
+  maxPerTransaction?: number;
+  maxDaily?: number;
+  documentRef?: string;
+  revokedAt?: string;
+  revocationReason?: string;
+  createdAt?: string;
+}
+
+export interface ExternalAuthorityRegistration {
+  shadowVaId: string;
+  mandateReference: string;
+  instructionFormat: InstructionFormat;
+  validFrom?: string;
+  validTo?: string;
+  maxPerTransaction?: number;
+  maxDaily?: number;
+  documentRef?: string;
+}
+
+export const externalAuthorityApi = {
+  forShadow: (shadowVaId: string) =>
+    apiClient.get<ApiResponse<ExternalAuthority[]>>('/treasury/external-authorities', { params: { shadowVaId } }).then(r => r.data.data),
+  forCorporate: (corporateId: string) =>
+    apiClient.get<ApiResponse<ExternalAuthority[]>>('/treasury/external-authorities', { params: { corporateId } }).then(r => r.data.data),
+  register: (data: ExternalAuthorityRegistration) =>
+    apiClient.post<ApiResponse<ExternalAuthority>>('/treasury/external-authorities', data).then(r => r.data.data),
+  activate: (id: string) =>
+    apiClient.post<ApiResponse<ExternalAuthority>>(`/treasury/external-authorities/${id}/activate`).then(r => r.data.data),
+  suspend: (id: string) =>
+    apiClient.post<ApiResponse<ExternalAuthority>>(`/treasury/external-authorities/${id}/suspend`).then(r => r.data.data),
+  revoke: (id: string, reason: string) =>
+    apiClient.post<ApiResponse<ExternalAuthority>>(`/treasury/external-authorities/${id}/revoke`, { reason }).then(r => r.data.data),
 };
 
 // ============================================================================
@@ -7274,24 +7350,13 @@ interface IhbEntityUnified {
   canBorrow: boolean;
   settlementVaId?: string;
   ihbCurrency: string;
-  totalLentOut: number;
-  totalDeposited: number;
-  netIhbPosition: number;
   utilizationPercent: number;
   limitWarning: boolean;
   limitBreached: boolean;
 }
 
 interface IhbStatsUnified {
-  totalIhbEntities: number;
-  activeLoans: number;
-  activeDeposits: number;
-  totalLoanOutstanding: number;
-  totalDepositBalance: number;
-  totalAccruedLoanInterest: number;
-  totalAccruedDepositInterest: number;
-  netPosition: number;
-  netInterestIncome: number;
+  totalEntities: number;
 }
 
 interface EnableIhbRequest {
@@ -7305,15 +7370,6 @@ interface EnableIhbRequest {
   autoSweepEnabled?: boolean;
   sweepFrequency?: string;
   ihbInterestConfigId?: string;
-}
-
-export interface CalculateInterestResponse {
-  totalLoanInterest: number;
-  totalDepositInterest: number;
-  totalSpread: number;
-  netInterest: number;
-  processedLoans: number;
-  processedDeposits: number;
 }
 
 export interface TreasuryRates {
@@ -7396,116 +7452,7 @@ export const ihbUnifiedApi = {
   getCurrentAccountsByCorporate: (corporateId: string) =>
     apiClient.get<ApiResponse<any[]>>(`/ihb/corporate/${corporateId}/current-accounts`).then(r => r.data),
 
-  // Indicative Rate Calculation
-  getIndicativeRate: (treasuryCenterId: string, entityId: string, request: {
-    amount: number;
-    currency: string;
-    rateType: string;
-    tenorDays?: number;
-  }) =>
-    apiClient.post<ApiResponse<any>>(
-      `/ihb/indicative-rate?treasuryCenterId=${treasuryCenterId}&entityId=${entityId}`,
-      request
-    ).then(r => r.data),
 };
-
-// ============================================================================
-// INTEREST ACCRUAL API
-// Add this after interestConfigurationApi
-// ============================================================================
-
-export type AccrualType = 'LOAN' | 'DEPOSIT' | 'VA_CREDIT' | 'VA_DEBIT' | 'POOL_INTEREST' | 'SWEEP_INTEREST';
-export type AccrualStatus = 'ACCRUED' | 'POSTED' | 'SETTLED' | 'REVERSED' | 'PENDING';
-
-export interface InterestAccrual {
-  id: string;
-  accrualReference: string;
-  accrualType: AccrualType;
-  corporateId: string;
-  entityId?: string;
-  entityName?: string;
-  virtualAccountId?: string;
-  virtualAccountNumber?: string;
-  loanId?: string;
-  loanReference?: string;
-  depositId?: string;
-  depositReference?: string;
-  interestConfigId?: string;
-  interestConfigName?: string;
-  currency: string;
-  principalBalance: number;
-  interestRate: number;
-  dayCountConvention: string;
-  accrualDate: string;
-  periodStart: string;
-  periodEnd: string;
-  daysInPeriod: number;
-  accruedAmount: number;
-  cumulativeAccrued: number;
-  status: AccrualStatus;
-  postedAt?: string;
-  settledAt?: string;
-  settlementTransactionId?: string;
-  notes?: string;
-  createdAt: string;
-}
-
-export interface AccrualSummary {
-  corporateId: string;
-  periodStart: string;
-  periodEnd: string;
-  currency: string;
-  totalLoanInterestAccrued: number;
-  loanAccrualCount: number;
-  avgLoanRate: number;
-  totalDepositInterestAccrued: number;
-  depositAccrualCount: number;
-  avgDepositRate: number;
-  totalVaCreditInterest: number;
-  vaCreditAccrualCount: number;
-  avgCreditRate: number;
-  totalVaDebitInterest: number;
-  vaDebitAccrualCount: number;
-  avgDebitRate: number;
-  netInterestIncome: number;
-  spreadEarned: number;
-  pendingAccruals: number;
-  postedAccruals: number;
-  settledAccruals: number;
-}
-
-export const interestAccrualApi = {
-  getAccruals: (corporateId: string, params?: { 
-    type?: AccrualType; 
-    status?: AccrualStatus; 
-    from?: string; 
-    to?: string;
-    page?: number;
-    size?: number;
-  }) => 
-    apiClient.get<ApiResponse<InterestAccrual[]>>(`/interest-accruals/corporate/${corporateId}`, { params }).then(r => r.data),
-  
-  getSummary: (corporateId: string, from?: string, to?: string) => 
-    apiClient.get<ApiResponse<AccrualSummary>>(`/interest-accruals/summary/${corporateId}`, { 
-      params: { from, to } 
-    }).then(r => r.data),
-  
-  runDailyAccrual: (corporateId: string, accrualDate?: string) => 
-    apiClient.post<ApiResponse<any>>(`/interest-accruals/run/${corporateId}`, { accrualDate }).then(r => r.data),
-  
-  postAccruals: (corporateId: string, accrualIds: string[]) => 
-    apiClient.post<ApiResponse<any>>('/interest-accruals/post', { corporateId, accrualIds }).then(r => r.data),
-  
-  settleAccruals: (corporateId: string, accrualIds: string[]) => 
-    apiClient.post<ApiResponse<any>>('/interest-accruals/settle', { corporateId, accrualIds }).then(r => r.data),
-  
-  exportReport: (corporateId: string, from: string, to: string, format: 'CSV' | 'EXCEL' | 'PDF') => 
-    apiClient.get(`/interest-accruals/export/${corporateId}`, { 
-      params: { from, to, format },
-      responseType: 'blob'
-    }).then(r => r.data),
-};
-
 
 export interface NettingEntry {
   id: string;
@@ -7524,12 +7471,11 @@ export interface NettingEntry {
   baseAmount: number;
   originalCurrency?: string;
   originalAmount?: number;
-  sourceType: 'INTERCOMPANY_PAYABLE' | 'INTERCOMPANY_RECEIVABLE' | 'POBO_RECHARGE' | 'COBO_COLLECTION' | 'IHB_LOAN' | 'IHB_DEPOSIT' | 'MANUAL';
+  sourceType: 'INTERCOMPANY_PAYABLE' | 'INTERCOMPANY_RECEIVABLE' | 'POBO_RECHARGE' | 'COBO_COLLECTION' | 'MANUAL';
   sourceReference?: string;
   payableId?: string;
   receivableId?: string;
   intercompanyRechargeId?: string;
-  ihbTransactionId?: string;
   dueDate?: string;
   status: 'PENDING' | 'INCLUDED' | 'EXCLUDED' | 'SETTLED';
   createdAt: string;
@@ -7614,8 +7560,6 @@ export interface IntercompanyTransaction {
   charges?: number;
   netAmount?: number;
   originalReference?: string;
-  ihbLoanId?: string;
-  ihbDepositId?: string;
   viban?: string;
   status: 'PENDING' | 'ACTIVE' | 'PROCESSED' | 'COMPLETED' | 'SETTLED' | 'REVERSED' | 'FAILED';
   statusReason?: string;
@@ -7974,7 +7918,6 @@ export default {
   accountAttachment: accountAttachmentApi,
   interestConfiguration: interestConfigurationApi,
   ihbUnified: ihbUnifiedApi,
-  interestAccrual: interestAccrualApi,
   nettingEnhanced: nettingApiEnhanced,
   intercompanyEnhanced: intercompanyApiEnhanced,
 };

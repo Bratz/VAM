@@ -2017,7 +2017,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           ) : (
             <div className="p-3 bg-surface-page rounded-lg">
               <p className="body-sm">IHB not enabled for this entity</p>
-              <p className="caption mt-1">Enable to participate in intercompany loans, deposits, and EOD sweeps</p>
+              <p className="caption mt-1">Enable to hold an IHB current account, with intercompany receivable/payable positions and sweeps</p>
               <Button 
                 variant="outline" 
                 size="sm" 

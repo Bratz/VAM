@@ -1,8 +1,9 @@
 package com.bank.vam.repository.treasury;
 
 import com.bank.vam.entity.treasury.ExternalMandate;
-import com.bank.vam.entity.treasury.ExternalMandate.MandateStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,7 +15,9 @@ public interface ExternalMandateRepository extends JpaRepository<ExternalMandate
 
     Optional<ExternalMandate> findByMandateReference(String mandateReference);
 
-    List<ExternalMandate> findByShadowVaId(UUID shadowVaId);
+    List<ExternalMandate> findByShadowVaIdOrderByCreatedAtDesc(UUID shadowVaId);
 
-    List<ExternalMandate> findByShadowVaIdAndStatus(UUID shadowVaId, MandateStatus status);
+    @Query("SELECT m FROM ExternalMandate m WHERE m.shadowVaId IN "
+            + "(SELECT v.id FROM VirtualAccount v WHERE v.corporateId = :corporateId) ORDER BY m.createdAt DESC")
+    List<ExternalMandate> findByCorporateId(@Param("corporateId") UUID corporateId);
 }

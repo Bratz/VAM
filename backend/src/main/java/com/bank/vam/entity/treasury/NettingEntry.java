@@ -14,7 +14,7 @@ import java.util.UUID;
  * 
  * PHASE 4 ENHANCEMENTS:
  * - Flow direction (PAYABLE vs RECEIVABLE) for bidirectional netting
- * - Source document links (payable_id, receivable_id, recharge_id, ihb_transaction_id)
+ * - Source document links (payable_id, receivable_id, recharge_id)
  * - Extended source types for all obligation types
  * - Original currency tracking for multi-currency netting
  * - Due date for aging and prioritization
@@ -39,7 +39,6 @@ import java.util.UUID;
     @Index(name = "idx_netting_entry_payable", columnList = "payable_id"),
     @Index(name = "idx_netting_entry_receivable", columnList = "receivable_id"),
     @Index(name = "idx_netting_entry_recharge", columnList = "intercompany_recharge_id"),
-    @Index(name = "idx_netting_entry_ihb", columnList = "ihb_transaction_id"),
     @Index(name = "idx_netting_entry_source_entity", columnList = "source_entity_id"),
     @Index(name = "idx_netting_entry_due_date", columnList = "due_date")
 })
@@ -170,12 +169,6 @@ public class NettingEntry extends BaseEntity {
     private UUID intercompanyRechargeId;
     
     /**
-     * Link to IHB transaction (loan/deposit) if from IHB.
-     */
-    @Column(name = "ihb_transaction_id")
-    private UUID ihbTransactionId;
-    
-    /**
      * The entity that is the source of this obligation.
      * For payables: owning entity (debtor)
      * For receivables: owning entity (creditor)
@@ -241,7 +234,6 @@ public class NettingEntry extends BaseEntity {
     public enum SourceType {
         // Original types
         INVOICE,
-        LOAN,
         PAYMENT,
         MANUAL,
         
@@ -254,10 +246,6 @@ public class NettingEntry extends BaseEntity {
         POBO_RECHARGE,
         /** Collection recharge created after COBO */
         COBO_COLLECTION,
-        /** IHB loan obligation (subsidiary owes treasury) */
-        IHB_LOAN,
-        /** IHB deposit (treasury owes subsidiary) */
-        IHB_DEPOSIT,
         /** External vendor payable (non-IC) */
         EXTERNAL_PAYABLE,
         /** External customer receivable (non-IC) */
@@ -517,41 +505,6 @@ public class NettingEntry extends BaseEntity {
             .originalAmount(amount)
             .baseAmount(amount)
             .exchangeRate(BigDecimal.ONE)
-            .status(EntryStatus.PENDING)
-            .build();
-    }
-    
-    /**
-     * Create entry from an IHB loan.
-     */
-    public static NettingEntry fromIhbLoan(
-            NettingCycle cycle,
-            UUID ihbTransactionId,
-            UUID borrowerEntityId, String borrowerCode, String borrowerName,
-            UUID lenderEntityId, String lenderCode, String lenderName,
-            BigDecimal amount, String currency, LocalDate dueDate, String reference) {
-        
-        return NettingEntry.builder()
-            .cycle(cycle)
-            .flowDirection(FlowDirection.PAYABLE) // Borrower owes lender
-            .ihbTransactionId(ihbTransactionId)
-            .sourceType(SourceType.IHB_LOAN)
-            .sourceReference(reference)
-            .sourceEntityId(borrowerEntityId)
-            .sourceEntityCode(borrowerCode)
-            .payerEntityId(borrowerEntityId)
-            .payerEntityCode(borrowerCode)
-            .payerEntityName(borrowerName)
-            .payeeEntityId(lenderEntityId)
-            .payeeEntityCode(lenderCode)
-            .payeeEntityName(lenderName)
-            .grossAmount(amount)
-            .currencyCode(currency)
-            .originalCurrency(currency)
-            .originalAmount(amount)
-            .baseAmount(amount)
-            .exchangeRate(BigDecimal.ONE)
-            .dueDate(dueDate)
             .status(EntryStatus.PENDING)
             .build();
     }

@@ -200,7 +200,6 @@ export const navSections: NavSection[] = [
     items: [
       { icon: <CreditCard className="w-5 h-5" />, label: 'Credit Limits', href: 'credit-limits' },
       { icon: <Percent className="w-5 h-5" />, label: 'Interest Configuration', href: 'interest-config' },
-      { icon: <TrendingUp className="w-5 h-5" />, label: 'Interest Accruals', href: 'interest-accruals' },
       { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rate Table', href: 'fx-rates' },
       { icon: <Receipt className="w-5 h-5" />, label: 'Tax & Charges', href: 'tax-charges' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Integrations', href: 'integrations' },
@@ -277,7 +276,6 @@ export const pageTitles: Record<string, string> = {
   // now, alongside FX Rates above.
   'credit-limits': 'Credit Limits',
   'interest-config': 'Interest Configuration',
-  'interest-accruals': 'Interest Accruals',
   // Insights — only Treasury Copilot is shipped; roadmap features
   // (Forecasting, Sweep Optimizer, Smart Reconciliation) removed from
   // the menu per the post-review until they land. Page titles re-add

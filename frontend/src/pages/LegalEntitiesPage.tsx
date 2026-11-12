@@ -72,9 +72,6 @@ interface LegalEntity {
   canBorrow?: boolean;
   lendingRateSpread?: number;
   borrowingRateSpread?: number;
-  totalLentOut?: number;
-  totalDeposited?: number;
-  netIhbPosition?: number;
   // Status & Validity
   status: EntityStatus;
   effectiveFrom?: string;
@@ -677,9 +674,9 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                         checked={formData.canLend}
                         onChange={(v) => updateField('canLend', v)}
                         label="Can Lend"
-                        description={formData.isTreasuryCenter ? "Auto-enabled for Treasury Centers" : "Provide intercompany loans"}
+                        description={formData.isTreasuryCenter ? "Auto-enabled for Treasury Centers" : "Funds IHB current accounts and receives their surplus sweeps"}
                       />
-                      <Checkbox variant="card" size="sm" checked={formData.canBorrow} onChange={(v) => updateField('canBorrow', v)} label="Can Borrow" description="Take intercompany loans" />
+                      <Checkbox variant="card" size="sm" checked={formData.canBorrow} onChange={(v) => updateField('canBorrow', v)} label="Can Borrow" description="IHB current account may run a debit, up to the IHB credit limit" />
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <FormField label="Lending Spread %" hint="Added when lending">

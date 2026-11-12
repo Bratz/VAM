@@ -369,28 +369,6 @@ public class LegalEntity extends BaseEntity {
     @Column(name = "ihb_interest_config_id")
     private UUID ihbInterestConfigId;
 
-    /**
-     * Total amount currently lent to other entities.
-     */
-    @Column(name = "total_lent_out", precision = 19, scale = 4)
-    @Builder.Default
-    private BigDecimal totalLentOut = BigDecimal.ZERO;
-
-    /**
-     * Total deposits placed with treasury.
-     */
-    @Column(name = "total_deposited", precision = 19, scale = 4)
-    @Builder.Default
-    private BigDecimal totalDeposited = BigDecimal.ZERO;
-
-    /**
-     * Net IHB position: lent + deposited - borrowed.
-     * Positive = net lender, Negative = net borrower
-     */
-    @Column(name = "net_ihb_position", precision = 19, scale = 4)
-    @Builder.Default
-    private BigDecimal netIhbPosition = BigDecimal.ZERO;
-
     // ========================================================================
     // ENUMS
     // ========================================================================
@@ -622,7 +600,6 @@ public class LegalEntity extends BaseEntity {
         if (ihbCurrentExposure == null) ihbCurrentExposure = BigDecimal.ZERO;
         ihbCurrentExposure = ihbCurrentExposure.add(amount);
         ihbAvailableLimit = getAvailableIhbLimit();
-        updateNetIhbPosition();
     }
 
     public void releaseIhbLimit(BigDecimal amount) {
@@ -632,44 +609,6 @@ public class LegalEntity extends BaseEntity {
             ihbCurrentExposure = BigDecimal.ZERO;
         }
         ihbAvailableLimit = getAvailableIhbLimit();
-        updateNetIhbPosition();
-    }
-
-    public void addLentAmount(BigDecimal amount) {
-        if (totalLentOut == null) totalLentOut = BigDecimal.ZERO;
-        totalLentOut = totalLentOut.add(amount);
-        updateNetIhbPosition();
-    }
-
-    public void reduceLentAmount(BigDecimal amount) {
-        if (totalLentOut == null) totalLentOut = BigDecimal.ZERO;
-        totalLentOut = totalLentOut.subtract(amount);
-        if (totalLentOut.compareTo(BigDecimal.ZERO) < 0) {
-            totalLentOut = BigDecimal.ZERO;
-        }
-        updateNetIhbPosition();
-    }
-
-    public void addDepositedAmount(BigDecimal amount) {
-        if (totalDeposited == null) totalDeposited = BigDecimal.ZERO;
-        totalDeposited = totalDeposited.add(amount);
-        updateNetIhbPosition();
-    }
-
-    public void reduceDepositedAmount(BigDecimal amount) {
-        if (totalDeposited == null) totalDeposited = BigDecimal.ZERO;
-        totalDeposited = totalDeposited.subtract(amount);
-        if (totalDeposited.compareTo(BigDecimal.ZERO) < 0) {
-            totalDeposited = BigDecimal.ZERO;
-        }
-        updateNetIhbPosition();
-    }
-
-    private void updateNetIhbPosition() {
-        BigDecimal lent = totalLentOut != null ? totalLentOut : BigDecimal.ZERO;
-        BigDecimal deposited = totalDeposited != null ? totalDeposited : BigDecimal.ZERO;
-        BigDecimal borrowed = ihbCurrentExposure != null ? ihbCurrentExposure : BigDecimal.ZERO;
-        netIhbPosition = lent.add(deposited).subtract(borrowed);
     }
 
     public String getEffectiveIhbCurrency() {
@@ -813,9 +752,6 @@ public class LegalEntity extends BaseEntity {
         this.borrowingRateSpread = borrowingSpread != null ? borrowingSpread : new BigDecimal("0.75000");
         this.spreadsDefault = lendingSpread == null || borrowingSpread == null;
         this.ihbCurrency = this.functionalCurrency;
-        this.totalLentOut = BigDecimal.ZERO;
-        this.totalDeposited = BigDecimal.ZERO;
-        this.netIhbPosition = BigDecimal.ZERO;
     }
 
     /**
@@ -836,9 +772,6 @@ public class LegalEntity extends BaseEntity {
         this.borrowingRateSpread = BigDecimal.ZERO;
         this.spreadsDefault = true;
         this.ihbCurrency = this.functionalCurrency;
-        this.totalLentOut = BigDecimal.ZERO;
-        this.totalDeposited = BigDecimal.ZERO;
-        this.netIhbPosition = BigDecimal.ZERO;
     }
 
     /**

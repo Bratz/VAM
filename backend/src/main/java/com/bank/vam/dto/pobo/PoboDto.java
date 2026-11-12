@@ -64,7 +64,6 @@ public class PoboDto {
         private LocalDate settlementDate;
         private String settlementReference;
         private IntercompanyRecharge.SettlementMethod settledVia;
-        private UUID ihbLoanId;
         private String approvedBy;
         private LocalDateTime approvedAt;
         private LocalDateTime createdAt;
@@ -81,7 +80,6 @@ public class PoboDto {
         private int settledRecharges;
         private BigDecimal totalRechargesOutstanding;
         private BigDecimal totalServiceFeesCollected;
-        private int ihbLoansCreated;
         private int armLengthValidationsPending;
         private LocalDateTime asOfDate;
     }
@@ -117,7 +115,6 @@ public class PoboDto {
         private UUID rechargeId;
         private String rechargeReference;
         private BigDecimal totalRecharge;
-        private boolean ihbLoanCreated;
         private String status;
         private LocalDateTime executedAt;
         private String executedBy;
@@ -159,14 +156,6 @@ public class PoboDto {
         private BigDecimal fxMarkup;
         private BigDecimal totalRecharge;
         private String rechargeStatus;
-        
-        // IHB loan details (if created)
-        private boolean ihbLoanCreated;
-        private UUID ihbLoanId;
-        private String ihbLoanReference;
-        private BigDecimal ihbLoanAmount;
-        private BigDecimal ihbInterestRate;
-        private LocalDate ihbMaturityDate;
         
         // Audit
         private String executedBy;

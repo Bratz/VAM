@@ -144,7 +144,7 @@ public class PoboController {
             @PathVariable UUID executionId) {
         
         // TODO: Implement execution detail lookup
-        // Would include: payable details, recharge, IHB loan, fee breakdown, timestamps
+        // Would include: payable details, recharge, fee breakdown, timestamps
         return ResponseEntity.notFound().build();
     }
 }

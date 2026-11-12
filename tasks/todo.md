@@ -1,5 +1,324 @@
 # Active Work / Status Tracker
 
+## ✅ IHB loan/deposit remnants removed (follow-up to 9950ceb)
+IHB exposure now = the debit balance of the entity's IHB current accounts in its IHB currency
+(`IhbUnifiedService.ihbDebitBalance`; the stored `ihbCurrentExposure` is never maintained), used by the IHB entity
+response, the limit-change and disable checks; the IHB page reads the API's own field names (it read `ihbCreditLimit` /
+`ihbCurrentExposure`, which the API never sent, so limit and exposure always showed 0). Still on the stale field:
+IntercompanyService, BalanceStructureService, LegalEntityController, the copilot tool.
+- [x] Frontend: Interest Accruals page, route, nav entry and `interestAccrualApi` gone (it called `/interest-accruals/*`,
+      which never existed). IHB page: Lending Portfolio, Lent Out / Deposited, the Total Lent Out / Total Deposited tiles
+      and Net IHB Position gone (net was lent + deposited - exposure, so -exposure once the totals are gone; "Borrowed" /
+      Current Exposure already shows it). Rates, credit limit and utilisation kept. Can Lend / Can Borrow and the
+      hierarchy IHB hint reworded to what they do now. Dead loan/deposit fields dropped from `api.ts`, receivables page,
+      `usePermissions` (`canCreateIHBLoan`), dashboard comment.
+- [x] Backend: `LegalEntity.totalLentOut/totalDeposited/netIhbPosition` (+ add/reduce methods), IC transaction
+      `ihbLoanId/ihbDepositId/ihbInterestRate`, recharge `ihbLoanId/createsIntercompanyLoan/ihbTransactionId` +
+      `settleViaIhbLoan` + `SettlementMethod.IHB_LOAN`, `NettingEntry.ihbTransactionId` + `fromIhbLoan` + source types
+      `LOAN/IHB_LOAN/IHB_DEPOSIT`, `Payable.poboIhbLoanId`, `Receivable.coboIhbDepositId` + `markCoboCollected`, the
+      DTO/copilot/controller fields mirroring them, the unused `/ihb/indicative-rate` loan/deposit quote, the unused
+      `IhbTransaction` entity + repository, and the `ihb_deposit_id` / `ihb_transaction_id` `@Index` declarations
+      (the "column ihb_deposit_id does not exist" startup warning). No enum value removed has rows locally or in the dump.
+- [x] V57 (both migration dirs): drops those columns, plus `v_ihb_entities` and the four dead PL/pgSQL functions that
+      read/wrote them. Ran twice on a scratch-schema copy of vam_db and on an empty schema: clean.
+- [x] `mvn test` 824/0; `tsc --noEmit` and `npm run lint` clean.
+
+## ✅ Sweeps with external-bank accounts (spec: docs/specs/external-bank-sweeps.md, decisions D1–D10)
+Phases in order, reported after each; commit and push only when the user says so. The home bank always runs the sweep.
+Design: reuse `ExternalMandate` as the authority (+ instruction format) and `SweepExecution` COMMITTED as "pending";
+one new table `sweep_instructions` carries the MT101 / pain.001 and its confirmation. Home-bank-only and IHB sweeps
+must behave exactly as today (all existing sweep tests unchanged). Defaults the interview left open (say if wrong):
+flat instruction fee 25 in the account currency (`vam.sweeps.external-instruction-fee`), charged to the target entity;
+seeded rules re-pointed to the *source entity's* home-bank account, else deactivated; no new sweep of a source while
+one is pending; a failed leg's reversal is never refused; "Mark rejected" plays the other bank's rejection.
+
+### Phase 1 — authority (R1–R3, D2, D3)
+- [x] 1.1 `external_mandates` + `instruction_format` MT101 / PAIN_001 (ddl-auto, nullable = MT101); authority checks
+      in one place: ACTIVE, within validity, amount ≤ max per transaction, day's instructed total + amount ≤ max daily.
+- [x] 1.2 Bank-side API: list per shadow / corporate, register (PENDING_ACTIVATION), activate, suspend, revoke (reason);
+      audited.
+- [x] 1.3 Bank Accounts account details: authority panel (register / activate / suspend / revoke) for an external
+      shadow; read-only view of the same.
+- [x] 1.4 Tests: lifecycle, limit checks.
+
+Phase 1 done (2026-11-12, not committed): 791 backend tests (781 + 10 in `ExternalAuthorityTest`), tsc + lint clean;
+live on localhost (UK): ddl-auto added `instruction_format varchar(10)` with CHECK (MT101, PAIN_001); register /
+activate / suspend / revoke driven through the API and the panel, audit rows written (test row removed after).
+For phases 2–5:
+- The check: `ExternalMandate.refusal(BigDecimal amount, LocalDate date, BigDecimal instructedToday)` → null when the
+  authority covers it, else the reason (status ACTIVE, validFrom/validTo, amount ≤ maxPerTransaction,
+  instructedToday + amount ≤ maxDaily; amount null = status and validity only; rail scope ignored).
+  `getInstructionFormat()` returns MT101 for a NULL column.
+- Daily-total hook: `instructedToday` is the parameter — Phase 3 passes the sum of that authority's
+  `sweep_instructions` for the execution date (not FAILED). Rule creation passes ZERO with a null amount.
+- Rule creation: `SweepService.assertShadowLegEligible(va, accountNumber)` (rail parameter dropped) — any authority on
+  the shadow passing `refusal(null, today, 0)`; refusal message lists each authority's reason or "none is registered".
+  Still applied to targets too; Phase 2 makes external targets a refusal.
+- API (`ExternalAuthorityController`, service `ExternalAuthorityService`): `GET /api/v1/treasury/external-authorities
+  ?shadowVaId=|?corporateId=`; `POST …` {shadowVaId, mandateReference, instructionFormat, validFrom, validTo,
+  maxPerTransaction, maxDaily, documentRef} → PENDING_ACTIVATION; `POST …/{id}/activate|suspend`;
+  `POST …/{id}/revoke` {reason}. Moves: PENDING→ACTIVE|REVOKED, ACTIVE→SUSPENDED|REVOKED, SUSPENDED→ACTIVE|REVOKED;
+  REVOKED/EXPIRED final. Audit: `EXTERNAL_AUTHORITY_REGISTERED` / `EXTERNAL_AUTHORITY_STATUS_CHANGED`, entity
+  `ExternalMandate`, corporate of the shadow. Registration only for a PHYSICAL_MIRROR / EXTERNAL_MIRROR whose BIC is
+  not the home bank's (`HomeBankProperties.matches`). Nothing sets EXPIRED yet (validTo already refuses).
+- Frontend: `externalAuthorityApi` in services/api.ts; `components/treasury/ExternalAuthorityPanel.tsx` in the Bank
+  Accounts details modal when `isExternalBank` and a shadow exists. Actions shown to everyone (no role model) —
+  `ponytail:` notes on the panel and controller.
+
+### Phase 2 — which rules (R4–R7, R20, D1, D9, D10)
+- [x] 2.1 Rule creation / edit: an external shadow only as a source, with an ACTIVE authority; target must be home-bank;
+      source and target same legal entity and currency; reasons in the 400.
+- [x] 2.2 Create Rule form: external accounts offered as sources only when authorised; the refusal reason shown
+      (CreateRuleModal fails silently today).
+- [x] 2.3 Flyway V55 (both folders): seeded external rules → target = source entity's home-bank account in the rule
+      currency (else deactivate with reason); ACTIVE MT101 demo authority per external source. Check against the
+      vam-five data (UAE, EBILAEADXXX) and local (UK) data before writing it.
+- [x] 2.4 Tests: each refusal; the migration on a copy of local data.
+
+Phase 2 done (2026-11-12, not committed): 795 backend tests (791 + 3 in `ExternalAuthorityTest` + 1 in
+`IhbSweepTargetTest`), tsc + lint clean. V55 NOT applied to local vam_db (tested on scratch schemas, dropped after).
+- Rules: `SweepService.assertExternalLegsFit` in createRule — target at another bank refused ("external sweeps
+  concentrate into the home bank"); with any other-bank source the target must be a home-bank *shadow*
+  (PHYSICAL_MIRROR at the home bank — the only target whose real balance follows the credit; a plain VA is refused),
+  same `owningEntityId` as that source, same currency. Authority check unchanged (sources only now in effect).
+  `VirtualAccount.isOtherBankShadow(homeBic)` is the one predicate. updateRule never changes legs: nothing to check.
+  Simulator activation goes through createRule, so a scenario with an other-bank target now fails activation.
+- IHB auto-rules (`createIhbSweepRules`) could include other-bank shadows (all VAs owned by the entity): now left out
+  as sources, and a treasury account at another bank is no target (fallback skips it; settlement VA there → no rule).
+- Form: CreateRuleModal shows the backend's 400 message; Step 2 marks other-bank accounts (multi-bank summary =
+  PHYSICAL_MIRROR only + `externalAuthorityApi.forCorporate`): target option disabled "other bank, source only";
+  source row "other bank · authorised", or disabled "other bank · no authority". EXTERNAL_MIRROR / scope / CSV picks
+  rely on the backend message.
+- V55 (`external_sweeps_repoint_seeded_rules`): every non-DISABLED rule with a leg at another bank → target = ACTIVE
+  home-bank PHYSICAL_MIRROR of the sources' one entity in the rule currency (current target first), else DISABLED with
+  "(off: no <CCY> home-bank account of <ENT>)" appended to the name (no reason column); ACTIVE MT101 authority
+  `DEMO-AUTH-<va number>` (from 2026-01-01, no limits) per other-bank source of each kept rule. Idempotent; no-op
+  without the tables. Outcome by home bank:
+  - EBILAEADXXX, vam-five (dump + FxSettlementAccountSeeder's EBILAEAD accounts, simulated): BRTO-002 kept on
+    BRTO0000001; HEL-001/002 → SHADOW-USD-54361990; MAWR-001/002 → SHADOW-SAR-23936644; ALBN-001/002, MERC-001/002
+    disabled (ALBN-EN, MERC-FR, MERC-IT hold no home-bank account). BRTO-001 home-only, untouched. 5 authorities.
+    The Albion Manchester rule (12 Nov recording) is among the disabled.
+  - Fresh OCI instance from the dump: the seeder runs after Flyway, so only BRTO-002 is kept, 8 disabled.
+  - HBUKGB4BXXX, local: ALBN-001 → ALBN0000003; BRTO-001/002 → SHADOW-AED-66445572; HEL → SHADOW-USD-54361989;
+    MAWR → SHADOW-SAR-23936643; ALBN-002 (source is ALBN-EN's only home account), MERC-001/002 disabled. 7 authorities.
+    Started with backend-uae instead, local gives the vam-five outcome.
+- Also: PhysicalAccountController home/external counts, home-bank name and bank tile `isHomeBank` use
+  `HomeBankProperties.matches` (was equalsIgnoreCase: HBUKGB4B ≠ HBUKGB4BXXX).
+For phase 3: rules may now hold other-bank sources only into a same-entity home-bank shadow; IHB rules never hold
+one. Bank tiles still group by raw bankCode, so HBUKGB4B and HBUKGB4BXXX are two tiles (both now "home").
+
+### Phase 3 — run and instruct (R3, R8–R14, D4, D6, D8)
+- [x] 3.1 At run: authority re-checked, source sized on its last END_OF_DAY statement booked balance, stale or a
+      pending instruction on the source → skipped with the reason.
+- [x] 3.2 `sweep_instructions` + MT101 and pain.001 builders (pain.001: reuse `Iso20022XmlBuilder` where it fits).
+- [x] 3.3 Booking: home-bank target credited at once (bank balance + physical follow as today), external leg pending,
+      execution COMMITTED; external shadow bank balance untouched.
+- [x] 3.4 Fee: standard + flat instruction fee, from the target entity; refund path.
+- [x] 3.5 Tests: MT101 and pain.001 content, booking, fee, each skip reason; existing sweep tests unchanged.
+
+Phase 3 done (2026-11-12, not committed): 805 backend tests (795 + 10 in `ExternalSweepRunTest`), unit tests only,
+backend not started (V55 still unapplied locally).
+- `sweep_instructions` ALREADY EXISTED (multi-bank v1 `SweepInstruction`, empty everywhere incl. the vam-five dump, read
+  only by the copilot tool `GetSweepInstructionsTool`), with fixed CHECKs on `status` and NOT NULL `rail`. Reused, not
+  replaced: ddl-auto adds nullable `instruction_format` (CHECK MT101/PAIN_001), `message_text`, `rule_id`,
+  `execution_date`, `confirmed_by_line_id`, `standard_fee_ref`, `instruction_fee_ref`, `instruction_fee`,
+  `target_credit_ref`. Mapping: `idempotency_key` = `external_reference` = the end-to-end reference,
+  `sweep_execution_id`, `source_shadow_va_id`, `target_va_id`, `mandate_id` = the authority, `rail` = AUTO
+  (ponytail: no value fits, the format column is the real type). Statuses are the table's own: pending = INSTRUCTED
+  (`ExternalSweepService.IN_FLIGHT` = PREPARED/INSTRUCTED/ACK_RECEIVED), confirmed = SETTLED, failed = REJECTED
+  (Mark rejected) or EXPIRED (window) (`FAILED` = REJECTED/NACKED/EXPIRED). The spec's PENDING/CONFIRMED/FAILED
+  are these; adding them would need a migration to replace the CHECK.
+- Run (`SweepService.executeSweep`, after the in-house check): a source with `isOtherBankShadow(homeBic)` goes to
+  `ExternalSweepService.plan` → skip with the reason (execution SKIPPED + errorMessage, as other skips) when an
+  instruction is in flight, there is no APPLIED END_OF_DAY statement (by `shadow_va_id`), it is stale
+  (`StatementFreshness.stale`: dated before the currency's previous business day; applied whatever the shadow's
+  balance source), the size of the closing booked balance is 0, or no authority passes
+  `refusal(amount, today, instructedOn(authority, today, not failed))` (all reasons joined). Amount cut to the
+  currency's decimals, rounding down. balanceBefore = statement balance, balanceAfter = it − amount. Home-bank and IHB
+  sources untouched.
+- Instruct: reference `XSW` + 13 hex = 16 chars (fits MT101 :20:/:21: and EndToEndId). MT101 block-4 body (:20: :28D:
+  :50H: :52A: other bank :30: :21: :32B: :57A: home bank :59: :70: :71A:SHA), plain strings, `\n`; pain.001.001.09 via
+  `Iso20022XmlBuilder.buildPain001` (both accounts as `<IBAN>`, account number if no IBAN). Instruction INSTRUCTED,
+  preparedAt = instructedAt = now, executionDate = today.
+- Booking decision: `executeTransfer` as today → target ledger + bank balance + physical account credited; source
+  LEDGER debited (SWEEP_OUT), its bank balance untouched (mirror is a no-op at another bank), and the ledger
+  availability check skipped for an other-bank source (sized on the statement). Kept the ledger debit because:
+  `differenceToPlatform` is closing booked − bank balance, which the debit does not touch, so the next statement's
+  difference stays the bank's own movements either way; the ledger then agrees with its own SWEEP_OUT row and the
+  entity's ledger total is not inflated by the amount while pending (target already credited); the next statement
+  resets the source ledger to the bank's figure in both cases. Not done: `bankBalanceCommitted` (the unused intraday
+  float, shown by MultiBankLiquidityViewService) is not raised, so bank-balance views count the swept amount at both
+  banks until the statement arrives.
+- Execution COMMITTED (counted as executed in the run: `isSuccess() || isCommitted()`); rule.totalSwept += amount.
+- Fees: standard (0.05%, min 5, max 500) and instruction (`vam.sweeps.external-instruction-fee`, default 25, in
+  application.yml) both charged to the TARGET via `FeePostingService.postFee` (standard fee still on the source for
+  home-bank sweeps); debit refs on the instruction (`standard_fee_ref`, `instruction_fee_ref`, + `instruction_fee`).
+For phase 4:
+- Match: statement line end-to-end id / bank ref = `external_reference` (= `idempotency_key`), else debit of `amount`
+  with value date = `execution_date`, on `source_shadow_va_id`, status in `IN_FLIGHT`.
+- Confirm: status SETTLED, `settled_at`, `confirmed_by_line_id` (+ `reconciliation_ref`); execution (one instruction
+  each) COMMITTED → SETTLED, `settledAt`.
+- Fail (EXPIRED after 2 business days / REJECTED when marked): `rejected_at`, `rejection_reason`; reverse the target
+  credit = debit `target_va_id` by `amount` (ledger + `mirrorIfHomeBankShadow`, never refused; SWEEP_IN ref in
+  `target_credit_ref`); the source ledger: credit back only if no statement was applied since `instructed_at`
+  (a later statement already reset it); refund `instruction_fee` to the target (`instruction_fee_ref` is the FEE
+  debit; standard fee not refunded per R16); rule.totalSwept −= amount; execution COMMITTED → FAILED + reason; alert.
+
+### Phase 4 — confirmation and failure (R15–R17, D5, D7)
+- [x] 4.1 Statement intake hook: on an applied END_OF_DAY statement for an external shadow, confirm pending
+      instructions by end-to-end reference, else debit of same amount with value date = execution date → CONFIRMED,
+      line linked; execution SETTLED when all its instructions are.
+- [x] 4.2 Daily job: pending past 2 business days (cut-off calendar) → FAILED; "Mark rejected" endpoint does the same
+      now. Failure: reverse the target credit (never refused), refund the instruction fee, alert bank ops + corporate.
+- [x] 4.3 Tests: confirm by reference, by amount + date, no match → fail after 2 business days, rejected, no break.
+      (+ committed float: raised at instruction, released on confirmation and failure.)
+
+Phase 4 done (2026-11-12, not committed): 818 backend tests (805 + 10 in `ExternalSweepRunTest` + 3 in
+`StatementIntakeServiceTest`), unit tests only, backend not started (V55 still unapplied locally).
+- Confirm (`ExternalSweepService.confirm(shadowVaId, lines)`): `StatementIntakeService` calls it per statement after the
+  statement's own transaction commits, in a second REQUIRES_NEW one (no Spring events in the codebase), for APPLIED
+  END_OF_DAY, not CBS-fed (older ones too: their lines are lines), with the statement's FINAL lines. A failure is logged
+  and leaves the instructions INSTRUCTED; the statement stays applied. Match: in-flight instructions of the shadow,
+  oldest first; pass 1 a DEBIT line (not a reversal) whose end-to-end id, bank reference or customer reference equals
+  `external_reference`; pass 2 a DEBIT of exactly `amount` with value date = `execution_date`; a line is used once
+  per statement (lines are new rows per statement, so no cross-statement check). On a match: SETTLED, `settled_at`,
+  `confirmed_by_line_id`, `reconciliation_ref` = the line's bank reference; committed float released; execution
+  COMMITTED → SETTLED + `settledAt` (one instruction per execution). Break flag untouched (R17).
+- Expiry: `ExternalSweepExpiryScheduler` (`vam.sweeps.external-expiry-cron`, default 18:00 daily, under
+  `vam.scheduling.enabled` like every job) → `ExternalSweepService.overdue(today)`: INSTRUCTED/… with `execution_date`
+  before the currency's 2nd previous business day (`CutoffCalendarService.previousBusinessDay` twice): executed Thu,
+  pending Fri and Mon, EXPIRED on Tue. Each `fail` in its own transaction. 18:00 so the morning's statement for the last
+  day of the window is in first.
+- Mark rejected: `POST /api/v1/sweeping/instructions/{instructionId}/reject` {reason} (reason required) → REJECTED;
+  400 (BusinessException) when blank or the instruction is no longer pending (SETTLED, REJECTED, EXPIRED).
+- `fail(instructionId, REJECTED|EXPIRED, reason)` (one path for both): target ledger −amount and
+  `CoreBankingBalance.mirrorIfHomeBankShadow` (moved there from SweepService's private method, which now delegates)
+  for bank balance + physical account, never refused (may overdraw); source ledger +amount only when no APPLIED,
+  non-older, non-CBS END_OF_DAY statement was created for it after `instructed_at`
+  (`BankStatementRepository.existsBy…CreatedAtAfter`); instruction fee refunded by running its posting backwards (the
+  FEE debit found by `instruction_fee_ref`: its `counterpartyVaId` settlement account pays back its `vaId`), the
+  standard fee stands; all compensating legs are REVERSAL rows (`OverdrawingSweepReversalService.movement`, now
+  package-static), correlation = the instruction reference; rule.totalSwept −= amount; committed float released;
+  execution COMMITTED → FAILED, `errorMessage` = "External sweep <ref> failed (<status>): <reason>", `completedAt`;
+  instruction `rejected_at`, `rejection_reason` (EXPIRED default "not confirmed by the other bank's statement within 2
+  business days"). Alert: one `notifyOnce` (PAYMENT_FAILED, ERROR, referenceType SWEEP_INSTRUCTION, referenceId = the
+  instruction, action "sweeping") to the source's corporate — the bank's bell lists every corporate's notifications,
+  so this one reaches bank ops too (a second raise would be deduplicated by type + reference anyway).
+- Committed float (4.3): `SweepService.instructExternal` raises the source shadow's `bankBalanceCommitted` by the amount
+  (saved by the transfer); `getBankBalanceEffective` = bank available (else bank balance) − committed, so multi-bank
+  liquidity counts the swept money at the home bank only while pending. Released (floored at 0) on confirmation and
+  failure. `applyEndOfDay` never touches it. Caveat: the day's snapshot is written before the confirmation, so its
+  `bankBalanceEffective` is low by a confirmed amount (nothing reads it; `ponytail:` note in the intake).
+For phase 5:
+- Endpoint: reject as above. No read endpoint for instructions yet: add e.g. `GET /api/v1/sweeping/executions/{id}/
+  instruction` (`SweepInstructionRepository` by `sweepExecutionId`, one per execution) or put the fields on
+  `ExecutionResponse`.
+- Fields per execution: status (COMMITTED = pending at the other bank, SETTLED, FAILED with `errorMessage`, SKIPPED with
+  `errorMessage`), `settledAt`, `completedAt`; from its instruction: `externalReference`, `instructionFormat`,
+  `messageText` (view / download), `amount`, `currencyCode`, `executionDate`, `instructedAt`, `status` (INSTRUCTED /
+  SETTLED / REJECTED / EXPIRED), `settledAt`, `confirmedByLineId` (+ `reconciliationRef` = the line's bank reference;
+  the line itself via `BankStatementLineRepository.findById`), `rejectedAt`, `rejectionReason`, `instructionFee`,
+  `standardFeeRef`, `instructionFeeRef`, `targetCreditRef`. "Mark rejected" while the instruction is INSTRUCTED.
+- Not done: a failure in the confirmation hook leaves the instruction pending even if the statement held its debit;
+  the window then expires it and reverses money that did move. Ops would need to see the log; no retry of an old
+  statement's lines.
+
+### Phase 5 — screens and fixes (R18–R21)
+- [x] 5.1 Sweep execution view: per source the instruction (format, reference, text, download), status, skip reason,
+      confirming statement line; "Mark rejected" while pending.
+- [x] 5.2 Today's Swept counts SETTLED and COMMITTED; per-rule history endpoint 500; "balance after" includes the fee.
+- [x] 5.3 Lint, typecheck (+ account view: pending sweep on an external shadow).
+
+Phase 5 done (2026-11-12, not committed): 822 backend tests (818 + 4 in `ExternalSweepRunTest`), tsc + lint clean,
+backend not started (V55, V56 unapplied locally).
+- A, self-healing confirmation: `ExternalSweepService.fail` (daily job and Mark rejected) first matches the source's
+  stored FINAL lines of APPLIED, non-CBS END_OF_DAY statements dated on or after `execution_date` through `confirm`
+  (same matching; `confirm` now skips any line already in some instruction's `confirmed_by_line_id`). Found: EXPIRED
+  returns it SETTLED, nothing reversed; REJECTED → 400 "… the bank's statement shows this debit: 800 GBP valued …, bank
+  reference …. It is confirmed instead." and the confirmation commits (`noRollbackFor = BusinessException`; every other
+  BusinessException in `fail` is thrown before a write).
+- B, no double failure: `SweepInstructionRepository.claim(id, to, from)` = conditional UPDATE (status in IN_FLIGHT),
+  returns the row count. `fail` claims before reversing (0 → 400 "no longer pending", nothing moved); `settle` claims
+  before confirming (0 → line left unused). Postgres re-checks the WHERE after the other transaction commits.
+- 5.1: `GET /api/v1/sweeping/executions/{executionId}/instruction` → {instruction, confirmingLine, standardFee} or
+  data null. `ExternalInstructionPanel` in the execution details: format, reference, amount, execution date, status
+  (Instructed / Confirmed / Rejected / Expired), fees (standard amount from its posting, instruction fee, "refunded" when
+  failed), confirming line (amount, value date, bank reference, line id) or reason + date, message in a `<pre>` with a
+  Blob download (.txt / .xml), Mark rejected (inline reason, backend message shown) while INSTRUCTED. Skipped shows
+  `errorMessage`. One status map (`concentration/constants.ts executionStatus`) for the list and the details:
+  COMMITTED = "Instructed · awaiting bank statement" (info), SETTLED/SUCCESS success, PARTIAL/SKIPPED warning.
+  Rule Reference and Sweep Type from the page's rules (the execution response has neither).
+- 5.2: Today's Swept counts SUCCESS, SETTLED, COMMITTED; Today's and Total Swept shown per currency (no display
+  currency on the page; `stats.totalSwept` that added currencies removed). Balance after (home-bank sweeps) minus the
+  standard fee charged to the source when posted (external: statement balance − amount, fees go to the target).
+- History 500: seeded executions with status `COMPLETED` (not in `ExecutionStatus`): the oldest row of SWP-ALBN-001,
+  -BRTO-001, -HEL-001, -MAWR-001 and two of -MERC-001 (global_mncs_pooling.sql, in the dump); the per-rule endpoint
+  sorted ascending, so page 0 held them and the enum mapping threw. Fix: V56 (both folders) COMPLETED → SETTLED, the
+  seed corrected, per-rule history newest first. Data, so no unit test; 6 rows locally.
+- 5.3: `ShadowAccountDto.bankBalanceCommitted` added (one builder line, no new endpoint); Bank Accounts details show
+  "Pending sweep: … (awaiting statement)" when > 0.
+For phase 6: 12,434 local executions are COMMITTED from the old end-of-day settlement (Jan–Sep 2026, no instruction):
+the list labels them "Instructed · awaiting bank statement"; the details say "committed before external-bank sweeps".
+Today's Swept is from the last 20 executions loaded; Run Sweeps' result total adds currencies and says AED.
+
+### Phase 6 — verification
+- [x] 6.1 Spec acceptance 1–8 as tests; full suite; typecheck + lint.
+- [x] 6.2 Localhost live run (backend-uae, backed up and restored): link account → statement → authority → rule →
+      run → MT101 → next statement confirms; a second run fails after the window.
+- [ ] 6.3 vam-five after deploy: re-record docs/demo/external-bank-sweeps-walkthrough.md end to end (the current draft
+      stops at the mandate refusal); note the Barclays balance the 12 Nov recording moved.
+
+Phase 6 done (2026-11-12, 6.1 + 6.2; not committed): 824 backend tests (822 + `ExternalSweepRunTest` daily-job test +
+`SettlementVaResolverServiceTest` caller's-copy test), 0 failures; tsc + lint clean.
+- 6.1 acceptance → tests: 1 `ExternalAuthorityTest` ruleCreationNeedsAnAuthority… / anAccountAtAnotherBankIsNeverATarget /
+  anExternalSourceSweepsOnlyIntoItsOwnEntitys… (form message: live); 2 `ExternalSweepRunTest` anAuthorisedSource…,
+  bothFees…, mt101IsTheBlock4Body…; 3 aPain001AuthorityProducesAPain001, pain001Debits…; 4 aDebitLineWithTheEndToEnd…,
+  withoutTheReference…, `StatementIntakeServiceTest` endOfDayStatement_offersItsFinalLines…_noBreak; 5 anExpiredLeg…,
+  markRejected…, theDailyJobExpiresEachOverdueLeg… (new: scheduler → fail per leg, one failure does not stop the rest);
+  6 noAuthorityOrOne… (none / REVOKED / over per-transaction), theDailyLimit…, aStaleStatement…, noEndOfDay…,
+  aSourceWithAnInstructionInFlight… (expired/suspended via `ExternalMandate.refusal` in ExternalAuthorityTest);
+  7 V55 = data migration, verified live (below); 8 = 6.3.
+- 6.2 live, localhost:8099 (UAE / EBILAEADXXX, scheduling off), first start applied V55 + V56 to local vam_db (kept):
+  V55 "5 kept, 4 disabled" = the vam-five outcome: SWP-HEL-001/002 → SHADOW-USD-54361990, SWP-MAWR-001/002 →
+  SHADOW-SAR-23936644, SWP-BRTO-002 kept on BRTO0000001; SWP-ALBN-001/002, SWP-MERC-001/002 DISABLED with "(off: no
+  GBP|EUR home-bank account of ALBN-EN|MERC-FR|MERC-IT)"; 5 ACTIVE MT101 authorities DEMO-AUTH-BRTO0000003,
+  -HEL0000002, -HEL0000003, -MAWR0000002, -MAWR0000003. V56: 6 COMPLETED → SETTLED (SETTLED 74 → 80).
+  Then, backed up (bk7_*), Helios: rule refusals (external target, cross-entity target MAWR0000004, no authority on
+  SHADOW-USD-54361989 — HBUKGB4B, another bank under UAE); stale 9 Nov MT940 → SKIPPED "stale balance"; 11 Nov MT940
+  (opening 6,045,000 + 15,000) → run (TARGET_BALANCE 1M) → COMMITTED 5,060,000, MT101 (:50H: BofA IBAN, :57A:
+  EBILAEADXXX, :59: USD54361990), target ledger/bank/physical +5,060,000, fees 500 + 25 on the target, BofA bank balance
+  unchanged and committed 5,060,000; 12 Nov MT940 with the debit + /EREF/ → SETTLED, line linked, committed 0, no break;
+  pain.001 authority registered + activated on Citi (audited) → pain.001; Mark rejected refused when the stored
+  statement showed the debit (confirmed by amount + value date instead); next run Mark rejected → reversed, 25
+  refunded, 500 stands, FAILED, one alert; seeded SWP-HEL-001 ran under DEMO-AUTH-HEL0000002; its instruction backdated
+  to 6 Nov and the expiry job run once through a launcher (`ExpiryLauncher` in the scratchpad: the app without web
+  server, `ExternalSweepExpiryScheduler.expireOverdue()`) → EXPIRED, reversed, refunded, alert. UI (Vite :3099 → 8099):
+  Cash Concentration statuses, Today's Swept per currency, instruction panel (confirming line, pain.001, download),
+  Mark rejected. Bank Accounts / Create Rule form not driven in the browser (APIs checked). All bk7_* tables restored
+  (diff 0 both ways), window sweep clean, bk7_* dropped.
+- Defects fixed: (1) lost fee credit: the Exception VA a fee falls back to (no settlement VA, e.g. Helios USD) was read
+  in the parking REQUIRES_NEW transaction, so `postFee` merged a stale copy and an external sweep's second fee
+  overwrote the first one's credit (fee account +25 for 525 charged). `SettlementVaResolverService.parked` now hands
+  back the caller's own copy. (2) Rule refusals said "Account null" when the request named accounts by id only: messages
+  use the account's number. (3) MT101 :70: cut the execution reference ("Cash concentration EXE-…" > 35): now "Cash
+  sweep EXE-…" (34). (4) Cash Concentration: a refetch after Mark rejected showed the full-page spinner, unmounting the
+  open execution details (backend refusal message lost, header stale): spinner on first load only, details follow the
+  refreshed execution.
+- Seen, not changed: `differenceToPlatform` on the confirming statement includes the swept debit (−5,061,250; no break,
+  as designed); pain.001 InitgPty is the source VA name ("Shadow · Citibank USD (NYC)"), CdtrAcct an account number in
+  `<IBAN>` (ponytail); fees move the target's ledger only, not its bank balance (as for home-bank sweeps);
+  `/statements/lines` without its parameter is a 500 (missing-param handling, pre-existing); startup "ihb_deposit_id
+  does not exist" index error (pre-existing).
+For 6.3 (vam-five, after commit + deploy): V55 applies there on the first start with the vam-five outcome above (the
+Albion rule of the 12 Nov draft is DISABLED; re-record with Helios). Order: (a) Bank Accounts → Helios NY at BofA
+8765432101 (HEL0000002): authority panel shows DEMO-AUTH-HEL0000002 ACTIVE MT101 (or register + activate a new one);
+(b) post an END_OF_DAY MT940 for it FIRST (`:25:BOFAUS3N/8765432101`, opening = its current bank balance, dated the last
+business day) — without one the run is skipped "no end-of-day statement"; (c) Create Rule BofA → SHADOW-USD-54361990
+(Helios's USD account at Emirates NBD) — show the refusal for an other-bank target first; (d) Run → COMMITTED, MT101
+in the execution details, target credited, fees 0.05% (max 500) + 25; (e) next END_OF_DAY MT940 with the debit and
+/EREF/<reference> → Confirmed, execution Settled. SWP-HEL-001 (seeded, ZBA) also sweeps HEL0000002: run only the new
+rule, or use SWP-HEL-001 itself. Note the Barclays balance the 12 Nov recording moved.
+
 ## ✅ Bank statement intake (spec: docs/specs/bank-statement-intake.md, decisions D1–D8)
 Phases in order, reported after each; commit and push only when the user says so. Statements are whole documents, not
 rows, so they get their own intake service and log; the row-based File Ingest Pipeline only displays the log.

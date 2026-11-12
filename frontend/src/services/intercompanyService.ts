@@ -53,24 +53,3 @@ export const vibanIntegrationApi = {
     return { success: true, data: [] };
   },
 };
-
-// Stub for ihbIntegrationApi
-export const ihbIntegrationApi = {
-  getEntityPosition: async (_entityId: string): Promise<ApiResponse<any>> => {
-    console.warn('[ihbIntegrationApi] Using stub - not implemented');
-    return {
-      success: true,
-      data: {
-        netPosition: 0,
-        depositBalance: 0,
-        loanBalance: 0,
-        availableCredit: 0,
-      }
-    };
-  },
-
-  submitCoboDeposit: async (request: CoboRequest): Promise<ApiResponse<CoboResult>> => {
-    // Delegate to actual intercompanyApi
-    return intercompanyApi.setupCobo(request);
-  },
-};

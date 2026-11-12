@@ -1177,6 +1177,14 @@ public class VirtualAccount extends BaseEntity {
     }
 
     /**
+     * The shadow of an account at another bank: an EXTERNAL_MIRROR, or a PHYSICAL_MIRROR not held at the home bank.
+     * The home bank moves its money only by instructing that bank, under an authority (external-bank sweeps D1).
+     */
+    public boolean isOtherBankShadow(String homeBankBic) {
+        return isExternalMirror() || (isPhysicalMirror() && !isHomeBankHeld(homeBankBic));
+    }
+
+    /**
      * Effective bank balance available for sweep — accounts for intraday float
      * from outstanding sweep instructions not yet reflected on the bank statement.
      */

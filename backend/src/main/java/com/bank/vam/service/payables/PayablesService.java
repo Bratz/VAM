@@ -1526,7 +1526,6 @@ public class PayablesService {
             .poboTransactionRef(p.getPoboTransactionRef())
             .fxStatus(p.getFxStatus())
             .fxStatusReason(p.getFxStatusReason())
-            .poboIhbLoanId(p.getPoboIhbLoanId())
             .poboRechargeId(p.getPoboRechargeId())
             .poboRequestedAt(p.getPoboRequestedAt())
             .poboRequestedBy(p.getPoboRequestedBy())

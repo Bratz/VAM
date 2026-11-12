@@ -246,12 +246,6 @@ public class Receivable extends BaseEntity {
     private UUID coboRechargeId;
     
     /**
-     * IHB deposit ID created when treasury forwards collection to subsidiary.
-     */
-    @Column(name = "cobo_ihb_deposit_id")
-    private UUID coboIhbDepositId;
-    
-    /**
      * When COBO was requested.
      */
     @Column(name = "cobo_requested_at")
@@ -810,20 +804,6 @@ public class Receivable extends BaseEntity {
         this.coboCollectorEntityId = null;
         this.coboCollectorEntityCode = null;
         this.coboCollectorEntityName = null;
-    }
-    
-    /**
-     * Mark COBO as collected and record IHB deposit.
-     */
-    public void markCoboCollected(String transactionRef, UUID ihbDepositId, UUID rechargeId) {
-        this.coboRequestStatus = CoboRequestStatus.COLLECTED;
-        this.coboTransactionRef = transactionRef;
-        this.coboIhbDepositId = ihbDepositId;
-        this.coboRechargeId = rechargeId;
-        this.status = ReceivableStatus.PAID;
-        this.paymentStatus = PaymentStatus.COMPLETE;
-        this.paidAmount = this.netAmount;
-        this.outstandingAmount = BigDecimal.ZERO;
     }
     
     /**

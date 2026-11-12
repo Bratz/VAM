@@ -729,7 +729,6 @@ public class ReceivablesController {
             .coboRequestStatus(r.getCoboRequestStatus() != null ? r.getCoboRequestStatus().name() : null)
             .coboTransactionRef(r.getCoboTransactionRef())
             .coboRechargeId(r.getCoboRechargeId())
-            .coboIhbDepositId(r.getCoboIhbDepositId())
             // Netting
             .nettingEligible(Boolean.TRUE.equals(r.getNettingEligible()))
             .nettingCycleId(r.getNettingCycleId())

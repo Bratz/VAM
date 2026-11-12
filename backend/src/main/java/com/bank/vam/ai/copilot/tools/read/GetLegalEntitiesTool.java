@@ -30,8 +30,7 @@ import java.util.stream.Collectors;
  *
  * <p>Output shape (list): {@code { totalMatched, entities: [{ id, entityCode,
  * entityName, entityType, hierarchyPath, hierarchyLevel, parentEntityId,
- * countryCode, status, bancsCustomerId, ihbCurrentExposure, totalLentOut,
- * totalDeposited, netIhbPosition }] } }
+ * countryCode, status, bancsCustomerId, ihbCurrentExposure }] } }
  * <p>Output shape (detail, {@code id} given): adds {@code ancestors: [...]},
  * {@code descendants: [...]}.
  */
@@ -144,9 +143,6 @@ public class GetLegalEntitiesTool implements CopilotTool {
         row.put("status", entity.getStatus() != null ? entity.getStatus().name() : null);
         row.put("bancsCustomerId", entity.getBancsCustomerId());
         row.put("ihbCurrentExposure", entity.getIhbCurrentExposure());
-        row.put("totalLentOut", entity.getTotalLentOut());
-        row.put("totalDeposited", entity.getTotalDeposited());
-        row.put("netIhbPosition", entity.getNetIhbPosition());
         return row;
     }
 

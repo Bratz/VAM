@@ -229,7 +229,6 @@ public class PoboService {
             .map(IntercompanyRecharge::getServiceFee)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        int ihbLoans = (int) rechargeRepository.findWithIhbLoans().size();
         int pendingArmLength = rechargeRepository.findPendingArmLengthValidation().size();
 
         return PoboStatsResponse.builder()
@@ -237,7 +236,6 @@ public class PoboService {
             .settledRecharges(settledToday.size())
             .totalRechargesOutstanding(totalOutstanding)
             .totalServiceFeesCollected(totalServiceFees)
-            .ihbLoansCreated(ihbLoans)
             .armLengthValidationsPending(pendingArmLength)
             .asOfDate(LocalDateTime.now())
             .build();
@@ -281,7 +279,6 @@ public class PoboService {
             .settlementDate(r.getSettlementDate())
             .settlementReference(r.getSettlementReference())
             .settledVia(r.getSettledVia())
-            .ihbLoanId(r.getIhbLoanId())
             .approvedBy(r.getApprovedBy())
             .approvedAt(r.getApprovedAt())
             .createdAt(r.getCreatedAt())

@@ -422,6 +422,7 @@ public class ShadowAccountController {
             .currencyCode(va.getCurrencyCode())
             .bankBalance(va.getBankBalance())
             .bankAvailableBalance(va.getBankAvailableBalance())
+            .bankBalanceCommitted(va.getBankBalanceCommitted())
             .linkedPhysicalAccountId(va.getLinkedPhysicalAccountId())
             .physicalAccountNumber(va.getBankAccountNumber())
             .bankName(va.getBankName())
@@ -484,6 +485,8 @@ public class ShadowAccountController {
         private String currencyCode;
         private BigDecimal bankBalance;
         private BigDecimal bankAvailableBalance;
+        /** External-bank sweeps instructed and not yet confirmed by the other bank's statement (committed float). */
+        private BigDecimal bankBalanceCommitted;
         private UUID linkedPhysicalAccountId;
         private String physicalAccountNumber;
         private String bankName;

@@ -32,7 +32,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/ihb")
 @RequiredArgsConstructor
-@Tag(name = "In-House Bank", description = "Intercompany lending and deposits")
+@Tag(name = "In-House Bank", description = "IHB participation, rates and current accounts")
 public class IhbController {
 
     private final IhbUnifiedService ihbUnifiedService;
@@ -143,20 +143,6 @@ public class IhbController {
         return ResponseEntity.ok(ApiResponse.success(
             ihbUnifiedService.getTreasuryRatesById(treasuryCenterId),
             "Treasury rates retrieved"));
-    }
-
-    @PostMapping("/indicative-rate")
-    @Operation(summary = "Calculate indicative rate for loan/deposit",
-               description = "Returns the effective rate an entity would receive based on amount, tenor, and type")
-    public ResponseEntity<ApiResponse<IhbDto.IndicativeRateResponse>> getIndicativeRate(
-            @Parameter(description = "Treasury Center ID") @RequestParam UUID treasuryCenterId,
-            @Parameter(description = "Entity ID (borrower/depositor)") @RequestParam UUID entityId,
-            @Valid @RequestBody IhbDto.IndicativeRateRequest request) {
-        log.info("POST /api/v1/ihb/indicative-rate - treasury={}, entity={}, type={}",
-            treasuryCenterId, entityId, request.getRateType());
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.getIndicativeRate(treasuryCenterId, entityId, request),
-            "Indicative rate calculated"));
     }
 
     // ========================================================================

@@ -310,7 +310,6 @@ public class BalanceStructureDto {
         private String positionType; // RECEIVABLE or PAYABLE
         private BigDecimal amount;
         private String currencyCode;
-        private String loanReference;
     }
 
     // ========================================================================

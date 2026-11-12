@@ -157,7 +157,7 @@ public class WithholdingTaxTreaty extends BaseEntity {
     // ========================================================================
 
     public enum IncomeType {
-        INTEREST,           // Loan/deposit interest (IHB primary use case)
+        INTEREST,           // Interest, e.g. on IHB current accounts
         DIVIDENDS,          // Dividend payments
         ROYALTIES,          // Royalty payments
         FEES,               // Management/service fees

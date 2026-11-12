@@ -89,7 +89,6 @@ import AccountAttachmentsPage from './pages/AccountAttachmentsPage';
 import CreditAgreementsPage from './pages/CreditAgreementsPage';
 import CreditFacilitiesPage from './pages/CreditFacilitiesPage';
 import InterestConfigurationPage from './pages/InterestConfigurationPage';
-import InterestAccrualReportsPage from './pages/InterestAccrualReportsPage';
 
 // ============================================================================
 // SETTLEMENT & EXCEPTION PAGES (Phase 3)
@@ -190,7 +189,6 @@ export type PageType =
   | 'credit-agreements'
   | 'credit-facilities'
   | 'interest-config'
-  | 'interest-accruals'
   
   // Settlement & Exception (Phase 3)
   | 'exceptions'
@@ -447,7 +445,7 @@ const sectionFor = (page: PageType): SectionKey => {
   const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
     'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates','fx-workspace','fx-market','fx-exposure','fx-deals','fx-rfq','fx-settlement','fx-reports',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
-    'interest-accruals','exceptions','hierarchy-operations'];
+    'exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
   if (['receivables','payables','escrow','wallet','receivables-create','receivables-edit','payables-create','payables-edit',
        'ecommerce-dashboard','ecommerce-collections','merchant-onboarding','seller-collections','file-ingest'].includes(page)) return 'finance';
@@ -612,7 +610,6 @@ const App: React.FC = () => {
       case 'credit-agreements': return <CreditAgreementsPage />;
       case 'credit-facilities': return <CreditFacilitiesPage />;
       case 'interest-config': return <InterestConfigurationPage />;
-      case 'interest-accruals': return <InterestAccrualReportsPage />;
         
       // ====================================================================
       // Settlement & Exception (Phase 3)

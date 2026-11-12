@@ -523,7 +523,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
         title="Cash position"
         description={
           <span>
-            Cash, accounts, sweeps, maturities, statement activity, the action queue and FX are{' '}
+            Cash, accounts, sweeps, statement activity, the action queue and FX are{' '}
             <span className="font-medium text-success-700 dark:text-success-300">live</span> from connected banks.
             FX-honest: per-currency totals only — there is deliberately no synthetic cross-currency grand total.
           </span>
@@ -1059,13 +1059,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               rows into full-width sections gave up — confirmed live the
               consolidation alone (fewer named sections) still nudged
               scrollHeight up slightly (2364px -> 2501px at 1440x900) purely
-              from lost packing, before this pairing recovers it. IHB
-              maturities (was its own permanent card, usually an empty state
-              — "No in-house bank loans or deposits mature in the next 14
-              days" observed live) folds into Sweeps as a conditional line:
-              hide-when-empty matches Brex's "surface exceptions, hide
-              non-events" principle generalized to non-events generally,
-              rather than giving a usually-empty section its own card. */}
+              from lost packing, before this pairing recovers it. */}
           <div className="grid gap-4 items-start grid-cols-2">
           <Card padding="none" className="overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">

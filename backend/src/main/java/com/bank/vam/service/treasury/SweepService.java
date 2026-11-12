@@ -52,11 +52,8 @@ import java.util.stream.Collectors;
 /**
  * SweepService - Cash Concentration with IHB Integration.
  * 
- * When funds are swept between IHB-enabled entities:
- * - Source entity gets an IHB Deposit (they're lending to Treasury)
- * - Target entity (Treasury) gets an IHB Loan (they're borrowing from source)
- * 
- * This creates proper intercompany positions with interest accrual.
+ * When funds are swept between IHB-enabled entities, the sweep posts to the source
+ * entity's IHB current account and its IC Receivable/Payable mirror, which accrue interest.
  * 
  * Sweep Types:
  * - ZERO_BALANCE: Sweep all funds to target
@@ -85,6 +82,7 @@ public class SweepService {
     private final com.bank.vam.repository.treasury.ExternalMandateRepository externalMandateRepository;
     private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
     private final TransactionService transactionService;
+    private final ExternalSweepService externalSweeps;
 
     /**
      * Per-source transaction boundary used by {@link #runSweeps}. Each source's
@@ -255,8 +253,8 @@ public class SweepService {
 
                 VirtualAccount va = vaById.get(sourceReq.getAccountId());
                 if (va != null) {
-                    hasShadowLeg |= assertShadowLegEligible(va, sourceReq.getAccountNumber(), rule.getRail());
-                    assertPooledOrMirrored(va, sourceReq.getAccountNumber());
+                    hasShadowLeg |= assertShadowLegEligible(va, va.getVaNumber());
+                    assertPooledOrMirrored(va, va.getVaNumber());
                     sourceVasForMirroring.add(va);
                 }
             }
@@ -268,8 +266,9 @@ public class SweepService {
         VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId())
                 .orElseThrow(() -> new BusinessException("Target account not found: " + request.getTargetAccountId()));
         rule.setTargetAccountNumber(targetVa.getVaNumber()); // from the account, not the request
-        hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
-        assertCanHoldSweptCash(targetVa, request.getTargetAccountNumber());
+        assertExternalLegsFit(sourceVasForMirroring, targetVa);
+        hasShadowLeg |= assertShadowLegEligible(targetVa, targetVa.getVaNumber());
+        assertCanHoldSweptCash(targetVa, targetVa.getVaNumber());
         // No assertPooledOrMirrored() on the target: a dedicated Treasury pool/root
         // account is routinely the ONLY VA on its own physical account by design —
         // that's the destination the concentration exists to fill, not a stand-in for
@@ -473,7 +472,7 @@ public class SweepService {
      * PostgreSQL {@code 25P02} state that breaks every subsequent source in
      * the loop. Per-source transaction boundaries contain the damage.
      *
-     * <p><b>N+1 fix:</b> {@code executeSweep}/{@code createCommittedIhbDeposit}
+     * <p><b>N+1 fix:</b> {@code executeSweep}
      * used to re-run {@code findById} on the source VA, the target VA, and
      * both legal entities on EVERY source iteration — for a rule with 2000
      * sources that's up to ~10,000 individual lookups where the target VA and
@@ -532,7 +531,9 @@ public class SweepService {
                 executions.add(toExecutionResponse(execution));
                 processedCount++;
 
-                if (execution.isSuccess()) { // SUCCESS or SETTLED: executed sweeps are saved SETTLED, so == SUCCESS counted them as skipped
+                // SUCCESS or SETTLED: executed sweeps are saved SETTLED, so == SUCCESS counted them as skipped.
+                // COMMITTED: an external source instructed, its leg pending at the other bank (R12) - executed too.
+                if (execution.isSuccess() || execution.isCommitted()) {
                     successCount++;
                     totalSwept = totalSwept.add(execution.getSweepAmount());
                 } else if (execution.getStatus() == SweepExecution.ExecutionStatus.FAILED) {
@@ -699,6 +700,23 @@ public class SweepService {
                 return executionRepository.save(execution);
             }
 
+            // An account at another bank (spec external-bank-sweeps R3, R8-R12): sized on its last end-of-day statement,
+            // skipped with the reason when stale, pending or not covered by an authority; else instructed.
+            if (sourceVa.isOtherBankShadow(homeBankProperties.getBic())) {
+                ExternalSweepService.Plan plan = externalSweeps.plan(sourceVa, LocalDate.now(), b -> calculateSweepAmount(rule, b));
+                BigDecimal statementBalance = plan.balance() != null ? plan.balance() : sourceVa.getCurrentBalance();
+                execution.setBalanceBefore(statementBalance);
+                if (plan.skip() != null) {
+                    execution.setSweepAmount(BigDecimal.ZERO);
+                    execution.setBalanceAfter(statementBalance);
+                    execution.setStatus(SweepExecution.ExecutionStatus.SKIPPED);
+                    execution.setErrorMessage(plan.skip());
+                    return executionRepository.save(execution);
+                }
+                cashMoving = true;
+                return instructExternal(rule, sourceVa, targetVa, plan, legalEntityById, execution);
+            }
+
             // Sweep the account's own CASH, never its borrowing line.
             //
             // availableBalance is not cash on an IHB participant: IhbUnifiedService persists
@@ -781,7 +799,7 @@ public class SweepService {
                     boolean transferSuccess = executeTransfer(
                         sourceVa, targetVa, sweepAmount, rule.getCurrencyCode(),
                         execution.getExecutionReference(), "Cash concentration sweep - " + rule.getRuleName()
-                    );
+                    ) != null;
 
                     if (!transferSuccess) {
                         execution.setSweepAmount(BigDecimal.ZERO);
@@ -803,8 +821,10 @@ public class SweepService {
                                 ihbCurrentVa, sweepAmount, execution.getExecutionReference(), LocalDate.now());
                         }
 
-                        // Post sweep fee
-                        postSweepFee(source, execution, sweepAmount);
+                        // Post sweep fee; the source pays it, so its balance after shows it (R21)
+                        if (postSweepFee(source.getAccountId(), execution, sweepAmount) != null) {
+                            execution.setBalanceAfter(execution.getBalanceAfter().subtract(calculateSweepFee(sweepAmount)));
+                        }
 
                         log.info("Sweep executed: {} {} from {} ({}) to {} ({})",
                             sweepAmount, rule.getCurrencyCode(),
@@ -825,6 +845,39 @@ public class SweepService {
         }
 
         return executionRepository.save(execution);
+    }
+
+    /**
+     * Book and instruct one external source (D4, R11-R13), inside its per-source transaction: any failure rolls the
+     * whole source back. The home-bank target is credited at once (ledger, bank balance and physical account, as for
+     * any home-bank shadow). The source's LEDGER is debited too, its bank balance is not (the mirror is a no-op for
+     * another bank's account): the ledger shows the debit the home bank instructed, the bank balance stays the bank's
+     * own figure until its next statement, which then resets both. Execution COMMITTED while the instruction is
+     * pending. Both fees go to the target: the home bank cannot debit the other bank's account.
+     */
+    private SweepExecution instructExternal(SweepRule rule, VirtualAccount sourceVa, VirtualAccount targetVa,
+                                            ExternalSweepService.Plan plan, Map<UUID, LegalEntity> legalEntityById,
+                                            SweepExecution execution) {
+        BigDecimal amount = plan.amount();
+        LocalDate today = LocalDate.now();
+        // Committed float (multi-bank v1): the bank balance still shows the amount until the other bank's statement, so
+        // its effective balance leaves it out while pending; released on confirmation or failure. Saved by the transfer.
+        sourceVa.setBankBalanceCommitted(Objects.requireNonNullElse(sourceVa.getBankBalanceCommitted(), BigDecimal.ZERO).add(amount));
+        String targetCreditRef = executeTransfer(sourceVa, targetVa, amount, rule.getCurrencyCode(),
+                execution.getExecutionReference(), "External sweep (instructed) - " + rule.getRuleName());
+        execution.setSweepAmount(amount);
+        execution.setBalanceAfter(plan.balance().subtract(amount));
+        execution.setStatus(SweepExecution.ExecutionStatus.COMMITTED);
+        rule.setTotalSwept(rule.getTotalSwept().add(amount));
+        SweepExecution saved = executionRepository.save(execution);   // the fees and the instruction carry its id
+
+        LegalEntity owner = sourceVa.getOwningEntityId() != null ? legalEntityById.get(sourceVa.getOwningEntityId()) : null;
+        String ownerName = owner != null && owner.getEntityName() != null ? owner.getEntityName() : sourceVa.getVaName();
+        String standardFeeRef = postSweepFee(targetVa.getId(), saved, amount);
+        externalSweeps.instruct(saved, sourceVa, targetVa, ownerName, plan, today, standardFeeRef, targetCreditRef);
+        log.info("External sweep instructed: {} {} from {} (other bank) to {} under authority {}", amount,
+                rule.getCurrencyCode(), sourceVa.getVaNumber(), targetVa.getVaNumber(), plan.authority().getMandateReference());
+        return saved;
     }
 
     // ========================================================================
@@ -1024,7 +1077,7 @@ public class SweepService {
             // Execute the reverse transfer: Treasury → Source (deficit account)
             String executionRef = generateExecutionReference();
             cashMoving = true;
-            boolean transferSuccess = executeTransfer(
+            boolean transferSuccess = null != executeTransfer(
                     targetVa,   // FROM Treasury
                     sourceVa,   // TO deficit account
                     deficit,
@@ -1090,10 +1143,7 @@ public class SweepService {
      * mandated rail instruction, not a same-process ledger mirror — see ExternalMandate).
      */
     private void mirrorIfHomeBankShadow(VirtualAccount va, BigDecimal delta) {
-        if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
-            va.mirrorBankBalance(delta);
-            CoreBankingBalance.follow(physicalAccountRepository, va, delta);
-        }
+        CoreBankingBalance.mirrorIfHomeBankShadow(physicalAccountRepository, homeBankProperties.getBic(), va, delta);
     }
 
     /**
@@ -1104,34 +1154,70 @@ public class SweepService {
      *   (see {@link #mirrorIfHomeBankShadow}) — no mandate needed, it's the bank's
      *   own account.
      * - EXTERNAL_MIRROR, or a PHYSICAL_MIRROR at another bank: eligible only with an
-     *   ACTIVE {@link ExternalMandate} for this shadow that supports the rule's rail
-     *   — real money at another bank can't move without one.
+     *   authority ({@link ExternalMandate}) that passes {@link ExternalMandate#refusal}
+     *   today — real money at another bank can't move without one. No amount at rule
+     *   creation, so status and validity only; the rail scope is ignored (spec §4).
      * - Anything else (operational/aggregation/etc.): not a shadow leg — returns
      *   false, the sweep continues on today's plain ledger path, unchanged.
      *
      * @return true iff this leg is a shadow account (whether or not it required a mandate)
      */
-    private boolean assertShadowLegEligible(VirtualAccount va, String accountNumberForError, SweepRule.Rail rail) {
+    private boolean assertShadowLegEligible(VirtualAccount va, String accountNumberForError) {
         if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
             return true;
         }
         if (va.isPhysicalMirror() || va.isExternalMirror()) {
-            // rail==AUTO means "pick at execution time" (per SweepRule.Rail javadoc), so at
-            // creation time any active mandate on this shadow is sufficient; a specific rail
-            // must be explicitly supported by the mandate.
-            boolean mandated = externalMandateRepository
-                    .findByShadowVaIdAndStatus(va.getId(), ExternalMandate.MandateStatus.ACTIVE).stream()
-                    .anyMatch(m -> m.isActive(LocalDate.now())
-                            && (rail == SweepRule.Rail.AUTO || m.supportsRail(rail)));
-            if (!mandated) {
+            List<String> refusals = externalMandateRepository.findByShadowVaIdOrderByCreatedAtDesc(va.getId()).stream()
+                    .map(m -> m.refusal(null, LocalDate.now(), BigDecimal.ZERO))
+                    .collect(Collectors.toList());
+            if (refusals.stream().noneMatch(Objects::isNull)) {
                 throw new BusinessException(
-                        "Account " + accountNumberForError + " mirrors an external/non-home-bank account (BIC "
-                        + va.getBankSwift() + "). Real movement requires an ACTIVE ExternalMandate for rail "
-                        + rail + " — add one first, or remove this account from the rule.");
+                        "Account " + accountNumberForError + " is at another bank (BIC " + va.getBankSwift()
+                        + "): the home bank sweeps it only under an ACTIVE authority, and "
+                        + (refusals.isEmpty() ? "none is registered" : String.join("; ", refusals))
+                        + ". Bank operations register one on the account, or remove this account from the rule.");
             }
             return true;
         }
         return false;
+    }
+
+    /**
+     * External-bank sweeps (spec R4–R6, D1, D10): an account at another bank is only ever a source, swept into its
+     * own legal entity's account at the home bank in the same currency. The home bank instructs the other bank and
+     * credits its own account; it cannot instruct a credit at another bank, and cross-entity concentration goes
+     * through the in-house bank. The source's authority is checked separately ({@link #assertShadowLegEligible}).
+     */
+    private void assertExternalLegsFit(List<VirtualAccount> sources, VirtualAccount target) {
+        String homeBic = homeBankProperties.getBic();
+        if (target.isOtherBankShadow(homeBic)) {
+            throw new BusinessException("Target " + target.getVaNumber() + " is at another bank (BIC " + target.getBankSwift()
+                    + "): external sweeps concentrate into the home bank. Pick an account held at the home bank as the target.");
+        }
+        for (VirtualAccount source : sources) {
+            if (!source.isOtherBankShadow(homeBic)) continue;
+            // ponytail: "home-bank account" = a home-bank shadow, the only target whose real balance follows the
+            // credit (mirrorIfHomeBankShadow); a plain VA would take the cash on the ledger only.
+            if (!target.isHomeBankHeld(homeBic)) {
+                throw new BusinessException("Source " + source.getVaNumber() + " is at another bank, so the target must be"
+                        + " its legal entity's own account held at the home bank; " + target.getVaNumber() + " is not an"
+                        + " account held at the home bank.");
+            }
+            if (source.getOwningEntityId() == null || !source.getOwningEntityId().equals(target.getOwningEntityId())) {
+                throw new BusinessException("Source " + source.getVaNumber() + " (" + entityLabel(source) + ") is at another"
+                        + " bank and target " + target.getVaNumber() + " belongs to " + entityLabel(target) + ": a sweep from"
+                        + " another bank stays within one legal entity. Cross-entity concentration goes through the in-house bank.");
+            }
+            if (source.getCurrencyCode() == null || !source.getCurrencyCode().equalsIgnoreCase(target.getCurrencyCode())) {
+                throw new BusinessException("Source " + source.getVaNumber() + " is in " + source.getCurrencyCode() + " and target "
+                        + target.getVaNumber() + " in " + target.getCurrencyCode() + ": a sweep from another bank does not"
+                        + " convert currency. Pick the entity's home-bank account in " + source.getCurrencyCode() + ".");
+            }
+        }
+    }
+
+    private static String entityLabel(VirtualAccount va) {
+        return va.getOwningEntityCode() != null ? va.getOwningEntityCode() : "no legal entity";
     }
 
     /**
@@ -1211,7 +1297,8 @@ public class SweepService {
         physicalAccountRepository.saveAll(accounts);
     }
 
-    private boolean executeTransfer(VirtualAccount sourceVa, VirtualAccount targetVa,
+    /** @return the reference of the SWEEP_IN credit on the target; null when the source cannot cover the amount */
+    private String executeTransfer(VirtualAccount sourceVa, VirtualAccount targetVa,
                                     BigDecimal amount, String currency,
                                     String executionReference, String description) {
         // No catch: a failure part-way (balances changed, ledger rows not written) must reach the caller, which
@@ -1220,10 +1307,12 @@ public class SweepService {
             ? sourceVa.getAvailableBalance()
             : sourceVa.getCurrentBalance();
             
-        if (sourceAvailable == null || sourceAvailable.compareTo(amount) < 0) {
-            log.warn("Insufficient balance for sweep: available={}, required={}", 
+        // An account at another bank was sized on its statement (D6); its ledger only follows that and is not checked.
+        if (!sourceVa.isOtherBankShadow(homeBankProperties.getBic())
+                && (sourceAvailable == null || sourceAvailable.compareTo(amount) < 0)) {
+            log.warn("Insufficient balance for sweep: available={}, required={}",
                 sourceAvailable, amount);
-            return false;
+            return null;
         }
         
         BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
@@ -1247,20 +1336,18 @@ public class SweepService {
         virtualAccountRepository.save(targetVa);
         
         // Create transaction records
-        createSweepTransactions(
-            sourceVa, targetVa, 
+        return createSweepTransactions(
+            sourceVa, targetVa,
             amount, currency,
             sourceBalanceBefore, targetBalanceBefore,
             executionReference, description
         );
-        
-        return true;
     }
 
     /**
      * Create transaction records for sweep operation.
      */
-    private void createSweepTransactions(VirtualAccount sourceVa, VirtualAccount targetVa,
+    private String createSweepTransactions(VirtualAccount sourceVa, VirtualAccount targetVa,
                                          BigDecimal amount, String currency,
                                          BigDecimal sourceBalanceBefore, BigDecimal targetBalanceBefore,
                                          String executionReference, String description) {
@@ -1320,8 +1407,9 @@ public class SweepService {
         transactionRepository.save(sweepOut);
         transactionRepository.save(sweepIn);
         
-        log.debug("Created sweep transactions: OUT={}, IN={}", 
+        log.debug("Created sweep transactions: OUT={}, IN={}",
             sweepOut.getReferenceNumber(), sweepIn.getReferenceNumber());
+        return sweepIn.getReferenceNumber();
     }
 
     // ========================================================================
@@ -1334,23 +1422,29 @@ public class SweepService {
             || (va.getMirrorAccountType() != null && va.getMirrorAccountType() != VirtualAccount.MirrorAccountType.NONE);
     }
 
-    /** The fee of one execution that moved money; nothing for a sweep of zero (the minimum fee applies only to a sweep). */
-    private void postSweepFee(SweepRuleSource source, SweepExecution execution, BigDecimal sweepAmount) {
-        if (source.getAccountId() == null || sweepAmount == null || sweepAmount.signum() <= 0) return;
+    /**
+     * The fee of one execution that moved money, charged to {@code chargedVaId} (the source; the target for a source at
+     * another bank); nothing for a sweep of zero (the minimum fee applies only to a sweep).
+     * @return the fee's debit transaction reference, null when none was posted
+     */
+    private String postSweepFee(UUID chargedVaId, SweepExecution execution, BigDecimal sweepAmount) {
+        if (chargedVaId == null || sweepAmount == null || sweepAmount.signum() <= 0) return null;
 
         BigDecimal sweepFee = calculateSweepFee(sweepAmount);
-        if (sweepFee.compareTo(BigDecimal.ZERO) <= 0) return;
-        
+        if (sweepFee.compareTo(BigDecimal.ZERO) <= 0) return null;
+
         try {
-            feePostingService.postFee(
-                source.getAccountId(),
+            FeePostingService.FeePostingResult r = feePostingService.postFee(
+                chargedVaId,
                 sweepFee,
                 "SWEEP_EXECUTION_FEE",
                 execution.getId(),
                 "Cash concentration sweep fee - " + execution.getExecutionReference()
             );
+            return r != null && r.getDebitTransaction() != null ? r.getDebitTransaction().getReferenceNumber() : null;
         } catch (Exception e) {
             log.error("Failed to post sweep fee for {}: {}", execution.getExecutionReference(), e.getMessage());
+            return null;
         }
     }
     

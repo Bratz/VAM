@@ -17,7 +17,6 @@ export const usePermissions = () => {
     canSettleNettingCycle: isTreasury,
     canApprovePOBORecharge: isTreasury,
     canRejectPOBORecharge: isTreasury,
-    canCreateIHBLoan: currentEntity?.canLend || false,
     canBorrowFromIHB: currentEntity?.canBorrow || false,
 
     // View permissions

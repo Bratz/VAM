@@ -18,7 +18,8 @@ import java.util.UUID;
  *  - One shadow can carry multiple mandates per rail (e.g. SWIFT MT103 vs SEPA SCT).
  *  - Mandate document references (PDF URLs, eMandate IDs) live alongside the limits.
  *
- * Only mandates in {@link MandateStatus#ACTIVE} are eligible for sweep instruction.
+ * Only mandates in {@link MandateStatus#ACTIVE} are eligible for sweep instruction ({@link #refusal}).
+ * Bank operations manage them through {@code ExternalAuthorityService}.
  */
 @Entity
 @Table(name = "external_mandates", indexes = {
@@ -48,6 +49,14 @@ public class ExternalMandate extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "rail_scope", length = 30)
     private SweepRule.Rail railScope;
+
+    /**
+     * Request for transfer the home bank sends under this authority (spec D2). Nullable column (added to an existing
+     * table): NULL reads as MT101 — see {@link #getInstructionFormat()}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "instruction_format", length = 10)
+    private InstructionFormat instructionFormat;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "mandate_type", nullable = false, length = 30)
@@ -95,15 +104,43 @@ public class ExternalMandate extends BaseEntity {
     // Helpers
     // ------------------------------------------------------------------------
 
-    public boolean isActive(LocalDate asOf) {
-        if (status != MandateStatus.ACTIVE) return false;
-        if (validFrom != null && asOf.isBefore(validFrom)) return false;
-        if (validTo != null && asOf.isAfter(validTo)) return false;
-        return true;
+    public InstructionFormat getInstructionFormat() {
+        return instructionFormat != null ? instructionFormat : InstructionFormat.MT101;
     }
 
-    public boolean supportsRail(SweepRule.Rail rail) {
-        return railScope == null || railScope == rail;
+    /**
+     * The authority check (spec R3) — the only one: rule creation calls it now, the sweep run (Phase 3) per source.
+     * The rail scope is not looked at (spec §4): the rail is the authority's own request for transfer.
+     *
+     * @param amount          the amount to instruct; null when there is none yet (rule creation): status and validity only
+     * @param date            the execution date
+     * @param instructedToday already instructed under this authority on {@code date}, counted against {@code maxDaily};
+     *                        Phase 3 sums its {@code sweep_instructions}, rule creation has no amount so it is unused
+     * @return null when this authority covers it, else the reason it does not
+     */
+    public String refusal(BigDecimal amount, LocalDate date, BigDecimal instructedToday) {
+        String who = "authority " + mandateReference;
+        if (status != MandateStatus.ACTIVE) return who + " is " + status;
+        if (validFrom != null && date.isBefore(validFrom)) return who + " is valid from " + validFrom;
+        if (validTo != null && date.isAfter(validTo)) return who + " expired on " + validTo;
+        if (amount == null) return null;
+        if (maxPerTransaction != null && amount.compareTo(maxPerTransaction) > 0) {
+            return who + ": " + plain(amount) + " is over the limit per transaction of " + plain(maxPerTransaction);
+        }
+        if (maxDaily != null && instructedToday.add(amount).compareTo(maxDaily) > 0) {
+            return who + ": " + plain(amount) + " with " + plain(instructedToday)
+                    + " already instructed on " + date + " is over the daily limit of " + plain(maxDaily);
+        }
+        return null;
+    }
+
+    private static String plain(BigDecimal v) {
+        return v.stripTrailingZeros().toPlainString();
+    }
+
+    public enum InstructionFormat {
+        MT101,
+        PAIN_001
     }
 
     public enum MandateType {

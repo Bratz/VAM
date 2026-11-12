@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, CheckCircle } from 'lucide-react';
 import { Button } from '../ui';
-import { Modal, Stepper } from '../ui/enhanced';
+import { Alert, Modal, Stepper } from '../ui/enhanced';
 import {
   Corporate,
+  ExternalAuthority,
   Program,
   VirtualAccount,
   corporatesApi,
+  externalAuthorityApi,
+  multiBankLiquidityApi,
   programsApi,
   virtualAccountsApi,
 } from '../../services/api';
@@ -29,6 +32,10 @@ export interface CreateRuleModalProps {
   onClose: () => void;
   onSave: (rule: any) => Promise<void>;
 }
+
+/** An authority the backend's rule check would accept today: ACTIVE and within validity (ExternalMandate.refusal). */
+const coversToday = (a: ExternalAuthority, today: string) =>
+  a.status === 'ACTIVE' && (!a.validFrom || a.validFrom <= today) && (!a.validTo || a.validTo >= today);
 
 const INITIAL_FORM: CreateRuleFormData = {
   ruleName: '',
@@ -61,6 +68,9 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
   const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   const [formData, setFormData] = useState<CreateRuleFormData>({ ...INITIAL_FORM });
+  // Accounts at another bank of the selected corporate: id -> authorised today (external-bank sweeps R20).
+  const [otherBank, setOtherBank] = useState<Record<string, boolean>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Fetch corporates on modal open
   useEffect(() => {
@@ -74,9 +84,11 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
     if (formData.corporateId) {
       fetchPrograms(formData.corporateId);
       fetchAccounts(formData.corporateId);
+      fetchOtherBank(formData.corporateId);
     } else {
       setPrograms([]);
       setAccounts([]);
+      setOtherBank({});
     }
   }, [formData.corporateId]);
 
@@ -129,11 +141,33 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
     }
   };
 
+  // ponytail: PHYSICAL_MIRROR shadows only (the multi-bank summary); an EXTERNAL_MIRROR is caught by the backend's
+  // refusal, shown on submit.
+  const fetchOtherBank = async (corporateId: string) => {
+    try {
+      const [summary, authorities] = await Promise.all([
+        multiBankLiquidityApi.getSummary(corporateId),
+        externalAuthorityApi.forCorporate(corporateId),
+      ]);
+      const today = new Date().toISOString().slice(0, 10);
+      const map: Record<string, boolean> = {};
+      (summary?.data?.banks ?? []).filter(b => !b.homeBank).forEach(b => b.currencies.forEach(c => c.shadows.forEach(sh => {
+        map[sh.vaId] = (authorities ?? []).some(a => a.shadowVaId === sh.vaId && coversToday(a, today));
+      })));
+      setOtherBank(map);
+    } catch (err) {
+      console.error('Failed to fetch accounts at other banks:', err);
+      setOtherBank({});
+    }
+  };
+
   const resetForm = () => {
     setStep(1);
     setFormData({ ...INITIAL_FORM });
     setPrograms([]);
     setAccounts([]);
+    setOtherBank({});
+    setSubmitError(null);
   };
 
   const handleTargetAccountChange = (accountId: string) => {
@@ -193,6 +227,7 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
 
   const handleSubmit = async () => {
     setSaving(true);
+    setSubmitError(null);
     try {
       const payload = {
         ruleName: formData.ruleName,
@@ -217,7 +252,9 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
       onClose();
       resetForm();
     } catch (err) {
-      console.error('Failed to create rule:', err);
+      // The backend says why (e.g. an account at another bank with no authority, a cross-entity target).
+      setSubmitError((err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        ?? (err as Error)?.message ?? 'The rule was not created');
     } finally {
       setSaving(false);
     }
@@ -255,6 +292,7 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
         <Step2Accounts
           formData={formData}
           accounts={accounts}
+          otherBank={otherBank}
           loadingAccounts={loadingAccounts}
           onTargetAccountChange={handleTargetAccountChange}
           onToggleSourceAccount={toggleSourceAccount}
@@ -272,6 +310,12 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
           selectedCorporate={selectedCorporate}
           selectedProgram={selectedProgram}
         />
+      )}
+
+      {submitError && (
+        <Alert variant="error" title="The rule was not created" onClose={() => setSubmitError(null)} className="mt-6">
+          {submitError}
+        </Alert>
       )}
 
       {/* Navigation */}

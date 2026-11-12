@@ -51,9 +51,9 @@ interface IhbEntity {
   entityType: 'PARENT' | 'SUBSIDIARY' | 'BRANCH' | 'DIVISION' | 'JOINT_VENTURE';
   corporateId: string;
   ihbEnabled: boolean;
-  ihbCreditLimit: number;
-  ihbCurrentExposure: number;
-  ihbAvailableLimit: number;
+  creditLimit: number;
+  currentExposure: number;
+  availableLimit: number;
   lendingRateSpread: number;
   borrowingRateSpread: number;
   /** The spreads are built-in defaults nobody set. */
@@ -62,9 +62,6 @@ interface IhbEntity {
   canBorrow: boolean;
   settlementVaId?: string;
   ihbCurrency: string;
-  totalLentOut: number;
-  totalDeposited: number;
-  netIhbPosition: number;
   utilizationPercent: number;
   limitWarning: boolean;
   limitBreached: boolean;
@@ -261,18 +258,15 @@ const EntityCard: React.FC<{
   onCreateCurrentAccount?: () => void;
 }> = ({ entity, onViewPosition, onCreateCurrentAccount }) => {
   // Safe number handling - default to 0 for null/undefined
-  const netPosition = entity.netIhbPosition ?? 0;
-  const totalLentOut = entity.totalLentOut ?? 0;
-  const totalDeposited = entity.totalDeposited ?? 0;
-  const creditLimit = entity.ihbCreditLimit ?? 0;
-  const currentExposure = entity.ihbCurrentExposure ?? 0;
-  const availableLimit = entity.ihbAvailableLimit ?? 0;
+  const creditLimit = entity.creditLimit ?? 0;
+  const currentExposure = entity.currentExposure ?? 0;
+  const availableLimit = entity.availableLimit ?? 0;
   const utilizationPercent = entity.utilizationPercent ?? 0;
   const lendingSpread = entity.lendingRateSpread ?? 0;
   const borrowingSpread = entity.borrowingRateSpread ?? 0;
   const currency = entity.ihbCurrency || 'AED';
 
-  const isPositive = netPosition >= 0;
+  const isPositive = currentExposure <= 0;
   const utilizationColor = entity.limitBreached ? 'error' : entity.limitWarning ? 'warning' : 'success';
 
   // Determine entity role: Treasury Center vs IHB Participant
@@ -324,63 +318,18 @@ const EntityCard: React.FC<{
         </div>
 
         <div className="space-y-3">
-          {/* Treasury Center View - Focus on Lending Portfolio */}
+          {/* Treasury Center View */}
           {isTreasuryCenter ? (
-            <>
-              {/* Lending Portfolio Summary */}
-              <div className="bg-warning-50 rounded-lg p-3 border border-warning-100 dark:bg-warning-500/10 dark:border-warning-500/30">
-                <p className="text-caption font-semibold text-warning-700 uppercase tracking-wide mb-2 dark:text-warning-300">Lending Portfolio</p>
-                <div className="flex justify-between items-baseline">
-                  <span className="caption-warning">Total Lent Out</span>
-                  <span className="text-body-lg font-bold text-warning-900">{formatCurrency(totalLentOut, currency)}</span>
-                </div>
-                <div className="flex justify-between items-baseline mt-1">
-                  <span className="caption-warning">Deposits Received</span>
-                  <span className="text-body-sm font-semibold text-warning-800 dark:text-warning-300">{formatCurrency(totalDeposited, currency)}</span>
-                </div>
-              </div>
-
-              {/* Net Position */}
-              <div className="flex justify-between items-baseline">
-                <span className="label">Net IHB Position</span>
-                <span className={cn('text-body-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-                  {formatCurrency(netPosition, currency)}
-                </span>
-              </div>
-
-              {/* Lending Rate */}
-              <div className="pt-3 border-t border-edge">
-                <div className="flex justify-between text-body-sm">
-                  <span className="text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</span>
-                  <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
-                </div>
-              </div>
-            </>
+            <div className="flex justify-between text-body-sm">
+              <span className="text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</span>
+              <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
+            </div>
           ) : (
             <>
               {/* Participant View - Focus on Borrowing Capacity */}
               <div className="flex justify-between items-baseline">
-                <span className="label">Net Position</span>
-                <span className={cn('text-body-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-                  {formatCurrency(netPosition, currency)}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-body-sm">
-                {entity.canLend && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Lent Out</span>
-                    <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(totalLentOut, currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-neutral-500 dark:text-neutral-400">Deposited</span>
-                  <span className="font-medium text-success-600 dark:text-success-300">{formatCurrency(totalDeposited, currency)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-500 dark:text-neutral-400">Borrowed</span>
-                  <span className="font-medium text-error-600 dark:text-error-300">{formatCurrency(currentExposure, currency)}</span>
-                </div>
+                <span className="label">IHB debit balance</span>
+                <span className="text-body-lg font-bold tracking-tight text-error-600 dark:text-error-300">{formatCurrency(currentExposure, currency)}</span>
               </div>
 
               {/* Credit Limit & Utilization */}
@@ -632,7 +581,7 @@ const InHouseBankPage: React.FC = () => {
       ...prev,
       participantEntityId: entity.id,
       currencyCode: entity.ihbCurrency || 'AED',
-      creditLimit: entity.ihbCreditLimit?.toString() || '',
+      creditLimit: entity.creditLimit?.toString() || '',
     }));
     setShowCurrentAccountModal(true);
   };
@@ -1082,24 +1031,9 @@ const InHouseBankPage: React.FC = () => {
             {/* Position Summary */}
             <StatStrip>
               <StatTile
-                tone="success"
-                label="Total Lent Out"
-                value={<TileAmount value={selectedEntity.totalLentOut ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
-              />
-              <StatTile
-                tone="info"
-                label="Total Deposited"
-                value={<TileAmount value={selectedEntity.totalDeposited ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
-              />
-              <StatTile
                 tone="danger"
-                label="Current Exposure"
-                value={<TileAmount value={selectedEntity.ihbCurrentExposure ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
-              />
-              <StatTile
-                tone={(selectedEntity.netIhbPosition ?? 0) >= 0 ? 'success' : 'danger'}
-                label="Net IHB Position"
-                value={<TileAmount value={selectedEntity.netIhbPosition ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
+                label="IHB Debit Balance"
+                value={<TileAmount value={selectedEntity.currentExposure ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
               />
             </StatStrip>
 
@@ -1111,19 +1045,19 @@ const InHouseBankPage: React.FC = () => {
                   <div>
                     <p className="caption">Credit Limit</p>
                     <p className="body-strong font-semibold">
-                      {formatCurrency(selectedEntity.ihbCreditLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
+                      {formatCurrency(selectedEntity.creditLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
                   <div>
                     <p className="caption">Used</p>
                     <p className="text-body-sm font-semibold text-error-600 dark:text-error-300">
-                      {formatCurrency(selectedEntity.ihbCurrentExposure ?? 0, selectedEntity.ihbCurrency || 'AED')}
+                      {formatCurrency(selectedEntity.currentExposure ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
                   <div>
                     <p className="caption">Available</p>
                     <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
-                      {formatCurrency(selectedEntity.ihbAvailableLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
+                      {formatCurrency(selectedEntity.availableLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
                 </div>
@@ -1243,7 +1177,7 @@ const InHouseBankPage: React.FC = () => {
                     ...prev,
                     participantEntityId: e.target.value,
                     currencyCode: entity?.ihbCurrency || prev.currencyCode,
-                    creditLimit: entity?.ihbCreditLimit?.toString() || prev.creditLimit,
+                    creditLimit: entity?.creditLimit?.toString() || prev.creditLimit,
                   }));
                 }}
               >

@@ -10,6 +10,7 @@ import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { AccountStatementLines } from '../components/statements/Statements';
+import { ExternalAuthorityPanel } from '../components/treasury/ExternalAuthorityPanel';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -1757,6 +1758,9 @@ const PhysicalAccountsPage: React.FC = () => {
                     <div><p className="caption">Available</p><p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(shadow.bankAvailableBalance, shadow.currencyCode)}</p></div>
                     <div><p className="caption">On Hold</p><p className="font-semibold text-warning-600 dark:text-warning-300">{onHold > 0 ? formatCurrency(onHold, shadow.currencyCode) : '—'}</p></div>
                   </div>
+                  {(shadow.bankBalanceCommitted ?? 0) > 0 && (
+                    <p className="caption">Pending sweep: {formatCurrency(shadow.bankBalanceCommitted ?? 0, shadow.currencyCode)} (awaiting statement)</p>
+                  )}
                   <div className="flex items-center justify-between caption">
                     <span className="flex items-center gap-1"><Database className="w-3 h-3" />
                       {statementFed
@@ -1768,6 +1772,11 @@ const PhysicalAccountsPage: React.FC = () => {
                 </div>
               );
             })()}
+
+            {/* External shadows only: the home bank sweeps an account at another bank under the corporate's authority. */}
+            {selectedAccount.isExternalBank && shadowFor(selectedAccount) && (
+              <ExternalAuthorityPanel shadowVaId={shadowFor(selectedAccount).id} currency={selectedAccount.currency} />
+            )}
 
             <AccountStatementLines physicalAccountId={selectedAccount.id} currency={selectedAccount.currency} />
 

@@ -17,6 +17,27 @@ import { RunSweepsModal } from '../components/concentration/RunSweepsModal';
 import { RuleCard } from '../components/concentration/RuleCard';
 import { ExecutionHistory } from '../components/concentration/ExecutionHistory';
 import { ViewExecutionModal } from '../components/concentration/ViewExecutionModal';
+import { SWEPT_STATUSES } from '../components/concentration/constants';
+
+// ============================================================================
+// PER-CURRENCY TOTALS — amounts in different currencies are never added up (no FX on this page)
+// ============================================================================
+const sumByCurrency = (items: [string | undefined, number][]) =>
+  items.reduce<Record<string, number>>((acc, [ccy, amount]) => {
+    const c = ccy || 'AED';
+    acc[c] = (acc[c] ?? 0) + amount;
+    return acc;
+  }, {});
+
+const CurrencyTotals: React.FC<{ totals: Record<string, number> }> = ({ totals }) => {
+  const entries = Object.entries(totals).filter(([, v]) => v !== 0);
+  if (entries.length === 0) return <TileAmount value={0} showCurrency={false} />;
+  return (
+    <span className="flex flex-wrap gap-x-4">
+      {entries.map(([c, v]) => <TileAmount key={c} value={v} currency={c} />)}
+    </span>
+  );
+};
 
 // ============================================================================
 // LOADING COMPONENT
@@ -227,22 +248,25 @@ const CashConcentrationPage: React.FC = () => {
     return true;
   });
 
-  // Calculate today's swept amount
+  // Today's swept, per currency: settled, legacy SUCCESS and instructed-at-another-bank (COMMITTED) executions.
+  // ponytail: from the history page loaded (latest 20), as before; a backend daily total if that ever falls short.
   const today = new Date().toDateString();
-  const todaySwept = executions
+  const todaySwept = sumByCurrency(executions
     .filter(exec => {
       const execDate = (exec as any).executionTime || (exec as any).executedAt;
-      return execDate && new Date(execDate).toDateString() === today && exec.status === 'SUCCESS';
+      return execDate && new Date(execDate).toDateString() === today && SWEPT_STATUSES.includes(exec.status);
     })
-    .reduce((sum, exec) => sum + ((exec as any).sweepAmount || (exec as any).amountSwept || 0), 0);
+    .map(exec => [exec.currencyCode, (exec as any).sweepAmount || (exec as any).amountSwept || 0]));
+  const totalSwept = sumByCurrency(rules.map(r => [r.currencyCode, (r as any).totalSwept || 0]));
 
   const tabs = [
     { id: 'rules', label: 'Sweep Rules', icon: Layers, count: filteredRules.length },
     { id: 'history', label: 'Execution History', icon: History, count: filteredExecutions.length },
   ];
 
-  // Loading state
-  if (loading) {
+  // Loading state: first load only. A refetch (e.g. after Mark rejected) keeps the page, so an open execution's
+  // details stay mounted with their message instead of being unmounted behind a full-page spinner.
+  if (loading && rules.length === 0) {
     return (
       <Page>
         <LoadingSpinner />
@@ -286,12 +310,12 @@ const CashConcentrationPage: React.FC = () => {
       <HeroMetricCard
         primary={{
           label: 'Total Swept',
-          value: <TileAmount value={stats.totalSwept} showCurrency={false} />,
+          value: <CurrencyTotals totals={totalSwept} />,
           sub: 'Cumulative funds concentrated across all rules',
         }}
         secondary={{
           label: "Today's Swept",
-          value: <TileAmount value={todaySwept} showCurrency={false} />,
+          value: <CurrencyTotals totals={todaySwept} />,
           sub: 'Net concentration today',
         }}
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
@@ -403,7 +427,9 @@ const CashConcentrationPage: React.FC = () => {
       <ViewExecutionModal
         isOpen={showViewExecutionModal}
         onClose={() => { setShowViewExecutionModal(false); setSelectedExecution(null); }}
-        execution={selectedExecution}
+        execution={executions.find(e => e.id === selectedExecution?.id) ?? selectedExecution}
+        rule={rules.find(r => r.id === selectedExecution?.ruleId)}
+        onChanged={() => { fetchRules(); fetchHistory(); }}
       />
     </Page>
   );

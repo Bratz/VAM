@@ -129,17 +129,8 @@ public class IntercompanyTransaction extends BaseEntity {
     private UUID originalReferenceId;
 
     // ========================================================================
-    // IHB INTEGRATION
+    // INTEREST
     // ========================================================================
-
-    @Column(name = "ihb_loan_id")
-    private UUID ihbLoanId;
-
-    @Column(name = "ihb_deposit_id")
-    private UUID ihbDepositId;
-
-    @Column(name = "ihb_interest_rate", precision = 8, scale = 4)
-    private BigDecimal ihbInterestRate;
 
     @Column(name = "accrued_interest", precision = 19, scale = 4)
     private BigDecimal accruedInterest;

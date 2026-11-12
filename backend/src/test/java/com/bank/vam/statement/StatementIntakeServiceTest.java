@@ -12,6 +12,7 @@ import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
 import com.bank.vam.service.notification.NotificationService;
+import com.bank.vam.service.treasury.ExternalSweepService;
 import com.bank.vam.statement.BankStatement.Status;
 import com.bank.vam.statement.BankStatementFile.Channel;
 import com.bank.vam.statement.StatementIntakeService.IntakeResult;
@@ -30,6 +31,7 @@ import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -52,8 +54,9 @@ class StatementIntakeServiceTest {
     private final VirtualAccountRepository shadowRepo = mock(VirtualAccountRepository.class);
     private final ShadowBalanceSnapshotRepository snapshotRepo = mock(ShadowBalanceSnapshotRepository.class);
     private final NotificationService notifications = mock(NotificationService.class);
+    private final ExternalSweepService externalSweeps = mock(ExternalSweepService.class);
     private final StatementIntakeService service = new StatementIntakeService(files, statementRepo, lineRepo, accountRepo,
-            shadowRepo, snapshotRepo, mock(PlatformTransactionManager.class), notifications);
+            shadowRepo, snapshotRepo, mock(PlatformTransactionManager.class), notifications, externalSweeps);
 
     private final List<BankStatement> statements = new ArrayList<>();
     private final List<BankStatementLine> lines = new ArrayList<>();
@@ -334,6 +337,42 @@ class StatementIntakeServiceTest {
         assertTrue(r.statements().isEmpty());
         verify(notifications).notifyOnce(isNull(), eq(NotificationType.SYSTEM_ALERT), eq(NotificationCategory.ERROR),
                 eq("Bank statement file not read: x.txt"), any(), any(), eq(r.fileId()), any(), any(), any());
+    }
+
+    // ---- external-bank sweeps R15, R17: an applied end-of-day statement is offered to the sweep confirmation ----
+
+    @Test
+    void endOfDayStatement_offersItsFinalLinesToSweepConfirmation_noBreak() throws Exception {
+        VirtualAccount shadow = account(GB07, null, null, "GBP", DataSource.SWIFT_MT940, "125000.00");
+
+        StatementResult s = service.intake(file("mt940-single.sta"), "mt940-single.sta", Channel.INBOX).statements().get(0);
+
+        assertFalse(s.breakFlag());
+        verify(externalSweeps).confirm(eq(shadow.getId()), argThat(l -> l.size() == 3
+                && l.stream().allMatch(x -> x.getStatus() == BankStatementLine.Status.FINAL && s.id().equals(x.getBankStatementId()))));
+    }
+
+    @Test
+    void sweepConfirmationThatFails_leavesTheStatementApplied() throws Exception {
+        VirtualAccount shadow = account(GB07, null, null, "GBP", DataSource.SWIFT_MT940, "125000.00");
+        doThrow(new IllegalStateException("boom")).when(externalSweeps).confirm(any(), any());
+
+        IntakeResult r = service.intake(file("mt940-single.sta"), "mt940-single.sta", Channel.INBOX);
+
+        assertEquals(1, r.applied());
+        assertEquals(0, r.refused());
+        assertEquals(Status.APPLIED, r.statements().get(0).status());
+        assertBalance("135330.25", shadow.getBankBalance());
+        assertEquals(3, lines.size());
+    }
+
+    @Test
+    void intradayOrCoreBankingFedStatement_confirmsNothing() throws Exception {
+        account(GB07, null, null, "GBP", DataSource.CORE_BANKING, "125000.00");
+        service.intake(file("mt940-single.sta"), "cbs.sta", Channel.INBOX);
+        service.intake(file("mt942-intraday.sta"), "mt942.sta", Channel.INBOX);
+
+        verify(externalSweeps, never()).confirm(any(), any());
     }
 
     // ---- helpers ----

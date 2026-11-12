@@ -107,12 +107,8 @@ public class IntercompanyService {
                 .entityId(entityId)
                 .entityCode(entity.getEntityCode())
                 .entityName(entity.getEntityName())
-                .loansAsLender(Collections.emptyList())
-                .loansAsBorrower(Collections.emptyList())
-                .deposits(Collections.emptyList())
                 .totalLent(totalLent)
                 .totalBorrowed(totalBorrowed)
-                .totalDeposited(entity.getTotalDeposited() != null ? entity.getTotalDeposited() : BigDecimal.ZERO)
                 .netPosition(totalLent.subtract(totalBorrowed))
                 .build();
     }
@@ -664,8 +660,6 @@ public class IntercompanyService {
                 .currencyCode(tx.getCurrencyCode())
                 .charges(tx.getCharges())
                 .netAmount(tx.getNetAmount())
-                .ihbLoanId(tx.getIhbLoanId())
-                .ihbDepositId(tx.getIhbDepositId())
                 .viban(tx.getViban())
                 .vibanId(tx.getVibanId())
                 .status(tx.getStatus().name())

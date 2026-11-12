@@ -99,7 +99,6 @@ public class PayablesDto {
         /** ihb-fx D7: AWAITING_FX while treasury negotiates the rate, with why; null otherwise. */
         private String fxStatus;
         private String fxStatusReason;
-        private UUID poboIhbLoanId;
         private UUID poboRechargeId;
         private LocalDateTime poboRequestedAt;
         private String poboRequestedBy;

@@ -65,7 +65,6 @@ public class NettingDto {
         private UUID payableId;
         private UUID receivableId;
         private UUID intercompanyRechargeId;
-        private UUID ihbTransactionId;
         
         // Due date for aging
         private LocalDate dueDate;
@@ -81,7 +80,6 @@ public class NettingDto {
         private boolean includePayables = true;
         private boolean includeReceivables = true;
         private boolean includePoboRecharges = true;
-        private boolean includeIhbTransactions = false; // Future
     }
 
     // ========================================================================
@@ -153,7 +151,6 @@ public class NettingDto {
         private UUID payableId;
         private UUID receivableId;
         private UUID intercompanyRechargeId;
-        private UUID ihbTransactionId;
         private UUID sourceEntityId;
         private String sourceEntityCode;
         
@@ -241,7 +238,6 @@ public class NettingDto {
         private Integer rechargesAdded;           // Total recharges (POBO + COBO)
         private Integer poboRechargesAdded;       // POBO recharges (subsidiary owes treasury)
         private Integer coboRechargesAdded;       // COBO recharges (treasury owes subsidiary)
-        private Integer ihbTransactionsAdded;
         private Integer totalAdded;
         private Integer totalEntries;
         private BigDecimal totalGross;

@@ -347,11 +347,6 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
      * Find COBO by recharge ID.
      */
     Optional<Receivable> findByCoboRechargeId(UUID coboRechargeId);
-    
-    /**
-     * Find COBO by IHB deposit ID.
-     */
-    Optional<Receivable> findByCoboIhbDepositId(UUID coboIhbDepositId);
 
     // ========================================================================
     // PHASE 3: NETTING QUERIES

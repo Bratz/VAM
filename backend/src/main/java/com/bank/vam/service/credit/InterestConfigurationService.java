@@ -43,7 +43,7 @@ import java.util.UUID;
  *    - Source: Corporate Treasury/CFO
  *    - Represents: Internal transfer pricing for intercompany transactions
  *    - Corporate CAN create, update, delete
- *    - Used for: IHB loans, intercompany credit, internal settlements
+ *    - Used for: IHB current-account rates, intercompany credit, internal settlements
  *    - SPREAD over external rates (value capture for treasury)
  * 
  * BUSINESS RULES:

@@ -13,6 +13,7 @@ import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
 import com.bank.vam.service.notification.NotificationService;
+import com.bank.vam.service.treasury.ExternalSweepService;
 import com.bank.vam.statement.BankStatement.Status;
 import com.bank.vam.statement.BankStatementFile.Channel;
 import com.bank.vam.statement.parse.ParseResult;
@@ -63,6 +64,7 @@ public class StatementIntakeService {
     private final ShadowBalanceSnapshotRepository snapshots;
     private final PlatformTransactionManager transactionManager;
     private final NotificationService notifications;
+    private final ExternalSweepService externalSweeps;
 
     public record IntakeResult(UUID fileId, String fileName, BankStatementFile.Status status, String error,
                                int applied, int duplicates, int refused, List<StatementResult> statements) {
@@ -104,12 +106,16 @@ public class StatementIntakeService {
         TransactionTemplate own = new TransactionTemplate(transactionManager);
         own.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         for (ParsedStatement p : parsed.statements()) {
+            BankStatement s;
             try {
-                taken.add(own.execute(status -> take(fileId, p)));
+                s = own.execute(status -> take(fileId, p));
             } catch (RuntimeException e) {
                 log.warn("Statement {} for {} in {} not applied", p.statementId(), account(p), fileName, e);
                 taken.add(statements.save(refuse(header(fileId, p), "not applied: " + e.getMessage())));
+                continue;
             }
+            taken.add(s);
+            confirmSweeps(own, s);
         }
 
         file.setAppliedCount(count(taken, Status.APPLIED));
@@ -143,6 +149,24 @@ public class StatementIntakeService {
                     "BANK_STATEMENT_FILE", r.fileId(), cut(r.fileName(), 100), "file-ingest", "Open intake log");
         } catch (RuntimeException e) {
             log.error("Alert for statement file {} not raised", r.fileName(), e);
+        }
+    }
+
+    /**
+     * External-bank sweeps R15: an end-of-day statement just applied may confirm sweep instructions pending on its
+     * account. After the statement's own transaction and in another: a failure here is logged and leaves them in flight
+     * (the confirmation window then expires them), never the statement unapplied. Breaks are not touched (R17).
+     * ponytail: the day's snapshot was written with the committed float still raised, so its effective balance is low
+     * by a confirmed amount; nothing reads the snapshot's effective balance today.
+     */
+    private void confirmSweeps(TransactionTemplate own, BankStatement s) {
+        if (s.getStatus() != Status.APPLIED || s.getKind() != Kind.END_OF_DAY || s.isCbsFed()) return;
+        try {
+            own.executeWithoutResult(t -> externalSweeps.confirm(s.getShadowVaId(),
+                    lines.findByBankStatementIdInAndStatus(List.of(s.getId()), BankStatementLine.Status.FINAL)));
+        } catch (RuntimeException e) {
+            log.error("Sweep confirmation for statement {} of shadow {} failed; its instructions stay pending",
+                    s.getStatementId(), s.getShadowVaId(), e);
         }
     }
 

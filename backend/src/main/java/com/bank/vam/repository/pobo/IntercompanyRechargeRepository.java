@@ -59,10 +59,6 @@ public interface IntercompanyRechargeRepository extends JpaRepository<Intercompa
            "WHERE ir.payerEntityId = :payerId AND ir.status != 'CANCELLED' " +
            "GROUP BY ir.behalfEntityCode")
     List<Object[]> summarizeByBehalfEntity(@Param("payerId") UUID payerEntityId);
-    
-    @Query("SELECT ir FROM IntercompanyRecharge ir WHERE ir.createsIntercompanyLoan = true " +
-           "AND ir.ihbLoanId IS NOT NULL")
-    List<IntercompanyRecharge> findWithIhbLoans();
 
     // ========================================================================
     // RECHARGE TYPE & FLOW DIRECTION QUERIES

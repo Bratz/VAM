@@ -143,7 +143,7 @@ public class PayablesController {
 
     @GetMapping("/pobo/history")
     @Operation(summary = "Get POBO payment history", 
-               description = "Returns executed POBO payments with IHB loan references")
+               description = "Returns executed POBO payments")
     public ResponseEntity<PayableListResponse> getPoboHistory(
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestParam(required = false) UUID owningEntityId,

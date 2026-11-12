@@ -124,6 +124,46 @@ public class SweepInstruction extends BaseEntity {
     @Column(name = "reconciliation_ref", length = 100)
     private String reconciliationRef;
 
+    // External-bank sweeps (docs/specs/external-bank-sweeps.md R11-R16) ---------------------------------------------
+    // The home bank's request for transfer from an account at another bank: no rail adapter sends it (R14), so
+    // INSTRUCTED = pending at the other bank, SETTLED = confirmed by its statement, REJECTED (marked rejected) or
+    // EXPIRED (confirmation window passed) = failed. idempotencyKey = externalReference = the end-to-end reference;
+    // mandateId = the authority; rail = AUTO (the format below is the real message type). Columns added by ddl-auto,
+    // nullable: the table predates them (empty, created for multi-bank v1).
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "instruction_format", length = 10)
+    private ExternalMandate.InstructionFormat instructionFormat;
+
+    /** The MT101 block-4 body or pain.001 XML (rail_message_payload is jsonb and cannot hold either). */
+    @Column(name = "message_text", columnDefinition = "TEXT")
+    private String messageText;
+
+    @Column(name = "rule_id")
+    private UUID ruleId;
+
+    @Column(name = "execution_date")
+    private java.time.LocalDate executionDate;
+
+    /** The other bank's statement line that confirmed the debit (Phase 4). */
+    @Column(name = "confirmed_by_line_id")
+    private UUID confirmedByLineId;
+
+    /** Debit reference of the standard sweep fee, charged to the target (R13). */
+    @Column(name = "standard_fee_ref", length = 50)
+    private String standardFeeRef;
+
+    /** Debit reference of the flat instruction fee on the target; refunded when the leg fails (R16). */
+    @Column(name = "instruction_fee_ref", length = 50)
+    private String instructionFeeRef;
+
+    @Column(name = "instruction_fee", precision = 19, scale = 4)
+    private BigDecimal instructionFee;
+
+    /** Reference of the SWEEP_IN credit on the target; reversed when the leg fails (R16). */
+    @Column(name = "target_credit_ref", length = 50)
+    private String targetCreditRef;
+
     // ------------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------------

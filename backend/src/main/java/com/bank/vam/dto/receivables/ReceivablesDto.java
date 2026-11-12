@@ -154,7 +154,6 @@ public class ReceivablesDto {
         private String coboRequestStatus;
         private String coboTransactionRef;
         private UUID coboRechargeId;
-        private UUID coboIhbDepositId;
         private LocalDateTime coboRequestedAt;
         private String coboRequestedBy;
         private LocalDateTime coboActionedAt;
@@ -1080,7 +1079,6 @@ public class ReceivablesDto {
         private String coboRequestStatus;
         private String coboTransactionRef;
         private UUID coboRechargeId;
-        private UUID coboIhbDepositId;
         
         // Netting
         private boolean nettingEligible;

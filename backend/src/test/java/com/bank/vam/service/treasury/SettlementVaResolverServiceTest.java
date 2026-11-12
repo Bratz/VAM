@@ -109,6 +109,35 @@ class SettlementVaResolverServiceTest {
     }
 
     /**
+     * The Exception VA read in that own transaction is stale for the caller: postFee credits it and saves (merges), so two
+     * fees in one transaction (an external sweep's standard + instruction fee) kept only the second credit. The caller
+     * gets its own transaction's copy instead.
+     */
+    @Test
+    void theParkedExceptionVaIsTheCallersOwnCopy() {
+        VirtualAccountRepository vaRepository = mock(VirtualAccountRepository.class);
+        ExceptionTransactionRepository exceptionRepository = mock(ExceptionTransactionRepository.class);
+        when(vaRepository.save(any(VirtualAccount.class))).thenAnswer(inv -> {
+            VirtualAccount va = inv.getArgument(0);
+            va.setId(UUID.randomUUID());
+            return va;
+        });
+        when(exceptionRepository.save(any(ExceptionTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+        VirtualAccount callersCopy = VirtualAccount.builder().vaNumber("EXCEPTION-USD").currentBalance(new BigDecimal("500")).build();
+        when(vaRepository.findById(any())).thenReturn(Optional.of(callersCopy));
+        org.springframework.transaction.PlatformTransactionManager tm = mock(org.springframework.transaction.PlatformTransactionManager.class);
+        when(tm.getTransaction(any())).thenReturn(new org.springframework.transaction.support.SimpleTransactionStatus());
+        SettlementVaResolverService resolver =
+                new SettlementVaResolverService(vaRepository, mock(ProgramRepository.class), exceptionRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(resolver, "transactionManager", tm);
+
+        var result = resolver.resolveSettlementVaWithResult(VirtualAccount.builder().vaNumber("VA-USD-1")
+                .programId(UUID.randomUUID()).currencyCode("USD").build(), new BigDecimal("25.00"), null);
+
+        assertThat(result.getResolvedVa()).isSameAs(callersCopy);
+    }
+
+    /**
      * Regression guard for provisioning a Settlement VA on a "flat" program — one with no
      * hierarchy_nodes ROOT and no AccountCategory.ROOT VA (several flagship demo corporates
      * are exactly this shape: standalone PHYSICAL_MIRROR shadows, nothing else). The

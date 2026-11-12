@@ -44,7 +44,7 @@ class SweepFeeTest {
         mock(SweepRunBootstrap.class), mock(com.bank.vam.repository.treasury.SweepRunRepository.class),
         mock(com.bank.vam.config.HomeBankProperties.class),
         mock(com.bank.vam.repository.treasury.ExternalMandateRepository.class),
-        mock(com.bank.vam.repository.PhysicalAccountRepository.class), transactions);
+        mock(com.bank.vam.repository.PhysicalAccountRepository.class), transactions, mock(ExternalSweepService.class));
 
     private final LegalEntity subsidiary = entity(false);
     private final LegalEntity treasury = entity(true);
@@ -117,9 +117,12 @@ class SweepFeeTest {
     @Test
     void aSweepThatMovesMoneyIsChargedOnceAndAnEmptyAccountIsNot() {
         VirtualAccount operating = account(subsidiary, "OPS-AED", "1000");
+        when(fees.postFee(any(), any(), anyString(), any(), anyString())).thenReturn(FeePostingService.FeePostingResult.builder()
+            .debitTransaction(com.bank.vam.entity.Transaction.builder().referenceNumber("FEE-1").build()).build());
 
-        run(operating);
-        assertThat(operating.getCurrentBalance()).isEqualByComparingTo("0");
+        var response = run(operating);
+        assertThat(operating.getCurrentBalance()).isEqualByComparingTo("0");   // the mocked fee moves nothing
+        assertThat(response.getExecutions().get(0).getBalanceAfter()).isEqualByComparingTo("-5.00");   // but is shown
         assertThat(target.getCurrentBalance()).isEqualByComparingTo("1000");
         verify(fees, times(1)).postFee(eq(operating.getId()), eq(new BigDecimal("5.00")), eq("SWEEP_EXECUTION_FEE"), any(), anyString());
 

@@ -3,13 +3,17 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.SweepRuleDto;
 import com.bank.vam.dto.treasury.SweepRunDto;
+import com.bank.vam.entity.treasury.SweepInstruction;
 import com.bank.vam.entity.treasury.SweepRun;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.service.treasury.ExternalSweepService;
 import com.bank.vam.service.treasury.SweepService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +30,7 @@ public class SweepController {
 
     private final SweepService sweepService;
     private final com.bank.vam.service.treasury.OverdrawingSweepReversalService overdrawingSweepReversalService;
+    private final ExternalSweepService externalSweeps;
 
     /**
      * Reverses sweeps that moved more than the source account held, posting a compensating pair.
@@ -164,9 +169,36 @@ public class SweepController {
     @Operation(summary = "Get execution history for specific rule")
     public ResponseEntity<ApiResponse<Page<SweepRuleDto.ExecutionResponse>>> getRuleExecutionHistory(
             @PathVariable UUID ruleId,
-            @PageableDefault(size = 20, sort = "executionTime") Pageable pageable) {
+            // newest first, as /history (its @Query orders DESC); ascending put the seed's oldest rows on page 0 (V56)
+            @PageableDefault(size = 20, sort = "executionTime", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<SweepRuleDto.ExecutionResponse> history = sweepService.getExecutionsByRule(ruleId, pageable);
         return ResponseEntity.ok(ApiResponse.success(history));
+    }
+
+    /** External-bank sweeps R19: the execution's instruction and its confirming statement line; data null when it has none. */
+    @GetMapping("/executions/{executionId}/instruction")
+    @Operation(summary = "Get the external sweep instruction of an execution")
+    public ResponseEntity<ApiResponse<ExternalSweepService.InstructionView>> getInstruction(@PathVariable UUID executionId) {
+        return ResponseEntity.ok(ApiResponse.success(externalSweeps.view(executionId)));
+    }
+
+    public record Rejection(String reason) {
+    }
+
+    /**
+     * External-bank sweeps R14, R16: plays the other bank's rejection of a pending instruction (no SWIFT link exists).
+     * The leg fails now: target credit reversed, instruction fee refunded, execution FAILED, alert. 400 when the
+     * instruction is no longer pending (settled or already failed), no reason is given, or a stored statement of the
+     * account already shows the debit (then it is confirmed instead).
+     */
+    @PostMapping("/instructions/{id}/reject")
+    @Operation(summary = "Mark an external sweep instruction rejected by the other bank")
+    public ResponseEntity<ApiResponse<SweepInstruction>> markRejected(@PathVariable UUID id, @RequestBody Rejection rejection) {
+        if (rejection == null || rejection.reason() == null || rejection.reason().isBlank()) {
+            throw new BusinessException("A reason is required to mark an instruction rejected");
+        }
+        SweepInstruction i = externalSweeps.fail(id, SweepInstruction.InstructionStatus.REJECTED, rejection.reason());
+        return ResponseEntity.ok(ApiResponse.success(i, "Instruction " + i.getExternalReference() + " marked rejected; sweep reversed"));
     }
 
     // ========================================================================

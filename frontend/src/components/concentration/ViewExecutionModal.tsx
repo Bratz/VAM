@@ -3,7 +3,9 @@ import { CheckCircle, Layers, Building2, ArrowRight, Clock, XCircle, AlertTriang
 import { Card, Button, Badge, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCompactCurrency, formatRelativeTime, cn } from '../../utils';
-import { SweepExecution } from '../../services/api';
+import { SweepExecution, SweepRule } from '../../services/api';
+import { executionStatus, SWEEP_TYPES } from './constants';
+import { ExternalInstructionPanel } from './ExternalInstructionPanel';
 
 // ============================================================================
 // VIEW EXECUTION MODAL
@@ -12,13 +14,19 @@ export interface ViewExecutionModalProps {
   isOpen: boolean;
   onClose: () => void;
   execution: SweepExecution | null;
+  /** The execution's rule (Rule Reference, Sweep Type: the execution response does not carry them). */
+  rule?: SweepRule;
+  /** After Mark rejected: the execution and the rule's total changed. */
+  onChanged?: () => void;
 }
 
-export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, onClose, execution }) => {
+export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, onClose, execution, rule, onChanged }) => {
   if (!execution) return null;
 
   const exec = execution as any;
-  const statusVariant = exec.status === 'SUCCESS' ? 'success' : exec.status === 'FAILED' ? 'error' : 'warning';
+  const { label: statusLabel, variant: statusVariant } = executionStatus(exec.status);
+  const ok = statusVariant === 'success';
+  const sweepType = rule?.sweepType ?? exec.sweepType;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Execution Details" size="md">
@@ -26,31 +34,31 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {/* Header */}
         <Card className={cn(
           'border-2',
-          exec.status === 'SUCCESS' && 'bg-success-50/30 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30',
+          ok && 'bg-success-50/30 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30',
           exec.status === 'FAILED' && 'bg-error-50/30 dark:bg-error-500/10 border-error-200/60 dark:border-error-500/30',
           exec.status === 'SKIPPED' && 'bg-warning-50/30 dark:bg-warning-500/10 border-warning-200/60 dark:border-warning-500/30',
-          !['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && 'bg-neutral-50/30 dark:bg-primary-950/30 border-neutral-200/60 dark:border-primary-800'
+          !ok && !['FAILED', 'SKIPPED'].includes(exec.status) && 'bg-neutral-50/30 dark:bg-primary-950/30 border-neutral-200/60 dark:border-primary-800'
         )}>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className={cn(
                 'w-12 h-12 rounded-lg flex items-center justify-center',
-                exec.status === 'SUCCESS' && 'bg-success-100 dark:bg-success-500/20',
+                ok && 'bg-success-100 dark:bg-success-500/20',
                 exec.status === 'FAILED' && 'bg-error-100 dark:bg-error-500/20',
                 exec.status === 'SKIPPED' && 'bg-warning-100 dark:bg-warning-500/20',
-                !['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && 'bg-surface-muted'
+                !ok && !['FAILED', 'SKIPPED'].includes(exec.status) && 'bg-surface-muted'
               )}>
-                {exec.status === 'SUCCESS' && <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
+                {ok && <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
                 {exec.status === 'FAILED' && <XCircle className="w-6 h-6 text-error-600 dark:text-error-300" />}
                 {exec.status === 'SKIPPED' && <XCircle className="w-6 h-6 text-warning-600 dark:text-warning-300" />}
-                {!['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && <Layers className="w-6 h-6 text-neutral-600 dark:text-neutral-300" />}
+                {!ok && !['FAILED', 'SKIPPED'].includes(exec.status) && <Layers className="w-6 h-6 text-neutral-600 dark:text-neutral-300" />}
               </div>
               <div>
                 <h3 className="section-title">{exec.ruleName || 'Sweep Execution'}</h3>
                 <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{exec.executionReference || exec.id}</p>
               </div>
             </div>
-            <Badge variant={statusVariant} size="md" dot>{exec.status}</Badge>
+            <Badge variant={statusVariant} size="md" dot>{statusLabel}</Badge>
           </div>
         </Card>
 
@@ -118,7 +126,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               </p>
             </Card>
             <Card padding="sm" className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30">
-              <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Balance After</p>
+              <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mb-1" title="After the sweep and any fee charged to the source">Balance After</p>
               <p className="stat-value-sm text-success-800 dark:text-success-300">
                 {formatCompactCurrency(exec.balanceAfter || 0, exec.currencyCode || 'AED')}
               </p>
@@ -152,6 +160,8 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
           </div>
         </Card>
 
+        <ExternalInstructionPanel executionId={exec.id} executionStatus={exec.status} onChanged={onChanged} />
+
         {/* Error Message (if failed) */}
         {exec.status === 'FAILED' && exec.errorMessage && (
           <Card className="bg-error-50/50 dark:bg-error-500/10 border-error-200/60 dark:border-error-500/30">
@@ -166,13 +176,13 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         )}
 
         {/* Skipped Reason (if skipped) */}
-        {exec.status === 'SKIPPED' && exec.skipReason && (
+        {exec.status === 'SKIPPED' && (exec.skipReason || exec.errorMessage) && (
           <Card className="bg-warning-50/50 dark:bg-warning-500/10 border-warning-200/60 dark:border-warning-500/30">
             <div className="flex items-start gap-4">
               <StatusIconBadge tone="warning" icon={AlertTriangle} className="flex-shrink-0" />
               <div>
                 <p className="font-semibold text-warning-800 dark:text-warning-300">Execution Skipped</p>
-                <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1">{exec.skipReason}</p>
+                <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1">{exec.skipReason || exec.errorMessage}</p>
               </div>
             </div>
           </Card>
@@ -184,11 +194,11 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
           <div className="space-y-2">
             <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Rule Reference</span>
-              <span className="font-mono text-primary-900 dark:text-neutral-50">{exec.ruleReference || 'N/A'}</span>
+              <span className="font-mono text-primary-900 dark:text-neutral-50">{rule?.ruleReference ?? exec.ruleReference ?? 'N/A'}</span>
             </div>
             <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Sweep Type</span>
-              <Badge variant="neutral" size="xs">{exec.sweepType || 'N/A'}</Badge>
+              <Badge variant="neutral" size="xs">{SWEEP_TYPES[sweepType as keyof typeof SWEEP_TYPES]?.label ?? sweepType ?? 'N/A'}</Badge>
             </div>
             {exec.ruleId && (
               <div className="flex justify-between text-body-sm">

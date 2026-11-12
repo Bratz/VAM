@@ -204,13 +204,6 @@ public class Payable extends BaseEntity {
     public static final String AWAITING_FX = "AWAITING_FX";
     
     /**
-     * IHB loan ID created for the subsidiary as a result of POBO.
-     * Treasury pays vendor, creates loan to subsidiary for reimbursement.
-     */
-    @Column(name = "pobo_ihb_loan_id")
-    private UUID poboIhbLoanId;
-    
-    /**
      * Intercompany recharge record created for POBO settlement.
      */
     @Column(name = "pobo_recharge_id")

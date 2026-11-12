@@ -31,4 +31,16 @@ public final class CoreBankingBalance {
             banks.save(p);
         });
     }
+
+    /**
+     * A home-bank-held shadow (PHYSICAL_MIRROR at the home bank): its bank balance follows a delta just applied to its
+     * ledger, and its physical account with it. No-op for any other account — another bank's balance moves only on
+     * that bank's statement.
+     */
+    public static void mirrorIfHomeBankShadow(PhysicalAccountRepository banks, String homeBankBic, VirtualAccount va, BigDecimal delta) {
+        if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankBic)) {
+            va.mirrorBankBalance(delta);
+            follow(banks, va, delta);
+        }
+    }
 }

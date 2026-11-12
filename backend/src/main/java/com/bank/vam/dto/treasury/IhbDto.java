@@ -44,9 +44,6 @@ public class IhbDto {
         private LocalDateTime createdAt;
         
         // Phase 2 Unified fields
-        private BigDecimal totalLentOut;
-        private BigDecimal totalDeposited;
-        private BigDecimal netIhbPosition;
         private UUID settlementVaId;
         private String ihbCurrency;
         private BigDecimal utilizationPercent;
@@ -113,7 +110,6 @@ public class IhbDto {
     @Data
     public static class IhbStatsResponse {
         private Long totalEntities;
-        private BigDecimal netPosition;
     }
 
     @Data
@@ -121,12 +117,6 @@ public class IhbDto {
         private UUID entityId;
         private String entityCode;
         private String entityName;
-        private BigDecimal totalLentOut;
-        private BigDecimal totalBorrowed;
-        private BigDecimal totalDeposited;
-        private BigDecimal netPosition;
-
-        // Phase 2 fields
         private BigDecimal ihbCreditLimit;
         private BigDecimal ihbAvailableLimit;
         private BigDecimal utilizationPercent;
@@ -187,39 +177,6 @@ public class IhbDto {
         // Effective date
         private LocalDate effectiveFrom;
         private LocalDate effectiveTo;
-    }
-
-    /**
-     * Request to get indicative rate for a specific amount.
-     */
-    @Data
-    public static class IndicativeRateRequest {
-        private UUID treasuryCenterId;
-        private BigDecimal amount;
-        private String currency;
-        private String rateType; // LENDING or DEPOSIT
-        private Integer tenorDays;
-    }
-
-    /**
-     * Response with indicative rate calculation.
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class IndicativeRateResponse {
-        private BigDecimal baseRate;
-        private String baseRateType;
-        private BigDecimal treasurySpread;
-        private BigDecimal entitySpread;      // Borrower's spread (for loans)
-        private BigDecimal effectiveRate;
-        private BigDecimal estimatedInterest; // For the tenor
-        private String currency;
-        private Integer tenorDays;
-        private String rateType;
-        /** DEFAULT: the base rate is the built-in 5.00, not a reference rate the bank set. */
-        private String rateSource;
     }
 
     // ========================================================================

@@ -67,12 +67,8 @@ public class IntercompanyDto {
         private UUID entityId;
         private String entityCode;
         private String entityName;
-        private List<LoanSummary> loansAsLender;
-        private List<LoanSummary> loansAsBorrower;
-        private List<DepositSummary> deposits;
         private BigDecimal totalLent;
         private BigDecimal totalBorrowed;
-        private BigDecimal totalDeposited;
         private BigDecimal netPosition;
     }
 
@@ -98,31 +94,6 @@ public class IntercompanyDto {
         private BigDecimal proposedExposure;
         private BigDecimal utilizationPercent;
         private List<String> warnings;
-    }
-
-    // ========================================================================
-    // LOAN/DEPOSIT SUMMARIES
-    // ========================================================================
-
-    @Data
-    @Builder
-    public static class LoanSummary {
-        private UUID loanId;
-        private String loanRef;
-        private BigDecimal principalAmount;
-        private BigDecimal outstandingAmount;
-        private BigDecimal interestRate;
-        private String status;
-    }
-
-    @Data
-    @Builder
-    public static class DepositSummary {
-        private UUID depositId;
-        private String depositRef;
-        private BigDecimal principalAmount;
-        private BigDecimal interestRate;
-        private String status;
     }
 
     // ========================================================================
@@ -174,8 +145,6 @@ public class IntercompanyDto {
         private String status;
         private String message;
         private BigDecimal collectedAmount;
-        private UUID ihbDepositId;
-        private String ihbDepositRef;
         private LocalDateTime processedAt;
     }
 
@@ -216,8 +185,6 @@ public class IntercompanyDto {
         private String currencyCode;
         private BigDecimal charges;
         private BigDecimal netAmount;
-        private UUID ihbLoanId;
-        private UUID ihbDepositId;
         private String viban;
         private UUID vibanId;
         private String status;

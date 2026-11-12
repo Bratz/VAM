@@ -21,6 +21,8 @@ import type { CreateRuleFormData } from './types';
 export interface Step2AccountsProps {
   formData: CreateRuleFormData;
   accounts: VirtualAccount[];
+  /** Accounts at another bank: id -> has an authority today. Sources only, and only when authorised (R4, R20). */
+  otherBank: Record<string, boolean>;
   loadingAccounts: boolean;
   onTargetAccountChange: (accountId: string) => void;
   onToggleSourceAccount: (account: VirtualAccount) => void;
@@ -30,6 +32,7 @@ export interface Step2AccountsProps {
 export const Step2Accounts: React.FC<Step2AccountsProps> = ({
   formData,
   accounts,
+  otherBank,
   loadingAccounts,
   onTargetAccountChange,
   onToggleSourceAccount,
@@ -75,6 +78,8 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
         options={accounts.map((acc) => ({
           value: acc.id,
           label: `${acc.vaName} - ${acc.vaNumber || acc.viban} (${acc.currencyCode})`
+            + (acc.id in otherBank ? ' · other bank, source only' : ''),
+          disabled: acc.id in otherBank,
         }))}
         hint={formData.targetAccountNumber
           ? `Selected: ${formData.targetAccountNumber} | Entity: ${formData.targetEntityCode}`
@@ -118,14 +123,18 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                   .filter(acc => acc.id !== formData.targetAccountId)
                   .map((acc) => {
                     const isSelected = formData.sourceAccounts.some(s => s.accountId === acc.id);
+                    const external = acc.id in otherBank;
+                    const blocked = external && !otherBank[acc.id] && !isSelected;
                     return (
                       <label
                         key={acc.id}
                         className={cn(
-                          'flex items-center gap-4 p-4 cursor-pointer transition-all duration-150',
-                          isSelected ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                          'flex items-center gap-4 p-4 transition-all duration-150',
+                          blocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
+                          isSelected ? 'bg-primary-50 dark:bg-primary-800/40' : !blocked && 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                         )}
-                        onClick={() => onToggleSourceAccount(acc)}
+                        onClick={() => { if (!blocked) onToggleSourceAccount(acc); }}
+                        title={blocked ? 'At another bank with no authority: bank operations register one on the account first' : undefined}
                       >
                         <div className={cn(
                           'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-150',
@@ -140,6 +149,11 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                           <p className="font-medium text-body-sm text-primary-900 dark:text-neutral-50 truncate">{acc.vaName}</p>
                           <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono truncate">{acc.vaNumber || acc.viban}</p>
                         </div>
+                        {external && (
+                          <Badge variant={otherBank[acc.id] ? 'info' : 'warning'} size="sm">
+                            {otherBank[acc.id] ? 'other bank · authorised' : 'other bank · no authority'}
+                          </Badge>
+                        )}
                         <div className="text-right flex-shrink-0">
                           <Badge variant="neutral" size="sm">{acc.currencyCode}</Badge>
                           <p className="caption mt-1">

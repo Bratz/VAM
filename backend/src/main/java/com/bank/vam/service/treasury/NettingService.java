@@ -211,7 +211,6 @@ public class NettingService {
      * - Intercompany Payables (netting-eligible, approved)
      * - Intercompany Receivables (netting-eligible, open)
      * - POBO Recharges (from IntercompanyTransaction)
-     * - IHB Loans/Deposits (future enhancement)
      *
      * @param cycleId The netting cycle to populate
      * @param corporateId Corporate ID to filter obligations
@@ -240,13 +239,11 @@ public class NettingService {
         // Add COBO recharges (RECEIVABLE direction - treasury owes subsidiary) - NEW
         int coboRechargesAdded = addCoboRecharges(cycle, corporateId, includePending);
 
-        // Future: Add IHB loans
-
         // Update cycle stats
         cycle.setEntryCount(cycle.getEntries().size());
         cycleRepository.save(cycle);
 
-        PopulationResult result = new PopulationResult(payablesAdded, receivablesAdded, poboRechargesAdded, coboRechargesAdded, 0);
+        PopulationResult result = new PopulationResult(payablesAdded, receivablesAdded, poboRechargesAdded, coboRechargesAdded);
         log.info("Populated cycle {}: {} payables, {} receivables, {} POBO recharges, {} COBO recharges",
             cycle.getCycleReference(), payablesAdded, receivablesAdded, poboRechargesAdded, coboRechargesAdded);
 
@@ -1341,7 +1338,6 @@ public class NettingService {
         response.setRechargesAdded(result.rechargesAdded());           // Total (POBO + COBO)
         response.setPoboRechargesAdded(result.poboRechargesAdded());   // POBO only
         response.setCoboRechargesAdded(result.coboRechargesAdded());   // COBO only
-        response.setIhbTransactionsAdded(result.ihbTransactionsAdded());
         response.setTotalAdded(result.totalAdded());
         response.setTotalEntries(cycle.getEntries().size());
         response.setTotalGross(cycle.getTotalGross());
@@ -1363,8 +1359,7 @@ public class NettingService {
         int payablesAdded,
         int receivablesAdded,
         int poboRechargesAdded,
-        int coboRechargesAdded,
-        int ihbTransactionsAdded
+        int coboRechargesAdded
     ) {
         /**
          * Total recharges added (POBO + COBO).
@@ -1377,7 +1372,7 @@ public class NettingService {
          * Total entries added across all sources.
          */
         public int totalAdded() {
-            return payablesAdded + receivablesAdded + poboRechargesAdded + coboRechargesAdded + ihbTransactionsAdded;
+            return payablesAdded + receivablesAdded + poboRechargesAdded + coboRechargesAdded;
         }
     }
 }

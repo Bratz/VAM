@@ -257,7 +257,6 @@ public class CoboReceivableService {
         private UUID subsidiaryVaId;
         private UUID settlementVaId;
         private String settlementVaNumber;
-        private UUID ihbDepositId;
         private UUID rechargeId;
         private boolean feePosted;
         private LocalDateTime collectedAt;

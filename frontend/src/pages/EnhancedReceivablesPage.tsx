@@ -115,7 +115,6 @@ interface InvoicePhase3 {
   coboRequestStatus: CoboRequestStatus;
   coboTransactionRef?: string;
   coboRechargeId?: string;
-  coboIhbDepositId?: string;
   coboRequestedAt?: string;
   coboRequestedBy?: string;
   coboActionedAt?: string;
@@ -475,7 +474,6 @@ const EnhancedReceivablesPage: React.FC = () => {
             coboRequestStatus: inv.coboRequestStatus || 'NOT_REQUESTED',
             coboTransactionRef: inv.coboTransactionRef,
             coboRechargeId: inv.coboRechargeId,
-            coboIhbDepositId: inv.coboIhbDepositId,
             coboRequestedAt: inv.coboRequestedAt,
             coboRequestedBy: inv.coboRequestedBy,
             coboActionedAt: inv.coboActionedAt,

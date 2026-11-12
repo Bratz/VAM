@@ -8,17 +8,13 @@ import java.util.UUID;
 
 /**
  * SweepExecution - Records each sweep execution.
- * 
- * Enhanced with IHB integration to track when sweeps create
- * intercompany positions (loans/deposits) between IHB-enabled entities.
  */
 @Data
 @Entity
 @Table(name = "sweep_executions", indexes = {
     @Index(name = "idx_sweep_exec_rule", columnList = "rule_id"),
     @Index(name = "idx_sweep_exec_status", columnList = "status"),
-    @Index(name = "idx_sweep_exec_time", columnList = "execution_time"),
-    @Index(name = "idx_sweep_exec_ihb_deposit", columnList = "ihb_deposit_id")
+    @Index(name = "idx_sweep_exec_time", columnList = "execution_time")
 })
 public class SweepExecution {
 
