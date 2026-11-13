@@ -61,7 +61,7 @@ class NettingSettlementTest {
     private final PhysicalAccountRepository physicals = mock(PhysicalAccountRepository.class);
     private final PlatformTransactionManager txManager = mock(PlatformTransactionManager.class);
     private final HomeBankProperties homeBank = new HomeBankProperties();
-    private final NettingService service = new NettingService(cycles, entries, payables, receivables, recharges, null, vas,
+    private final NettingService service = new NettingService(cycles, entries, payables, receivables, recharges, vas,
         ledger, mock(FeePostingService.class), null, mock(FxRateService.class), new IhbMirrorService(vas, ledger), entities,
         transactions, outward, physicals, homeBank, txManager);
 

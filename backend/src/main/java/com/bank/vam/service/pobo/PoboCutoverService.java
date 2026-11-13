@@ -4,7 +4,6 @@ import com.bank.vam.config.CurrentUser;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.MirrorAccountType;
-import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.PayableStatus;
 import com.bank.vam.entity.payables.Payable.PaymentRoute;
@@ -17,7 +16,6 @@ import com.bank.vam.exception.BusinessException;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
-import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.treasury.SweepRuleRepository;
@@ -40,7 +38,7 @@ import java.util.stream.Collectors;
  * Preview first (dry run changes nothing); re-running after a real run changes nothing:
  * (a) payables stuck in the retired request/approval flow go back to Approved, to be routed at payment by the enrolment;
  * (b) treasury's mirrors set to the R10 rule from each IHB current position;
- * (c) per-payment POBO recharges and the IC records of POBO postings closed as settled by the IHB position;
+ * (c) per-payment POBO recharges closed as settled by the IHB position;
  * (d) IHB credit use set from the balance; (e) sweep rules on in-house accounts stopped;
  * (f) report only: past self-sweeps of IHB current accounts that added cash to a treasury account.
  */
@@ -49,7 +47,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PoboCutoverService {
 
-    /** Marks a recharge / IC record closed by the cut-over: settled through the IHB current position (D8). */
+    /** Marks a recharge closed by the cut-over: settled through the IHB current position (D8). */
     public static final String SETTLED_BY_IHB = "IHB-POSITION-CUTOVER";
 
     private final PayableRepository payables;
@@ -57,7 +55,6 @@ public class PoboCutoverService {
     private final VirtualAccountRepository accounts;
     private final IhbMirrorService ihbMirrors;
     private final IntercompanyRechargeRepository recharges;
-    private final IntercompanyTransactionRepository icRecords;
     private final LegalEntityRepository legalEntities;
     private final SweepRuleRepository sweepRules;
     private final TransactionRepository ledger;
@@ -91,7 +88,7 @@ public class PoboCutoverService {
             report.mirrors().addAll(mirrors(va, dryRun));
         }
         if (!dryRun) {
-            log.info("POBO cut-over for corporate {}: {} payables, {} mirrors, {} recharges/records, {} credit limits, {} sweep rules",
+            log.info("POBO cut-over for corporate {}: {} payables, {} mirrors, {} recharges, {} credit limits, {} sweep rules",
                 corporateId, report.payables().size(), report.mirrors().size(), report.recharges().size(),
                 report.creditLimits().size(), report.sweepRules().size());
         }
@@ -178,7 +175,7 @@ public class PoboCutoverService {
         Set<UUID> entities = legalEntities.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
             .map(e -> e.getId()).collect(Collectors.toSet());
         List<Item> out = new ArrayList<>();
-        // ponytail: scans every recharge / IC record (neither carries a corporate); query by entity if they grow.
+        // ponytail: scans every recharge (it carries no corporate); query by entity if they grow.
         for (IntercompanyRecharge r : recharges.findAll()) {
             if (r.getRechargeType() != IntercompanyRecharge.RechargeType.POBO_PAYMENT) continue;
             if (r.getStatus() == RechargeStatus.SETTLED || r.getStatus() == RechargeStatus.CANCELLED) continue;
@@ -191,23 +188,6 @@ public class PoboCutoverService {
             out.add(new Item(r.getId().toString(), r.getRechargeReference(), r.getPayerEntityCode() + " paid for " + r.getBehalfEntityCode(),
                 r.getTotalRecharge(), r.getCurrencyCode(), "POBO recharge " + was + " -> settled by the IHB position: the payment is "
                     + "already on " + r.getBehalfEntityCode() + "'s IHB current account, so netting and IC settlement no longer count it"));
-        }
-        for (IntercompanyTransaction t : icRecords.findAll()) {
-            if (t.getOriginalReferenceType() == null || !t.getOriginalReferenceType().startsWith("POBO_")) continue;
-            IntercompanyTransaction.TransactionStatus s = t.getStatus();
-            if (s == IntercompanyTransaction.TransactionStatus.SETTLED || s == IntercompanyTransaction.TransactionStatus.REVERSED
-                || s == IntercompanyTransaction.TransactionStatus.FAILED) continue;
-            if (!entities.contains(t.getPayingEntityId()) && !entities.contains(t.getBehalfEntityId())) continue;
-            if (!dryRun) {
-                t.setStatus(IntercompanyTransaction.TransactionStatus.SETTLED);
-                t.setSettlementRef(SETTLED_BY_IHB);
-                t.setSettledAt(LocalDateTime.now());
-                t.setSettledBy("POBO cut-over by " + CurrentUser.name());
-                icRecords.save(t);
-            }
-            out.add(new Item(t.getId().toString(), t.getTransactionRef(), t.getPayingEntityCode() + " paid for " + t.getBehalfEntityCode(),
-                t.getNetAmount(), t.getCurrencyCode(), "IC record of a POBO posting " + s + " -> settled by the IHB position; "
-                    + "no longer in bilateral positions or settlement"));
         }
         return out;
     }

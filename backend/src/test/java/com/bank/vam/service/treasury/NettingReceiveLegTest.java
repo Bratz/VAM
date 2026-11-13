@@ -31,7 +31,7 @@ class NettingReceiveLegTest {
     private final TransactionRepository ledger = mock(TransactionRepository.class);
     private final com.bank.vam.service.TransactionService transactions = mock(com.bank.vam.service.TransactionService.class);
     private final NettingService service = new NettingService(cycles, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
-        null, null, null, null, vas, ledger, mock(FeePostingService.class), null, mock(FxRateService.class),
+        null, null, null, vas, ledger, mock(FeePostingService.class), null, mock(FxRateService.class),
         new IhbMirrorService(vas, ledger), null, transactions, null, null, null,
         mock(org.springframework.transaction.PlatformTransactionManager.class));
 

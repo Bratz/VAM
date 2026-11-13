@@ -7,7 +7,6 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
-import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.tax.ChargeConfigurationRepository;
 import com.bank.vam.service.treasury.FundsAvailabilityService;
 import com.bank.vam.service.treasury.IhbMirrorService;
@@ -232,21 +231,13 @@ class PoboLegsBalanceTest {
     }
 
     @Test
-    void aPoboPaymentCreatesNoRechargeButKeepsItsIntercompanyRecords() {
+    void aPoboPaymentCreatesNoRecharge() {
         pobo("20000");
 
-        // TransactionService no longer has a recharge repository at all; the IC records for the Intercompany page remain.
+        // TransactionService no longer has a recharge repository at all: the IHB current account's ledger rows are the
+        // record (the legacy intercompany_transactions copies went in Phase 3, spec D3).
         assertThat(TransactionService.class.getDeclaredConstructors()[0].getParameterTypes())
             .doesNotContain(com.bank.vam.repository.pobo.IntercompanyRechargeRepository.class);
-        org.mockito.ArgumentCaptor<com.bank.vam.entity.intercompany.IntercompanyTransaction> ic =
-            org.mockito.ArgumentCaptor.forClass(com.bank.vam.entity.intercompany.IntercompanyTransaction.class);
-        org.mockito.Mockito.verify(dep(IntercompanyTransactionRepository.class), org.mockito.Mockito.times(2)).save(ic.capture());
-        // Born settled by the IHB position: information only, never counted again in bilateral positions.
-        ic.getAllValues().forEach(r -> {
-            org.junit.jupiter.api.Assertions.assertEquals(
-                com.bank.vam.entity.intercompany.IntercompanyTransaction.TransactionStatus.SETTLED, r.getStatus());
-            org.junit.jupiter.api.Assertions.assertEquals("IHB-POSITION", r.getSettlementRef());
-        });
     }
 
     @Test

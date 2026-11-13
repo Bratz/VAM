@@ -73,7 +73,6 @@ class CoboPaymentApplicationTest {
         settlementResolver,
         mock(com.bank.vam.service.treasury.BalanceAggregationServiceEnhanced.class),
         new com.fasterxml.jackson.databind.ObjectMapper(),
-        mock(com.bank.vam.repository.intercompany.IntercompanyTransactionRepository.class),
         new com.bank.vam.service.treasury.IhbMirrorService(vaRepo, txnRepo),
         fx, mock(com.bank.vam.service.treasury.IhbUnifiedService.class));
 

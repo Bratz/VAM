@@ -128,14 +128,40 @@ Phase 2 done (13 Nov, uncommitted; `mvn test` 863/0 (849 + 14 in NettingSettleme
   the table; `/settlement/execute` and `/settlement/*`. Retry after a fix is "Settle" again (nothing half-posted).
 
 ### Phase 3 — retire `intercompany_transactions` (D3; R12)
-- [ ] 3.1 Stop writing: POBO/COBO (`createIntercompanyTransactionRecord`), IC services, cut-over, netting; anything still
+- [x] 3.1 Stop writing: POBO/COBO (`createIntercompanyTransactionRecord`), IC services, cut-over, netting; anything still
       needed is read from the ledger, payables, receivables or recharges instead.
-- [ ] 3.2 Remove reads and endpoints built on it (`/transactions*`, `/unsettled`, `/stats`, `/settlement/*`, `/cobo/setup`,
+- [x] 3.2 Remove reads and endpoints built on it (`/transactions*`, `/unsettled`, `/stats`, `/settlement/*`, `/cobo/setup`,
       `/cobo/{ref}/collect`, `/activity-report`, entity-pair/position-summary/entity-report where built on it) and their
       frontend clients; keep or rebuild only what Phase 1 / 4 use.
-- [ ] 3.3 Flyway migration (both folders): drop the table and dependents after confirming no FK/view/function uses it,
+- [x] 3.3 Flyway migration (both folders): drop the table and dependents after confirming no FK/view/function uses it,
       locally and in the vam-five dump.
-- [ ] 3.4 Tests: POBO, COBO, recharges, netting and cut-over still work without the table.
+- [x] 3.4 Tests: POBO, COBO, recharges, netting and cut-over still work without the table.
+
+Phase 3 done (13 Nov, uncommitted; `mvn test` 860/0 (863 less the three tests of removed endpoints: entities, entity
+pairs, stats), tsc + lint clean):
+- Writes removed: `TransactionService.createIntercompanyTransactionRecord` (the ICR-/ICP- pair per POBO, 4-leg and
+  6-leg; born SETTLED "IHB-POSITION", information only): the POBO's ledger legs on the IHB current account and its IC
+  mirrors record it (no recharge by design, POBO R11). The other builders (`IntercompanyService` COBO set-up / bilateral
+  settlement, `IntercompanyTransactionService` create / from-payable / from-receivable) went with their endpoints; no
+  page called them. Cut-over no longer closes IC records (it closes the POBO recharges, as before); NettingService
+  `addTransactionToCycle` and the add-to-netting `transactionIds` gone (the page never sent them).
+- Endpoints kept (exactly what frontend/src calls): `GET /intercompany/positions`, `/group-position`,
+  `/netting-eligibility`, `POST /add-to-netting/{cycleId}`. Removed: `/stats` (ledger-based but no page reads it),
+  `/transactions*` (incl. from-payable, from-receivable, validate-transfer-pricing, `/{ref}`), `/entities*`
+  (`/{id}`, position-detail, validate), `/pobo`, `/cobo`, `/cobo/setup`, `/cobo/{ref}/collect`, `/unsettled`,
+  `/settlement/calculate|execute|history|{ref}`, `/bilateral-position`, `/entity-pairs`, `/position-summary`,
+  `/entity-report/{id}`, `/activity-report`. Deleted: `IntercompanyService`, `IntercompanyDto`, the
+  `IntercompanyTransaction` entity and its repository. No frontend client or type called them any more.
+- NettingEntry: rows from IC transactions used source type INTERCOMPANY_PAYABLE (shared with payables), so no enum
+  value goes; no entry references an IC transaction locally or in the dump (only POBO_RECHARGE entries), and no
+  column points at the table (`intercompany_recharge_id` points at recharges).
+- V64 (both folders) `DROP TABLE IF EXISTS intercompany_transactions` (no CASCADE: an unexpected dependent fails it).
+  No FK, view, function, trigger or sequence uses it, locally or in the dump. Checked in scratch schemas from the
+  local table (38 rows) and the dump's (37): dropped, second run a no-op. Rows lost: vam-five 37 (dump = live GET,
+  same refs): 17 ICR + 17 ICP POBO copies (34 settled by the 13 Nov cut-over) and 3 bilateral settlements of 12 Sep,
+  each with its ledger legs in va_movements (correlation id); nothing found only there (transfer-pricing validation
+  never persisted). Local adds COBO-57E120F3, an ACTIVE test COBO set-up ("test cobo no viban", MERC-FR for MERC-DE,
+  EUR 5,000) that never collected.
 
 ### Phase 4 — In-House Bank page (D7, D8, D10; R13–R19)
 - [ ] 4.1 Position matrix: entities × currencies — current account balance, credit limit, used, headroom, accrued interest
@@ -189,8 +215,8 @@ Money / correctness first:
 - [ ] Run Sweeps result sums amounts across currencies and labels them AED; Emirates NBD tile on Bank Accounts sums
       currencies; bank tiles group by raw code (HBUKGB4B vs HBUKGB4BXXX = two tiles).
 - [ ] 12,434 COMMITTED sweep executions (Jan–Sep) from the old EOD settlement, no instruction (local; likely vam-five).
-- [ ] Global (unscoped) endpoints no page calls today: `/ihb/entities`, `/pobo/recharges`, `/pobo/stats`,
-      `/intercompany/pobo|cobo|unsettled`, `/settlement/history` — scope or remove (Phase 3 of the IHB/IC plan).
+- [ ] Global (unscoped) endpoints no page calls today: `/ihb/entities`, `/pobo/recharges`, `/pobo/stats` — scope or
+      remove. (`/intercompany/pobo|cobo|unsettled` and `/settlement/history` removed in Phase 3, 13 Nov.)
 - [x] `settleBilateralPosition.findIcReceivableVa` compares an enum to a String (always false) and falls back to the
       first "receivable" VA — wrong pair possible. Gone with `/settle-bilateral` (Phase 2, 13 Nov).
 - [x] Recharge approve/reject recorded the header entity code as approver: now the signed-in user, scoped, on the
@@ -223,11 +249,14 @@ UI:
 Dead code / data:
 - [ ] `ihb_transactions` table (empty everywhere, entity deleted in e7dae35); legacy database/schema.sql,
       1_schema.sql, vam_schema.sql still define dropped IHB columns.
-- [ ] `/cobo/{ref}/collect` always throws (Phase 3 removes it); services/intercompanyService.ts deleted 13 Nov.
+- [x] `/cobo/{ref}/collect` always threw: removed with the legacy table (Phase 3, 13 Nov); services/intercompanyService.ts
+      deleted 13 Nov.
 - [ ] Seeded rule names name their old targets ("Helios NY USD ZBA → SF Header"); seed physical/shadow data sources
       disagree (BofA MT942 vs MT940, Mercator OB vs MT940); Citi Boston shadow named "(NYC)".
 - [ ] `GET /statements/lines` without its parameter and non-UUID path ids return 500 (catch-all handler).
 Docs:
+- [ ] docs/FEATURE_CAPABILITY_MAP.md still describes `intercompany_transactions` and the removed intercompany endpoints
+      (retired in Phase 3 of the IHB/IC plan).
 - [ ] CLAUDE.md says the context path is `/api`; the backend serves `/api/v1/...` on 8053 itself.
 - [ ] docs/demo/bulk-collections-walkthrough.md still has steps 9–12; the Docs version was trimmed to 0–8.
 

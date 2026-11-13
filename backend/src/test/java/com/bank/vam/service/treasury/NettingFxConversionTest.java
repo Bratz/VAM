@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 class NettingFxConversionTest {
 
     private final FxRateService fx = mock(FxRateService.class);
-    private final NettingService service = new NettingService(null, null, null, null, null, null, null, null, null, null, fx, null,
+    private final NettingService service = new NettingService(null, null, null, null, null, null, null, null, null, fx, null,
         null, null, null, null, null, null);
 
     private NettingEntry usdEntry() {

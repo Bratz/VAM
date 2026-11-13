@@ -1,0 +1,16 @@
+-- ============================================================================
+-- V64 - Drop the legacy intercompany_transactions table (IHB/Intercompany pages spec D3, R12).
+--
+-- Nothing reads or writes it any more: POBO postings are recorded by their ledger legs on the IHB current account
+-- and its IC mirrors, recharges by intercompany_recharges, settlement by Netting Cycles. Checked 13 Nov, locally and
+-- in the vam-five dump: no foreign key, view, function, trigger or sequence references it, and no column elsewhere
+-- points at it (netting_entries.intercompany_recharge_id points at intercompany_recharges). Rows lost:
+--   vam-five (dump and live GET): 37 = 17 ICR + 17 ICP copies of POBO postings (34 settled by the 13 Nov POBO
+--     cut-over), 3 bilateral settlements of 12 Sep (SETTLE-20260912-000001..3); every one has its ledger legs in
+--     va_movements (correlation id = the row's ref suffix / original_reference).
+--   local: the same 37 plus COBO-57E120F3, an ACTIVE test COBO set-up ("test cobo no viban", MERC-FR for MERC-DE,
+--     EUR 5,000) that never collected; no money moved.
+-- No CASCADE on purpose: an unexpected dependent fails the migration instead of being dropped with it. Its indexes
+-- and constraints go with the table. Idempotent: IF EXISTS.
+-- ============================================================================
+DROP TABLE IF EXISTS intercompany_transactions;

@@ -16,7 +16,6 @@ import com.bank.vam.exception.BusinessException;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
-import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
@@ -55,16 +54,15 @@ class IntercompanyGroupPositionTest {
     private final IntercompanyRechargeRepository recharges = mock(IntercompanyRechargeRepository.class);
     private final NettingCycleRepository cycles = mock(NettingCycleRepository.class);
     private final NettingEntryRepository entries = mock(NettingEntryRepository.class);
-    private final IntercompanyTransactionRepository icRows = mock(IntercompanyTransactionRepository.class);
     private final NettingService netting = mock(NettingService.class);
     private final FxRateService fx = mock(FxRateService.class);
     private final MarketProfileProperties market = mock(MarketProfileProperties.class);
 
-    private final IntercompanyTransactionService icTransactions = new IntercompanyTransactionService(icRows, recharges,
-        entities, payables, receivables, cycles, entries, vas, netting, market);
+    private final IntercompanyTransactionService icTransactions = new IntercompanyTransactionService(recharges,
+        entities, payables, receivables, cycles, entries, vas, netting);
     private final IntercompanyGroupPositionService service = new IntercompanyGroupPositionService(icTransactions,
         entities, vas, payables, receivables, recharges, fx, market);
-    private final IntercompanyController controller = new IntercompanyController(null, icTransactions, service);
+    private final IntercompanyController controller = new IntercompanyController(icTransactions, service);
 
     private LegalEntity holding, treasury, uk, dubai, heliosHq;
 

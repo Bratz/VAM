@@ -163,7 +163,7 @@ public class NettingEntry extends BaseEntity {
     private UUID receivableId;
     
     /**
-     * Link to IntercompanyTransaction (recharge) if from POBO/COBO.
+     * Link to the IntercompanyRecharge if from POBO/COBO.
      */
     @Column(name = "intercompany_recharge_id")
     private UUID intercompanyRechargeId;

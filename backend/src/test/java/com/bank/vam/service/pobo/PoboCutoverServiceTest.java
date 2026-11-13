@@ -4,7 +4,6 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.MirrorAccountType;
 import com.bank.vam.entity.hierarchy.LegalEntity;
-import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.PayableStatus;
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
@@ -13,7 +12,6 @@ import com.bank.vam.entity.treasury.SweepRuleSource;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
-import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.treasury.SweepRuleRepository;
@@ -43,19 +41,17 @@ class PoboCutoverServiceTest {
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final TransactionRepository ledger = mock(TransactionRepository.class);
     private final IntercompanyRechargeRepository recharges = mock(IntercompanyRechargeRepository.class);
-    private final IntercompanyTransactionRepository icRecords = mock(IntercompanyTransactionRepository.class);
     private final LegalEntityRepository entities = mock(LegalEntityRepository.class);
     private final SweepRuleRepository rules = mock(SweepRuleRepository.class);
 
     private final PoboCutoverService service = new PoboCutoverService(payables, enrolments, vas,
-        new IhbMirrorService(vas, ledger), recharges, icRecords, entities, rules, ledger);
+        new IhbMirrorService(vas, ledger), recharges, entities, rules, ledger);
 
     private final UUID corp = UUID.randomUUID();
     private LegalEntity treasury, dubai;
     private VirtualAccount ihbCurrent, icReceivable, icPayable, treasurySettlement, ownAccount;
     private Payable pending, approved;
     private IntercompanyRecharge recharge;
-    private IntercompanyTransaction record;
     private SweepRule selfSweep;
 
     @BeforeEach
@@ -97,11 +93,6 @@ class PoboCutoverServiceTest {
             .totalRecharge(new BigDecimal("700")).currencyCode("AED").status(IntercompanyRecharge.RechargeStatus.APPROVED).build();
         recharge.setId(UUID.randomUUID());
         when(recharges.findAll()).thenReturn(List.of(recharge));
-        record = IntercompanyTransaction.builder().transactionRef("ICR-IHBPOBO-1").originalReferenceType("POBO_6LEG_RECEIVABLE")
-            .payingEntityId(treasury.getId()).payingEntityCode("MNC-TC").behalfEntityId(dubai.getId()).behalfEntityCode("MNC-UAE-DUBAI")
-            .netAmount(new BigDecimal("700")).currencyCode("AED").status(IntercompanyTransaction.TransactionStatus.PROCESSED).build();
-        record.setId(UUID.randomUUID());
-        when(icRecords.findAll()).thenReturn(List.of(record));
 
         selfSweep = new SweepRule();
         selfSweep.setId(UUID.randomUUID());
@@ -164,7 +155,7 @@ class PoboCutoverServiceTest {
         assertThat(r.mirrors()).extracting(PoboCutoverService.Item::detail).satisfiesExactly(
             d -> assertThat(d).startsWith("IC receivable 3369 -> 0 to follow IHB-DUBAI-AED's position 14.48"),
             d -> assertThat(d).startsWith("IC payable 0 -> 14.48"));
-        assertThat(r.recharges()).hasSize(2);
+        assertThat(r.recharges()).singleElement().satisfies(i -> assertThat(i.subject()).isEqualTo(recharge.getRechargeReference()));
         assertThat(r.creditLimits()).singleElement().satisfies(i ->
             assertThat(i.detail()).startsWith("Credit used 9000 -> 0, available 41000 -> 50000"));
         assertThat(r.sweepRules()).singleElement().satisfies(i -> assertThat(i.detail()).startsWith("Rule disabled"));
@@ -182,14 +173,13 @@ class PoboCutoverServiceTest {
         verify(vas, never()).save(any());
         verify(ledger, never()).save(any());
         verify(recharges, never()).save(any());
-        verify(icRecords, never()).save(any());
         verify(rules, never()).save(any());
     }
 
     @Test
     void aRealRunRepairsEverythingAndASecondRunFindsNothing() {
         PoboCutoverService.Report r = service.cutover(corp, false);
-        assertThat(r.changes()).isEqualTo(2 + 2 + 2 + 1 + 1);
+        assertThat(r.changes()).isEqualTo(2 + 2 + 1 + 1 + 1);
 
         assertThat(List.of(pending, approved)).allSatisfy(p -> {
             assertThat(p.getStatus()).isEqualTo(PayableStatus.APPROVED);
@@ -204,7 +194,6 @@ class PoboCutoverServiceTest {
         assertThat(ihbCurrent.getCreditLimitAvailable()).isEqualByComparingTo("50000");
         assertThat(recharge.getStatus()).isEqualTo(IntercompanyRecharge.RechargeStatus.SETTLED);
         assertThat(recharge.getSettlementReference()).isEqualTo(PoboCutoverService.SETTLED_BY_IHB);
-        assertThat(record.getStatus()).isEqualTo(IntercompanyTransaction.TransactionStatus.SETTLED);
         assertThat(selfSweep.getStatus()).isEqualTo(SweepRule.SweepStatus.DISABLED);
         assertThat(ihbCurrent.getCurrentBalance()).as("the position itself never moves").isEqualByComparingTo("14.48");
         assertThat(treasurySettlement.getCurrentBalance()).as("past self-sweeps only reported").isEqualByComparingTo("100000");
@@ -225,19 +214,15 @@ class PoboCutoverServiceTest {
     }
 
     @Test
-    void aClosedPoboRechargeNoLongerCountsInTheBilateralPosition() {
+    void aClosedPoboRechargeIsNotOfferedForNetting() {
         service.cutover(corp, false);
         when(entities.findById(treasury.getId())).thenReturn(Optional.of(treasury));
         when(entities.findById(dubai.getId())).thenReturn(Optional.of(dubai));
-        IntercompanyTransactionService ic = new IntercompanyTransactionService(icRecords, recharges, entities, payables,
+        IntercompanyTransactionService ic = new IntercompanyTransactionService(recharges, entities, payables,
             mock(com.bank.vam.repository.receivables.ReceivableRepository.class),
             mock(com.bank.vam.repository.treasury.NettingCycleRepository.class),
-            mock(com.bank.vam.repository.treasury.NettingEntryRepository.class), vas, null, null);
+            mock(com.bank.vam.repository.treasury.NettingEntryRepository.class), vas, null);
 
-        var position = ic.getBilateralPosition(treasury.getId(), dubai.getId());
-
-        assertThat(position.getEntity1OwesEntity2()).isEqualByComparingTo("0");
-        assertThat(position.getEntity2OwesEntity1()).isEqualByComparingTo("0");
         assertThat(ic.getNettingEligibleTransactions(corp, treasury.getId(), dubai.getId()).getItems()).isEmpty();
     }
 }

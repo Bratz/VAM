@@ -10,7 +10,6 @@ import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.tax.ChargeConfiguration;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
-import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.exception.ResourceNotFoundException;
@@ -21,7 +20,6 @@ import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.tax.ChargeConfigurationRepository;
-import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.service.treasury.IhbMirrorService;
 import com.bank.vam.service.pobo.PoboEnrolmentService;
 import com.bank.vam.service.treasury.BalanceAggregationServiceEnhanced;
@@ -184,7 +182,6 @@ public class TransactionService {
     private final SettlementVaResolverService settlementVaResolver;
     private final BalanceAggregationServiceEnhanced balanceAggregationService;
     private final ObjectMapper objectMapper;
-    private final IntercompanyTransactionRepository intercompanyTransactionRepository;
     private final IhbMirrorService ihbMirrors;
     private final FxPaymentService fxPayments;
     private final com.bank.vam.service.treasury.IhbUnifiedService ihb;
@@ -1224,14 +1221,6 @@ public class TransactionService {
             ownerVa.getVaNumber(), payerVa.getVaNumber(), shadowVa.getVaNumber(),
             request.getAmount(), poboFee, behalfOfEntity);
 
-        // =====================================================================
-        // CREATE INTERCOMPANY TRANSACTION RECORD (for Intercompany page display)
-        // =====================================================================
-        createIntercompanyTransactionRecord(
-            ownerVa, payerVa, ownerEntity, payerEntity,
-            request.getAmount(), poboFee, correlationId,
-            txn1_ownerOut.getReferenceNumber(), "POBO_4LEG");
-
         return txn1_ownerOut;
     }
 
@@ -1314,8 +1303,6 @@ public class TransactionService {
         // Get legal entities for audit
         LegalEntity ownerEntity = ownerVa.getOwningEntityId() != null ?
             legalEntityRepository.findById(ownerVa.getOwningEntityId()).orElse(null) : null;
-        LegalEntity treasuryEntity = treasurySettlementVa.getOwningEntityId() != null ?
-            legalEntityRepository.findById(treasurySettlementVa.getOwningEntityId()).orElse(null) : null;
 
         // No POBO fee (spec D10)
         BigDecimal poboFee = BigDecimal.ZERO;
@@ -1564,14 +1551,6 @@ public class TransactionService {
             ownerVa.getVaNumber(), ihbSettlementVa.getVaNumber(), treasurySettlementVa.getVaNumber(),
             icReceivableVa.getVaNumber(), icReceivableVa.getCurrentBalance(),
             shadowVa.getVaNumber(), request.getAmount(), poboFee, behalfOfEntity);
-
-        // =====================================================================
-        // CREATE INTERCOMPANY TRANSACTION RECORD (for Intercompany page display)
-        // =====================================================================
-        createIntercompanyTransactionRecord(
-            ownerVa, treasurySettlementVa, ownerEntity, treasuryEntity,
-            request.getAmount(), poboFee, correlationId,
-            txn1_ownerDebit.getReferenceNumber(), "POBO_6LEG");
 
         return txn1_ownerDebit;
     }
@@ -2146,164 +2125,6 @@ public class TransactionService {
             ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(), executionReference);
 
         return ownerTxn;
-    }
-
-    // ========================================================================
-    // INTERCOMPANY TRANSACTION RECORD CREATION
-    // ========================================================================
-
-    /**
-     * Create dual IntercompanyTransaction records for POBO payments.
-     *
-     * Creates TWO records for proper intercompany accounting:
-     * 1. IC_RECEIVABLE - Treasury's view (Treasury is owed by Subsidiary)
-     * 2. IC_PAYABLE - Subsidiary's view (Subsidiary owes Treasury)
-     *
-     * This ensures POBO transactions appear in the Intercompany page/screens
-     * with each entity seeing their own perspective.
-     *
-     * @param ownerVa The owner/behalf VA (subsidiary IHB Current Account)
-     * @param payerVa The payer VA (Treasury Settlement VA)
-     * @param ownerEntity The owner legal entity (subsidiary)
-     * @param payerEntity The payer legal entity (Treasury Center)
-     * @param amount The payment amount
-     * @param charges The POBO fee/charges
-     * @param correlationId The correlation ID linking all transaction legs
-     * @param txnReference The primary transaction reference
-     * @param flowType The POBO flow type ("POBO_4LEG" or "POBO_6LEG")
-     */
-    private void createIntercompanyTransactionRecord(
-            VirtualAccount ownerVa,
-            VirtualAccount payerVa,
-            LegalEntity ownerEntity,
-            LegalEntity payerEntity,
-            BigDecimal amount,
-            BigDecimal charges,
-            String correlationId,
-            String txnReference,
-            String flowType) {
-
-        try {
-            // Extract entity details
-            UUID treasuryEntityId = payerEntity != null ? payerEntity.getId() : payerVa.getOwningEntityId();
-            String treasuryEntityCode = payerEntity != null ? payerEntity.getEntityCode() : payerVa.getOwningEntityCode();
-            String treasuryEntityName = payerEntity != null ? payerEntity.getEntityName() : payerVa.getVaName();
-
-            UUID subsidiaryEntityId = ownerEntity != null ? ownerEntity.getId() : ownerVa.getOwningEntityId();
-            String subsidiaryEntityCode = ownerEntity != null ? ownerEntity.getEntityCode() : ownerVa.getOwningEntityCode();
-            String subsidiaryEntityName = ownerEntity != null ? ownerEntity.getEntityName() : ownerVa.getVaName();
-
-            BigDecimal netAmount = amount.add(charges != null ? charges : BigDecimal.ZERO);
-            String currencyCode = ownerVa.getCurrencyCode();
-
-            // =====================================================================
-            // RECORD 1: IC_RECEIVABLE - Treasury's perspective
-            // Treasury is owed by Subsidiary (receivable increases)
-            // =====================================================================
-            String icReceivableRef = "ICR-" + correlationId;
-
-            if (intercompanyTransactionRepository.findByTransactionRef(icReceivableRef).isEmpty()) {
-                IntercompanyTransaction treasuryRecord = IntercompanyTransaction.builder()
-                    .transactionRef(icReceivableRef)
-                    .transactionType(IntercompanyTransaction.TransactionType.IC_RECEIVABLE)
-                    // Settled by the IHB position at once: the payment is already on the subsidiary's IHB current account
-                    // (and the mirrors follow it), so the record is information only and never counted again in
-                    // bilateral positions or settlement (as the POBO cut-over does for older records).
-                    .status(IntercompanyTransaction.TransactionStatus.SETTLED)
-                    .settlementRef("IHB-POSITION")
-                    .settledAt(LocalDateTime.now())
-                    .settledBy("SYSTEM")
-
-                    // For IC_RECEIVABLE: Entity that owns the receivable (Treasury)
-                    .payingEntityId(treasuryEntityId)
-                    .payingEntityCode(treasuryEntityCode)
-                    .payingEntityName(treasuryEntityName)
-
-                    // Counterparty: Entity that owes (Subsidiary)
-                    .behalfEntityId(subsidiaryEntityId)
-                    .behalfEntityCode(subsidiaryEntityCode)
-                    .behalfEntityName(subsidiaryEntityName)
-
-                    // Amounts (positive = Treasury is owed this amount)
-                    .amount(amount)
-                    .currencyCode(currencyCode)
-                    .charges(charges)
-                    .netAmount(netAmount)
-
-                    // Original reference for linking
-                    .originalReference(txnReference)
-                    .originalReferenceType(flowType + "_RECEIVABLE")
-
-                    // Processing info
-                    .processedAt(LocalDateTime.now())
-                    .description("IC Receivable from " + subsidiaryEntityCode + " for POBO - " + txnReference)
-                    .createdBy("SYSTEM")
-                    .build();
-
-                intercompanyTransactionRepository.save(treasuryRecord);
-                log.info("Created IC_RECEIVABLE {} for Treasury {} (owed by {})",
-                    icReceivableRef, treasuryEntityCode, subsidiaryEntityCode);
-            }
-
-            // =====================================================================
-            // RECORD 2: IC_PAYABLE - Subsidiary's perspective
-            // Subsidiary owes Treasury (payable increases)
-            // =====================================================================
-            String icPayableRef = "ICP-" + correlationId;
-
-            if (intercompanyTransactionRepository.findByTransactionRef(icPayableRef).isEmpty()) {
-                IntercompanyTransaction subsidiaryRecord = IntercompanyTransaction.builder()
-                    .transactionRef(icPayableRef)
-                    .transactionType(IntercompanyTransaction.TransactionType.IC_PAYABLE)
-                    // Settled by the IHB position at once: the payment is already on the subsidiary's IHB current account
-                    // (and the mirrors follow it), so the record is information only and never counted again in
-                    // bilateral positions or settlement (as the POBO cut-over does for older records).
-                    .status(IntercompanyTransaction.TransactionStatus.SETTLED)
-                    .settlementRef("IHB-POSITION")
-                    .settledAt(LocalDateTime.now())
-                    .settledBy("SYSTEM")
-
-                    // For IC_PAYABLE: Entity that owes (Subsidiary)
-                    .payingEntityId(subsidiaryEntityId)
-                    .payingEntityCode(subsidiaryEntityCode)
-                    .payingEntityName(subsidiaryEntityName)
-
-                    // Counterparty: Entity that is owed (Treasury)
-                    .behalfEntityId(treasuryEntityId)
-                    .behalfEntityCode(treasuryEntityCode)
-                    .behalfEntityName(treasuryEntityName)
-
-                    // Amounts (positive = Subsidiary owes this amount)
-                    .amount(amount)
-                    .currencyCode(currencyCode)
-                    .charges(charges)
-                    .netAmount(netAmount)
-
-                    // Original reference for linking
-                    .originalReference(txnReference)
-                    .originalReferenceType(flowType + "_PAYABLE")
-
-                    // Processing info
-                    .processedAt(LocalDateTime.now())
-                    .description("IC Payable to " + treasuryEntityCode + " for POBO - " + txnReference)
-                    .createdBy("SYSTEM")
-                    .build();
-
-                intercompanyTransactionRepository.save(subsidiaryRecord);
-                log.info("Created IC_PAYABLE {} for Subsidiary {} (owes {})",
-                    icPayableRef, subsidiaryEntityCode, treasuryEntityCode);
-            }
-
-            log.info("Created dual IC records for POBO {}: ICR-{} (Treasury), ICP-{} (Subsidiary)",
-                txnReference, correlationId, correlationId);
-
-            // No IntercompanyRecharge (POBO spec R11 / D8): the payment is already on the subsidiary's IHB current
-            // account, and its position is settled once, never recharged per payment.
-
-        } catch (Exception e) {
-            // Log but don't fail the main transaction - IC records are for reporting
-            log.warn("Failed to create IntercompanyTransaction records for POBO {}: {}", txnReference, e.getMessage());
-        }
     }
 
     // ========================================================================

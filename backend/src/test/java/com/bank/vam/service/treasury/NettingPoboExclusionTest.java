@@ -1,6 +1,5 @@
 package com.bank.vam.service.treasury;
 
-import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
 import com.bank.vam.entity.treasury.NettingCycle;
 import com.bank.vam.exception.BusinessException;
@@ -27,7 +26,7 @@ class NettingPoboExclusionTest {
     private final com.bank.vam.repository.hierarchy.LegalEntityRepository entities =
         mock(com.bank.vam.repository.hierarchy.LegalEntityRepository.class);
     private final NettingService service = new NettingService(null, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
-        null, null, recharges, null, null, null, null, null, mock(FxRateService.class), null, entities, null, null, null, null, null);
+        null, null, recharges, null, null, null, null, mock(FxRateService.class), null, entities, null, null, null, null, null);
 
     private IntercompanyRecharge recharge(IntercompanyRecharge.RechargeType type) {
         IntercompanyRecharge r = IntercompanyRecharge.builder()
@@ -55,13 +54,8 @@ class NettingPoboExclusionTest {
     }
 
     @Test
-    void aPoboRechargeOrPostingRecordCannotBeAddedByHand() {
+    void aPoboRechargeCannotBeAddedByHand() {
         assertThatThrownBy(() -> service.addRechargeToCycle(UUID.randomUUID(), recharge(IntercompanyRecharge.RechargeType.POBO_PAYMENT)))
-            .isInstanceOf(BusinessException.class).hasMessageContaining("In-House Bank position");
-
-        IntercompanyTransaction record = IntercompanyTransaction.builder()
-            .transactionRef("ICR-IHBPOBO-1").originalReferenceType("POBO_6LEG_RECEIVABLE").build();
-        assertThatThrownBy(() -> service.addTransactionToCycle(UUID.randomUUID(), record))
             .isInstanceOf(BusinessException.class).hasMessageContaining("In-House Bank position");
     }
 
@@ -69,7 +63,7 @@ class NettingPoboExclusionTest {
     void aNewDraftCycleTakesARechargeByHandAsTheBulkScanWould() {
         com.bank.vam.repository.treasury.NettingCycleRepository cycles = mock(com.bank.vam.repository.treasury.NettingCycleRepository.class);
         NettingService netting = new NettingService(cycles, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
-            null, null, recharges, null, null, null, null, null, mock(FxRateService.class), null, null, null, null, null, null, null);
+            null, null, recharges, null, null, null, null, mock(FxRateService.class), null, null, null, null, null, null, null);
         NettingCycle draft = new NettingCycle(); // createCycle makes DRAFT; nothing ever sets OPEN
         draft.setBaseCurrency("AED");
         UUID id = UUID.randomUUID();
@@ -91,7 +85,7 @@ class NettingPoboExclusionTest {
         var entries = mock(com.bank.vam.repository.treasury.NettingEntryRepository.class);
         var payables = mock(com.bank.vam.repository.payables.PayableRepository.class);
         var receivables = mock(com.bank.vam.repository.receivables.ReceivableRepository.class);
-        NettingService netting = new NettingService(null, entries, payables, receivables, recharges, null, null, null,
+        NettingService netting = new NettingService(null, entries, payables, receivables, recharges, null, null,
             null, null, mock(FxRateService.class), null, null, null, null, null, null, null);
         IntercompanyRecharge cutOver = recharge(IntercompanyRecharge.RechargeType.POBO_PAYMENT); // NET-202602-003's case
         cutOver.setStatus(IntercompanyRecharge.RechargeStatus.SETTLED);
