@@ -75,6 +75,30 @@ public class IhbUnifiedService {
     private final ProgramRepository programRepository;
     private final PhysicalAccountRepository physicalAccountRepository;
     private final IhbMirrorService ihbMirrors;
+    private final IhbInterestAccrualRepository interestAccruals;
+    private final com.bank.vam.service.audit.AuditLogService audit;
+
+    /** Audit event of a change to an IHB credit limit, spread or the rates an IHB current account is charged (R16). */
+    public static final String TERMS_CHANGED = "IHB_TERMS_CHANGED";
+
+    /** The audit trail's name for the one amount among the IHB terms (in the entity's IHB currency). */
+    public static final String CREDIT_LIMIT = "IHB credit limit";
+
+    /** The IHB terms set on an entity, keyed by what the audit trail calls them. */
+    public static Map<String, Object> terms(LegalEntity e) {
+        Map<String, Object> t = new LinkedHashMap<>();
+        t.put(CREDIT_LIMIT, e.getIhbCreditLimit());
+        t.put("lending spread", e.getLendingRateSpread());
+        t.put("borrowing spread", e.getBorrowingRateSpread());
+        return t;
+    }
+
+    /** Audits what changed in {@link #terms} since {@code before} (nothing when nothing did). */
+    public static void auditTerms(com.bank.vam.service.audit.AuditLogService audit, LegalEntity e, Map<String, Object> before) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("currency", e.getEffectiveIhbCurrency());
+        audit.recordChanges(TERMS_CHANGED, "LegalEntity", e.getId(), e.getCorporateId(), e.getEntityCode(), context, before, terms(e));
+    }
 
     // ========================================================================
     // IHB ENTITY MANAGEMENT
@@ -109,6 +133,7 @@ public class IhbUnifiedService {
         if (entity.isIhbEnabled()) {
             throw new BusinessException("IHB already enabled for entity: " + entity.getEntityCode());
         }
+        Map<String, Object> before = terms(entity);
         entity.enableIhb(request.getCreditLimit(), request.isCanLend(), request.isCanBorrow(),
             request.getLendingRateSpread(), request.getBorrowingRateSpread());
         // Re-enabled with IHB accounts still open: the IHB currency stays theirs, not the functional currency.
@@ -120,6 +145,7 @@ public class IhbUnifiedService {
         applyInterestConfig(entity, request.getIhbInterestConfigId());
 
         entity = legalEntityRepository.save(entity);
+        auditTerms(audit, entity, before);
         log.info("IHB enabled for entity: {} with limit {}", entity.getEntityCode(), request.getCreditLimit());
         
         // ENHANCED: Auto-create sweep rules if enabled
@@ -296,6 +322,7 @@ public class IhbUnifiedService {
         if (!entity.isIhbEnabled()) {
             throw new BusinessException("IHB not enabled for entity: " + entity.getEntityCode());
         }
+        Map<String, Object> before = terms(entity);
         if (request.getCreditLimit() != null) {
             BigDecimal drawn = ihbDebitBalance(entity);
             if (request.getCreditLimit().compareTo(drawn) < 0) {
@@ -313,6 +340,7 @@ public class IhbUnifiedService {
         }
         applyInterestConfig(entity, request.getIhbInterestConfigId());
         entity = legalEntityRepository.save(entity);
+        auditTerms(audit, entity, before);
         log.info("Updated IHB settings for entity: {}", entity.getEntityCode());
         return toEntityResponse(entity);
     }
@@ -858,11 +886,9 @@ public class IhbUnifiedService {
         BigDecimal creditLimit = va.getEffectiveCreditLimit() != null ? va.getEffectiveCreditLimit() : BigDecimal.ZERO;
         BigDecimal overdraftUsed = va.isInOverdraft() ? va.getOverdraftAmount() : BigDecimal.ZERO;
 
-        // Get effective rates (from VA or defaults)
-        BigDecimal effectiveCreditRate = va.getEffectiveCreditRate() != null ?
-            va.getEffectiveCreditRate() : BigDecimal.ZERO;
-        BigDecimal effectiveDebitRate = va.getEffectiveDebitRate() != null ?
-            va.getEffectiveDebitRate() : BigDecimal.ZERO;
+        // The rates the interest run charges (spec D10): the account's own, else the built-in default (was 0 here).
+        BigDecimal effectiveCreditRate = chargedRate(va, true);
+        BigDecimal effectiveDebitRate = chargedRate(va, false);
         BigDecimal penaltyRate = va.getPenaltyRate() != null ?
             va.getPenaltyRate() : BigDecimal.ZERO;
 
@@ -903,6 +929,7 @@ public class IhbUnifiedService {
             .creditRate(effectiveCreditRate)   // Alias for frontend
             .debitRate(effectiveDebitRate)     // Alias for frontend
             .penaltyRate(penaltyRate)
+            .defaultRates(va.getEffectiveCreditRate() == null || va.getEffectiveDebitRate() == null)
             // Interest Configuration
             .internalInterestConfigId(va.getInternalInterestConfigId())
             // IHB Sweep Configuration (NEW)
@@ -940,6 +967,7 @@ public class IhbUnifiedService {
         }
         va.setLastInterestCalcDate(calcDate);
         virtualAccountRepository.save(va);
+        recordAccrual(va, calcDate, day, va.getCurrentBalance(), day.amount(), null);
 
         return VirtualAccountDto.IhbInterestCalcResult.builder()
             .accountId(va.getId())
@@ -957,7 +985,31 @@ public class IhbUnifiedService {
     }
 
     /** One day's interest on {@code balance}: credit (earned) or debit (owed). */
-    private record DailyInterest(boolean credit, BigDecimal amount, BigDecimal rate, boolean defaultRate) {
+    private record DailyInterest(boolean credit, BigDecimal amount, BigDecimal rate, boolean defaultRate, String dayCount) {
+    }
+
+    /** The interest history row (R15): one per accrual, or per correction of one (note says which). */
+    private void recordAccrual(VirtualAccount va, LocalDate on, DailyInterest day, BigDecimal balance, BigDecimal amount, String note) {
+        interestAccruals.save(IhbInterestAccrual.builder()
+            .vaId(va.getId()).accrualDate(on).side(day.credit() ? "CREDIT" : "DEBIT")
+            .balance(balance).rate(day.rate()).defaultRate(day.defaultRate()).dayCount(day.dayCount())
+            .amount(amount.setScale(4, RoundingMode.HALF_UP)).note(note)
+            .build());
+    }
+
+    /**
+     * The day count the interest run uses: the account's interest configuration's convention (one without a convention
+     * counts 360), else the currency's market convention.
+     */
+    public static String dayCount(Optional<InterestConfiguration> config, String currency) {
+        return config.map(c -> c.getDayCountConvention() != null ? c.getDayCountConvention() : "ACT/360")
+            .orElse(InterestConfigurationService.defaultDayCount(currency));
+    }
+
+    /** The annual rate the interest run charges an IHB account on that side: its own, else the built-in default. */
+    public static BigDecimal chargedRate(VirtualAccount va, boolean credit) {
+        BigDecimal configured = credit ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate();
+        return configured != null ? configured : credit ? DEFAULT_CREDIT_RATE : DEFAULT_DEBIT_RATE;
     }
 
     /** One day's interest on an IHB account at {@code balance}, as the daily accrual books it; null on a zero balance. */
@@ -965,16 +1017,15 @@ public class IhbUnifiedService {
         if (balance == null || balance.signum() == 0) return null;
         // Day count: the account's interest configuration's convention when it carries one, else the currency's
         // market default (ACT/365 for GBP, AED, SGD, ...; ACT/360 otherwise). Was 360 for every currency.
-        int dayBasis = Optional.ofNullable(va.getInternalInterestConfigId())
-            .flatMap(interestConfigRepository::findById)
-            .map(InterestConfiguration::getDayCountBasis)
-            .orElse("ACT/365".equals(InterestConfigurationService.defaultDayCount(va.getCurrencyCode())) ? 365 : 360);
+        Optional<InterestConfiguration> config = Optional.ofNullable(va.getInternalInterestConfigId())
+            .flatMap(interestConfigRepository::findById);
+        String dayCount = dayCount(config, va.getCurrencyCode());
+        int dayBasis = config.map(InterestConfiguration::getDayCountBasis).orElse("ACT/365".equals(dayCount) ? 365 : 360);
         boolean credit = balance.signum() > 0;
-        BigDecimal configured = credit ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate();
-        BigDecimal rate = configured != null ? configured : credit ? DEFAULT_CREDIT_RATE : DEFAULT_DEBIT_RATE;
+        BigDecimal rate = chargedRate(va, credit);
         // Daily interest = Balance * Rate / (100 * DayBasis)
         BigDecimal amount = balance.abs().multiply(rate).divide(BigDecimal.valueOf(100L * dayBasis), 6, RoundingMode.HALF_UP);
-        return new DailyInterest(credit, amount, rate, configured == null);
+        return new DailyInterest(credit, amount, rate, (credit ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate()) == null, dayCount);
     }
 
     /**
@@ -1002,15 +1053,20 @@ public class IhbUnifiedService {
         BigDecimal n = BigDecimal.valueOf(days);
         DailyInterest wrong = dailyInterest(va, va.getCurrentBalance().subtract(delta));
         DailyInterest right = dailyInterest(va, va.getCurrentBalance());
+        String note = "Reversal of a movement of " + movedOn + ": " + days + " day(s) re-accrued";
         if (wrong != null) {
             BigDecimal off = wrong.amount().setScale(4, RoundingMode.HALF_UP).multiply(n);
-            if (wrong.credit()) va.setAccruedCreditInterest(Objects.requireNonNullElse(va.getAccruedCreditInterest(), BigDecimal.ZERO).subtract(off).max(BigDecimal.ZERO));
-            else va.setAccruedDebitInterest(Objects.requireNonNullElse(va.getAccruedDebitInterest(), BigDecimal.ZERO).subtract(off).max(BigDecimal.ZERO));
+            BigDecimal had = Objects.requireNonNullElse(wrong.credit() ? va.getAccruedCreditInterest() : va.getAccruedDebitInterest(), BigDecimal.ZERO);
+            BigDecimal left = had.subtract(off).max(BigDecimal.ZERO);
+            if (wrong.credit()) va.setAccruedCreditInterest(left);
+            else va.setAccruedDebitInterest(left);
+            recordAccrual(va, LocalDate.now(), wrong, va.getCurrentBalance().subtract(delta), left.subtract(had), note);
         }
         if (right != null) {
             BigDecimal on = right.amount().setScale(4, RoundingMode.HALF_UP).multiply(n);
             if (right.credit()) va.accrueCredit(on);
             else va.accrueDebit(on);
+            recordAccrual(va, LocalDate.now(), right, va.getCurrentBalance(), on, note);
         }
         log.info("IHB interest on {} re-accrued for {} day(s) after a reversal of {}: credit {}, debit {}",
             va.getVaNumber(), days, delta, va.getAccruedCreditInterest(), va.getAccruedDebitInterest());

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, TrendingUp, TrendingDown, Wallet, RefreshCw, Plus, Eye, Loader2, X, Briefcase, XCircle } from 'lucide-react';
+import { Building2, TrendingUp, Wallet, RefreshCw, Plus, Loader2, X, Briefcase, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
-import { TileAmount } from '../components/TileAmount';
 import { corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
@@ -12,6 +11,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { StatStrip } from '../components/layout/StatStrip';
 import { CoboEnrolmentsPanel } from '../components/treasury/CoboEnrolmentsPanel';
 import { PoboEnrolmentsPanel } from '../components/treasury/PoboEnrolmentsPanel';
+import { IhbChangesPanel, IhbInterestPanel, IhbMovementsPanel, IhbPositionPanel } from '../components/treasury/IhbBookPanels';
 
 // ============================================================================
 // API CONFIGURATION - UNIFIED ENDPOINTS
@@ -100,13 +100,11 @@ interface IhbCurrentAccount {
   accruedDebitInterest: number;
   netAccruedInterest: number;
 
-  // Interest Rates
+  // Interest Rates: what the interest run charges (the built-in default where none is configured)
   creditRate: number;
   debitRate: number;
   penaltyRate: number;
-
-  // Interest Config
-  internalInterestConfigId?: string;
+  defaultRates?: boolean;
 
   // IHB Sweep Configuration
   ihbSweepEnabled?: boolean;
@@ -181,9 +179,6 @@ const ihbUnifiedApi = {
   disableIhb: (entityId: string) =>
     fetch(`${API_BASE}/entities/${entityId}/disable`, { method: 'POST' }).then(r => r.json()) as Promise<ApiResponse<void>>,
 
-  getEntityPosition: (entityId: string) =>
-    fetch(`${API_BASE}/entities/${entityId}/position`).then(r => r.json()),
-
   // Treasury Rates
   getTreasuryRates: (corporateId: string) =>
     fetch(`${API_BASE}/corporate/${corporateId}/treasury-rates`).then(r => r.json()) as Promise<ApiResponse<TreasuryRates>>,
@@ -252,26 +247,16 @@ const ihbUnifiedApi = {
 // Mobile variants) is removed. IHB-specific filter (only IHB-type programs)
 // is applied at the call site before passing into ScopeSelector.
 
+/**
+ * An entity's in-house bank set-up: its role and credit limit. Balances, use of the limit and interest are on the
+ * Position tab; spreads are not shown because the interest run does not apply them (spec D10).
+ */
 const EntityCard: React.FC<{
   entity: IhbEntity;
-  onViewPosition?: () => void;
   onCreateCurrentAccount?: () => void;
-}> = ({ entity, onViewPosition, onCreateCurrentAccount }) => {
-  // Safe number handling - default to 0 for null/undefined
-  const creditLimit = entity.creditLimit ?? 0;
-  const currentExposure = entity.currentExposure ?? 0;
-  const availableLimit = entity.availableLimit ?? 0;
-  const utilizationPercent = entity.utilizationPercent ?? 0;
-  const lendingSpread = entity.lendingRateSpread ?? 0;
-  const borrowingSpread = entity.borrowingRateSpread ?? 0;
+}> = ({ entity, onCreateCurrentAccount }) => {
   const currency = entity.ihbCurrency || 'AED';
-
-  const isPositive = currentExposure <= 0;
-  const utilizationColor = entity.limitBreached ? 'error' : entity.limitWarning ? 'warning' : 'success';
-
-  // Determine entity role: Treasury Center vs IHB Participant
   const isTreasuryCenter = entity.canLend && !entity.canBorrow;
-  const isParticipant = entity.canBorrow;
   const isDualRole = entity.canLend && entity.canBorrow;
 
   return (
@@ -279,21 +264,9 @@ const EntityCard: React.FC<{
       isTreasuryCenter && 'ring-2 ring-warning-200 bg-gradient-to-br from-warning-50/50 to-white'
     )}>
       <div className="p-4">
-        {/* Header with Role Indicator */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              'w-10 h-10 rounded-lg flex items-center justify-center',
-              isTreasuryCenter ? 'bg-warning-100 dark:bg-warning-500/20' : isPositive ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20'
-            )}>
-              {isTreasuryCenter ? (
-                <Building2 className="w-5 h-5 text-warning-600 dark:text-warning-300" />
-              ) : isPositive ? (
-                <TrendingUp className="w-5 h-5 text-success-600 dark:text-success-300" />
-              ) : (
-                <TrendingDown className="w-5 h-5 text-error-600 dark:text-error-300" />
-              )}
-            </div>
+            <StatusIconBadge tone={isTreasuryCenter ? 'warning' : 'primary'} icon={Building2} />
             <div>
               <p className="body-strong font-semibold tracking-tight">{entity.entityName}</p>
               <p className="caption">{entity.entityCode} • {entity.entityType}</p>
@@ -317,87 +290,22 @@ const EntityCard: React.FC<{
           </div>
         </div>
 
-        <div className="space-y-3">
-          {/* Treasury Center View */}
-          {isTreasuryCenter ? (
-            <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</span>
-              <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
-            </div>
-          ) : (
-            <>
-              {/* Participant View - Focus on Borrowing Capacity */}
-              <div className="flex justify-between items-baseline">
-                <span className="label">IHB debit balance</span>
-                <span className="text-body-lg font-bold tracking-tight text-error-600 dark:text-error-300">{formatCurrency(currentExposure, currency)}</span>
-              </div>
+        {isTreasuryCenter ? (
+          <p className="body-sm">Runs the in-house bank: holds the group&apos;s current accounts and funds them from its bank accounts.</p>
+        ) : (
+          <div className="flex justify-between text-body-sm">
+            <span className="text-neutral-500 dark:text-neutral-400">Credit limit</span>
+            <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(entity.creditLimit ?? 0, currency)}</span>
+          </div>
+        )}
 
-              {/* Credit Limit & Utilization */}
-              <div className="pt-3 border-t border-edge">
-                <div className="flex justify-between text-body-sm mb-2">
-                  <span className="text-neutral-500 dark:text-neutral-400">Credit Limit</span>
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(creditLimit, currency)}</span>
-                </div>
-                <div className="flex justify-between text-body-sm mb-2">
-                  <span className="text-neutral-500 dark:text-neutral-400">Available</span>
-                  <span className="font-medium text-success-600 dark:text-success-300">{formatCurrency(availableLimit, currency)}</span>
-                </div>
-                <div className="flex justify-between text-body-sm mb-2">
-                  <span className="text-neutral-500 dark:text-neutral-400">Utilized</span>
-                  <span className={cn(
-                    'font-medium',
-                    utilizationColor === 'error' ? 'text-error-600 dark:text-error-300' :
-                    utilizationColor === 'warning' ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-600 dark:text-neutral-300'
-                  )}>
-                    {utilizationPercent.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="w-full bg-neutral-200 rounded-full h-2 dark:bg-primary-800">
-                  <div
-                    className={cn(
-                      'h-2 rounded-full transition-all',
-                      utilizationColor === 'error' ? 'bg-error-500' :
-                      utilizationColor === 'warning' ? 'bg-warning-500' : 'bg-success-500'
-                    )}
-                    style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Rate Spreads */}
-              <div className="pt-3 border-t border-edge">
-                <div className="grid grid-cols-2 gap-2 text-body-sm">
-                  {entity.canLend && (
-                    <div className="flex justify-between">
-                      <span className="text-neutral-500 dark:text-neutral-400">Lending</span>
-                      <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Borrowing</span>
-                    <span className="font-medium text-error-600 dark:text-error-300">+{borrowingSpread.toFixed(2)}%</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-edge">
-          {/* View Position - available for all entities */}
-          {onViewPosition && (
-            <Button variant="ghost" size="sm" className="flex-1" onClick={onViewPosition}>
-              <Eye className="w-4 h-4 mr-1" /> Position
-            </Button>
-          )}
-          {/* Create Current Account - for Participants (canBorrow) */}
-          {isParticipant && onCreateCurrentAccount && !entity.settlementVaId && (
+        {entity.canBorrow && onCreateCurrentAccount && !entity.settlementVaId && (
+          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-edge">
             <Button variant="ghost" size="sm" className="flex-1 text-cat-2 dark:text-cat-2-fg hover:bg-cat-2-soft dark:hover:bg-cat-2/15" onClick={onCreateCurrentAccount}>
               <Wallet className="w-4 h-4 mr-1" /> Open Account
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -409,7 +317,7 @@ const EntityCard: React.FC<{
 
 const InHouseBankPage: React.FC = () => {
   // State
-  const [activeTab, setActiveTab] = useState<'overview' | 'entities' | 'current-accounts' | 'cobo' | 'pobo'>('overview');
+  const [activeTab, setActiveTab] = useState<'position' | 'movements' | 'interest' | 'changes' | 'entities' | 'current-accounts' | 'cobo' | 'pobo'>('position');
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
@@ -422,11 +330,7 @@ const InHouseBankPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Modals
-  const [showPositionModal, setShowPositionModal] = useState(false);
   const [showCurrentAccountModal, setShowCurrentAccountModal] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState<IhbEntity | null>(null);
-  const [, setEntityPosition] = useState<any>(null);
-  const [loadingPosition, setLoadingPosition] = useState(false);
 
   // Form state - Enhanced for backend alignment
   const [currentAccountForm, setCurrentAccountForm] = useState({
@@ -565,7 +469,7 @@ const InHouseBankPage: React.FC = () => {
           ihbSweepEnabled: false, targetCashBalance: '', ihbSweepFrequency: 'DAILY', vaName: '',
         });
         await loadData();
-        alert('IHB Current Account created successfully (TRANSACTION VA with ihbParticipant=true)');
+        alert('Current account opened at the in-house bank');
       } else {
         alert(result?.message || 'Failed to create current account');
       }
@@ -598,29 +502,16 @@ const InHouseBankPage: React.FC = () => {
     }
   };
 
-  // Handle viewing entity position
-  const handleViewPosition = async (entity: IhbEntity) => {
-    setSelectedEntity(entity);
-    setShowPositionModal(true);
-    setLoadingPosition(true);
-    try {
-      const result = await ihbUnifiedApi.getEntityPosition(entity.id);
-      setEntityPosition(result?.data || result);
-    } catch (err) {
-      console.error('Failed to load entity position:', err);
-      setEntityPosition(null);
-    } finally {
-      setLoadingPosition(false);
-    }
-  };
-
   // Calculated values
   const lenders = entities.filter(e => e.canLend);
   const borrowers = entities.filter(e => e.canBorrow);
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'entities', label: 'IHB Entities', count: entities.length },
+    { id: 'position', label: 'Position' },
+    { id: 'movements', label: 'Movements' },
+    { id: 'interest', label: 'Interest' },
+    { id: 'changes', label: 'Limit and rate changes' },
+    { id: 'entities', label: 'Entities', count: entities.length },
     { id: 'current-accounts', label: 'Current Accounts', count: currentAccounts.length },
     { id: 'cobo', label: 'Collections on behalf (COBO)' },
     { id: 'pobo', label: 'Payments on behalf (POBO)' },
@@ -704,29 +595,6 @@ const InHouseBankPage: React.FC = () => {
       {/* Content when corporate is selected */}
       {selectedCorporateId && (
         <>
-          {/* Treasury Rates Banner (if available) */}
-          {treasuryRates && (
-            <Card padding="sm" className="bg-gradient-to-r from-warning-50/50 via-white to-success-50/50 border-warning-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="warning" icon={TrendingUp} className="flex-shrink-0" />
-                  <div>
-                    <p className="text-caption font-medium text-warning-700 uppercase tracking-wide dark:text-warning-300">Treasury Indicative Rates</p>
-                    <p className="text-body-sm text-neutral-700 mt-0.5 dark:text-neutral-200">
-                      <span className="font-semibold text-warning-800 dark:text-warning-300">Lending: {treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</span>
-                      <span className="mx-3 text-neutral-300 dark:text-neutral-400">|</span>
-                      <span className="font-semibold text-success-700 dark:text-success-300">Deposit: {treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right caption">
-                  <p>Base: {treasuryRates.lendingBaseRateType} {treasuryRates.lendingBaseRate}%</p>
-                  {treasuryRates.rateSource === 'DEFAULT' && <p className="text-warning-700 dark:text-warning-300">Default rates, not the bank&apos;s agreed terms</p>}
-                </div>
-              </div>
-            </Card>
-          )}
-
           {/* Stats */}
           <StatStrip>
             <StatTile
@@ -745,7 +613,7 @@ const InHouseBankPage: React.FC = () => {
               icon={<Wallet className="w-5 h-5" />}
               label="Current Accounts"
               value={currentAccounts.length}
-              sub="IHB participant VAs"
+              sub="At the in-house bank"
               loading={loading}
               delay="0.2s"
             />
@@ -781,16 +649,10 @@ const InHouseBankPage: React.FC = () => {
         </div>
 
         <div className="p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              {/* Position Summary */}
-              <StatStrip>
-                <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Lender Entities" value={lenders.length} sub="Available to lend funds" />
-                <StatTile tone="danger" icon={<TrendingDown className="w-5 h-5" />} label="Borrower Entities" value={borrowers.length} sub="Can borrow from IHB" />
-              </StatStrip>
-            </div>
-          )}
+          {activeTab === 'position' && <IhbPositionPanel corporateId={selectedCorporateId} />}
+          {activeTab === 'movements' && <IhbMovementsPanel corporateId={selectedCorporateId} entities={entities} accounts={currentAccounts} />}
+          {activeTab === 'interest' && <IhbInterestPanel corporateId={selectedCorporateId} accounts={currentAccounts} />}
+          {activeTab === 'changes' && <IhbChangesPanel corporateId={selectedCorporateId} />}
 
           {/* Entities Tab */}
           {activeTab === 'entities' && (
@@ -799,7 +661,6 @@ const InHouseBankPage: React.FC = () => {
                 <EntityCard
                   key={entity.id}
                   entity={entity}
-                  onViewPosition={() => handleViewPosition(entity)}
                   onCreateCurrentAccount={() => handleQuickCurrentAccount(entity)}
                 />
               ))}
@@ -807,7 +668,7 @@ const InHouseBankPage: React.FC = () => {
                 <div className="col-span-full text-center py-12">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No IHB-enabled entities</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Enable IHB on Legal Entities to start intercompany operations</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Enable the in-house bank on an entity under Legal Entities</p>
                 </div>
               )}
             </div>
@@ -852,29 +713,19 @@ const InHouseBankPage: React.FC = () => {
                               variant={account.positionType === 'CREDIT' ? 'success' : account.positionType === 'DEBIT' ? 'error' : 'neutral'}
                               size="sm"
                             >
-                              {account.positionType}
+                              {account.positionType === 'CREDIT' ? 'In credit' : account.positionType === 'DEBIT' ? 'Overdrawn' : 'Zero'}
                             </Badge>
-                            {/* IHB Participant Badge */}
-                            {account.ihbParticipant && (
-                              <Badge variant="info" size="sm" className="text-caption">
-                                IHB Participant
-                              </Badge>
-                            )}
                           </div>
                         </div>
 
-                        {/* Account Category & Type */}
-                        <div className="flex gap-2 mb-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-caption font-medium bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
-                            {account.accountCategory || 'TRANSACTION'}
-                          </span>
-                          {account.ihbSweepEnabled && (
+                        {account.ihbSweepEnabled && (
+                          <div className="flex gap-2 mb-3">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-caption font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
                               <RefreshCw className="w-3 h-3 mr-1" />
-                              Sweep: {account.ihbSweepFrequency || 'DAILY'}
+                              Swept {(account.ihbSweepFrequency || 'DAILY').toLowerCase().replace('_', '-')}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
 
                         {/* Balance Section */}
                         <div className="space-y-2">
@@ -931,24 +782,25 @@ const InHouseBankPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Interest Rates */}
+                        {/* The rates the interest run charges (spec D10) */}
                         <div className="mt-3 pt-3 border-t border-edge">
                           <div className="grid grid-cols-2 gap-2 text-caption">
                             <div className="flex justify-between">
-                              <span className="text-neutral-500 dark:text-neutral-400">Credit Rate</span>
-                              <span className="font-medium text-success-600 dark:text-success-300">{account.creditRate?.toFixed(2) || '0.00'}%</span>
+                              <span className="text-neutral-500 dark:text-neutral-400">Credit rate</span>
+                              <span className="font-medium text-success-600 dark:text-success-300">{account.creditRate?.toFixed(2) ?? '-'}%</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-neutral-500 dark:text-neutral-400">Debit Rate</span>
-                              <span className="font-medium text-error-600 dark:text-error-300">{account.debitRate?.toFixed(2) || '0.00'}%</span>
+                              <span className="text-neutral-500 dark:text-neutral-400">Debit rate</span>
+                              <span className="font-medium text-error-600 dark:text-error-300">{account.debitRate?.toFixed(2) ?? '-'}%</span>
                             </div>
                           </div>
+                          {account.defaultRates && <p className="caption mt-1">Built-in default rate on a side with none configured</p>}
                         </div>
 
                         {/* IHB Configuration Details */}
                         {(account.ihbSweepEnabled || account.targetCashBalance) && (
                           <div className="mt-3 pt-3 border-t border-edge">
-                            <p className="label mb-2 dark:text-neutral-400">IHB Config</p>
+                            <p className="label mb-2 dark:text-neutral-400">Sweep</p>
                             <div className="grid grid-cols-2 gap-2 text-caption">
                               {account.targetCashBalance !== undefined && account.targetCashBalance !== null && (
                                 <div className="flex justify-between">
@@ -960,7 +812,7 @@ const InHouseBankPage: React.FC = () => {
                               )}
                               {account.ihbEnabledAt && (
                                 <div className="flex justify-between">
-                                  <span className="text-neutral-500 dark:text-neutral-400">IHB Since</span>
+                                  <span className="text-neutral-500 dark:text-neutral-400">Opened</span>
                                   <span className="font-medium text-neutral-700 dark:text-neutral-200">
                                     {formatDate(account.ihbEnabledAt)}
                                   </span>
@@ -970,12 +822,6 @@ const InHouseBankPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Internal Interest Config Reference */}
-                        {account.internalInterestConfigId && (
-                          <div className="mt-2 text-caption text-neutral-400 truncate dark:text-neutral-400">
-                            Config: {account.internalInterestConfigId.substring(0, 8)}...
-                          </div>
-                        )}
                       </div>
                     </Card>
                   ))}
@@ -984,7 +830,7 @@ const InHouseBankPage: React.FC = () => {
                 <EmptyState
                   icon={<Wallet className="w-12 h-12" />}
                   title="No IHB Current Accounts"
-                  description="Create current accounts for IHB participants to manage their intercompany balances"
+                  description="Open a current account at the in-house bank for each entity that takes part"
                   action={<Button onClick={() => setShowCurrentAccountModal(true)} leftIcon={<Plus className="w-4 h-4" />}>New Current Account</Button>}
                 />
               )}
@@ -995,132 +841,11 @@ const InHouseBankPage: React.FC = () => {
         </>
       )}
 
-      {/* Entity Position Modal */}
-      <Modal
-        isOpen={showPositionModal}
-        onClose={() => { setShowPositionModal(false); setSelectedEntity(null); setEntityPosition(null); }}
-        title={`Position: ${selectedEntity?.entityName || 'Entity'}`}
-        size="lg"
-      >
-        {loadingPosition ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
-          </div>
-        ) : selectedEntity && (
-          <div className="space-y-5">
-            {/* Entity Summary Header */}
-            <div className={cn(
-              "rounded-lg p-4 border",
-              selectedEntity.canLend && !selectedEntity.canBorrow
-                ? "bg-warning-50 border-warning-200 dark:border-warning-500/30 dark:bg-warning-500/10"
-                : "bg-primary-50 border-primary-200 dark:border-primary-700 dark:bg-primary-500/10"
-            )}>
-              <div className="flex items-center gap-3 mb-3">
-                <StatusIconBadge tone={selectedEntity.canLend && !selectedEntity.canBorrow ? 'warning' : 'primary'} icon={Building2} />
-                <div>
-                  <p className="body-strong font-semibold">{selectedEntity.entityName}</p>
-                  <p className="caption">{selectedEntity.entityCode} • {selectedEntity.entityType}</p>
-                </div>
-                <div className="ml-auto flex gap-2">
-                  {selectedEntity.canLend && <Badge variant="success" size="sm">Lender</Badge>}
-                  {selectedEntity.canBorrow && <Badge variant="info" size="sm">Borrower</Badge>}
-                </div>
-              </div>
-            </div>
-
-            {/* Position Summary */}
-            <StatStrip>
-              <StatTile
-                tone="danger"
-                label="IHB Debit Balance"
-                value={<TileAmount value={selectedEntity.currentExposure ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
-              />
-            </StatStrip>
-
-            {/* Credit Limit Section (for borrowers) */}
-            {selectedEntity.canBorrow && (
-              <div className="p-4 bg-surface-page rounded-lg border border-edge">
-                <p className="body-strong font-semibold mb-3">Credit Limit Status</p>
-                <div className="grid grid-cols-3 gap-4 mb-3">
-                  <div>
-                    <p className="caption">Credit Limit</p>
-                    <p className="body-strong font-semibold">
-                      {formatCurrency(selectedEntity.creditLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="caption">Used</p>
-                    <p className="text-body-sm font-semibold text-error-600 dark:text-error-300">
-                      {formatCurrency(selectedEntity.currentExposure ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="caption">Available</p>
-                    <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
-                      {formatCurrency(selectedEntity.availableLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                    </p>
-                  </div>
-                </div>
-                <div className="w-full bg-neutral-200 rounded-full h-3 dark:bg-primary-800">
-                  <div
-                    className={cn(
-                      "h-3 rounded-full transition-all",
-                      selectedEntity.limitBreached ? "bg-error-500" :
-                      selectedEntity.limitWarning ? "bg-warning-500" : "bg-success-500"
-                    )}
-                    style={{ width: `${Math.min(selectedEntity.utilizationPercent ?? 0, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1">
-                  <p className="caption">Utilization</p>
-                  <p className={cn(
-                    "text-caption font-medium",
-                    selectedEntity.limitBreached ? "text-error-600 dark:text-error-300" :
-                    selectedEntity.limitWarning ? "text-warning-600 dark:text-warning-300" : "text-neutral-600 dark:text-neutral-300"
-                  )}>
-                    {(selectedEntity.utilizationPercent ?? 0).toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Rate Spreads */}
-            <div className="p-4 bg-surface-page rounded-lg border border-edge">
-              <p className="body-strong font-semibold mb-3">
-                Rate Spreads
-                {selectedEntity.spreadsDefault && <span className="ml-2" title="Built-in spreads nobody has set for this entity"><Badge variant="warning" size="sm">Default: not agreed terms</Badge></span>}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {selectedEntity.canLend && (
-                  <div>
-                    <p className="caption">Lending Spread (Earns)</p>
-                    <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">+{(selectedEntity.lendingRateSpread ?? 0).toFixed(2)}%</p>
-                  </div>
-                )}
-                {selectedEntity.canBorrow && (
-                  <div>
-                    <p className="caption">Borrowing Spread (Pays)</p>
-                    <p className="text-body-sm font-semibold text-error-600 dark:text-error-300">+{(selectedEntity.borrowingRateSpread ?? 0).toFixed(2)}%</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" className="flex-1" onClick={() => setShowPositionModal(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
       {/* Create Current Account Modal */}
       <Modal
         isOpen={showCurrentAccountModal}
         onClose={() => setShowCurrentAccountModal(false)}
-        title="Create IHB Current Account"
+        title="Open a current account at the in-house bank"
         size="lg"
       >
         <div className="space-y-5">
@@ -1129,12 +854,10 @@ const InHouseBankPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <StatusIconBadge tone="cat-2" icon={Wallet} className="shrink-0" />
               <div>
-                <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
+                <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">In-house bank current account</p>
                 <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
-                  Creates a TRANSACTION VA with <span className="font-mono bg-cat-2/10 px-1 rounded-md dark:bg-cat-2/15">ihbParticipant=true</span>.
-                  This account supports running balance with credit interest (positive balance) and
-                  debit interest (overdraft). The IHB flag allows any operational VA to participate
-                  in treasury interest schemes.
+                  The entity&apos;s account at the in-house bank: it earns credit interest on a positive balance and pays
+                  debit interest when overdrawn, up to its credit limit.
                 </p>
               </div>
             </div>
@@ -1188,7 +911,7 @@ const InHouseBankPage: React.FC = () => {
                   </option>
                 ))}
               </Select>
-              <p className="caption mt-1">Only entities with canBorrow=true can have IHB current accounts</p>
+              <p className="caption mt-1">Only entities that may borrow from the in-house bank can have a current account</p>
             </div>
           </div>
 
@@ -1257,7 +980,7 @@ const InHouseBankPage: React.FC = () => {
               </div>
             </div>
             <p className="caption mt-2">
-              Leave rates empty to use treasury configuration. Override rates take precedence over entity spreads.
+              Used only when neither the entity nor treasury has a rate configuration in this currency; otherwise that configuration&apos;s rates apply.
             </p>
           </div>
 

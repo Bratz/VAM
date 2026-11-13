@@ -1469,6 +1469,8 @@ public class VirtualAccountDto {
         private BigDecimal creditRate;   // Alias for effectiveCreditRate
         private BigDecimal debitRate;    // Alias for effectiveDebitRate
         private BigDecimal penaltyRate;  // Penalty rate for overdraft
+        /** A credit or debit rate above is the built-in default: none is configured on the account. */
+        private Boolean defaultRates;
 
         // Interest Configuration
         private UUID internalInterestConfigId;

@@ -92,6 +92,41 @@ public class AuditLogService {
     }
 
     /**
+     * Records what changed on one record, field by field ("credit limit: 1000000 → 500000"), from two snapshots taken
+     * before and after with the same keys; numbers compare by value (1.50 = 1.5). Nothing is written when nothing
+     * changed. Payload: {@code {subject, ...context, changes: [{field, from, to}]}}; context (nullable) says what the
+     * values need to be read, e.g. their currency.
+     */
+    public void recordChanges(String eventType, String entityType, UUID entityId, UUID corporateId, String subject,
+                              Map<String, Object> context, Map<String, Object> before, Map<String, Object> after) {
+        java.util.List<Map<String, Object>> changes = new java.util.ArrayList<>();
+        StringBuilder summary = new StringBuilder(subject).append(':');
+        for (Map.Entry<String, Object> e : after.entrySet()) {
+            Object from = before.get(e.getKey());
+            Object to = e.getValue();
+            if (sameValue(from, to)) continue;
+            Map<String, Object> change = new java.util.LinkedHashMap<>();
+            change.put("field", e.getKey());
+            change.put("from", from);
+            change.put("to", to);
+            changes.add(change);
+            summary.append(' ').append(e.getKey()).append(' ').append(from).append(" → ").append(to).append(';');
+        }
+        if (changes.isEmpty()) return;
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("subject", subject);
+        if (context != null) payload.putAll(context);
+        payload.put("changes", changes);
+        String text = summary.substring(0, summary.length() - 1);
+        record(eventType, entityType, entityId, corporateId, text.length() > 500 ? text.substring(0, 500) : text, payload);
+    }
+
+    private static boolean sameValue(Object a, Object b) {
+        if (a instanceof java.math.BigDecimal x && b instanceof java.math.BigDecimal y) return x.compareTo(y) == 0;
+        return java.util.Objects.equals(a, b);
+    }
+
+    /**
      * Fixed-order, control-character-delimited string of the entry's semantic
      * fields — not JSON. A hash only needs *a* deterministic byte sequence, not
      * valid JSON, and a fixed field order needs no key-sorting configuration on

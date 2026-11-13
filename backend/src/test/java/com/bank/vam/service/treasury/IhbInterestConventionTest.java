@@ -34,12 +34,14 @@ class IhbInterestConventionTest {
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final TransactionRepository txns = mock(TransactionRepository.class);
     private final InterestConfigurationRepository configs = mock(InterestConfigurationRepository.class);
+    private final com.bank.vam.repository.treasury.IhbInterestAccrualRepository accruals =
+        mock(com.bank.vam.repository.treasury.IhbInterestAccrualRepository.class);
     private final IhbUnifiedService service = new IhbUnifiedService(
         mock(LegalEntityRepository.class), vas, txns, mock(FeePostingService.class),
         mock(com.bank.vam.repository.treasury.SweepRuleRepository.class), configs,
         mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),
-        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns));
+        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns), accruals, mock(com.bank.vam.service.audit.AuditLogService.class));
 
     @BeforeEach
     void setUp() {
@@ -94,5 +96,34 @@ class IhbInterestConventionTest {
         ArgumentCaptor<Transaction> row = ArgumentCaptor.forClass(Transaction.class);
         verify(txns).save(row.capture());
         assertThat(row.getValue().getDescription()).contains("default rate 2.50% — no rate configured");
+    }
+
+    @Test
+    void eachAccrualIsRecordedWithItsBalanceRateDayCountAndAmount() {
+        VirtualAccount aed = account("AED", "-365000", null);
+        aed.setEffectiveDebitRate(new BigDecimal("5.50"));
+        accrue(aed);
+
+        ArgumentCaptor<com.bank.vam.entity.treasury.IhbInterestAccrual> row =
+            ArgumentCaptor.forClass(com.bank.vam.entity.treasury.IhbInterestAccrual.class);
+        verify(accruals).save(row.capture());
+        assertThat(row.getValue().getVaId()).isEqualTo(aed.getId());
+        assertThat(row.getValue().getSide()).isEqualTo("DEBIT");
+        assertThat(row.getValue().getBalance()).isEqualByComparingTo("-365000");
+        assertThat(row.getValue().getRate()).isEqualByComparingTo("5.50");
+        assertThat(row.getValue().isDefaultRate()).isFalse();
+        assertThat(row.getValue().getDayCount()).isEqualTo("ACT/365");
+        assertThat(row.getValue().getAmount()).isEqualByComparingTo("55.0000"); // = what was added to the accrued debit
+        assertThat(aed.getAccruedDebitInterest()).isEqualByComparingTo(row.getValue().getAmount());
+    }
+
+    @Test
+    void theAccountShowsTheRatesTheRunChargesNotZeroWhenNoneIsConfigured() {
+        VirtualAccount va = account("AED", "100", null);
+        when(vas.findById(va.getId())).thenReturn(Optional.of(va));
+        VirtualAccountDto.IhbPositionResponse r = service.getIhbCurrentAccountPosition(va.getId());
+        assertThat(r.getCreditRate()).isEqualByComparingTo("2.50");
+        assertThat(r.getDebitRate()).isEqualByComparingTo("5.00");
+        assertThat(r.getDefaultRates()).isTrue();
     }
 }

@@ -46,6 +46,7 @@ public class LegalEntityService {
     private final LegalEntityRepository legalEntityRepository;
     private final PhysicalAccountRepository physicalAccountRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.service.audit.AuditLogService audit;
 
     // ========================================================================
     // CREATE OPERATIONS
@@ -309,6 +310,7 @@ public class LegalEntityService {
         log.info("Updating legal entity: {}", entityId);
 
         LegalEntity entity = getEntity(entityId);
+        java.util.Map<String, Object> ihbTermsBefore = com.bank.vam.service.treasury.IhbUnifiedService.terms(entity);
 
         // ========================================================================
         // Basic Info
@@ -442,6 +444,7 @@ public class LegalEntityService {
         if (request.getBorrowingRateSpread() != null) {
             entity.setBorrowingRateSpread(request.getBorrowingRateSpread());
         }
+        com.bank.vam.service.treasury.IhbUnifiedService.auditTerms(audit, entity, ihbTermsBefore);
 
         // ========================================================================
         // Validity Dates

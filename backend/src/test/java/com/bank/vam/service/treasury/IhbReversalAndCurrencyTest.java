@@ -42,7 +42,7 @@ class IhbReversalAndCurrencyTest {
         mock(com.bank.vam.repository.treasury.SweepRuleRepository.class), configs,
         mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),
-        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns));
+        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns), mock(com.bank.vam.repository.treasury.IhbInterestAccrualRepository.class), mock(com.bank.vam.service.audit.AuditLogService.class));
 
     /** Dubai on vam-five: 15 Sep sweep took it from 0.96 to -1,000,000; accrued 16-28 Sep; reversed 1 Oct. */
     private VirtualAccount dubaiAfterReversal() {

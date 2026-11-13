@@ -47,7 +47,7 @@ class IhbLedgerPostingTest {
         mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class),
         mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),
-        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns));
+        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), new IhbMirrorService(vas, txns), mock(com.bank.vam.repository.treasury.IhbInterestAccrualRepository.class), mock(com.bank.vam.service.audit.AuditLogService.class));
 
     private VirtualAccount ihbAccount(String number, String cash) {
         VirtualAccount va = VirtualAccount.builder()

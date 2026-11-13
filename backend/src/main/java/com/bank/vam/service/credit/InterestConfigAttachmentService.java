@@ -68,6 +68,7 @@ public class InterestConfigAttachmentService {
     private final VirtualAccountRepository vaRepository;
     private final InterestConfigurationRepository configRepository;
     private final InterestConfigurationService configService;
+    private final com.bank.vam.service.audit.AuditLogService audit;
 
     // ========================================================================
     // AUTO-ATTACHMENT (Called when VA is created)
@@ -301,9 +302,21 @@ public class InterestConfigAttachmentService {
             }
         }
         
-        // Update VA
+        // Update VA. On an IHB account these are the rates the interest run charges: a change is audited (R16).
+        java.util.Map<String, Object> before = ihbRates(va);
         va.setEffectiveCreditRate(effectiveCreditRate);
         va.setEffectiveDebitRate(effectiveDebitRate);
+        if (va.isIhbParticipant()) {
+            audit.recordChanges(com.bank.vam.service.treasury.IhbUnifiedService.TERMS_CHANGED, "VirtualAccount",
+                va.getId(), va.getCorporateId(), va.getVaNumber(), null, before, ihbRates(va));
+        }
+    }
+
+    private static java.util.Map<String, Object> ihbRates(VirtualAccount va) {
+        java.util.Map<String, Object> rates = new java.util.LinkedHashMap<>();
+        rates.put("credit rate", va.getEffectiveCreditRate());
+        rates.put("debit rate", va.getEffectiveDebitRate());
+        return rates;
     }
 
     /**

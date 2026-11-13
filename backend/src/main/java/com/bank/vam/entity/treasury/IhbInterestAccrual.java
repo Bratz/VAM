@@ -1,74 +1,69 @@
 package com.bank.vam.entity.treasury;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * One day's interest on an IHB current account, as the daily run booked it: the balance it ran on, the rate it charged,
+ * the day count and the amount added to the account's accrued credit or debit interest (spec ihb-intercompany-pages
+ * R15). A reversal that takes accrued interest back is a row too (negative amount, with a note), so the rows of a
+ * period add up to what was accrued. Posted amounts are the INTEREST rows of the ledger. Written by
+ * IhbUnifiedService; the old per-entity table of this name never had a writer (V65 dropped it).
+ */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "ihb_interest_accruals")
+@Table(name = "ihb_interest_accruals", indexes = @Index(name = "idx_ihb_accrual_va_date", columnList = "va_id, accrual_date"))
 public class IhbInterestAccrual {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "entity_id", nullable = false)
-    private IhbEntity entity;
+    @Column(name = "va_id", nullable = false)
+    private UUID vaId;
 
-    @Column(name = "entity_code", length = 20)
-    private String entityCode;
+    /** The run's date (the day the interest was added to the accrual). */
+    @Column(name = "accrual_date", nullable = false)
+    private LocalDate accrualDate;
 
-    @Column(name = "period_start", nullable = false)
-    private LocalDate periodStart;
+    /** CREDIT: earned by the participant (balance in credit); DEBIT: owed by it (overdrawn). */
+    @Column(name = "side", length = 6, nullable = false)
+    private String side;
 
-    @Column(name = "period_end", nullable = false)
-    private LocalDate periodEnd;
+    @Column(name = "balance", precision = 18, scale = 2)
+    private BigDecimal balance;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "position_type", length = 20)
-    private PositionType positionType;
+    /** Annual rate in percent, as charged. */
+    @Column(name = "rate", precision = 10, scale = 5)
+    private BigDecimal rate;
 
-    @Column(name = "average_balance", precision = 18, scale = 2)
-    private BigDecimal averageBalance;
+    /** True when no rate was configured and the built-in default was charged. */
+    @Column(name = "default_rate")
+    private boolean defaultRate;
 
-    @Column(name = "interest_rate", precision = 8, scale = 4)
-    private BigDecimal interestRate;
+    @Column(name = "day_count", length = 10)
+    private String dayCount;
 
-    @Column(name = "accrued_amount", precision = 18, scale = 2)
-    private BigDecimal accruedAmount;
+    /** Added to the accrued interest of {@link #side}, to the accrued columns' 4 places; negative when taken back. */
+    @Column(name = "amount", precision = 18, scale = 4, nullable = false)
+    private BigDecimal amount;
 
-    @Column(name = "currency_code", length = 3)
-    private String currencyCode = "AED";
+    /** Null for a daily accrual; says why for a correction. */
+    @Column(name = "note", length = 200)
+    private String note;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 20)
-    private AccrualStatus status = AccrualStatus.ACCRUED;
-
-    @Column(name = "posted_date")
-    private LocalDate postedDate;
-
-    @Column(name = "posting_reference", length = 30)
-    private String postingReference;
-
-    @Column(name = "calculated_at")
-    private LocalDateTime calculatedAt = LocalDateTime.now();
-
-    @Column(name = "posted_at")
-    private LocalDateTime postedAt;
-
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
-
-    public enum PositionType {
-        SURPLUS, DEFICIT
-    }
-
-    public enum AccrualStatus {
-        ACCRUED, POSTED, SETTLED, REVERSED
-    }
+    @Builder.Default
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

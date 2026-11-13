@@ -335,6 +335,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
            "ORDER BY t.transactionDate DESC")
     List<Transaction> findAllTransactionsByCorrelationId(@Param("correlationId") String correlationId);
 
+    /** Movements on any of the given VAs booked in [from, to), oldest first — the IHB page's movements and statements. */
+    List<Transaction> findByVaIdInAndTransactionDateGreaterThanEqualAndTransactionDateLessThanOrderByTransactionDateAscCreatedAtAsc(
+        java.util.Collection<UUID> vaIds, java.time.LocalDateTime from, java.time.LocalDateTime to);
+
     /** Movements on any of the given VAs from a point in time — used for wallet volumes. */
     List<Transaction> findByVaIdInAndTransactionDateGreaterThanEqual(
         List<UUID> vaIds, java.time.LocalDateTime from);

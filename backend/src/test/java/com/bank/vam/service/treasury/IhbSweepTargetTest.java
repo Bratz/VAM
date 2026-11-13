@@ -30,7 +30,7 @@ class IhbSweepTargetTest {
         mock(FeePostingService.class), rules,
         mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class), mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),
-        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class));
+        mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class), mock(com.bank.vam.repository.treasury.IhbInterestAccrualRepository.class), mock(com.bank.vam.service.audit.AuditLogService.class));
 
     @Test
     void treasuryCenterIsLookedUpInTheEntitysOwnCorporateOnly() {
@@ -108,7 +108,7 @@ class IhbSweepTargetTest {
             mock(FeePostingService.class), rules,
             mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class), mock(com.bank.vam.service.tax.TaxService.class),
             market, mock(HierarchyNodeRepository.class),
-            mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class));
+            mock(ProgramRepository.class), mock(PhysicalAccountRepository.class), mock(IhbMirrorService.class), mock(com.bank.vam.repository.treasury.IhbInterestAccrualRepository.class), mock(com.bank.vam.service.audit.AuditLogService.class));
 
         UUID corporate = UUID.randomUUID();
         LegalEntity entity = new LegalEntity();

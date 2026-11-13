@@ -164,16 +164,73 @@ pairs, stats), tsc + lint clean):
   EUR 5,000) that never collected.
 
 ### Phase 4 — In-House Bank page (D7, D8, D10; R13–R19)
-- [ ] 4.1 Position matrix: entities × currencies — current account balance, credit limit, used, headroom, accrued interest
+- [x] 4.1 Position matrix: entities × currencies — current account balance, credit limit, used, headroom, accrued interest
       (IhbExposure + accounts) — with the IHB's funding (treasury's bank accounts) beside it.
-- [ ] 4.2 Movements on IHB current accounts (sweeps, POBO, COBO, interest, settlements): filter by entity, currency, type,
+- [x] 4.2 Movements on IHB current accounts (sweeps, POBO, COBO, interest, settlements): filter by entity, currency, type,
       date; drill-down to the transaction; per-account statement for a period (opening/closing, value dates) with CSV
       export (PDF/camt.053 via the existing statement generation if it fits).
-- [ ] 4.3 Interest history per account and period: day count, rate actually charged, accrued, posted.
-- [ ] 4.4 Limit/rate audit trail from the existing audit log (who, from → to, when).
-- [ ] 4.5 Rates shown = rates the interest run charges (D10); unused spreads no longer shown as applied; jargon removed
+- [x] 4.3 Interest history per account and period: day count, rate actually charged, accrued, posted.
+- [x] 4.4 Limit/rate audit trail from the existing audit log (who, from → to, when).
+- [x] 4.5 Rates shown = rates the interest run charges (D10); unused spreads no longer shown as applied; jargon removed
       (no "mirror", config ids); currency on every amount. Set-up actions unchanged (D8).
-- [ ] 4.6 Tests for 4.1–4.4 read models; lint, typecheck.
+- [x] 4.6 Tests for 4.1–4.4 read models; lint, typecheck.
+
+Phase 4 done (13 Nov, uncommitted; `mvn test` 869/0 (860 + 7 in IhbBookServiceTest + 2 in IhbInterestConventionTest),
+tsc + lint clean; not run live: starting the backend applies V57–V65 to the local DB, which Phase 5.2 backs up first):
+- Read model `IhbBookService` (new), endpoints on `IhbController`, each with a required `corporateId` (400 without; an
+  account or movement of another corporate is a 404): `GET /ihb/position`; `GET /ihb/movements?entityId&currency&kind&from&to`
+  (kind SWEEP|POBO|COBO|INTEREST|SETTLEMENT|FEE|OTHER, booked dates inclusive, default the last three months, newest
+  first); `GET /ihb/movements/{id}` (drill-down: the movement, counterparty, payment reference and every leg of its
+  transaction = same correlation id, the corporate's legs only); `GET /ihb/statement?accountId&from&to`;
+  `GET /ihb/statement/camt053?accountId&from&to` (the existing `VaStatementService` XML, behind the scoped account
+  check); `GET /ihb/interest-history?accountId&from&to`; `GET /ihb/terms-history`.
+- Position: rows = the corporate's active IHB current accounts grouped by entity and currency; balance and net accrued
+  interest (credit − debit, signed like the balance) summed from the accounts; credit limit / used / headroom =
+  `IhbExposure` (entity limit, debit balance of its IHB-currency accounts), on the IHB-currency row only (null on any
+  other: no limit applies there). Funding = the active physical accounts of the corporate's lending entities
+  (`canLend`), per currency beside the rows; a currency with funding and no accounts is shown too.
+- Movements: classified by type and channel (INTEREST; SWEEP_IN/OUT or SWEEP channel; POBO_DEBIT / is_pobo / *POBO*;
+  ROBO_CREDIT / is_robo / *COBO*; IC_SETTLEMENT, IHB_SETTLEMENT, NETTING; FEE; else OTHER). Amounts signed by
+  balance before → after (an IHB interest posting is one INTEREST row either way, and `Transaction.isCredit` calls every
+  INTEREST a credit). Leg accounts as the corporate knows them: the bank account for a shadow, the IHB account number,
+  else the account's name (no shadow / mirror / VA-only numbers). Statement: booked from..to, failed/cancelled left out;
+  opening = `findLedgerBalanceBefore(from)` (else the first line's balance before), closing = the last line's balance
+  after. CSV is client-side (`downloadCsv`), camt.053 from the existing generator; no PDF (no generator for it).
+- Interest history (4.3): nothing recorded it (no daily record, posting writes one INTEREST row and resets the
+  accrual), so the rate charged on a past day could not be derived honestly. `IhbInterestAccrual` is now one row per
+  account and run: accrual date, side, balance, rate charged, default flag, day count, amount (4 dp, = what was added to
+  the accrued column), written by `calculateInterestForAccount`; `takeBackAccruedInterest` writes the correction rows
+  (negative / re-accrued, with a note), so a period's rows add up to what was accrued. Posted = the period's INTEREST
+  ledger rows (gross/WHT in their description). Also returned: the rates charged now (`IhbUnifiedService.chargedRate`:
+  the account's, else the built-in 2.50 / 5.00), the day count now (`IhbUnifiedService.dayCount`, shared with the run),
+  accrued-not-posted, last accrual/posting dates. History starts with this release; earlier periods show postings only.
+  V65 (both folders) drops the old per-entity `ihb_interest_accruals` (entity_id → ihb_entities; never written, empty
+  locally and in the dump; refuses if it has rows; only the old shape, so re-runs are no-ops; checked in a scratch
+  schema) and ddl-auto creates the new one.
+- Audit trail (4.4): `AuditLogService` had no IHB writer (no IHB event locally). Added `recordChanges` (field-by-field
+  from → to, numbers by value, nothing when nothing changed; payload {subject, currency, changes[]}) and event
+  `IHB_TERMS_CHANGED` at the places the terms change: entity credit limit and spreads in `IhbUnifiedService.enableIhb` /
+  `updateIhbSettings` and `LegalEntityService.updateEntity` (Legal Entities page; three writers, no shared one), and an
+  IHB current account's credit/debit rate in `InterestConfigAttachmentService.syncEffectiveRates` (the one place the
+  charged rates change after opening: attach/detach, propagate, nightly sync). Who = the audit log's actor.
+- Page (4.5): tabs Position, Movements (with "Statement for the period"), Interest, Limit and rate changes, Entities,
+  Current Accounts, COBO, POBO (`components/treasury/IhbBookPanels.tsx`). Removed: the Overview tab (lender/borrower
+  counts, already in the stat strip), the "Treasury Indicative Rates" banner (base + spread, not what is charged), the
+  entity cards' spreads, debit balance / available / utilisation (now the Position tab) and their Position modal (its
+  API result was discarded; it showed the spreads as rates), the account cards' "IHB Participant" badge, "TRANSACTION"
+  chip and "Config: d36d1609…" id; CREDIT/DEBIT/NEUTRAL read In credit / Overdrawn / Zero. Account cards show the rates
+  the run charges (the response sent 0.00 where none was configured; it is now the default with `defaultRates`).
+  Set-up actions unchanged (D8); the open-account form's wording no longer says "TRANSACTION VA with
+  ihbParticipant=true" / "canBorrow=true", and its rate fields now say they apply only when no configuration exists
+  (that is what `getOrCreateIhbInterestConfig` does; it said they override spreads).
+- No overlap with the Intercompany page: it shows pairs (who owes whom, control, recharges); this shows each
+  entity's account at the IHB, movements, interest and terms. The same money appears as a pair line there and as an
+  entity's balance here by design (spec D1).
+- Phase 5 needs: start backend-uae after a backup (V57–V65 apply locally; check `ihb_interest_accruals` is recreated
+  in the new shape and a manual `POST /ihb/current-accounts/calculate-interest` writes rows); the TestMNC matrix
+  checked against the accounts' balances and the Intercompany page's IHB lines; a statement export; a limit change
+  on Legal Entities appearing under Limit and rate changes; another corporate's account id → 404. Optional: link the
+  Intercompany page's IHB lines to Movements filtered by entity (Phase 1 note).
 
 ### Phase 5 — verification
 - [ ] 5.1 Spec acceptance 1–8 as tests; full suite; typecheck + lint.
@@ -232,7 +289,23 @@ Money / correctness first:
 - [ ] Payment legs: "payer at another bank" uses the shadow's `bank_swift` (`isOtherBankShadow`, as sweeps do); a
       home-bank shadow with no BIC (SHADOW-AED--AED-002 in the dump) would be refused. An IHB current account payer is
       paid out by treasury's account (in-house route), but the bank check looks at the IHB account's own program shadow.
-- [ ] `IhbInterestAccrual` entity unused: IHB interest has no accrual history (Phase 4.3 of the IHB/IC plan).
+- [x] `IhbInterestAccrual` entity unused: now the per-account daily accrual record (Phase 4.3, V65, 13 Nov).
+- [ ] Two IHB credit limits: the entity's `ihbCreditLimit` (IhbExposure, the Position tab, the limit-change check) and
+      the account's `effectiveCreditLimit` (`PoboEnrolmentService.headroomRefusal`: what POBO and netting legs are
+      gated on), copied from the entity when the account is opened and never synced: a limit change on the entity does
+      not move the gate. Make one derive from the other.
+- [ ] `LegalEntityService.updateEntity` sets `ihbCreditLimit` without the "not below the IHB debit balance" check that
+      `IhbUnifiedService.updateIhbSettings` applies.
+- [ ] An interest configuration's rate edit reaches the accounts only at the 2:00 sync or `propagate`; the audit trail
+      records it there (actor of that run), not who edited the configuration (configuration edits are not audited).
+- [ ] `AuditLogService` records `anonymousUser` as the actor in dev (permitAll); `CurrentUser.name()` says "system".
+- [ ] IHB daily interest has no catch-up: a missed run is a missed day (one accrual per run, on the balance then).
+- [ ] Locally 1,698 FEE rows (channel TREASURY, 1–12 Feb) sit on IHB current accounts; check whether fees should be
+      charged to an IHB account at all.
+- [ ] Unscoped endpoints: `/ihb/entities/{id}(/position)`, `/ihb/current-account/{id}/position|deposit|withdraw`,
+      `/ihb/current-account/transfer`, `/ihb/current-accounts/calculate-interest|post-interest`,
+      `/ihb/treasury-rates/entity/{id}`, and `/statements/va/{vaId}*` (camt.053 for any account). The IHB page's local
+      `ihbUnifiedApi` still declares several of them unused.
 - [ ] Netting Cycles has no way to remove an entry from a cycle; populate takes every eligible item, so one
       unfundable leg blocks the whole cycle (e.g. TestMNC: MNC-HOLDING's SETTLE-AED-3953 holds AED 15 for a 15,000 leg).
 Statement intake:

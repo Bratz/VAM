@@ -2274,6 +2274,74 @@ export const poboEnrolmentApi = {
     apiClient.get<ApiResponse<AwaitingFxPayable[]>>('/pobo/enrolments/awaiting-fx', { params: { corporateId } }).then(r => r.data.data ?? []),
 };
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The in-house bank's book (IhbBookService; spec ihb-intercompany-pages R13-R16). Every call is scoped to a corporate.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** creditLimit / used / headroom only on the entity's IHB currency (null elsewhere). Amounts signed like the balance. */
+export interface IhbPositionRow {
+  entityId: string; entityCode: string; entityName: string | null; currency: string; accounts: number;
+  balance: number; creditLimit: number | null; used: number | null; headroom: number | null; accruedInterest: number;
+}
+export interface IhbFundingAccount {
+  id: string; accountNumber: string; accountName: string | null; bankName: string | null; currency: string;
+  balance: number; available: number; balanceAsOf: string | null;
+}
+export interface IhbCurrencyPosition {
+  currency: string; rows: IhbPositionRow[]; totalBalance: number; totalAccruedInterest: number;
+  funding: IhbFundingAccount[]; totalFunding: number;
+}
+export type IhbMovementKind = 'SWEEP' | 'POBO' | 'COBO' | 'INTEREST' | 'SETTLEMENT' | 'FEE' | 'OTHER';
+/** amount signed: positive credits the account. */
+export interface IhbMovement {
+  id: string; reference: string; bookedAt: string; valueDate: string | null; accountId: string; accountNumber: string;
+  entityCode: string | null; currency: string; kind: IhbMovementKind; description: string | null; amount: number;
+  balanceAfter: number | null; status: string | null;
+}
+export interface IhbMovementDetail {
+  movement: IhbMovement; transactionReference: string | null; counterpartyName: string | null;
+  counterpartyAccount: string | null; paymentReference: string | null;
+  legs: { account: string | null; entityCode: string | null; currency: string; amount: number; description: string | null }[];
+}
+export interface IhbStatement {
+  accountId: string; accountNumber: string; accountName: string | null; entityCode: string | null; currency: string;
+  from: string; to: string; openingBalance: number; totalCredits: number; totalDebits: number; closingBalance: number;
+  lines: IhbMovement[];
+}
+export interface IhbInterestHistory {
+  accountId: string; accountNumber: string; entityCode: string | null; currency: string; from: string; to: string;
+  accruals: { date: string; side: 'CREDIT' | 'DEBIT'; balance: number; rate: number; defaultRate: boolean; dayCount: string | null; amount: number; note: string | null }[];
+  accruedCredit: number; accruedDebit: number;
+  postings: { movementId: string; postedAt: string; valueDate: string | null; amount: number; description: string | null }[];
+  posted: number; creditRateNow: number; debitRateNow: number; defaultRatesNow: boolean; dayCountNow: string;
+  unpostedCredit: number; unpostedDebit: number; lastAccrual: string | null; lastPosting: string | null;
+}
+/** currency is set when the values are an amount (the credit limit); otherwise they are annual percentages. */
+export interface IhbTermsChange {
+  at: string; by: string | null; subject: string | null; field: string;
+  from: number | string | null; to: number | string | null; currency: string | null;
+}
+export type IhbPeriod = { from?: string; to?: string };
+
+export const ihbBookApi = {
+  position: (corporateId: string) =>
+    apiClient.get<ApiResponse<{ corporateId: string; currencies: IhbCurrencyPosition[] }>>('/ihb/position', { params: { corporateId } })
+      .then(r => r.data.data?.currencies ?? []),
+  movements: (corporateId: string, filter: IhbPeriod & { entityId?: string; currency?: string; kind?: string }) =>
+    apiClient.get<ApiResponse<IhbMovement[]>>('/ihb/movements', { params: { corporateId, ...filter } }).then(r => r.data.data ?? []),
+  movement: (corporateId: string, movementId: string) =>
+    apiClient.get<ApiResponse<IhbMovementDetail>>(`/ihb/movements/${movementId}`, { params: { corporateId } }).then(r => r.data.data),
+  statement: (corporateId: string, accountId: string, period: IhbPeriod) =>
+    apiClient.get<ApiResponse<IhbStatement>>('/ihb/statement', { params: { corporateId, accountId, ...period } }).then(r => r.data.data),
+  /** The existing camt.053 generator's XML for the corporate's own account. */
+  statementCamt053: (corporateId: string, accountId: string, from: string, to: string) =>
+    apiClient.get<Blob>('/ihb/statement/camt053', { params: { corporateId, accountId, from, to }, responseType: 'blob' }).then(r => r.data),
+  interestHistory: (corporateId: string, accountId: string, period: IhbPeriod) =>
+    apiClient.get<ApiResponse<IhbInterestHistory>>('/ihb/interest-history', { params: { corporateId, accountId, ...period } }).then(r => r.data.data),
+  termsHistory: (corporateId: string) =>
+    apiClient.get<ApiResponse<IhbTermsChange[]>>('/ihb/terms-history', { params: { corporateId } }).then(r => r.data.data ?? []),
+};
+
 /** A POBO payable above the live-price limit, waiting for a negotiated rate; payer* / paymentVa* null when its route broke. */
 export interface AwaitingFxPayable {
   payableId: string;

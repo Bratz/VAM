@@ -4,7 +4,10 @@ import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.service.VirtualAccountService;
+import com.bank.vam.service.statement.VaStatementService;
+import com.bank.vam.service.treasury.IhbBookService;
 import com.bank.vam.service.treasury.IhbUnifiedService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,9 +15,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +44,93 @@ public class IhbController {
 
     private final IhbUnifiedService ihbUnifiedService;
     private final VirtualAccountService virtualAccountService;
+    private final IhbBookService book;
+    private final VaStatementService statements;
+
+    // ========================================================================
+    // THE IHB'S BOOK (spec ihb-intercompany-pages R13-R17): every call needs the corporate, 400 without
+    // ========================================================================
+
+    @GetMapping("/position")
+    @Operation(summary = "In-house bank position",
+               description = "Per currency: each entity's IHB current account balance, credit limit, used, headroom and "
+                   + "accrued interest, with treasury's bank accounts that fund the in-house bank")
+    public ResponseEntity<ApiResponse<IhbBookService.Position>> getPosition(@RequestParam(required = false) UUID corporateId) {
+        return ResponseEntity.ok(ApiResponse.success(book.position(requireCorporate(corporateId))));
+    }
+
+    @GetMapping("/movements")
+    @Operation(summary = "Movements on the IHB current accounts",
+               description = "Booked between from and to (inclusive; default the last three months), newest first; "
+                   + "kind is one of SWEEP, POBO, COBO, INTEREST, SETTLEMENT, FEE, OTHER")
+    public ResponseEntity<ApiResponse<List<IhbBookService.Movement>>> getMovements(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam(required = false) UUID entityId,
+            @RequestParam(required = false) String currency,
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(
+            book.movements(requireCorporate(corporateId), entityId, currency, kind, from, to)));
+    }
+
+    @GetMapping("/movements/{movementId}")
+    @Operation(summary = "One movement and the legs of its transaction")
+    public ResponseEntity<ApiResponse<IhbBookService.MovementDetail>> getMovement(
+            @PathVariable UUID movementId, @RequestParam(required = false) UUID corporateId) {
+        return ResponseEntity.ok(ApiResponse.success(book.movement(requireCorporate(corporateId), movementId)));
+    }
+
+    @GetMapping("/statement")
+    @Operation(summary = "Statement of an IHB current account",
+               description = "Opening and closing balance, movements with value dates, for a period")
+    public ResponseEntity<ApiResponse<IhbBookService.Statement>> getStatement(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam UUID accountId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(book.statement(requireCorporate(corporateId), accountId, from, to)));
+    }
+
+    @GetMapping(value = "/statement/camt053", produces = MediaType.APPLICATION_XML_VALUE)
+    @Operation(summary = "Statement of an IHB current account as camt.053 XML",
+               description = "The existing statement generator, for the corporate's own IHB current account only")
+    public ResponseEntity<String> getStatementCamt053(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam UUID accountId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        IhbBookService.Statement scoped = book.statement(requireCorporate(corporateId), accountId, from, to);
+        var camt = statements.generateStatement(scoped.accountId(), from, to);
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + camt.getStatementId() + ".xml\"")
+            .contentType(MediaType.APPLICATION_XML)
+            .body(camt.getXml());
+    }
+
+    @GetMapping("/interest-history")
+    @Operation(summary = "Interest history of an IHB current account",
+               description = "Each day's accrual (balance, rate charged, day count, amount) and the interest posted, for a period")
+    public ResponseEntity<ApiResponse<IhbBookService.InterestHistory>> getInterestHistory(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam UUID accountId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(book.interestHistory(requireCorporate(corporateId), accountId, from, to)));
+    }
+
+    @GetMapping("/terms-history")
+    @Operation(summary = "Credit limit and rate changes",
+               description = "Who changed an IHB credit limit, spread or an IHB current account's rates, from what to what, when")
+    public ResponseEntity<ApiResponse<List<IhbBookService.TermsChange>>> getTermsHistory(
+            @RequestParam(required = false) UUID corporateId) {
+        return ResponseEntity.ok(ApiResponse.success(book.termsHistory(requireCorporate(corporateId))));
+    }
+
+    private static UUID requireCorporate(UUID corporateId) {
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+        return corporateId;
+    }
 
     // ========================================================================
     // GLOBAL ENDPOINTS (All IHB entities across corporates)
