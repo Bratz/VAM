@@ -140,7 +140,7 @@ public class ExternalSweepService {
             if (refusal == null) return new Plan(balance, amount, authority, null);
             refusals.add(refusal);
         }
-        return Plan.skip(balance, "no authority covers instructing " + amount.toPlainString() + " from " + va + ": "
+        return Plan.skip(balance, "no authority covers instructing " + money(amount, source.getCurrencyCode()) + " from " + va + ": "
                 + (refusals.isEmpty() ? "none is registered" : String.join("; ", refusals)));
     }
 
@@ -353,7 +353,7 @@ public class ExternalSweepService {
 
         // Bank operations and the corporate: the bank's bell lists every corporate's notifications, so one raise reaches both.
         notifications.notifyOnce(source.getCorporateId(), NotificationType.PAYMENT_FAILED, NotificationCategory.ERROR,
-                "External sweep failed: " + source.getVaNumber(), note + ". " + amount.toPlainString() + " " + i.getCurrencyCode()
+                "External sweep failed: " + source.getVaNumber(), note + ". " + money(amount, i.getCurrencyCode())
                         + " taken back from " + target.getVaNumber() + "; the instruction fee is refunded.",
                 "SWEEP_INSTRUCTION", i.getId(), reference, "sweeping", "Open Cash Concentration");
         log.warn("{}: {} {} reversed on {}", note, amount, i.getCurrencyCode(), target.getVaNumber());
@@ -362,7 +362,7 @@ public class ExternalSweepService {
 
     private static String describe(BankStatementLine line, SweepInstruction i) {
         if (line == null) return "line " + i.getConfirmedByLineId();
-        return line.getAmount().toPlainString() + " " + i.getCurrencyCode() + " valued " + line.getValueDate()
+        return money(line.getAmount(), i.getCurrencyCode()) + " valued " + line.getValueDate()
                 + (line.getBankReference() != null ? ", bank reference " + line.getBankReference() : "");
     }
 
@@ -469,6 +469,11 @@ public class ExternalSweepService {
     static String swiftAmount(BigDecimal amount, String currency) {
         String plain = amount.setScale(decimals(currency), RoundingMode.DOWN).toPlainString().replace('.', ',');
         return plain.contains(",") ? plain : plain + ",";
+    }
+
+    /** For people: "3,012,000.00 USD" (was the raw "3012000.0000 USD"). */
+    static String money(BigDecimal amount, String currency) {
+        return String.format(java.util.Locale.ROOT, "%,." + decimals(currency) + "f", amount) + " " + currency;
     }
 
     private static int decimals(String currency) {

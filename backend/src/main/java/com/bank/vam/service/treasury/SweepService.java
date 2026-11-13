@@ -192,6 +192,19 @@ public class SweepService {
     }
 
     @Transactional
+    /**
+     * The entity code stored on a rule leg: the account's own legal entity, not the request's text. The Create Rule
+     * form sent the account name there, which overflowed the 20-character column (500) for any longer name.
+     */
+    private String legEntityCode(VirtualAccount va, String requested) {
+        if (va != null && va.getOwningEntityCode() != null) return va.getOwningEntityCode();
+        if (va != null && va.getOwningEntityId() != null) {
+            String code = legalEntityRepository.findById(va.getOwningEntityId()).map(LegalEntity::getEntityCode).orElse(null);
+            if (code != null) return code;
+        }
+        return requested != null && !requested.isBlank() && requested.length() <= 20 ? requested : null;
+    }
+
     public SweepRuleDto.Response createRule(SweepRuleDto.CreateRequest request) {
         SweepRule rule = new SweepRule();
         rule.setRuleReference(generateRuleReference(request.getSweepType()));
@@ -245,7 +258,7 @@ public class SweepService {
                 // From the account, not the request: a request naming the account by id alone failed on the NOT NULL
                 // account number (500), as pool members did.
                 source.setAccountNumber(srcVa != null ? srcVa.getVaNumber() : sourceReq.getAccountNumber());
-                source.setEntityCode(srcVa != null && srcVa.getOwningEntityCode() != null ? srcVa.getOwningEntityCode() : sourceReq.getEntityCode());
+                source.setEntityCode(legEntityCode(srcVa, sourceReq.getEntityCode()));
                 source.setEntityName(sourceReq.getEntityName());
                 source.setCurrencyCode(srcVa != null ? srcVa.getCurrencyCode() : sourceReq.getCurrencyCode());
                 source.setBankName(sourceReq.getBankName());
@@ -266,6 +279,7 @@ public class SweepService {
         VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId())
                 .orElseThrow(() -> new BusinessException("Target account not found: " + request.getTargetAccountId()));
         rule.setTargetAccountNumber(targetVa.getVaNumber()); // from the account, not the request
+        rule.setTargetEntityCode(legEntityCode(targetVa, request.getTargetEntityCode()));
         assertExternalLegsFit(sourceVasForMirroring, targetVa);
         hasShadowLeg |= assertShadowLegEligible(targetVa, targetVa.getVaNumber());
         assertCanHoldSweptCash(targetVa, targetVa.getVaNumber());

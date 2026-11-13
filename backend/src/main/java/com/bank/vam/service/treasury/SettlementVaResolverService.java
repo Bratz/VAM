@@ -363,6 +363,24 @@ public class SettlementVaResolverService {
         }
 
         // =====================================================================
+        // STEP 4: An account outside every program and hierarchy (e.g. the shadow of a bank account opened for the
+        // corporate) has no path: use the corporate's top-level settlement VA in its currency when exactly one exists.
+        // Unambiguous, so not the old corporate-wide fallback that picked across programs. External-sweep fees on a
+        // home-bank target went to EXCEPTION-DEFAULT-<ccy> without this.
+        // =====================================================================
+        if (sourceVa.getProgramId() == null && sourceVa.getParentAccountId() == null && sourceVa.getCorporateId() != null) {
+            List<VirtualAccount> tops = vaRepository.findByCorporateIdAndSettlementMarkTrue(sourceVa.getCorporateId()).stream()
+                .filter(va -> va.getParentAccountId() == null && va.getProgramId() != null)
+                .filter(va -> sourceVa.getCurrencyCode().equals(va.getCurrencyCode()) && va.getStatus() == VaStatus.ACTIVE)
+                .toList();
+            if (tops.size() == 1) {
+                SettlementVaResolutionResult entityValidation =
+                    validateLegalEntityOwnership(tops.get(0), sourceVa, contraVa, amount, transactionId);
+                return entityValidation != null ? entityValidation : SettlementVaResolutionResult.success(tops.get(0));
+            }
+        }
+
+        // =====================================================================
         // STEP 5: Settlement VA NOT FOUND - Park in Exception VA
         // =====================================================================
         String failureReason = String.format(

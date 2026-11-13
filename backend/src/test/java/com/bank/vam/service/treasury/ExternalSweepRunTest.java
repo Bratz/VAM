@@ -170,7 +170,7 @@ class ExternalSweepRunTest {
         VirtualAccount va = VirtualAccount.builder().vaNumber(number).vaName(number).currencyCode("GBP").bankSwift(bic)
                 .bankIban(iban).accountCategory(VirtualAccount.AccountCategory.PHYSICAL_MIRROR).owningEntityId(albion.getId())
                 .currentBalance(new BigDecimal(balance)).availableBalance(new BigDecimal(balance))
-                .bankBalance(new BigDecimal(balance)).heldBalance(BigDecimal.ZERO).build();
+                .bankBalance(new BigDecimal(balance)).bankAvailableBalance(new BigDecimal(balance)).heldBalance(BigDecimal.ZERO).build();
         va.setId(UUID.randomUUID());
         when(vas.findById(va.getId())).thenReturn(Optional.of(va));
         return va;
@@ -238,6 +238,7 @@ class ExternalSweepRunTest {
         // Target: ledger, bank balance and physical account follow the credit (fees are mocked, they move nothing here).
         assertThat(home.getCurrentBalance()).isEqualByComparingTo("5800");
         assertThat(home.getBankBalance()).isEqualByComparingTo("5800");
+        assertThat(home.getBankAvailableBalance()).isEqualByComparingTo("5800");   // available follows too
         assertThat(homePhysical.getCurrentBalance()).isEqualByComparingTo("5800");
         // Source: ledger shows the instructed debit, the bank balance stays the bank's own figure (statement wins).
         assertThat(lloyds.getCurrentBalance()).isEqualByComparingTo("200");
@@ -486,6 +487,7 @@ class ExternalSweepRunTest {
         // Target: credit reversed on the ledger, the bank balance and the physical account; +25 instruction fee back.
         assertThat(home.getCurrentBalance()).isEqualByComparingTo("5025");
         assertThat(home.getBankBalance()).isEqualByComparingTo("5000");
+        assertThat(home.getBankAvailableBalance()).isEqualByComparingTo("5000");
         assertThat(homePhysical.getCurrentBalance()).isEqualByComparingTo("5000");
         assertThat(settlement.getCurrentBalance()).isEqualByComparingTo("75");
         verify(txns, never()).findByReferenceNumber("FEE-SWEEP_EXECUTION_FEE");   // the standard fee stands
@@ -583,7 +585,7 @@ class ExternalSweepRunTest {
 
         assertThatThrownBy(() -> external.fail(i.getId(), InstructionStatus.REJECTED, "AC04"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("the bank's statement shows this debit: 800 GBP valued " + TODAY + ", bank reference LL800");
+                .hasMessageContaining("the bank's statement shows this debit: 800.00 GBP valued " + TODAY + ", bank reference LL800");
 
         assertThat(i.getStatus()).isEqualTo(InstructionStatus.SETTLED);
         assertThat(home.getCurrentBalance()).isEqualByComparingTo("5800");

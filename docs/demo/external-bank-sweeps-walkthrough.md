@@ -1,28 +1,36 @@
 # Sweeps with external banks — demo walkthrough
 
-Recorded on **https://vam-five.vercel.app** on **12 Nov 2026** (build 6e070ad, UAE profile, home bank Emirates NBD
-`EBILAEADXXX`), by clicking through the portal. Every value below is what was entered; every "You see" is what the
-portal showed at the time. No sign-in is needed. There is no link to any bank, so the bank's side is played from the
-browser console: the bank's end-of-day statement is posted to the intake endpoint the bank's middleware would call.
+Recorded on **https://vam-five.vercel.app** on **12 Nov 2026, 20:05–20:19** (build e7dae35, migrations V55–V57
+applied; frontend bundle `index-B4SiXEPv.js`; UAE profile, home bank Emirates NBD `EBILAEADXXX`), by clicking through
+the portal. Every value below is what was entered; every "You see" is what the portal showed at the time. No sign-in is
+needed. There is no link to any bank, so the bank's side is played from the browser console (F12 → Console): the
+bank's end-of-day statement is posted to the intake endpoint the bank's middleware would call, and the other bank's
+rejection is played with **Mark rejected** on the execution.
 
-**Story.** Albion Industrial PLC is a UK group that banks at four UK banks and concentrates its sterling into one header
-account at Lloyds in London. Treasury opens a new collections account at NatWest in Leeds and wants it in the
-concentration: the account is set up, its shadow is created, the bank's end-of-day statement brings its balance in, and
-treasury tries to add it to a sweep. The portal refuses: money at another bank cannot be moved without a mandate from
-the client, and there is no way to give it one yet (finding 1). The sweep is then shown on the group's existing
-external sweep, Manchester (Barclays) to London (Lloyds): it runs by hand, and you see what moved and what did not.
+> **Reload the tab after a deploy.** The pane had been open since before the deploy and was still running the old
+> bundle (`index-DSHZnM62.js`, by then a 404 on Vercel): no authority panel, and rule names without their "(off: …)"
+> suffix. A reload fixed both.
 
-Corporate used throughout: **Albion** (*Albion Industrial PLC*, `cc000003-…-0003`), GBP.
+**Story.** Helios Global Inc. banks with Bank of America in New York and with Emirates NBD, its home bank. The home
+bank always runs the sweep: Helios has given it an authority to instruct its BofA account. BofA's end-of-day statement
+brings the balance in; treasury adds a target-balance rule from BofA into Helios's own USD account at Emirates NBD; the
+run produces an MT101 for BofA and credits Emirates NBD at once; BofA's next statement shows the debit and confirms
+the sweep. Then a second sweep, from Citibank, is rejected by the other bank and everything is put back.
 
-| Account | Bank | Legal entity | Role |
-|---|---|---|---|
-| **DEMO Albion Leeds GBP Collections** · 56789105 · GB17 NWBK 6016 1356 7891 05 | National Westminster Bank plc · NWBKGB2LXXX | ALBN-EN Albion Engineering Ltd | new, created in step 1 |
-| Albion Manchester GBP Operating · 23456702 · shadow **ALBN0000002** | Barclays Bank UK plc · BARCGB22XXX | ALBN-EN | sweep source (rule SWP-ALBN-001) |
-| Albion London GBP Header · 12345601 · shadow **ALBN0000001** | Lloyds Bank plc · LOYDGB2LXXX | ALBN-GB Albion Industrial PLC | concentration (header) account |
+Corporate used throughout: **Helios** (*Helios Global Inc.*, `dd000004-0000-0000-0000-000000000004`), legal entity
+**HEL-US**, USD.
 
-> **Watch the Corporate filter.** Leaving Bank Accounts and coming back, the Corporate box showed *TestShop* while the
-> list still showed Albion rows, and **Link to Hierarchy** then offered TestShop's hierarchy (finding 9). Before each
-> step, set **Corporate** to **Albion** again.
+| Account | Bank | Role |
+|---|---|---|
+| **Helios NY USD Operating** · 8765432101 · US33 BOFA 2200 0087 6543 21 · shadow **HEL0000002** (*Shadow · Bank of America USD*) | Bank of America N.A. · BOFAUS3NXXX | sweep source, authority **DEMO-AUTH-HEL0000002** (MT101) |
+| **Helios Global Inc. USD current account** · USD54361989 · shadow **SHADOW-USD-54361989** | Emirates NBD · EBILAEADXXX (home bank) | target |
+| **Helios Boston USD Operating** · 7654321001 · US33 CITI US33 0000 7654 3210 · shadow **HEL0000003** (*Shadow · Citibank USD (NYC)*) | Citibank N.A. · CITIUS33XXX | source of the rejected sweep (step 5), authority **DEMO-AUTH-HEL0000003** (MT101) |
+
+The target is **SHADOW-USD-54361989** on vam-five (the 6.3 runbook in `tasks/todo.md` says …54361990, which is the
+local numbering). V55 re-pointed the seeded rules SWP-HEL-001/002 to it too.
+
+> **Watch the Corporate filter.** Bank Accounts opened on *TestShop* every time. Set **Corporate** to **Helios** before
+> each step there.
 
 ---
 
@@ -30,296 +38,400 @@ Corporate used throughout: **Albion** (*Albion Industrial PLC*, `cc000003-…-00
 
 | What | Reference | Notes |
 |---|---|---|
-| Bank account (physical) | **56789105** · DEMO Albion Leeds GBP Collections · id `de0266f5-889f-4917-ae63-a2e576824a65` | data source SWIFT_MT940; created from the console (step 1) |
-| Shadow account | **SHADOW-GBP-56789105** · id `245da729-0adc-4086-8ae5-d55cc8e15bcd` | under TRES-G-ROOT-81781 (Albion Treasury Program) |
-| Statement file | **NWBK_MT940_20261112.sta** · file `f764cf21-7ea2-466d-8b65-3b6e3560b93e` | statement NWBK261112-001, id `78fc81ad-2493-4de7-a435-9b0584953caf` |
-| Sweep rule | none | *DEMO Albion Leeds Target 250k → London* was refused (step 4) |
-| Sweep execution | **EXE-20261112132923-8109** · rule SWP-ALBN-001 · GBP 3,073,799.60 | step 5 |
-| Ledger postings | SWP17944901636336282 (sweep out, ALBN0000002), SWP17944901636331003 (sweep in, ALBN0000001), FEE-1794490163658-4537 (fee, ALBN0000002), SET-1794490163660-6725 (fee credit, SETTLEMENT-TRESGBPALBN-GBP) | step 5 |
+| Sweep rule | **SWP-TB-355475** · *DEMO Helios NY BofA Target 1M → ENBD USD* · id `0fa81a8a-5fb5-4ac2-8138-caf85149f663` | TARGET_BALANCE 1,000,000, DAILY, priority 1; HEL0000002 → SHADOW-USD-54361989. Created from the console (step 2, finding 1) |
+| Sweep execution | **EXE-20261112201308-0376** · id `9e14cad6-04ef-4cac-8fc3-f2202dad312d` · USD 5,219,974.50 | COMMITTED → **SETTLED** |
+| Instruction | **XSW70D5530C6B124** · MT101 · id `3f6fcae4-3c88-43e0-8854-29490e04493a` | INSTRUCTED → SETTLED, confirmed by line `35df7ab8-ad0c-4b0d-9024-6098724c8bda`, bank reference BOFA2611120051 |
+| Postings (run) | SWP17945143880303872 (sweep out, HEL0000002) · SWP17945143880313269 (sweep in, SHADOW-USD-54361989) · FEE-1794514388074-4219 / SET-1794514388076-7119 (standard fee 500.00) · FEE-1794514388108-8393 / SET-1794514388108-9780 (instruction fee 25.00) | fees debited to the target, credited to EXCEPTION-DEFAULT-USD |
+| Statement | **BOFA_MT940_20261112.sta** · file `afa0b927-ea67-4ac1-9a24-c2b4bba69f0d` · statement BOFA261112-001, id `5fb7b30e-a1b2-4d9a-bce5-d035c12f9bba` | step 4 |
+| Statement | **CITI_MT940_20261111.sta** · file `fc558711-73d9-45b3-8bba-b80f02a46ca8` · statement CITI261111-001, id `84b4f2e4-a222-4965-8e50-7c547cc56f94` | step 5 |
+| Sweep rule | **SWP-TB-640202** · *DEMO Helios Boston Citi Target 1M → ENBD USD* · id `7c1e4ccb-4006-4000-9c92-ff02111de292` | TARGET_BALANCE 1,000,000, priority 2; HEL0000003 → SHADOW-USD-54361989. Console (step 5) |
+| Sweep execution | **EXE-20261112201735-7222** · USD 3,012,000.00 | COMMITTED → **FAILED** |
+| Instruction | **XSW31CB42BC11274** · MT101 | INSTRUCTED → REJECTED |
+| Postings (Citi) | SWP17945146551796531 (out) · SWP17945146551798982 (in) · FEE-1794514655191-9459 / SET-1794514655192-5865 (500.00) · FEE-1794514655215-9498 / SET-1794514655215-0669 (25.00) · reversals REV17945146989114199 (target −3,012,000.00), REV17945146989167129 (HEL0000003 +3,012,000.00), REV17945146989305426 / REV17945146989305486 (25.00 refunded) | step 5 |
+| Notification | `2084851d-d8fd-4b71-8c14-3453bbfd335f` · *External sweep failed: HEL0000003* | PAYMENT_FAILED, ERROR |
 
-Balances the walkthrough changed (before → after step 5):
+No authority was registered: both demo authorities come from V55 and were used as they were.
 
-| Account | Before | After |
-|---|---|---|
-| ALBN0000002 Barclays shadow — ledger (current = available) | 3,573,799.60 | **499,500.00** |
-| ALBN0000002 — bank balance (from statements) | 3,573,799.60 | 3,573,799.60 (unchanged) |
-| Physical 23456702 (Barclays) | 3,573,799.60 | 3,573,799.60 (unchanged) |
-| ALBN0000001 Lloyds header shadow — ledger | 8,183,101.00 | **11,256,900.60** |
-| ALBN0000001 — bank balance / bank available | 8,183,101.00 / 8,210,000.00 | unchanged |
-| Physical 12345601 (Lloyds) | 8,210,000.00 | 8,210,000.00 (unchanged) |
-| SETTLEMENT-TRESGBPALBN-GBP | 131,602.62 | 132,102.62 (sweep fee) |
-| Rule SWP-ALBN-001 total swept / runs / last run | 4,079,349,000.00 / 3,896 / 28 Sep 2026 18:00 | 4,082,422,799.60 / 3,897 / 12 Nov 2026 13:29 |
+Balances the walkthrough touched (before step 1 → after step 5; "pending" = between the run and its end):
 
-To repeat the demo, use a new account number and IBAN in step 1 (both must be unique), and give the statement a new
-`:20:` reference. Step 5 sweeps whatever Barclays holds above 500,000: after this recording its ledger is 499,500.00,
-so a repeat run is **skipped** (*"No funds to sweep or below threshold"*) until a Barclays end-of-day statement above
-500,000 has been taken in (statement wins, step 6).
+| Account | Before | Pending | After |
+|---|---|---|---|
+| HEL0000002 BofA shadow — bank balance / bank available | 6,219,974.50 / 6,254,500.00 | unchanged | **1,000,000.00 / 1,000,000.00** (statement BOFA261112-001) |
+| HEL0000002 — committed ("Pending sweep") | 0.00 | 5,219,974.50 | 0.00 |
+| HEL0000002 — ledger | 6,219,974.50 | 1,000,000.00 | 1,000,000.00 |
+| Physical 8765432101 (BofA) current / available / ledger | 6,219,974.50 / 6,254,500.00 / 6,219,974.50 | unchanged | **1,000,000.00** all three |
+| SHADOW-USD-54361989 ENBD — bank balance | 5,000,000.00 | 10,219,974.50 (13,231,974.50 while the Citi leg was pending) | **10,219,974.50** |
+| SHADOW-USD-54361989 — bank available | 5,000,000.00 | 5,000,000.00 | 5,000,000.00 (finding 2) |
+| SHADOW-USD-54361989 — ledger | 0.00 | 5,219,449.50 (8,230,924.50 with Citi pending) | **5,218,949.50** (+5,219,974.50 − 525 − 500) |
+| Physical USD54361989 (ENBD) | 5,000,000.00 | 10,219,974.50 | **10,219,974.50** |
+| HEL0000003 Citi shadow — bank balance / ledger / committed | 4,012,000.00 / 4,012,000.00 / 0.00, *stale, last statement none yet* | 4,012,000.00 / 1,000,000.00 / 3,012,000.00 | 4,012,000.00 / 4,012,000.00 / 0.00, last statement 11 Nov |
+| EXCEPTION-DEFAULT-USD (*Exception Account - DEFAULT (USD)*) | 0.00 (525.00 just after the first run, which credited 525.00) | | **1,025.00** |
+| Rule SWP-HEL-001 (*Helios NY USD ZBA → SF Header*) | ACTIVE · 8,326,300,500.00 · 3,175 runs · last 28 Sep 2026 18:00 | | unchanged (not run) |
+| Rule SWP-HEL-002 | ACTIVE · 312,000,000.00 · 2,784 runs | | unchanged |
+| Cash Concentration · Today's Swept | GBP 3.1M | | **USD 5.2M · GBP 3.1M** |
+
+Not touched by this recording: the Albion Barclays shadow ALBN0000002, whose ledger the 12 Nov Albion recording moved to
+**499,500.00** (bank balance 3,573,799.60, no Barclays statement since). That rule, SWP-ALBN-001, is now DISABLED by V55.
 
 ---
 
-## 1. The bank account at NatWest (≈2 min)
+## 0. The external account and its authority (≈2 min)
 
-**Sidebar Accounts & Structure → Bank Accounts**, Corporate **Albion**.
+**Sidebar Accounts & Structure → Bank Accounts**, Corporate **Helios**.
 
-You see seven Albion accounts: three at **Emirates NBD** (*HOME BANK*, GBP/USD/EUR 5,000,000.00 each) and four
-*EXTERNAL*: Lloyds GBP 8,210,000.00, Barclays GBP 3,573,799.60, HSBC UK GBP 2,040,000.00, Citibank USD 1,820,000.00.
-Tiles: *External Banks 4 — Sweep sources*, *Sweep Enabled 2*.
+You see seven Helios accounts. Tiles: *Total Accounts 7*, *Home Bank 3 · Emirates NBD · Pool eligible*, *External
+Banks 4 · Sweep sources*, *Sweep Enabled 3*. Bank tiles: Emirates NBD *HOME BANK* (3 accounts), JPMorgan Chase
+USD 15,280,000.00, **Bank of America N.A. EXTERNAL · BOFAUS3NXXX · USD 6,219,974.50**, Citibank USD 4,012,000.00,
+Standard Chartered SGD 2,510,000.00. The row reads
+`Helios NY USD Operating · US33 BOFA 2200 0087 6543 21 · Helios Global Inc. HEL-US · Bank of America N.A. BOFAUS3NXXX ·
+USD 6,219,974.50 · In program · SYNCED`.
 
-The button for this is **Link External** (window *Link External Bank Account*: Legal Entity, Account Name, Account
-Type, Account Number, IBAN, Bank Name, Bank Code (SWIFT), Country, Currency, Branch). The window has **no data source
-field**: it always saves the account as `OPEN_BANKING_UAE` (finding 3), which statements do update, but which is not
-counted as statement-fed, so the account would never show *Fresh / Last statement …*. To get a statement-fed
-(`SWIFT_MT940`) account, the same request the window sends is posted from the browser console (F12 → Console), with the
-data source added:
+Click the eye icon (**View Details**):
 
-```js
-await fetch('/api/v1/physical-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    corporateId: 'cc000003-0000-0000-0000-000000000003',        // Albion
-    legalEntityId: 'cc000003-1000-0000-0000-000000000002',      // ALBN-EN Albion Engineering Ltd
-    accountNumber: '56789105', iban: 'GB17NWBK60161356789105',
-    accountName: 'DEMO Albion Leeds GBP Collections', accountType: 'CURRENT',
-    bankName: 'National Westminster Bank plc', bankCode: 'NWBKGB2LXXX', bankCountry: 'GB', branchName: 'Leeds',
-    dataSource: 'SWIFT_MT940', currencyCode: 'GBP', initialBalance: 0, interestType: 'CREDIT' }) })
-  .then(r => r.json())
-```
+- *Helios NY USD Operating · Bank of America N.A. • Helios Global Inc. · ACTIVE · External · Shadow Linked*; Current
+  USD 6,219,974.50, Available USD 6,254,500.00, Ledger USD 6,219,974.50.
+- *Shadow · Bank of America USD (HEL0000002)*: Bank Balance 6,219,974.50, Available 6,254,500.00, *"Updated by bank
+  statements · last statement 11 Nov 2026"*, *As of 11/12/2026, 10:30:00 AM* (BofA's 10:30 intraday MT942).
+- **Authority to instruct** — *"The corporate's authority for the home bank to sweep this account. Registered and
+  changed by bank operations."* — **Register**, and one row:
+  `DEMO-AUTH-HEL0000002 · MT101 · Active · Suspend · Revoke · 1 Jan 2026 – open · No limits · document Demo authority (V55)`.
 
-You see `success: true`, *"Physical account created successfully"*, with `bankRelationship: EXTERNAL`,
-`dataSource: SWIFT_MT940`, `isExternalBank: true`, `canInitiatePayments: false`, `sweepEligible: false`,
-`currentBalance: 0`, `syncStatus: PENDING`. The relationship is decided by the BIC: anything other than the home bank
-is EXTERNAL.
+> Talking point: the home bank never sweeps another bank's account on its own say-so. It needs the corporate's
+> authority for that account, registered by bank operations, with its format (MT101 or pain.001) and limits.
 
-Back on **Bank Accounts** (Corporate **Albion**) the row reads
-`DEMO Albion Leeds GBP Collections · GB17 NWBK 6016 1356 7891 05 · Albion Engineering Ltd ALBN-EN · National
-Westminster Bank plc NWBKGB2LXXX · GBP 0.00 · — · PENDING`. The Shadow column is empty: for an account at another bank
-the shadow is **not** created automatically (it is for home-bank accounts).
+Registering one is **Register** on this panel (reference, format, validity, limits, document) → *Pending activation* →
+**Activate**. Not done in this recording: BofA already has its V55 authority.
 
-> Talking point: the platform never moves money in this account itself. It sees it through the shadow account,
-> whose balance the bank's statements keep up to date.
+**Linking a new external account** (not recorded). It still needs the console for a statement-fed account: **Link
+External** sends `dataSource: 'OPEN_BANKING_UAE'` with no field to change it (`PhysicalAccountsPage.tsx`,
+`CreateAccountModal`, checked in the code at e7dae35), and that source is not counted as statement-fed. The console
+call and the **Link to Hierarchy** step are in the 12 Nov Albion draft (git history of this file); after that, an
+account needs a statement and an authority before it can be a rule source.
 
-## 2. Its shadow account (≈1 min)
+## 1. The bank's end-of-day statement is in (≈2 min)
 
-1. On the new row, click **Link to Hierarchy** (first action icon).
-2. Window *Link Physical Account to Hierarchy*: *DEMO Albion Leeds GBP Collections · National Westminster Bank plc ·
-   GB17NWBK60161356789105 · External Bank · GBP 0.00*. Under *Select Parent Node (AGGREGATION)* there are two cards,
-   **ROOT AED** and **ROOT GBP**, with no names. **ROOT AED is preselected: click ROOT GBP** (that is
-   *Albion Treasury Program - Group Treasury*, TRES-G-ROOT-81781, where Albion's other shadows sit; ROOT AED is the
-   corporate itself, not an account — finding 10).
-3. **Create Shadow Account**.
-
-You see the toast *"✓ Created Shadow Account"* (no account number in it). The row's Shadow column now reads **In
-program**. The shadow is **SHADOW-GBP-56789105** *"Shadow: DEMO Albion Leeds GBP Collections"*, PHYSICAL_MIRROR, owned
-by ALBN-EN, in the Albion Treasury Program, data source SWIFT_MT940, bank balance 0.00, *stale*.
-
-## 3. The bank delivers the end-of-day statement (≈2 min)
-
-There is no upload screen, by design: statements come from the bank's delivery folder or its system-to-system feed. The
-bank's feed is played by posting the statement from the console. Its opening balance (0.00) equals the shadow's bank
-balance, so it is not a break.
-
-```js
-const mt940 = `:20:NWBK261112-001
-:25:GB17NWBK60161356789105
-:28C:00001/001
-:60F:C261111GBP0,00
-:61:2611121112C780000,00NTRFINV-ALB-7781//NW2611120001
-:86:Northern Rail Supplies Ltd payment INV-ALB-7781
-:61:2611121112C470000,00NTRFINV-ALB-7790//NW2611120002
-:86:Pennine Fabrication plc payment INV-ALB-7790
-:62F:C261112GBP1250000,00
-:64:C261112GBP1250000,00
--`;
-await fetch('/api/v1/statements/intake?fileName=NWBK_MT940_20261112.sta',
-  { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: mt940 }).then(r => r.json())
-```
-
-You see *"1 applied, 0 duplicate, 0 refused"*: statement **NWBK261112-001**, END_OF_DAY, 2026-11-12, APPLIED, no gap,
-no break, `differenceToPlatform 1250000`, `cbsFed false`.
+BofA's end-of-day statement for **11 Nov** (the last business day) was already taken in on vam-five: it was posted
+from the console at 12:56 the same day with the sample statements (statement intake 6.3). Sweeps are sized on it, so
+no new statement was posted here; posting a second 11 Nov end-of-day statement would have invented a second close for
+a day the bank had already closed. On another day, post the last business day's statement first (see *How to repeat*).
 
 Where it shows:
 
 - **Payments & Collections → File Ingest Pipeline**, card **Bank (automatic)** (*"Bank statements taken in from the
-  bank's delivery folder or its system-to-system feed. Read-only: nobody uploads a statement."*): the top line is
-  `NWBK_MT940_20261112.sta · API · 12 Nov 2026, 01:24 PM · 1 applied · 0 duplicate · 0 refused · Processed`. Click it:
-  `GB17NWBK60161356789105 · APPLIED · NWBK261112-001 · 12 Nov 2026`. Below it, the four sample statements posted the
-  same day (BofA MT942, Commerzbank camt.053, Barclays MT940 and BofA MT940).
-- **Bank Accounts** (Corporate **Albion**): the row now reads **GBP 1,250,000.00 · In program · SYNCED**. Click the
-  eye icon (**View Details**): *Current / Available / Ledger GBP 1,250,000.00*; *Shadow: DEMO Albion Leeds GBP
-  Collections (SHADOW-GBP-56789105)* — Bank Balance GBP 1,250,000.00, Available GBP 1,250,000.00, *"Updated by bank
-  statements · last statement 12 Nov 2026"*, *As of 11/12/2026, 11:59:59 PM*; and **Bank statement lines**:
+  bank's delivery folder or its system-to-system feed. Read-only: nobody uploads a statement."*):
+  `BOFA_MT940_20261111.sta · API · 12 Nov 2026, 12:56 PM · 1 applied · 0 duplicate · 0 refused · Processed`. Click it:
+  `US33BOFA22000087654321 · APPLIED · BOFA261111-001 · 11 Nov 2026`.
+- **Bank Accounts → Helios NY USD Operating → View Details**, **Bank statement lines**:
 
-| Value date | Status | Amount | Details |
-|---|---|---|---|
-| 12 Nov 2026 | FINAL | GBP 780,000.00 | Northern Rail Supplies Ltd payment INV-ALB-7781 |
-| 12 Nov 2026 | FINAL | GBP 470,000.00 | Pennine Fabrication plc payment INV-ALB-7790 |
+| Statement | Value date | Status | Amount | Details |
+|---|---|---|---|---|
+| BOFA942-261112-1030 · Intraday | 12 Nov 2026 | PROVISIONAL | USD 64,000.00 | Bayview Stores invoice INV-HEL-2026-131 |
+| | 12 Nov 2026 | PROVISIONAL | USD -9,500.00 | Supplier 7790 packaging |
+| BOFA261111-001 · closing USD 6,219,974.50 | 11 Nov 2026 | FINAL | USD 182,450.00 | Pacific Retail Corp invoice INV-HEL-2026-118 |
+| | 11 Nov 2026 | FINAL | USD -7,450.50 | Supplier 7731 freight November |
+| | 11 Nov 2026 | FINAL | USD -25.00 | Wire fee |
 
-- **Dashboard → Accounts · ALL BANKS**, open the **GBP** group: `Shadow: DEMO Albion Leeds GBP Collections ·
-  SHADOW-GBP-56789105 · ALBN-EN · National Westminster Bank plc · 1,250,000.00 · 1,250,000.00 · Fresh · Last statement
-  12 Nov 2026`. Next to it, Barclays (ALBN0000002) is *Fresh · Last statement 11 Nov 2026*, HSBC UK is *Stale · Last
-  statement none yet*, and the Lloyds header is *Stale · Core banking · as of 14 Oct 2026*.
-- **Multi-Bank Liquidity**, Corporate **Albion**: *National Westminster Bank plc 4.2%* in the distribution; GBP
-  *5 mirrors · 5 banks · External-heavy · GBP 20,073,799.60*, NatWest *GBP 1,250,000.00 · 6.2%*. Tab **By Bank**:
-  `National Westminster Bank plc · NWBKGB2LXXX · 1 shadow · SHADOW-GBP-56789105 · ALBN-EN · 56789105 · GBP
-  1,250,000.00 · GBP 1,250,000.00`.
+- **Dashboard → Accounts · ALL BANKS**, open **USD**:
+  `Shadow · Bank of America USD · HEL0000002 · HEL-US · Bank of America N.A. BOFAUS3NXXX · 6,219,974.50 · 6,254,500.00 ·
+  Fresh · Last statement 11 Nov 2026`. Citibank HEL0000003 is *Stale · Last statement none yet*; the Emirates NBD
+  target SHADOW-USD-54361989 is *Stale · Core banking · as of 6 Nov 2026, 02:56 PM* (5,000,000.00).
+- **Multi-Bank Liquidity**, Corporate **Helios**: USD *4 mirrors · 4 banks · External-heavy · USD 30,546,500.00*;
+  Bank of America *USD 6,254,500.00 · 20.5%*; *In transit (pending sweeps) AED 0.00*. Tab **By Bank**:
+  `HEL0000002 · HEL-US · 8765432101 · USD 6,219,974.50 · USD 6,254,500.00` (bank balance · effective).
 
-> Talking point: the statement wins. Its closing balance becomes the shadow's bank balance and ledger, and the
-> physical account follows; any difference to what the platform expected is recorded on the statement, for
-> information.
+> Talking point: the sweep is sized on the bank's own end-of-day booked balance (6,219,974.50), not on the intraday
+> figure or the platform's ledger. Without a statement for the last business day the run is skipped as stale.
 
-## 4. Put it in a sweep — refused: no mandate (≈2 min)
+## 2. Create the rule — one refusal, then the rule (≈3 min)
 
-**Sidebar Liquidity Management → Cash Concentration** → **Create Rule**.
+**Sidebar Liquidity Management → Cash Concentration**, Corporate **Helios** → **Create Rule**.
 
-1. *Setup*: Corporate **Albion Industrial PLC**; Program left on *All Programs (Optional)* (the list offered nothing
-   else); Rule Name **DEMO Albion Leeds Target 250k → London**; Sweep Type **Target Balance**; Frequency **Daily** →
-   **Continue**.
-2. *Accounts*: Target Account **Shadow · Lloyds GBP (Header) - ALBN0000001 (GBP)**; Source Accounts (Manual): tick
-   **Shadow: DEMO Albion Leeds GBP Collections · SHADOW-GBP-56789105 · GBP 1,250,000.00** → **Continue**.
-3. *Configuration*: Currency **GBP - British Pound**, Priority **1**, Target Balance Amount **250000** → **Continue**.
-4. *Review*: *DEMO Albion Leeds Target 250k → London · Target Balance • DAILY · Albion Industrial PLC · GBP · 1*;
-   Source Accounts 1 → Lloyds header ALBN0000001 → **Create Rule**.
+1. *Setup*: Corporate **Helios Global Inc.**; Program left on *All Programs (Optional)* (the only entry); Rule Name
+   **DEMO Helios NY BofA Target 1M → ENBD USD**; Sweep Type **Target Balance**; Frequency **Daily** → **Continue**.
+2. *Accounts*: the **Target Account** list offers Helios's three Emirates NBD shadows, the currency mirror, the
+   treasury root, settlement and exception accounts, and, greyed out, the four other-bank shadows:
+   *Shadow · Bank of America USD - HEL0000002 (USD) · other bank, source only* (same for HEL0000001, -003, -004).
+   In **Source Accounts (Manual)** the other-bank rows are marked: *HEL0000002 · other bank · authorised · USD
+   6,219,974.50*, *HEL0000003 · other bank · authorised*, *HEL0000001 (JPMorgan) · other bank · no authority*,
+   *HEL0000004 (StanChart SGD) · other bank · no authority*.
 
-You see: nothing. The window stays on *Review* with no message (finding 6). The request was refused (HTTP 400); the
-reason is only in the browser console:
+**The refusal.** Pick Target **Settlement Account - TRES-USD-HEL (USD) - SETTLEMENT-TRESUSDHEL-USD (USD)** and tick
+source **Shadow · Bank of America USD · HEL0000002** (*1 account(s) selected*) → **Continue**. *Configuration*:
+Currency **USD - US Dollar** (it defaults to AED), Priority **1**, Target Balance Amount **1000000** → **Continue** →
+*Review* → **Create Rule**.
 
-> *Account SHADOW-GBP-56789105 mirrors an external/non-home-bank account (BIC NWBKGB2LXXX). Real movement requires an
-> ACTIVE ExternalMandate for rail AUTO — add one first, or remove this account from the rule.*
+You see, under the review: *"The rule was not created — Source HEL0000002 is at another bank, so the target must be its
+legal entity's own account held at the home bank; SETTLEMENT-TRESUSDHEL-USD is not an account held at the home bank."*
 
-Close the window. No rule was created.
+**The rule.** **Back**, **Back**; Target **Shadow: Helios Global Inc. USD current account - SHADOW-USD-54361989 (USD)**
+(source still ticked) → **Continue** → **Continue** → **Create Rule**.
 
-> Talking point (and the honest one): the platform will not pull money out of an account at another bank on its own
-> say-so; it needs the client's mandate to the home bank for that account. The mandate record exists in the platform
-> (`external_mandates`), but there is no screen or API to register one yet, so a new external account cannot join a
-> sweep today. The same rule would be refused with the Albion GBP account at Emirates NBD as the target: the refusal
-> is about the external source.
+You see: *"The rule was not created — An unexpected error occurred"* (HTTP 500). This is a defect in the form, not a
+refusal (finding 1): it sends each account's *name* as its entity code, and the target's name (46 characters) does
+not fit the 20-character column. The previous refusal message also stayed on screen until this submit.
 
-## 5. Run the group's existing external sweep by hand (≈2 min)
+Workaround, recorded: close the window and send the same request from the console with the entity code `HEL-US`:
 
-Albion's seeded rule **Albion Manchester Target 500k → London** (SWP-ALBN-001) sweeps Barclays (ALBN0000002) down to
-500,000 into the Lloyds header. It is a DAILY rule (18:00); it last ran on 28 Sep 2026, and nothing has run on vam-five
-since, so it is run by hand.
+```js
+await fetch('/api/v1/sweeping/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    ruleName: 'DEMO Helios NY BofA Target 1M → ENBD USD',
+    corporateId: 'dd000004-0000-0000-0000-000000000004',
+    sweepType: 'TARGET_BALANCE', targetAmount: 1000000, frequency: 'DAILY', currencyCode: 'USD', priority: 1,
+    targetAccountId: 'cb3d697f-bfa8-4ebf-b062-76e59d9aa389', targetAccountNumber: 'SHADOW-USD-54361989',
+    targetEntityCode: 'HEL-US',
+    sourceAccounts: [{ accountId: 'dd000004-4000-0000-0000-000000000002', accountNumber: 'HEL0000002',
+                       entityCode: 'HEL-US', entityName: 'Helios Global Inc.' }] }) }).then(r => r.json())
+```
 
-Before: Barclays ledger **3,573,799.60** (from the 11 Nov statement, *Fresh*); Lloyds header ledger **8,183,101.00**.
+You see `success: true`, *"Sweep rule created successfully"*, `ruleReference: SWP-TB-355475`, `status: ACTIVE`.
+**Refresh** on Cash Concentration: *Sweep Rules 3*, top card `DEMO Helios NY BofA Target 1M → ENBD USD · ACTIVE ·
+SWP-TB-355475 · Target · DAILY · Total Swept USD 0.00 · 1 source account(s)`.
 
-1. **Cash Concentration** → **Run Sweeps**. Window *"Select specific rules to execute or run all active sweep rules at
-   once."* with the 15 active rules.
-2. Tick only **Albion Manchester Target 500k → London · SWP-ALBN-001** → **Run 1 Rule(s)**.
+> Talking point: other-bank accounts are sources only, and they sweep into their own legal entity's account at the
+> home bank, in the same currency. Cross-entity concentration goes through the in-house bank.
 
-You see *Sweeps Complete · 1 Executed · 1 Successful · 0 Failed* (no amount shown) → **Close**.
+## 3. Run it: the MT101 (≈3 min)
+
+The seeded SWP-HEL-001 also sweeps HEL0000002 (zero balance), so run the new rule alone.
+
+1. **Cash Concentration → Run Sweeps** (*"Select specific rules to execute or run all active sweep rules at once."*,
+   12 active rules listed).
+2. Tick only **DEMO Helios NY BofA Target 1M → ENBD USD · SWP-TB-355475** → **Run 1 Rule(s)**.
+
+You see *Sweeps Complete · 1 Executed · 1 Successful · 0 Failed* → **Close**. Nothing else ran. The tiles now read
+*Today's Swept USD 5.2M · GBP 3.1M*; the rule card *Total Swept USD 5.2M · Last run: Just now*.
 
 3. Tab **Execution History**, top row:
-   `EXE-20261112132923-8109 · GBP 3,073,799.60 · GBP 3,573,799.60 → GBP 500,000.00 · SETTLED · Just now`.
-   Click it (**Execution Details**): *Albion Manchester Target 500k → London · SETTLED · Transfer flow ALBN-EN
-   ALBN0000002 → GBP 3,073,799.60 → ALBN-GB ALBN0000001 · Amount swept GBP 3,073,799.60 · Balance before GBP
-   3,573,799.60 · Balance after GBP 500,000.00 · 11/12/2026, 1:29:23 PM*. (Rule Reference and Sweep Type read *N/A*.)
+   `EXE-20261112201308-0376 · USD 5,219,974.50 · USD 6,219,974.50 → USD 1,000,000.00 · Instructed · awaiting bank
+   statement · Just now`. Click it (**Execution Details**):
+   - *DEMO Helios NY BofA Target 1M → ENBD USD · Instructed · awaiting bank statement*; transfer flow *HEL-US
+     HEL0000002 → USD 5,219,974.50 → HEL-US SHADOW-USD-54361989*; Amount swept USD 5,219,974.50; Balance before
+     USD 6,219,974.50 (the statement's closing); Balance after USD 1,000,000.00; *11/12/2026, 8:13:08 PM*.
+   - **Instruction to the other bank**: *Instructed · Format MT101 · Reference XSW70D5530C6B124 · Amount USD
+     5,219,974.50 · Execution date 12 Nov 2026 · Instructed 12 Nov 2026, 08:13 PM · Standard fee USD 500.00 · charged
+     to the target · Instruction fee USD 25.00* (standard fee 0.05% capped at 500, plus 25 per instruction).
+   - **Message**, with **Download** (saves `XSW70D5530C6B124.txt`) and **Mark rejected**:
+
+```
+:20:XSW70D5530C6B124
+:28D:1/1
+:50H:/US33BOFA22000087654321
+Helios Global Inc.
+:52A:BOFAUS3NXXX
+:30:261112
+:21:XSW70D5530C6B124
+:32B:USD5219974,50
+:57A:EBILAEADXXX
+:59:/USD54361989
+Helios Global Inc.
+:70:Cash sweep EXE-20261112201308-0376
+:71A:SHA
+```
+
+   - *Additional details*: Rule Reference SWP-TB-355475, Sweep Type Target Balance.
 
 What moved, and what did not:
 
 - **Dashboard → Recent statement activity**, newest first:
 
-| Time | Line | Account · reference | | Amount |
-|---|---|---|---|---|
-| 01:29 PM | FEE CREDIT: Cash concentration sweep fee - EXE-20261112132923-8109 | SETTLEMENT-TRESGBPALBN-GBP · SET-1794490163660-6725 | CR | GBP 500.00 |
-| 01:29 PM | FEE DEBIT: Cash concentration sweep fee - EXE-20261112132923-8109 | ALBN0000002 · FEE-1794490163658-4537 | DR | GBP 500.00 |
-| 01:29 PM | Cash concentration sweep - Albion Manchester Target 500k → London | ALBN0000001 · SWP17944901636331003 | CR | GBP 3,073,799.60 |
-| 01:29 PM | Cash concentration sweep - Albion Manchester Target 500k → London | ALBN0000002 · SWP17944901636336282 | DR | GBP 3,073,799.60 |
+| Line | Account · reference | | Amount |
+|---|---|---|---|
+| FEE CREDIT: External sweep instruction fee - XSW70D5530C6B124 | EXCEPTION-DEFAULT-USD · SET-1794514388108-9780 | CR | USD 25.00 |
+| FEE DEBIT: External sweep instruction fee - XSW70D5530C6B124 | SHADOW-USD-54361989 · FEE-1794514388108-8393 | DR | USD 25.00 |
+| FEE CREDIT: Cash concentration sweep fee - EXE-20261112201308-0376 | EXCEPTION-DEFAULT-USD · SET-1794514388076-7119 | CR | USD 500.00 |
+| FEE DEBIT: Cash concentration sweep fee - EXE-20261112201308-0376 | SHADOW-USD-54361989 · FEE-1794514388074-4219 | DR | USD 500.00 |
+| External sweep (instructed) - DEMO Helios NY BofA Target 1M → ENBD USD | SHADOW-USD-54361989 · SWP17945143880313269 | CR | USD 5,219,974.50 |
+| External sweep (instructed) - DEMO Helios NY BofA Target 1M → ENBD USD | HEL0000002 · SWP17945143880303872 | DR | USD 5,219,974.50 |
 
-- **Accounts & Structure → Virtual Accounts**, search `ALBN000000`: *Shadow · Lloyds GBP (Header) ALBN0000001 · GBP
-  11,256,900.60* and *Shadow · Barclays GBP ALBN0000002 · GBP 499,500.00* (500,000 less the 500.00 sweep fee — 0.05%,
-  capped at 500).
-- **Bank Accounts** still shows Manchester **GBP 3,573,799.60** and London **GBP 8,210,000.00**, and the Dashboard's
-  GBP group still shows Barclays *3,573,799.60 · Fresh · Last statement 11 Nov 2026* and Lloyds *8,183,101.00 /
-  8,210,000.00*. Those are the banks' figures, and nothing has been sent to either bank.
-- No payment instruction exists: no MT101, pain.001 or transfer to download anywhere for EXE-20261112132923-8109.
-- No intercompany position: the money moved from Albion Engineering (ALBN-EN) to Albion Industrial (ALBN-GB), and
-  neither entity is IHB-enabled, so nothing records that ALBN-GB now owes ALBN-EN 3,073,799.60.
+- **Bank Accounts** (Corporate **Helios**): *Helios Global Inc. USD current account · USD54361989 · Emirates NBD ·
+  USD 10,219,974.50* — the home bank's account is credited at once (bank balance and physical account). *Helios NY
+  USD Operating* still reads **USD 6,219,974.50**: BofA's balance is BofA's, and only its statement moves it.
+  - BofA **View Details**: Bank Balance USD 6,219,974.50, Available USD 6,254,500.00, and **"Pending sweep:
+    USD 5,219,974.50 (awaiting statement)"**; *last statement 11 Nov 2026*.
+  - Emirates NBD **View Details**: Current / Available / Ledger USD 10,219,974.50; shadow Bank Balance USD
+    10,219,974.50, but *Available USD 5,000,000.00 · On Hold USD 5,219,974.50* (finding 2).
+- **Multi-Bank Liquidity**, Helios: *In transit (pending sweeps) AED 19,170,356.35* (the USD 5,219,974.50); USD
+  *25,326,525.50*, Bank of America *USD 1,034,525.50* (6,254,500.00 available less the pending 5,219,974.50),
+  Emirates NBD still *USD 5,000,000.00*. **By Bank**: `SHADOW-USD-54361989 · USD 10,219,974.50 · USD 5,000,000.00` and
+  `HEL0000002 · USD 6,219,974.50 · USD 1,034,525.50`.
 
-> Talking point, said plainly: on an external-bank sweep the platform moves its own books at once, both shadows'
-> ledgers, and leaves the bank balances to the next statements. Today it does not send the bank anything, so in a
-> real deployment treasury would still have to instruct Barclays itself (findings 2 and 4).
+> Talking point: the home bank books its own side at once — Helios can use the money at Emirates NBD now — and keeps
+> the BofA leg pending until BofA's statement shows it. Nothing is transmitted: the MT101 is generated for the
+> channel the bank would send it on.
 
-## 6. Next day: the statement reconciles it (≈1 min) — *script, not recorded*
+## 4. BofA's next statement confirms it (≈2 min)
 
-> Not posted on 12 Nov: in the recording session, posting a statement to the existing Barclays demo account was not
-> permitted, so this step was not run. What follows is the text to post and what the code says will happen
-> (`StatementIntakeService.take` / `applyEndOfDay`); check it when it is first run.
-
-Barclays' end-of-day statement for 12 Nov, standing for the bank having executed the instruction treasury sent. Its
-opening balance is the 11 Nov closing, so no break:
+BofA's end-of-day statement for 12 Nov, played from the console. It opens at the 11 Nov closing (no break), carries
+the debit with the instruction's reference as end-to-end id, and closes at 6,219,974.50 − 5,219,974.50. It is dated
+today, the last day for which a statement can exist yet. (It carries only the sweep; the 10:30 intraday items are left
+out so the closing lands on the 1,000,000 target, and their provisional lines become *Superseded*.)
 
 ```js
-const barc = `:20:BARC261112-078
-:25:BARCGB22/23456702
-:28C:00212/001
-:60F:C261111GBP3573799,60
-:61:2611121112D3073799,60NTRFEXE-20261112132923-8109//BC2611120001
-:86:Sweep to Albion London GBP Header LOYDGB2L 12345601
-:62F:C261112GBP500000,00
-:64:C261112GBP500000,00
+const mt940 = `:20:BOFA261112-001
+:25:BOFAUS3N/8765432101
+:28C:00046/001
+:60F:C261111USD6219974,50
+:61:2611121112D5219974,50NTRFXSW70D5530C6B124//BOFA2611120051
+:86:/EREF/XSW70D5530C6B124/REMI/USTD//MT101 EBILAEAD sweep to USD54361989
+:62F:C261112USD1000000,00
+:64:C261112USD1000000,00
 -`;
-await fetch('/api/v1/statements/intake?fileName=BARC_MT940_20261112.sta',
-  { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: barc }).then(r => r.json())
+await fetch('/api/v1/statements/intake?fileName=BOFA_MT940_20261112.sta',
+  { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: mt940 }).then(r => r.json())
 ```
 
-Expected: *1 applied*; ALBN0000002 bank balance, ledger and physical 23456702 all **500,000.00**; *Fresh · Last
-statement 12 Nov 2026*; one FINAL line *GBP 3,073,799.60*. The statement's *difference to platform* reads
-**−3,073,799.60**: it is measured against the bank balance, which the sweep never moved, not against the ledger. The
-ledger goes from 499,500.00 to 500,000.00: the statement wins, so the 500.00 fee drops out of the balance (its posting
-remains).
+You see *"1 applied, 0 duplicate, 0 refused"*: statement **BOFA261112-001**, END_OF_DAY, 2026-11-12, APPLIED,
+`gap false`, **`breakFlag false`**, `differenceToPlatform -5219974.5` (measured against the bank balance, which the
+sweep did not move; informational), `older false`, `cbsFed false`.
+
+- **Cash Concentration → Execution History**: `EXE-20261112201308-0376 · USD 5,219,974.50 · … · Settled · 3m ago`.
+  **Execution Details**: *Settled*; instruction *Confirmed*, and **"Confirmed by the other bank's statement — Debit of
+  USD 5,219,974.50 valued 12 Nov 2026 · bank reference BOFA2611120051 · 12 Nov 2026, 08:16 PM · line
+  35df7ab8-ad0c-4b0d-9024-6098724c8bda"**. **Mark rejected** is gone.
+- **Bank Accounts**: *Helios NY USD Operating · USD 1,000,000.00 · SYNCED*. **View Details**: Current / Available /
+  Ledger USD 1,000,000.00; Bank Balance and Available USD 1,000,000.00, On Hold —; **no "Pending sweep" line**;
+  *"Updated by bank statements · last statement 12 Nov 2026"*, *As of 11/12/2026, 11:59:59 PM*. Lines: *BOFA261112-001
+  · closing USD 1,000,000.00 · 12 Nov 2026 · FINAL · USD -5,219,974.50 · MT101 EBILAEAD sweep to USD54361989*; the two
+  12 Nov intraday lines now *SUPERSEDED*.
+- **File Ingest Pipeline → Bank (automatic)**: top line `BOFA_MT940_20261112.sta · API · 12 Nov 2026, 08:16 PM ·
+  1 applied · 0 duplicate · 0 refused · Processed`.
+- **Multi-Bank Liquidity**, Helios: *In transit (pending sweeps) AED 0.00*; Bank of America *USD 1,000,000.00*;
+  Emirates NBD still *USD 5,000,000.00*, USD total *25,292,000.00* (finding 2).
+
+> Talking point: the other bank's statement is the proof. The debit is matched by its reference (or, without one, by
+> amount and value date); it is the account's own movement, so it is no break.
+
+## 5. A rejection: Citibank refuses the MT101 (≈3 min)
+
+Citibank HEL0000003 had no statement (*Stale · Last statement none yet*), so one is needed before it can be swept.
+
+1. Citi's end-of-day statement for 11 Nov, from the console — no movements, opening = closing = its bank balance:
+
+```js
+const citi = `:20:CITI261111-001
+:25:CITIUS33/7654321001
+:28C:00001/001
+:60F:C261110USD4012000,00
+:62F:C261111USD4012000,00
+:64:C261111USD4012000,00
+-`;
+await fetch('/api/v1/statements/intake?fileName=CITI_MT940_20261111.sta',
+  { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: citi }).then(r => r.json())
+```
+
+   You see *"1 applied, 0 duplicate, 0 refused"*, CITI261111-001, no gap, no break.
+
+2. The rule, from the console (the form has the defect of step 2): the request of step 2 with `ruleName: 'DEMO Helios
+   Boston Citi Target 1M → ENBD USD'`, `priority: 2`, and source `{ accountId: 'dd000004-4000-0000-0000-000000000003',
+   accountNumber: 'HEL0000003', entityCode: 'HEL-US', entityName: 'Helios Global Inc.' }`. You see
+   *"Sweep rule created successfully"*, **SWP-TB-640202**.
+3. **Run Sweeps** → tick only **SWP-TB-640202** → **Run 1 Rule(s)** → *1 Executed · 1 Successful · 0 Failed*.
+   **Execution History**: `EXE-20261112201735-7222 · USD 3,012,000.00 · USD 4,012,000.00 → USD 1,000,000.00 ·
+   Instructed · awaiting bank statement`. Details: MT101 **XSW31CB42BC11274** (`:50H:/US33CITIUS33000076543210`,
+   `:52A:CITIUS33XXX`, `:32B:USD3012000,00`, `:57A:EBILAEADXXX`, `:59:/USD54361989`), fees 500.00 + 25.00. Emirates NBD
+   bank balance 13,231,974.50.
+4. **Mark rejected** → reason **Citibank: MT101 refused, no MT101 agreement on file for this account** → **Mark
+   rejected**.
+
+You see, in the same window: *Failed*; instruction *Rejected*; *Instruction fee USD 25.00 · refunded*; *"Rejected 12 Nov
+2026, 08:18 PM — Citibank: MT101 refused, no MT101 agreement on file for this account. The target's credit was reversed
+and the instruction fee refunded; the standard fee stands."*; *Execution Failed — External sweep XSW31CB42BC11274 failed
+(REJECTED): …*. The list row reads *Failed* with that message; *Today's Swept* stays *USD 5.2M · GBP 3.1M*.
+
+Behind it: SHADOW-USD-54361989 back to bank 10,219,974.50 (ledger 5,218,949.50: the 500.00 standard fee stands);
+HEL0000003 ledger back to 4,012,000.00, committed 0.00; four REVERSAL postings (records table); one notification,
+*"External sweep failed: HEL0000003 — External sweep XSW31CB42BC11274 failed (REJECTED): … 3012000.0000 USD taken back
+from SHADOW-USD-54361989; the instruction fee is refunded."* Rule SWP-TB-640202: 1 run, Total Swept 0.00.
+
+Not shown: the 2-business-day expiry (executed Thu → expired the following Tue by the 18:00 job). It cannot be played
+from the portal; see finding 9.
 
 ---
+
+## How to repeat
+
+- **Rules.** SWP-TB-355475 and SWP-TB-640202 stay on vam-five (ACTIVE, DAILY). Reuse them, or create new ones from the
+  console (step 2) until finding 1 is fixed.
+- **Statements.** A sweep is sized on the account's last end-of-day statement, which must be dated on or after the
+  last business day. On day D: post BofA's statement for the previous business day, opening at the last closing
+  (1,000,000.00 after this recording, unless a statement came since), with credits so it closes above 1,000,000, a
+  new `:20:` and `:28C:00047/001`; run SWP-TB-355475; then post the statement dated D with the debit and
+  `/EREF/<reference>`, opening at the previous closing. On **13 Nov** this does not work: the previous business day's
+  statement (12 Nov) already exists and closes at the 1,000,000 target, so there is nothing to sweep.
+- **Do not use "Run All Active"** for this demo: SWP-HEL-001 (zero balance) sweeps the same BofA account.
+- **Citi** goes stale again on 13 Nov (last statement 11 Nov); post a new Citi statement before step 5.
+- **Reload the tab** if a deploy happened while it was open.
 
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
 |---|---|
-| `POST /api/v1/physical-accounts` | Create a bank account; `dataSource` decides how its balance arrives; EXTERNAL unless the BIC is the home bank's |
-| `POST /api/v1/treasury/shadow-accounts` | Create the PHYSICAL_MIRROR shadow (automatic only for home-bank accounts) |
-| `POST /api/v1/statements/intake?fileName=` | Take in an MT940 / MT942 / camt.053 / camt.052 (raw body or multipart) |
+| `GET /api/v1/treasury/external-authorities?shadowVaId=\|corporateId=` | Authorities of an account / a corporate |
+| `POST /api/v1/treasury/external-authorities` · `…/{id}/activate\|suspend\|revoke` | Register (PENDING_ACTIVATION) and change an authority; audited |
+| `POST /api/v1/statements/intake?fileName=` | Take in an MT940 / MT942 / camt.053 / camt.052 (raw body or multipart); confirms pending sweep instructions |
 | `GET /api/v1/statements/files?limit=` · `GET /api/v1/statements/lines?physicalAccountId=` | Intake log; statements and lines of one account |
-| `POST /api/v1/sweeping/rules` | Create a rule; refused for an external-bank leg without an ACTIVE external mandate |
+| `POST /api/v1/sweeping/rules` | Create a rule; 400 with the reason for other-bank targets, cross-entity, no authority |
 | `POST /api/v1/sweeping/execute-async` `{ruleIds}` · `GET /api/v1/sweeping/runs/{runId}` | Run rules now (what **Run Sweeps** calls); poll the run |
-| `POST /api/v1/sweeping/execute` | The same, synchronously |
-| `GET /api/v1/sweeping/history` | All executions, newest first (`/rules/{id}/history` returned 500 on 12 Nov) |
+| `GET /api/v1/sweeping/executions/{id}/instruction` | The MT101 / pain.001, its status, confirming line and fees |
+| `POST /api/v1/sweeping/instructions/{id}/reject` `{reason}` | Mark rejected: reverse, refund the instruction fee, alert |
 
 ## Gotchas seen while recording
 
-- **Corporate filter**: coming back to Bank Accounts showed *TestShop* in the Corporate box while the list still
-  showed Albion. Reselect **Albion** before **Link to Hierarchy**, or the window offers TestShop's hierarchy.
-- **Link External** cannot set the data source; use the console call in step 1 for a statement-fed account.
-- **Link to Hierarchy** preselects *ROOT AED* (the corporate, not an account); pick **ROOT GBP**.
-- **Create Rule** shows no error when refused; the reason is in the browser console.
-- **Today's Swept** stayed *0.00* after the run, and **Total Swept** (31.7B) adds amounts in different currencies.
-- A repeat of step 5 is skipped until Barclays is above 500,000 again.
+- A tab open across a deploy runs the old bundle; reload.
+- **Corporate filter** on Bank Accounts opens on *TestShop*; set Helios each time.
+- **Create Rule** fails with *"An unexpected error occurred"* for these targets; use the console request (step 2).
+- **Create Rule** Configuration step defaults the currency to **AED**; set USD.
+- A refusal message on the Review step stays visible after going Back and changing the accounts.
+- Cash Concentration's tiles and Execution History do not follow the Corporate filter (Helios selected: *Today's
+  Swept GBP 3.1M* from Albion, other corporates' executions listed).
 
-## Findings (12 Nov 2026)
+## Findings (12 Nov 2026, e7dae35)
 
-1. **No way to give an external account a mandate.** Rule creation requires an ACTIVE `ExternalMandate` for any
-   non-home-bank shadow leg (`SweepService.assertShadowLegEligible`), but no controller or screen creates one (the
-   statement-intake spec lists "external mandates UI for sweeps" as out of scope), and the seed dump has none. A new
-   external account can never join a sweep.
-2. **No payment instruction.** An external-bank sweep posts ledger entries only (`SweepService.executeTransfer`); no
-   MT101 / pain.001 / transfer is produced for the bank.
-3. **Link External has no data source field**: it always sends `OPEN_BANKING_UAE` (`PhysicalAccountsPage.tsx`,
-   `CreateAccountModal`), which is not statement-fed, so such an account never shows statement freshness.
-4. **Only the ledger moves.** For external shadows `mirrorIfHomeBankShadow` is a no-op: bank balance and physical
-   account stay put until the next statement, which then overwrites the ledger; its *difference to platform* is taken
-   against the unmoved bank balance.
-5. **Mandate checked only at creation.** `executeSweep` never checks it, so the seeded external rules (created by SQL)
-   run without one; `IhbUnifiedService.createIhbSweepRules` also creates rules without the check.
-6. **Create Rule fails silently**: `CreateRuleModal.handleSubmit` only logs the error.
-7. **Staleness ignored.** Sweeps size off the ledger with no freshness check; the Lloyds header (stale since 14 Oct)
-   was credited without comment.
-8. **Cross-entity sweep, no intercompany record** (ALBN-EN → ALBN-GB, neither IHB-enabled), as the code comment in
-   `executeSweep` says.
-9. **Corporate filter** on Bank Accounts showed TestShop while listing Albion; Link to Hierarchy then used TestShop.
-10. **Link to Hierarchy** shows parent nodes without names and preselects the corporate pseudo-root.
-11. **Today's Swept** counts only status `SUCCESS` but executions are saved `SETTLED` (`CashConcentrationPage.tsx`);
-    Total Swept adds currencies together.
-12. `GET /api/v1/sweeping/rules/{id}/history` returns 500.
-13. Execution *Balance after* excludes the sweep fee (500,000.00 shown, 499,500.00 actual); *Rule Reference* and
-    *Sweep Type* show N/A.
-14. **Add Account** (home bank) defaults the BIC to `EABORAEDXXX`, not the home bank's `EBILAEADXXX`, so a home-bank
-    account saved with the default is classed EXTERNAL.
-15. Data-source mismatches in the seed: Lloyds shadow CORE_BANKING vs physical OPEN_BANKING_UK; Barclays physical
-    OPEN_BANKING_UK vs shadow SWIFT_MT940.
+1. **Create Rule returns 500 for any account whose name is over 20 characters.** `CreateRuleModal.tsx`
+   `handleTargetAccountChange` sets `targetEntityCode: account.vaName` and `toggleSourceAccount` sets
+   `entityCode: account.vaName`; the columns are `length = 20` (`SweepRule.java` `target_entity_code`,
+   `SweepRuleSource.java` `entity_code`) and `SweepService.createRule` stores them as sent. *"Shadow: Helios Global
+   Inc. USD current account"* is 46 characters, so no Helios rule can be created from the form; the same request with
+   `HEL-US` works. The refusal path works because it fails before saving. 6.2 checked the API, not the form.
+2. **A sweep credit to a home-bank shadow moves its bank balance but not its bank available balance.**
+   `VirtualAccount.mirrorBankBalance` (called by `CoreBankingBalance.mirrorIfHomeBankShadow`) changes `bankBalance`
+   only. SHADOW-USD-54361989 shows *Available 5,000,000.00 · On Hold 5,219,974.50*, and multi-bank liquidity, which
+   uses available − committed, keeps Emirates NBD at 5,000,000.00: after confirmation the swept 5.2M is at neither
+   bank (Helios USD 30,546,500.00 → 25,292,000.00). Home-bank sweeps go through the same path.
+3. The 6.3 runbook in `tasks/todo.md` names the target **SHADOW-USD-54361990**; on vam-five it is
+   **SHADOW-USD-54361989** (V55 re-pointed SWP-HEL-001/002 there). It also says to post a BofA statement first; on
+   vam-five the 11 Nov sample statement had already made BofA fresh.
+4. The target's ledger was **0.00** against a bank balance of **5,000,000.00** before the demo (shadow created 6 Nov,
+   CORE_BANKING, *Stale · as of 6 Nov*); the rule form lists it at *USD 0.00*. After the demo, ledger 5,218,949.50 and
+   bank balance 10,219,974.50.
+5. Both fees are credited to **EXCEPTION-DEFAULT-USD**, the bank-wide default exception account, although Helios has
+   SETTLEMENT-TRESUSDHEL-USD and EXCEPTION-TRESUSDHEL-USD on vam-five (neither moved). Not traced further. Both
+   credits arrived (525.00 for 525.00 charged), so the lost-fee defect fixed in 6.2 is fixed here too.
+6. **Link External** still has no data source field and always sends `OPEN_BANKING_UAE`; **Add Account** still
+   defaults the BIC to `EABORAEDXXX` (`PhysicalAccountsPage.tsx`, `CreateAccountModal`). A statement-fed external
+   account still needs the console. Checked in the code, not driven in the browser.
+7. Bank Accounts' **Emirates NBD** tile adds currencies: *USD 15,000,000.00* for GBP, EUR and USD 5,000,000 each, then
+   *USD 20,219,974.50*.
+8. Multi-Bank Liquidity says *"Effective totals exclude stale and never-refreshed positions"*, but the stale Citi
+   HEL0000003 (4,012,000.00) was in the USD total (30,546,500.00) before step 5. The headline showed *▲ 582.9% · 1D*.
+9. The seeded DAILY rules last ran on 28 Sep, so vam-five's scheduled jobs appear to be off (`VAM_SCHEDULING_ENABLED`
+   in its `.env`; not checked). If so, the 2-business-day expiry job does not run there either, and a pending
+   instruction only ends by a statement or **Mark rejected**.
+10. The failure notification prints the amount unformatted, *"3012000.0000 USD"* (`ExternalSweepService.fail`,
+    `amount.toPlainString()`).
+11. Cash Concentration tiles (*Total Swept*, *Today's Swept*, *Active Rules*, *Linked Accounts*) and Execution History
+    ignore the Corporate filter.
+12. Create Rule: currency defaults to AED; a refusal message persists after Back; Program lists nothing to pick.
+13. Seed naming: rule names *"Helios NY USD ZBA → SF Header"* / *"Helios Boston > 5M → SF"* still name the JPMorgan SF
+    header after V55 re-pointed them to Emirates NBD; the Citi shadow of *Helios Boston USD Operating* is called
+    *"Citibank USD (NYC)"*; BofA's physical account is `SWIFT_MT942`, its shadow `SWIFT_MT940`.
+14. Seen, as designed: the confirming statement's `differenceToPlatform` is −5,219,974.50 (the sweep debit; no break);
+    the standard fee is not refunded on rejection.
+
+Fixed since the 12 Nov Albion draft (its findings 1, 2, 4–7, 11–13): authorities exist and are checked at creation and
+at every run; an MT101 is produced; the home bank's side moves its bank balance and physical account; the external
+leg waits for the statement; Create Rule shows the backend's refusal; stale sources are skipped; Today's Swept counts
+instructed and settled sweeps per currency; per-rule history no longer 500s; Rule Reference and Sweep Type are shown.
+Still open: Link External data source and the EABORAEDXXX default (finding 6), the Corporate filter on Bank Accounts,
+the seed data-source mismatches.

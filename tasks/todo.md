@@ -313,7 +313,7 @@ For 6.3 (vam-five, after commit + deploy): V55 applies there on the first start 
 Albion rule of the 12 Nov draft is DISABLED; re-record with Helios). Order: (a) Bank Accounts → Helios NY at BofA
 8765432101 (HEL0000002): authority panel shows DEMO-AUTH-HEL0000002 ACTIVE MT101 (or register + activate a new one);
 (b) post an END_OF_DAY MT940 for it FIRST (`:25:BOFAUS3N/8765432101`, opening = its current bank balance, dated the last
-business day) — without one the run is skipped "no end-of-day statement"; (c) Create Rule BofA → SHADOW-USD-54361990
+business day) — without one the run is skipped "no end-of-day statement"; (c) Create Rule BofA → SHADOW-USD-54361989 (vam-five; …990 locally)
 (Helios's USD account at Emirates NBD) — show the refusal for an other-bank target first; (d) Run → COMMITTED, MT101
 in the execution details, target credited, fees 0.05% (max 500) + 25; (e) next END_OF_DAY MT940 with the debit and
 /EREF/<reference> → Confirmed, execution Settled. SWP-HEL-001 (seeded, ZBA) also sweeps HEL0000002: run only the new

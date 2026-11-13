@@ -74,6 +74,28 @@ class SettlementVaResolverServiceTest {
         assertThat(result.getExceptionRaised().getRemitterInfo()).contains(unpersistedReferenceId.toString());
     }
 
+    /** A program-less, parentless account (a home-bank shadow) settles on the corporate's only top-level settlement VA. */
+    @Test
+    void anAccountOutsideEveryProgramUsesTheCorporatesOnlySettlementVaInItsCurrency() {
+        VirtualAccountRepository vaRepository = mock(VirtualAccountRepository.class);
+        SettlementVaResolverService resolver = new SettlementVaResolverService(vaRepository,
+                mock(ProgramRepository.class), mock(ExceptionTransactionRepository.class));
+        UUID corporate = UUID.randomUUID();
+        VirtualAccount settlement = VirtualAccount.builder().vaNumber("SETTLEMENT-TRESUSDHEL-USD")
+                .programId(UUID.randomUUID()).corporateId(corporate).currencyCode("USD").build();
+        VirtualAccount otherCcy = VirtualAccount.builder().vaNumber("SETTLEMENT-EUR")
+                .programId(UUID.randomUUID()).corporateId(corporate).currencyCode("EUR").build();
+        when(vaRepository.findByCorporateIdAndSettlementMarkTrue(corporate)).thenReturn(java.util.List.of(settlement, otherCcy));
+        VirtualAccount shadow = VirtualAccount.builder().vaNumber("SHADOW-USD-54361989")
+                .corporateId(corporate).currencyCode("USD").build();
+
+        SettlementVaResolverService.SettlementVaResolutionResult result =
+                resolver.resolveSettlementVaWithResult(shadow, new BigDecimal("25.00"), UUID.randomUUID());
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.getResolvedVa().getVaNumber()).isEqualTo("SETTLEMENT-TRESUSDHEL-USD");
+    }
+
     /**
      * The payment that is refused for a missing Settlement VA rolls back; the parking record its error cites must not
      * go with it. So the record is written in a transaction of its own (REQUIRES_NEW), committed before the caller

@@ -1367,6 +1367,9 @@ public class VirtualAccount extends BaseEntity {
     public void mirrorBankBalance(BigDecimal delta) {
         if (this.bankBalance != null) {
             this.bankBalance = this.bankBalance.add(delta);
+            // The bank's available balance moves too (as the physical account's does in CoreBankingBalance.follow):
+            // a sweep credit left it behind, so liquidity views showed the swept cash at neither bank.
+            if (this.bankAvailableBalance != null) this.bankAvailableBalance = this.bankAvailableBalance.add(delta);
             this.bankBalanceAt = LocalDateTime.now();
         }
     }

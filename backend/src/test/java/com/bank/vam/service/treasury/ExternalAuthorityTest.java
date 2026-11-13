@@ -317,4 +317,28 @@ class ExternalAuthorityTest {
         assertThat(createRule(source, target).getTargetAccountId()).isEqualTo(target.getId());
         verify(mandates, never()).findByShadowVaIdOrderByCreatedAtDesc(any());
     }
+
+    @Test
+    void entityCodesComeFromTheAccountsNotTheFormsAccountNames() {
+        // The form sends each account's name as its entity code; over 20 characters that was a 500 on the column.
+        VirtualAccount source = shadow(VirtualAccount.AccountCategory.PHYSICAL_MIRROR, "HBUKGB4BXXX");
+        VirtualAccount target = shadow(VirtualAccount.AccountCategory.PHYSICAL_MIRROR, "HBUKGB4B");
+        target.setOwningEntityCode("HEL-US");
+        when(rules.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(vas.findAllById(List.of(source.getId()))).thenReturn(List.of(source));
+        SweepRuleDto.SourceAccountRequest s = new SweepRuleDto.SourceAccountRequest();
+        s.setAccountId(source.getId());
+        s.setEntityCode("Shadow · Bank of America USD");
+        SweepRuleDto.CreateRequest request = new SweepRuleDto.CreateRequest();
+        request.setRuleName("names");
+        request.setSweepType(SweepRule.SweepType.ZERO_BALANCE);
+        request.setTargetAccountId(target.getId());
+        request.setTargetEntityCode("Shadow: Helios USD settlement account");
+        request.setSourceAccounts(List.of(s));
+
+        SweepRuleDto.Response rule = sweeps.createRule(request);
+
+        assertThat(rule.getTargetEntityCode()).isEqualTo("HEL-US");
+        assertThat(rule.getSourceAccounts().get(0).getEntityCode()).isEqualTo("ALBN-EN");
+    }
 }
