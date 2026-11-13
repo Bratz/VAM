@@ -9,6 +9,7 @@ import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.service.treasury.IhbExposure;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.service.viban.VibanService;
@@ -123,9 +124,10 @@ public class IntercompanyService {
         boolean valid = true;
         String reason = null;
         
-        BigDecimal creditLimit = entity.getIhbCreditLimit() != null ? entity.getIhbCreditLimit() : BigDecimal.ZERO;
-        BigDecimal currentExposure = entity.getIhbCurrentExposure() != null ? entity.getIhbCurrentExposure() : BigDecimal.ZERO;
-        BigDecimal availableLimit = entity.getIhbAvailableLimit() != null ? entity.getIhbAvailableLimit() : creditLimit.subtract(currentExposure);
+        IhbExposure exposure = IhbExposure.of(virtualAccountRepository, entity);
+        BigDecimal creditLimit = exposure.creditLimit();
+        BigDecimal currentExposure = exposure.drawn();
+        BigDecimal availableLimit = exposure.available();
         
         if (entity.getStatus() != LegalEntity.EntityStatus.ACTIVE) {
             valid = false;
@@ -613,9 +615,10 @@ public class IntercompanyService {
     }
 
     private EntityWithPositionResponse mapToEntityWithPosition(LegalEntity entity) {
-        BigDecimal creditLimit = entity.getIhbCreditLimit() != null ? entity.getIhbCreditLimit() : BigDecimal.ZERO;
-        BigDecimal currentExposure = entity.getIhbCurrentExposure() != null ? entity.getIhbCurrentExposure() : BigDecimal.ZERO;
-        BigDecimal availableLimit = entity.getIhbAvailableLimit() != null ? entity.getIhbAvailableLimit() : creditLimit.subtract(currentExposure);
+        IhbExposure exposure = IhbExposure.of(virtualAccountRepository, entity);
+        BigDecimal creditLimit = exposure.creditLimit();
+        BigDecimal currentExposure = exposure.drawn();
+        BigDecimal availableLimit = exposure.available();
         
         return EntityWithPositionResponse.builder()
                 .entityId(entity.getId())

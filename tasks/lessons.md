@@ -569,3 +569,38 @@ An inward credit (`processCollection`) credits the shadow VA's linked **physical
 ledger rows (`va_movements`) don't show it. Reverting only the VAs is undone by the next shadow refresh, which copies
 the physical balance back onto the shadow. When cleaning up a test payment, also revert `physical_accounts`
 (match by `virtual_accounts.linked_physical_account_id`) — check `updated_at` on physical accounts after the test.
+
+## The home bank runs every sweep (user correction, 2026-11-12)
+An account at another bank is never swept "by" that bank: the home bank instructs it (MT101 / pain.001, under an
+authority bank operations register) and that bank's statement confirms it. Design external legs as home-bank-initiated
+instructions that stay pending until a statement shows them — never as a ledger-only transfer.
+
+## Check a field's writers before calling it real (2026-11-12)
+I told the user the IHB page's "Borrowed" / `ihbCurrentExposure` was live because sweeps maintain it; nothing wrote
+it since IHB loans were retired. Before describing a stored figure as current, grep its setters/mutators for callers.
+A field with no writers is residue: derive it from the source of truth (here the IHB current accounts' debit balance).
+
+## Check the API response, not the TypeScript type (2026-11-12)
+`InHouseBankPage` read `ihbCreditLimit` / `ihbCurrentExposure`; the API sends `creditLimit` / `currentExposure`. The
+type compiled, the page showed 0 for months. When a screen shows a suspicious 0 or blank, `fetch` the endpoint and
+compare keys before touching logic.
+
+## Identity fields come from the account, not the form (2026-11-12)
+Create Rule sent each account's *name* as its entity code; any name over 20 characters was a 500 on the column.
+Server-side, take account number, entity code and currency from the referenced account; treat the request's copies as
+hints at most.
+
+## An unmapped enum value in data is a 500 on read (2026-11-12)
+Seeded `sweep_executions.status = 'COMPLETED'` (not in `ExecutionStatus`) broke per-rule history (V56). Before removing
+an enum value — or when a list endpoint 500s — `SELECT DISTINCT` the column locally and in the vam-five dump.
+
+## Say which existing records a live demo may change (2026-11-12)
+I told the user a vam-five recording would not change existing records; the delegated agent ran an existing seeded
+rule (Albion Barclays → Lloyds) to have something to show. When delegating a live run on a shared server, name the
+records it may touch and tell it to stop and report instead of using others.
+
+## An annotation sticks to the next declaration, comments and all (2026-11-13)
+I inserted a new private helper (with its javadoc) right under `@Transactional` and above `createRule`; the
+annotation moved to the helper, where Spring ignores it, and rule creation ran without a transaction (0a4f8ce, caught
+by a review agent). When inserting a method, insert it *above* the annotations of the method that follows, and grep
+the diff for `^\+\s*@` lines whose next declaration changed.

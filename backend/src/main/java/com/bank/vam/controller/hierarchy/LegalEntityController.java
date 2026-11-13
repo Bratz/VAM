@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 public class LegalEntityController {
 
     private final LegalEntityService legalEntityService;
+    private final com.bank.vam.repository.VirtualAccountRepository virtualAccountRepository;
 
     // ========================================================================
     // QUERY APIs - By Corporate
@@ -461,6 +462,9 @@ public class LegalEntityController {
     // ========================================================================
 
     private LegalEntityDto toDto(LegalEntity entity) {
+        // ponytail: one account lookup per IHB-enabled entity in lists; batch by owning entity if lists grow.
+        com.bank.vam.service.treasury.IhbExposure exposure = entity.isIhbEnabled()
+                ? com.bank.vam.service.treasury.IhbExposure.of(virtualAccountRepository, entity) : null;
         return LegalEntityDto.builder()
             .id(entity.getId())
             .entityCode(entity.getEntityCode())
@@ -505,8 +509,8 @@ public class LegalEntityController {
             // ENHANCED: IHB fields
             .ihbEnabled(entity.isIhbEnabled())
             .ihbCreditLimit(entity.getIhbCreditLimit())
-            .ihbCurrentExposure(entity.getIhbCurrentExposure())
-            .ihbAvailableLimit(entity.getIhbAvailableLimit())
+            .ihbCurrentExposure(exposure != null ? exposure.drawn() : null)
+            .ihbAvailableLimit(exposure != null ? exposure.available() : null)
             .canLend(entity.getCanLend())
             .canBorrow(entity.getCanBorrow())
             .ihbCurrency(entity.getIhbCurrency())
@@ -514,9 +518,9 @@ public class LegalEntityController {
             .borrowingRateSpread(entity.getBorrowingRateSpread())
             .spreadsDefault(entity.getSpreadsDefault())
             .ownershipDefault(entity.getOwnershipDefault())
-            .utilizationPercent(entity.getIhbUtilizationPercent())
-            .limitWarning(entity.isIhbLimitWarning())
-            .limitBreached(entity.isIhbLimitBreached())
+            .utilizationPercent(exposure != null ? exposure.utilisationPercent() : null)
+            .limitWarning(exposure != null && exposure.warning())
+            .limitBreached(exposure != null && exposure.breached())
             .build();
     }
 

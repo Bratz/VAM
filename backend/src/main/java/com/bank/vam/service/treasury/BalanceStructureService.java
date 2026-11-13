@@ -994,20 +994,20 @@ public class BalanceStructureService {
         try {
             return legalEntityRepository.findById(entityId)
                 .filter(LegalEntity::isIhbEnabled)
-                .map(entity -> IhbSummary.builder()
+                .map(entity -> { IhbExposure exposure = IhbExposure.of(virtualAccountRepository, entity); return IhbSummary.builder()
                     .enabled(true)
                     .isTreasuryCenter(Boolean.TRUE.equals(entity.getCanLend()))
                     .canLend(Boolean.TRUE.equals(entity.getCanLend()))
                     .canBorrow(Boolean.TRUE.equals(entity.getCanBorrow()))
                     .ihbCurrency(entity.getEffectiveIhbCurrency())
-                    .creditLimit(entity.getIhbCreditLimit())
-                    .currentExposure(entity.getIhbCurrentExposure())
-                    .availableLimit(entity.getIhbAvailableLimit())
-                    .utilizationPercent(calculateUtilization(entity.getIhbCurrentExposure(), entity.getIhbCreditLimit()))
+                    .creditLimit(exposure.creditLimit())
+                    .currentExposure(exposure.drawn())
+                    .availableLimit(exposure.available())
+                    .utilizationPercent(exposure.utilisationPercent())
                     .targetCashBalance(va.getTargetCashBalance())
                     .sweepEnabled(Boolean.TRUE.equals(va.getIhbSweepEnabled()))
                     .sweepFrequency(va.getIhbSweepFrequency())
-                    .build())
+                    .build(); })
                 .orElse(null);
         } catch (Exception e) {
             log.warn("Failed to build IHB summary for entity {}: {}", entityId, e.getMessage());

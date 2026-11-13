@@ -7,6 +7,11 @@ needed. There is no link to any bank, so the bank's side is played from the brow
 bank's end-of-day statement is posted to the intake endpoint the bank's middleware would call, and the other bank's
 rejection is played with **Mark rejected** on the execution.
 
+**Step 2 was re-recorded through the Create Rule form** on **13 Nov 2026, 02:33–02:37** (build 0a4f8ce, same bundle
+`index-B4SiXEPv.js`; 0a4f8ce changed only the backend). On 12 Nov the form returned a 500 and the rules were created
+from the console; the form now works. The rule it created, SWP-TB-401710, was paused straight away so that it does not
+duplicate SWP-TB-355475, the 12 Nov rule that steps 3 and 4 run.
+
 > **Reload the tab after a deploy.** The pane had been open since before the deploy and was still running the old
 > bundle (`index-DSHZnM62.js`, by then a 404 on Vercel): no authority panel, and rule names without their "(off: …)"
 > suffix. A reload fixed both.
@@ -38,7 +43,8 @@ local numbering). V55 re-pointed the seeded rules SWP-HEL-001/002 to it too.
 
 | What | Reference | Notes |
 |---|---|---|
-| Sweep rule | **SWP-TB-355475** · *DEMO Helios NY BofA Target 1M → ENBD USD* · id `0fa81a8a-5fb5-4ac2-8138-caf85149f663` | TARGET_BALANCE 1,000,000, DAILY, priority 1; HEL0000002 → SHADOW-USD-54361989. Created from the console (step 2, finding 1) |
+| Sweep rule | **SWP-TB-355475** · *DEMO Helios NY BofA Target 1M → ENBD USD* · id `0fa81a8a-5fb5-4ac2-8138-caf85149f663` | TARGET_BALANCE 1,000,000, DAILY, priority 1; HEL0000002 → SHADOW-USD-54361989. Created from the console on 12 Nov, before 0a4f8ce fixed the form; the one run in steps 3–4 |
+| Sweep rule | **SWP-TB-401710** · *DEMO Helios BofA → Emirates NBD (form)* · id `2f31432f-abd2-4e8f-af59-9cec38fd5420` | Same rule, created through the form on 13 Nov (step 2); entity codes `HEL-US` on both legs. **PAUSED**, never run |
 | Sweep execution | **EXE-20261112201308-0376** · id `9e14cad6-04ef-4cac-8fc3-f2202dad312d` · USD 5,219,974.50 | COMMITTED → **SETTLED** |
 | Instruction | **XSW70D5530C6B124** · MT101 · id `3f6fcae4-3c88-43e0-8854-29490e04493a` | INSTRUCTED → SETTLED, confirmed by line `35df7ab8-ad0c-4b0d-9024-6098724c8bda`, bank reference BOFA2611120051 |
 | Postings (run) | SWP17945143880303872 (sweep out, HEL0000002) · SWP17945143880313269 (sweep in, SHADOW-USD-54361989) · FEE-1794514388074-4219 / SET-1794514388076-7119 (standard fee 500.00) · FEE-1794514388108-8393 / SET-1794514388108-9780 (instruction fee 25.00) | fees debited to the target, credited to EXCEPTION-DEFAULT-USD |
@@ -144,49 +150,75 @@ Where it shows:
 
 ## 2. Create the rule — one refusal, then the rule (≈3 min)
 
-**Sidebar Liquidity Management → Cash Concentration**, Corporate **Helios** → **Create Rule**.
+Recorded through the form on 13 Nov 2026 (build 0a4f8ce). The rule this demo runs in steps 3 and 4, **SWP-TB-355475**,
+was created on 12 Nov from the console, when this form still returned a 500; it is the same rule. To avoid two
+rules sweeping the same account, the form's rule was paused at the end of this step.
 
-1. *Setup*: Corporate **Helios Global Inc.**; Program left on *All Programs (Optional)* (the only entry); Rule Name
-   **DEMO Helios NY BofA Target 1M → ENBD USD**; Sweep Type **Target Balance**; Frequency **Daily** → **Continue**.
-2. *Accounts*: the **Target Account** list offers Helios's three Emirates NBD shadows, the currency mirror, the
-   treasury root, settlement and exception accounts, and, greyed out, the four other-bank shadows:
-   *Shadow · Bank of America USD - HEL0000002 (USD) · other bank, source only* (same for HEL0000001, -003, -004).
-   In **Source Accounts (Manual)** the other-bank rows are marked: *HEL0000002 · other bank · authorised · USD
-   6,219,974.50*, *HEL0000003 · other bank · authorised*, *HEL0000001 (JPMorgan) · other bank · no authority*,
-   *HEL0000004 (StanChart SGD) · other bank · no authority*.
+**Sidebar Liquidity Management → Cash Concentration**; Corporate **Helios** at the top of the page.
 
-**The refusal.** Pick Target **Settlement Account - TRES-USD-HEL (USD) - SETTLEMENT-TRESUSDHEL-USD (USD)** and tick
-source **Shadow · Bank of America USD · HEL0000002** (*1 account(s) selected*) → **Continue**. *Configuration*:
-Currency **USD - US Dollar** (it defaults to AED), Priority **1**, Target Balance Amount **1000000** → **Continue** →
-*Review* → **Create Rule**.
+You see *Sweep Rules 4* (SWP-TB-355475, SWP-HEL-001, SWP-TB-640202, SWP-HEL-002), *Active Rules 13*, *Linked
+Accounts 15* (these tiles count every corporate). Click **Create Rule** (top right) → window *Create Sweep Rule*, steps
+*Setup · Accounts · Configuration · Review*.
 
-You see, under the review: *"The rule was not created — Source HEL0000002 is at another bank, so the target must be its
-legal entity's own account held at the home bank; SETTLEMENT-TRESUSDHEL-USD is not an account held at the home bank."*
+1. *Setup*: **Corporate** opens on *Select Corporate...* (the page's Helios filter is not carried over) → **Helios
+   Global Inc.**; **Program** left on *All Programs (Optional)*, the only entry; **Rule Name** **DEMO Helios BofA →
+   Emirates NBD (form)**; **Sweep Type**: click the **Target Balance** card (*"Maintain a specific balance, sweep
+   excess"*); **Frequency** **Daily** (the default) → **Continue**.
+2. *Accounts*. How other-bank accounts are marked:
+   - **Target Account (Concentration Account)** lists Helios's home-bank accounts — *Exception Account - DEFAULT
+     (USD) - EXCEPTION-DEFAULT-USD*, the three Emirates NBD shadows *SHADOW-GBP-54361989*, *SHADOW-EUR-54361989*,
+     *SHADOW-USD-54361989*, *USD Currency Mirror - M-USD-43BB74BA*, *Helios Treasury Program - Group Treasury -
+     TRES-U-ROOT-81845*, the SGD and USD settlement accounts and *EXCEPTION-TRESUSDHEL-USD* — then, **greyed out and
+     not selectable**, the four other-bank shadows:
+     *Shadow · StanChart SGD - HEL0000004 (SGD) · other bank, source only*, *Shadow · Citibank USD (NYC) - HEL0000003
+     (USD) · other bank, source only*, *Shadow · Bank of America USD - HEL0000002 (USD) · other bank, source only*,
+     *Shadow · JPMorgan USD (Header) - HEL0000001 (USD) · other bank, source only*.
+   - **Source Accounts**, tab **Manual**: each row shows name, number, currency and balance. The other-bank rows carry
+     a label: *Shadow · Citibank USD (NYC) · HEL0000003 · **other bank · authorised** · USD 4,012,000.00* and *Shadow ·
+     Bank of America USD · HEL0000002 · **other bank · authorised** · USD 1,000,000.00*; *HEL0000004 (SGD
+     2,510,000.00)* and *HEL0000001 (USD 15,280,000.00)* read **other bank · no authority**, are faded, and their
+     tooltip says *"At another bank with no authority: bank operations register one on the account first"*. The
+     home-bank target reads *SHADOW-USD-54361989 · USD 5,218,949.50* (its ledger).
 
-**The rule.** **Back**, **Back**; Target **Shadow: Helios Global Inc. USD current account - SHADOW-USD-54361989 (USD)**
-(source still ticked) → **Continue** → **Continue** → **Create Rule**.
+**The refusal.** **Target Account** → **Settlement Account - TRES-USD-HEL (USD) - SETTLEMENT-TRESUSDHEL-USD (USD)**.
 
-You see: *"The rule was not created — An unexpected error occurred"* (HTTP 500). This is a defect in the form, not a
-refusal (finding 1): it sends each account's *name* as its entity code, and the target's name (46 characters) does
-not fit the 20-character column. The previous refusal message also stayed on screen until this submit.
+You see under the list *"Selected: SETTLEMENT-TRESUSDHEL-USD | Entity: Settlement Account - TRES-USD-HEL (USD)"*; that
+account drops out of the source list. Tick source **Shadow · Bank of America USD · HEL0000002** → *1 account(s)
+selected* → **Continue**.
 
-Workaround, recorded: close the window and send the same request from the console with the entity code `HEL-US`:
+3. *Configuration*: **Currency** opens on *AED - UAE Dirham* → **USD - US Dollar**; **Priority** **1** (the default,
+   *"1 = Highest priority"*); **Target Balance Amount** **1000000** (*"Funds will be swept to maintain this balance in
+   source accounts"*) → **Continue**.
+4. *Review*: *DEMO Helios BofA → Emirates NBD (form) · Target Balance • DAILY · Corporate Helios Global Inc. ·
+   Currency USD · Priority 1*; *Account flow*: *Source Accounts 1 account(s) → Sweep → Settlement Account - TRES-USD-HEL
+   (USD) · SETTLEMENT-TRESUSDHEL-USD*; *Source Accounts: Shadow · Bank of America USD · HEL0000002*. (The target
+   amount is not shown here.) → **Create Rule**.
 
-```js
-await fetch('/api/v1/sweeping/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    ruleName: 'DEMO Helios NY BofA Target 1M → ENBD USD',
-    corporateId: 'dd000004-0000-0000-0000-000000000004',
-    sweepType: 'TARGET_BALANCE', targetAmount: 1000000, frequency: 'DAILY', currencyCode: 'USD', priority: 1,
-    targetAccountId: 'cb3d697f-bfa8-4ebf-b062-76e59d9aa389', targetAccountNumber: 'SHADOW-USD-54361989',
-    targetEntityCode: 'HEL-US',
-    sourceAccounts: [{ accountId: 'dd000004-4000-0000-0000-000000000002', accountNumber: 'HEL0000002',
-                       entityCode: 'HEL-US', entityName: 'Helios Global Inc.' }] }) }).then(r => r.json())
-```
+You see, under the review, the backend's refusal (HTTP 400): *"The rule was not created — Source HEL0000002 is at
+another bank, so the target must be its legal entity's own account held at the home bank; SETTLEMENT-TRESUSDHEL-USD is
+not an account held at the home bank."* Nothing is created.
 
-You see `success: true`, *"Sweep rule created successfully"*, `ruleReference: SWP-TB-355475`, `status: ACTIVE`.
-**Refresh** on Cash Concentration: *Sweep Rules 3*, top card `DEMO Helios NY BofA Target 1M → ENBD USD · ACTIVE ·
-SWP-TB-355475 · Target · DAILY · Total Swept USD 0.00 · 1 source account(s)`.
+**The rule.** **Back**, **Back** (to *Accounts*; the source is still ticked) → **Target Account** → **Shadow: Helios
+Global Inc. USD current account - SHADOW-USD-54361989 (USD)**.
+
+You see *"Selected: SHADOW-USD-54361989 | Entity: Shadow: Helios Global Inc. USD current account"*, *1 account(s)
+selected*. The refusal message from the last submit is still on screen here and on *Review*; ignore it. **Continue**
+(*Configuration* kept USD, 1, 1000000) → **Continue** → *Review* now shows *Sweep → Shadow: Helios Global Inc. USD
+current account · SHADOW-USD-54361989* → **Create Rule**.
+
+You see the window close (HTTP 200; no toast). The page now reads *Sweep Rules 5*, *Active Rules 14*, *Linked
+Accounts 16*, and a new card: `DEMO Helios BofA → Emirates NBD (form) · ACTIVE · SWP-TB-401710 · Type Target ·
+Frequency DAILY · Total Swept USD 0.00 · 1 source account(s)`. Behind it (`GET /api/v1/sweeping/rules`): target
+SHADOW-USD-54361989, `targetEntityCode: HEL-US`, source HEL0000002 with `entityCode: HEL-US`, USD, priority 1,
+TARGET_BALANCE 1,000,000, DAILY — the entity code now comes from the account's legal entity, not the account name the
+form sends.
+
+**Pause it** (this recording only; on a fresh instance, keep the rule and run it in step 3). On the
+**SWP-TB-401710** card, the icons are **Edit rule**, **Pause rule**, **Delete rule** → **Pause rule**.
+
+You see, with no confirmation, the card change to **PAUSED** and its icon to **Activate rule**; *Active Rules 13*
+again (*Linked Accounts* stays 16). The rule is kept, never run; steps 3–5 use **SWP-TB-355475**, which reads exactly
+as this rule does (ACTIVE, Total Swept USD 5.2M after the 12 Nov run).
 
 > Talking point: other-bank accounts are sources only, and they sweep into their own legal entity's account at the
 > home bank, in the same currency. Cross-entity concentration goes through the in-house bank.
@@ -322,10 +354,22 @@ await fetch('/api/v1/statements/intake?fileName=CITI_MT940_20261111.sta',
 
    You see *"1 applied, 0 duplicate, 0 refused"*, CITI261111-001, no gap, no break.
 
-2. The rule, from the console (the form has the defect of step 2): the request of step 2 with `ruleName: 'DEMO Helios
-   Boston Citi Target 1M → ENBD USD'`, `priority: 2`, and source `{ accountId: 'dd000004-4000-0000-0000-000000000003',
-   accountNumber: 'HEL0000003', entityCode: 'HEL-US', entityName: 'Helios Global Inc.' }`. You see
-   *"Sweep rule created successfully"*, **SWP-TB-640202**.
+2. The rule. On 12 Nov it was created from the console, because the form then returned a 500 (fixed in 0a4f8ce; on
+   a later run, create it through the form as in step 2, with source **HEL0000003** and priority **2**). As recorded:
+
+```js
+await fetch('/api/v1/sweeping/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    ruleName: 'DEMO Helios Boston Citi Target 1M → ENBD USD',
+    corporateId: 'dd000004-0000-0000-0000-000000000004',
+    sweepType: 'TARGET_BALANCE', targetAmount: 1000000, frequency: 'DAILY', currencyCode: 'USD', priority: 2,
+    targetAccountId: 'cb3d697f-bfa8-4ebf-b062-76e59d9aa389', targetAccountNumber: 'SHADOW-USD-54361989',
+    targetEntityCode: 'HEL-US',
+    sourceAccounts: [{ accountId: 'dd000004-4000-0000-0000-000000000003', accountNumber: 'HEL0000003',
+                       entityCode: 'HEL-US', entityName: 'Helios Global Inc.' }] }) }).then(r => r.json())
+```
+
+   You see *"Sweep rule created successfully"*, **SWP-TB-640202**.
 3. **Run Sweeps** → tick only **SWP-TB-640202** → **Run 1 Rule(s)** → *1 Executed · 1 Successful · 0 Failed*.
    **Execution History**: `EXE-20261112201735-7222 · USD 3,012,000.00 · USD 4,012,000.00 → USD 1,000,000.00 ·
    Instructed · awaiting bank statement`. Details: MT101 **XSW31CB42BC11274** (`:50H:/US33CITIUS33000076543210`,
@@ -351,8 +395,9 @@ from the portal; see finding 9.
 
 ## How to repeat
 
-- **Rules.** SWP-TB-355475 and SWP-TB-640202 stay on vam-five (ACTIVE, DAILY). Reuse them, or create new ones from the
-  console (step 2) until finding 1 is fixed.
+- **Rules.** SWP-TB-355475 and SWP-TB-640202 stay on vam-five (ACTIVE, DAILY); SWP-TB-401710 (the form's copy of
+  SWP-TB-355475) is PAUSED. Reuse them, or create new ones through the form (step 2). Do not activate SWP-TB-401710
+  while SWP-TB-355475 is active: both sweep HEL0000002.
 - **Statements.** A sweep is sized on the account's last end-of-day statement, which must be dated on or after the
   last business day. On day D: post BofA's statement for the previous business day, opening at the last closing
   (1,000,000.00 after this recording, unless a statement came since), with credits so it closes above 1,000,000, a
@@ -380,34 +425,30 @@ from the portal; see finding 9.
 
 - A tab open across a deploy runs the old bundle; reload.
 - **Corporate filter** on Bank Accounts opens on *TestShop*; set Helios each time.
-- **Create Rule** fails with *"An unexpected error occurred"* for these targets; use the console request (step 2).
-- **Create Rule** Configuration step defaults the currency to **AED**; set USD.
-- A refusal message on the Review step stays visible after going Back and changing the accounts.
+- **Create Rule** Configuration step defaults the currency to **AED**; set USD. Its Corporate opens on *Select
+  Corporate...* whatever the page filter says.
+- A refusal message on the Review step stays visible after going Back and changing the accounts (still so on 13 Nov).
 - Cash Concentration's tiles and Execution History do not follow the Corporate filter (Helios selected: *Today's
   Swept GBP 3.1M* from Albion, other corporates' executions listed).
 
-## Findings (12 Nov 2026, e7dae35)
+## Findings (12 Nov 2026, e7dae35; updated 13 Nov, 0a4f8ce)
 
-1. **Create Rule returns 500 for any account whose name is over 20 characters.** `CreateRuleModal.tsx`
-   `handleTargetAccountChange` sets `targetEntityCode: account.vaName` and `toggleSourceAccount` sets
-   `entityCode: account.vaName`; the columns are `length = 20` (`SweepRule.java` `target_entity_code`,
-   `SweepRuleSource.java` `entity_code`) and `SweepService.createRule` stores them as sent. *"Shadow: Helios Global
-   Inc. USD current account"* is 46 characters, so no Helios rule can be created from the form; the same request with
-   `HEL-US` works. The refusal path works because it fails before saving. 6.2 checked the API, not the form.
-2. **A sweep credit to a home-bank shadow moves its bank balance but not its bank available balance.**
-   `VirtualAccount.mirrorBankBalance` (called by `CoreBankingBalance.mirrorIfHomeBankShadow`) changes `bankBalance`
-   only. SHADOW-USD-54361989 shows *Available 5,000,000.00 · On Hold 5,219,974.50*, and multi-bank liquidity, which
-   uses available − committed, keeps Emirates NBD at 5,000,000.00: after confirmation the swept 5.2M is at neither
-   bank (Helios USD 30,546,500.00 → 25,292,000.00). Home-bank sweeps go through the same path.
+1. ~~Create Rule returns 500 for any account whose name is over 20 characters.~~ **Fixed in 0a4f8ce**: rule legs take
+   their entity code from the account's legal entity (`SweepService.legEntityCode`), not the account name the form
+   still sends. Step 2 re-recorded through the form on 13 Nov: SWP-TB-401710, `HEL-US` on both legs.
+2. ~~A sweep credit to a home-bank shadow moves its bank balance but not its bank available balance.~~ **Fixed in
+   0a4f8ce** (`VirtualAccount.mirrorBankBalance` moves available too), for movements from then on. The 12 Nov values
+   were not repaired: on 13 Nov SHADOW-USD-54361989 still reads bank balance 10,219,974.50, bank available
+   5,000,000.00.
 3. The 6.3 runbook in `tasks/todo.md` names the target **SHADOW-USD-54361990**; on vam-five it is
    **SHADOW-USD-54361989** (V55 re-pointed SWP-HEL-001/002 there). It also says to post a BofA statement first; on
    vam-five the 11 Nov sample statement had already made BofA fresh.
 4. The target's ledger was **0.00** against a bank balance of **5,000,000.00** before the demo (shadow created 6 Nov,
    CORE_BANKING, *Stale · as of 6 Nov*); the rule form lists it at *USD 0.00*. After the demo, ledger 5,218,949.50 and
    bank balance 10,219,974.50.
-5. Both fees are credited to **EXCEPTION-DEFAULT-USD**, the bank-wide default exception account, although Helios has
-   SETTLEMENT-TRESUSDHEL-USD and EXCEPTION-TRESUSDHEL-USD on vam-five (neither moved). Not traced further. Both
-   credits arrived (525.00 for 525.00 charged), so the lost-fee defect fixed in 6.2 is fixed here too.
+5. ~~Both fees are credited to **EXCEPTION-DEFAULT-USD**.~~ **Fixed in 0a4f8ce**: fees charged to a home-bank shadow
+   now settle on the corporate's top-level settlement VA in that currency (here SETTLEMENT-TRESUSDHEL-USD) when exactly
+   one exists. The 12 Nov fees stay where they landed (EXCEPTION-DEFAULT-USD reads USD 1,025.00 in the 13 Nov form).
 6. **Link External** still has no data source field and always sends `OPEN_BANKING_UAE`; **Add Account** still
    defaults the BIC to `EABORAEDXXX` (`PhysicalAccountsPage.tsx`, `CreateAccountModal`). A statement-fed external
    account still needs the console. Checked in the code, not driven in the browser.
@@ -418,16 +459,26 @@ from the portal; see finding 9.
 9. The seeded DAILY rules last ran on 28 Sep, so vam-five's scheduled jobs appear to be off (`VAM_SCHEDULING_ENABLED`
    in its `.env`; not checked). If so, the 2-business-day expiry job does not run there either, and a pending
    instruction only ends by a statement or **Mark rejected**.
-10. The failure notification prints the amount unformatted, *"3012000.0000 USD"* (`ExternalSweepService.fail`,
-    `amount.toPlainString()`).
+10. ~~The failure notification prints the amount unformatted, *"3012000.0000 USD"*.~~ **Fixed in 0a4f8ce**: alerts
+    and refusals print *"3,012,000.00 USD"*. The 12 Nov notification keeps its old text.
 11. Cash Concentration tiles (*Total Swept*, *Today's Swept*, *Active Rules*, *Linked Accounts*) and Execution History
     ignore the Corporate filter.
-12. Create Rule: currency defaults to AED; a refusal message persists after Back; Program lists nothing to pick.
+12. Create Rule: currency defaults to AED; a refusal message persists after Back; Program lists nothing to pick
+    (all three still so on 13 Nov). Also seen on 13 Nov: Corporate is not preselected from the page filter; Review
+    does not show the target amount; no toast on success; a source leg's `entityName` is stored as the account name
+    (*"Shadow · Bank of America USD"*).
 13. Seed naming: rule names *"Helios NY USD ZBA → SF Header"* / *"Helios Boston > 5M → SF"* still name the JPMorgan SF
     header after V55 re-pointed them to Emirates NBD; the Citi shadow of *Helios Boston USD Operating* is called
     *"Citibank USD (NYC)"*; BofA's physical account is `SWIFT_MT942`, its shadow `SWIFT_MT940`.
 14. Seen, as designed: the confirming statement's `differenceToPlatform` is −5,219,974.50 (the sweep debit; no break);
     the standard fee is not refunded on rejection.
+15. (13 Nov, 0a4f8ce) **`SweepService.createRule` is no longer `@Transactional`.** 0a4f8ce inserted `legEntityCode`
+    between the `@Transactional` annotation and `createRule`, so the annotation now sits on the private helper (where
+    Spring ignores it) and `createRule` runs without a transaction: the rule save and the physical-account
+    sweep-participation update are no longer atomic. Rule creation worked on vam-five; found reading the diff.
+16. (13 Nov) Creating a rule re-points each involved physical account's `sweepRuleId` to the newest rule. After step
+    2, 8765432101 and USD54361989 point at the paused SWP-TB-401710 (before: SWP-TB-355475 and SWP-TB-640202);
+    `sweepEnabled` and `sweepRole` unchanged. Display mirror only; no sweep reads it.
 
 Fixed since the 12 Nov Albion draft (its findings 1, 2, 4–7, 11–13): authorities exist and are checked at creation and
 at every run; an MT101 is produced; the home bank's side moves its bank balance and physical account; the external

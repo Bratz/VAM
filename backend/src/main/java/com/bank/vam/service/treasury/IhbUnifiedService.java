@@ -300,7 +300,6 @@ public class IhbUnifiedService {
                 throw new BusinessException("New limit cannot be less than the IHB debit balance: " + drawn.toPlainString());
             }
             entity.setIhbCreditLimit(request.getCreditLimit());
-            entity.setIhbAvailableLimit(entity.getAvailableIhbLimit());
         }
         if (request.getLendingRateSpread() != null) entity.setLendingRateSpread(request.getLendingRateSpread());
         if (request.getBorrowingRateSpread() != null) entity.setBorrowingRateSpread(request.getBorrowingRateSpread());
@@ -545,8 +544,9 @@ public class IhbUnifiedService {
         response.setEntityCode(entity.getEntityCode());
         response.setEntityName(entity.getEntityName());
         response.setIhbCreditLimit(entity.getIhbCreditLimit());
-        response.setIhbAvailableLimit(entity.getIhbAvailableLimit());
-        response.setUtilizationPercent(entity.getIhbUtilizationPercent());
+        IhbExposure exposure = IhbExposure.of(virtualAccountRepository, entity);
+        response.setIhbAvailableLimit(exposure.available());
+        response.setUtilizationPercent(exposure.utilisationPercent());
         return response;
     }
 
@@ -577,15 +577,10 @@ public class IhbUnifiedService {
         dto.setEntityCode(entity.getEntityCode());
         dto.setEntityName(entity.getEntityName());
         dto.setEntityType(mapEntityType(entity.getEntityType()));
-        // Exposure = what the entity has drawn on its IHB current accounts (their debit balance), not the stored
-        // ihbCurrentExposure, which nothing maintains since IHB loans were retired.
-        BigDecimal limit = entity.getIhbCreditLimit() != null ? entity.getIhbCreditLimit() : BigDecimal.ZERO;
-        BigDecimal exposure = ihbDebitBalance(entity);
-        BigDecimal utilisation = limit.signum() > 0
-                ? exposure.multiply(BigDecimal.valueOf(100)).divide(limit, 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-        dto.setCreditLimit(limit);
-        dto.setCurrentExposure(exposure);
-        dto.setAvailableLimit(limit.subtract(exposure).max(BigDecimal.ZERO));
+        IhbExposure exposure = IhbExposure.of(virtualAccountRepository, entity);
+        dto.setCreditLimit(exposure.creditLimit());
+        dto.setCurrentExposure(exposure.drawn());
+        dto.setAvailableLimit(exposure.available());
         dto.setLendingRateSpread(entity.getLendingRateSpread());
         dto.setBorrowingRateSpread(entity.getBorrowingRateSpread());
         dto.setSpreadsDefault(entity.getSpreadsDefault());
@@ -596,23 +591,15 @@ public class IhbUnifiedService {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setSettlementVaId(entity.getSettlementVaId());
         dto.setIhbCurrency(entity.getEffectiveIhbCurrency());
-        dto.setUtilizationPercent(utilisation);
-        dto.setLimitWarning(utilisation.compareTo(BigDecimal.valueOf(80)) >= 0);
-        dto.setLimitBreached(utilisation.compareTo(BigDecimal.valueOf(100)) >= 0);
+        dto.setUtilizationPercent(exposure.utilisationPercent());
+        dto.setLimitWarning(exposure.warning());
+        dto.setLimitBreached(exposure.breached());
         return dto;
     }
 
-    /**
-     * The debit balance of the entity's active IHB current accounts in its IHB currency: the sum of max(0, -balance).
-     * ponytail: accounts in other currencies are left out (the credit limit is in the IHB currency); convert them
-     * at the FX rate if entities start drawing in several currencies.
-     */
+    /** What the entity has drawn on its IHB credit: see {@link IhbExposure}. */
     BigDecimal ihbDebitBalance(LegalEntity entity) {
-        String ccy = entity.getEffectiveIhbCurrency();
-        return virtualAccountRepository.findByOwningEntityId(entity.getId()).stream()
-                .filter(va -> va.isIhbParticipant() && va.isActive() && ccy != null && ccy.equals(va.getCurrencyCode()))
-                .map(va -> va.getCurrentBalance() != null ? va.getCurrentBalance().negate().max(BigDecimal.ZERO) : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return IhbExposure.of(virtualAccountRepository, entity).drawn();
     }
 
     private IhbEntity.EntityType mapEntityType(LegalEntity.EntityType type) {

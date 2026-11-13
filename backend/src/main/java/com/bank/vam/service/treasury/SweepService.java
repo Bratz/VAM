@@ -191,7 +191,6 @@ public class SweepService {
         return toResponse(rule);
     }
 
-    @Transactional
     /**
      * The entity code stored on a rule leg: the account's own legal entity, not the request's text. The Create Rule
      * form sent the account name there, which overflowed the 20-character column (500) for any longer name.
@@ -205,6 +204,7 @@ public class SweepService {
         return requested != null && !requested.isBlank() && requested.length() <= 20 ? requested : null;
     }
 
+    @Transactional
     public SweepRuleDto.Response createRule(SweepRuleDto.CreateRequest request) {
         SweepRule rule = new SweepRule();
         rule.setRuleReference(generateRuleReference(request.getSweepType()));
@@ -1072,9 +1072,9 @@ public class SweepService {
                 return result;
             }
 
-            // Borrower's credit headroom, the same rule POBO uses: IHB current balance + credit limit. The entity's
-            // ihbCurrentExposure (LegalEntity.canBorrowAmount) is never updated anywhere, so it checked each top-up
-            // alone; the IHB current balance falls with every top-up's intercompany leg, so this one is cumulative.
+            // Borrower's credit headroom, the same rule POBO uses: IHB current balance + credit limit. The entity's old
+            // stored exposure (dropped in V58) was never updated, so it checked each top-up alone; the IHB current
+            // balance falls with every top-up's intercompany leg, so this one is cumulative.
             String overLimit = com.bank.vam.service.pobo.PoboEnrolmentService.headroomRefusal(ihbCurrentVa, deficit);
             if (overLimit != null) {
                 result.setMessage(overLimit);

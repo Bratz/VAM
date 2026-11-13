@@ -395,31 +395,6 @@ public interface LegalEntityRepository extends JpaRepository<LegalEntity, UUID> 
     List<LegalEntity> findByCorporateIdAndCanBorrowTrue(UUID corporateId);
 
     /**
-     * Find entities with IHB limit warnings (utilization >= 80%).
-     */
-    @Query("SELECT e FROM LegalEntity e WHERE e.corporateId = :corporateId " +
-           "AND e.ihbEnabled = true " +
-           "AND e.ihbCreditLimit > 0 " +
-           "AND (e.ihbCurrentExposure * 100 / e.ihbCreditLimit) >= 80")
-    List<LegalEntity> findEntitiesWithIhbLimitWarning(@Param("corporateId") UUID corporateId);
-
-    /**
-     * Find entities with IHB limit breached (utilization >= 100%).
-     */
-    @Query("SELECT e FROM LegalEntity e WHERE e.corporateId = :corporateId " +
-           "AND e.ihbEnabled = true " +
-           "AND e.ihbCreditLimit > 0 " +
-           "AND e.ihbCurrentExposure >= e.ihbCreditLimit")
-    List<LegalEntity> findEntitiesWithIhbLimitBreached(@Param("corporateId") UUID corporateId);
-
-    /**
-     * Get total IHB exposure for a corporate.
-     */
-    @Query("SELECT COALESCE(SUM(e.ihbCurrentExposure), 0) FROM LegalEntity e " +
-           "WHERE e.corporateId = :corporateId AND e.ihbEnabled = true")
-    BigDecimal getTotalIhbExposure(@Param("corporateId") UUID corporateId);
-
-    /**
      * Get total IHB credit limit for a corporate.
      */
     @Query("SELECT COALESCE(SUM(e.ihbCreditLimit), 0) FROM LegalEntity e " +

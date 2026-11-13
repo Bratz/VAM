@@ -1,5 +1,49 @@
 # Active Work / Status Tracker
 
+## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
+Money / correctness first:
+- [ ] vam-five scheduler looks off (no sweep since 28 Sep): daily sweeps, the external-sweep 2-day expiry and the
+      15-min refresh may never run there. Check `VAM_SCHEDULING_ENABLED` in deploy/oci (.env on the VM).
+- [x] Stale `LegalEntity.ihbCurrentExposure` → every reader uses `IhbExposure` (IHB current accounts' debit balance);
+      the stored columns and their dead methods/queries go in V58 (2026-11-13).
+- [x] vam-five data from the 12 Nov recording, repaired 13 Nov through the product: shadow sync (SHADOW-USD-54361989
+      bank available 5,000,000 → 10,219,974.50 from its physical account); the three parked fee exceptions (USD 1,025)
+      allocated to SETTLEMENT-TRESUSDHEL-USD (75,500 → 76,525); the refunded 25 and four configuration duplicates
+      written off with the reason. EXCEPTION-DEFAULT-USD back to 0, no open items.
+- [ ] Creating a rule repoints `physical_accounts.sweep_rule_id` of every account it involves to the newest rule
+      (`SweepService.mirrorSweepParticipation`); deleting one clears it and `sweep_enabled`. Display-only today.
+- [ ] Source legs store the account name as `entityName`; Create Rule Review omits the target amount; Corporate opens
+      on "Select Corporate…" even with the page filter set; target list offers EXCEPTION-DEFAULT-USD.
+- [ ] Notional pool NP-0002 charges a management fee on vam-five although pooling D9 = no fee in v1.
+- [ ] A POBO payout can overdraw treasury's bank account; collection fees credit IHBS-MNC-UAE-DUBAI-AED (settlement
+      wiring per program).
+- [ ] Optimistic locking is off (`BaseEntity.version` never increments); only external sweeps claim atomically.
+- [ ] Multi-Bank Liquidity counts stale balances it says it excludes; headline "▲ 582.9% · 1D".
+- [ ] Run Sweeps result sums amounts across currencies and labels them AED; Emirates NBD tile on Bank Accounts sums
+      currencies; bank tiles group by raw code (HBUKGB4B vs HBUKGB4BXXX = two tiles).
+- [ ] 12,434 COMMITTED sweep executions (Jan–Sep) from the old EOD settlement, no instruction (local; likely vam-five).
+Statement intake:
+- [ ] Each re-delivery of a file with an unknown account raises a new alert (dedup is per file id).
+- [ ] Multipart intake limited to Spring's 1 MB default; raw body unlimited.
+- [ ] Statement for a CBS-fed account makes it look fresh although its balance comes from core banking.
+- [ ] OCI `fileingest_workspace` mount point likely root-owned (same issue fixed for the statement inbox) — unverified.
+UI:
+- [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,
+      keeps a refusal after Back, Program offers nothing.
+- [ ] Link External has no data-source field (hard-codes OPEN_BANKING_UAE); Add Account defaults BIC to EABORAEDXXX.
+- [ ] Link to Hierarchy: nameless parents, preselects ROOT AED, toast without account number, stale corporate filter.
+- [ ] Bank Accounts opens on TestShop; Account Details "Configure" does nothing; "Attach to Entity" when attached.
+Dead code / data:
+- [ ] `ihb_transactions` table (empty everywhere, entity deleted in e7dae35); legacy database/schema.sql,
+      1_schema.sql, vam_schema.sql still define dropped IHB columns.
+- [ ] `/cobo/{ref}/collect` always throws; frontend services/intercompanyService.ts imported by nothing.
+- [ ] Seeded rule names name their old targets ("Helios NY USD ZBA → SF Header"); seed physical/shadow data sources
+      disagree (BofA MT942 vs MT940, Mercator OB vs MT940); Citi Boston shadow named "(NYC)".
+- [ ] `GET /statements/lines` without its parameter and non-UUID path ids return 500 (catch-all handler).
+Docs:
+- [ ] CLAUDE.md says the context path is `/api`; the backend serves `/api/v1/...` on 8053 itself.
+- [ ] docs/demo/bulk-collections-walkthrough.md still has steps 9–12; the Docs version was trimmed to 0–8.
+
 ## ✅ IHB loan/deposit remnants removed (follow-up to 9950ceb)
 IHB exposure now = the debit balance of the entity's IHB current accounts in its IHB currency
 (`IhbUnifiedService.ihbDebitBalance`; the stored `ihbCurrentExposure` is never maintained), used by the IHB entity

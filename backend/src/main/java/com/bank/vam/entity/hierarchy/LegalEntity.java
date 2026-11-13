@@ -274,19 +274,6 @@ public class LegalEntity extends BaseEntity {
     private BigDecimal ihbCreditLimit;
 
     /**
-     * Current IHB exposure - total borrowed via IHB.
-     */
-    @Column(name = "ihb_current_exposure", precision = 19, scale = 4)
-    @Builder.Default
-    private BigDecimal ihbCurrentExposure = BigDecimal.ZERO;
-
-    /**
-     * Available IHB limit (ihbCreditLimit - ihbCurrentExposure).
-     */
-    @Column(name = "ihb_available_limit", precision = 19, scale = 4)
-    private BigDecimal ihbAvailableLimit;
-
-    /**
      * Spread added to base rate when this entity LENDS to others.
      * Default: 0.50% (50 bps)
      */
@@ -567,50 +554,6 @@ public class LegalEntity extends BaseEntity {
         return ihbCreditLimit != null && ihbCreditLimit.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    public BigDecimal getAvailableIhbLimit() {
-        if (ihbCreditLimit == null) return BigDecimal.ZERO;
-        BigDecimal exposure = ihbCurrentExposure != null ? ihbCurrentExposure : BigDecimal.ZERO;
-        return ihbCreditLimit.subtract(exposure).max(BigDecimal.ZERO);
-    }
-
-    public BigDecimal getIhbUtilizationPercent() {
-        if (ihbCreditLimit == null || ihbCreditLimit.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal exposure = ihbCurrentExposure != null ? ihbCurrentExposure : BigDecimal.ZERO;
-        return exposure.multiply(new BigDecimal("100"))
-            .divide(ihbCreditLimit, 2, java.math.RoundingMode.HALF_UP);
-    }
-
-    public boolean isIhbLimitWarning() {
-        return getIhbUtilizationPercent().compareTo(new BigDecimal("80")) >= 0;
-    }
-
-    public boolean isIhbLimitBreached() {
-        return getIhbUtilizationPercent().compareTo(new BigDecimal("100")) >= 0;
-    }
-
-    public boolean canBorrowAmount(BigDecimal amount) {
-        if (!canBorrow() || amount == null) return false;
-        if (!hasIhbLimit()) return true; // Unlimited if no limit set
-        return getAvailableIhbLimit().compareTo(amount) >= 0;
-    }
-
-    public void utilizeIhbLimit(BigDecimal amount) {
-        if (ihbCurrentExposure == null) ihbCurrentExposure = BigDecimal.ZERO;
-        ihbCurrentExposure = ihbCurrentExposure.add(amount);
-        ihbAvailableLimit = getAvailableIhbLimit();
-    }
-
-    public void releaseIhbLimit(BigDecimal amount) {
-        if (ihbCurrentExposure == null) ihbCurrentExposure = BigDecimal.ZERO;
-        ihbCurrentExposure = ihbCurrentExposure.subtract(amount);
-        if (ihbCurrentExposure.compareTo(BigDecimal.ZERO) < 0) {
-            ihbCurrentExposure = BigDecimal.ZERO;
-        }
-        ihbAvailableLimit = getAvailableIhbLimit();
-    }
-
     public String getEffectiveIhbCurrency() {
         return ihbCurrency != null ? ihbCurrency : functionalCurrency;
     }
@@ -744,8 +687,6 @@ public class LegalEntity extends BaseEntity {
                           BigDecimal lendingSpread, BigDecimal borrowingSpread) {
         this.ihbEnabled = true;
         this.ihbCreditLimit = creditLimit;
-        this.ihbAvailableLimit = creditLimit;
-        this.ihbCurrentExposure = BigDecimal.ZERO;
         this.canLend = canLend;
         this.canBorrow = canBorrow;
         this.lendingRateSpread = lendingSpread != null ? lendingSpread : new BigDecimal("0.50000");

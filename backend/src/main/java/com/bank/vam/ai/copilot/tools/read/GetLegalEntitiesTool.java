@@ -1,5 +1,7 @@
 package com.bank.vam.ai.copilot.tools.read;
 
+import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.service.treasury.IhbExposure;
 import com.bank.vam.ai.copilot.tools.CopilotTool;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
@@ -45,6 +47,7 @@ public class GetLegalEntitiesTool implements CopilotTool {
     static final int MAX_LIMIT = 200;
 
     private final LegalEntityRepository legalEntityRepository;
+    private final VirtualAccountRepository virtualAccountRepository;
 
     @Override
     public String name() {
@@ -142,7 +145,7 @@ public class GetLegalEntitiesTool implements CopilotTool {
         row.put("countryCode", entity.getCountryCode());
         row.put("status", entity.getStatus() != null ? entity.getStatus().name() : null);
         row.put("bancsCustomerId", entity.getBancsCustomerId());
-        row.put("ihbCurrentExposure", entity.getIhbCurrentExposure());
+        row.put("ihbCurrentExposure", entity.isIhbEnabled() ? IhbExposure.of(virtualAccountRepository, entity).drawn() : null);
         return row;
     }
 
