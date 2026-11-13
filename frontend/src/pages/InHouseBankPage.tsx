@@ -188,7 +188,6 @@ const ihbUnifiedApi = {
     participantEntityId: string;
     currencyCode: string;
     programId?: string;
-    creditLimit?: number;
     creditRate?: number;
     debitRate?: number;
     penaltyRate?: number;
@@ -336,7 +335,6 @@ const InHouseBankPage: React.FC = () => {
   const [currentAccountForm, setCurrentAccountForm] = useState({
     participantEntityId: '',
     currencyCode: 'AED',
-    creditLimit: '',
     creditRate: '',
     debitRate: '',
     penaltyRate: '',
@@ -450,7 +448,6 @@ const InHouseBankPage: React.FC = () => {
       const result = await ihbUnifiedApi.createCurrentAccount({
         participantEntityId: currentAccountForm.participantEntityId,
         currencyCode: currentAccountForm.currencyCode,
-        creditLimit: currentAccountForm.creditLimit ? parseFloat(currentAccountForm.creditLimit) : undefined,
         creditRate: currentAccountForm.creditRate ? parseFloat(currentAccountForm.creditRate) : undefined,
         debitRate: currentAccountForm.debitRate ? parseFloat(currentAccountForm.debitRate) : undefined,
         penaltyRate: currentAccountForm.penaltyRate ? parseFloat(currentAccountForm.penaltyRate) : undefined,
@@ -464,7 +461,7 @@ const InHouseBankPage: React.FC = () => {
       if (result?.success) {
         setShowCurrentAccountModal(false);
         setCurrentAccountForm({
-          participantEntityId: '', currencyCode: 'AED', creditLimit: '',
+          participantEntityId: '', currencyCode: 'AED',
           creditRate: '', debitRate: '', penaltyRate: '',
           ihbSweepEnabled: false, targetCashBalance: '', ihbSweepFrequency: 'DAILY', vaName: '',
         });
@@ -900,7 +897,6 @@ const InHouseBankPage: React.FC = () => {
                     ...prev,
                     participantEntityId: e.target.value,
                     currencyCode: entity?.ihbCurrency || prev.currencyCode,
-                    creditLimit: entity?.creditLimit?.toString() || prev.creditLimit,
                   }));
                 }}
               >
@@ -929,12 +925,17 @@ const InHouseBankPage: React.FC = () => {
               </div>
               <div>
                 <label className="field-label block mb-1">Credit Limit (Overdraft)</label>
-                <Input
-                  type="number"
-                  value={currentAccountForm.creditLimit}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, creditLimit: e.target.value })}
-                  placeholder="Leave empty for entity default"
-                />
+                {(() => {
+                  const participant = entities.find(en => en.id === currentAccountForm.participantEntityId);
+                  return (
+                    <p className="body-sm py-2">
+                      {participant
+                        ? formatCurrency(participant.creditLimit ?? 0, participant.ihbCurrency || currentAccountForm.currencyCode)
+                        : '—'}
+                      <span className="caption block">The entity's IHB credit limit; change it on the entity</span>
+                    </p>
+                  );
+                })()}
               </div>
             </div>
           </div>

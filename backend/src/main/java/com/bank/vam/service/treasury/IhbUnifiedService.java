@@ -138,6 +138,7 @@ public class IhbUnifiedService {
             request.getLendingRateSpread(), request.getBorrowingRateSpread());
         // Re-enabled with IHB accounts still open: the IHB currency stays theirs, not the functional currency.
         IhbExposure.accountCurrency(virtualAccountRepository, entity.getId()).ifPresent(entity::setIhbCurrency);
+        applyCreditLimit(virtualAccountRepository, entity, request.getCreditLimit());
         if (request.getSettlementVaId() != null) {
             validateSettlementVa(request.getSettlementVaId(), entity);
             entity.setSettlementVaId(request.getSettlementVaId());
@@ -323,13 +324,7 @@ public class IhbUnifiedService {
             throw new BusinessException("IHB not enabled for entity: " + entity.getEntityCode());
         }
         Map<String, Object> before = terms(entity);
-        if (request.getCreditLimit() != null) {
-            BigDecimal drawn = ihbDebitBalance(entity);
-            if (request.getCreditLimit().compareTo(drawn) < 0) {
-                throw new BusinessException("New limit cannot be less than the IHB debit balance: " + drawn.toPlainString());
-            }
-            entity.setIhbCreditLimit(request.getCreditLimit());
-        }
+        applyCreditLimit(virtualAccountRepository, entity, request.getCreditLimit());
         if (request.getLendingRateSpread() != null) entity.setLendingRateSpread(request.getLendingRateSpread());
         if (request.getBorrowingRateSpread() != null) entity.setBorrowingRateSpread(request.getBorrowingRateSpread());
         if (request.getCanLend() != null) entity.setCanLend(request.getCanLend());
@@ -625,6 +620,30 @@ public class IhbUnifiedService {
         dto.setLimitWarning(exposure.warning());
         dto.setLimitBreached(exposure.breached());
         return dto;
+    }
+
+    /**
+     * Sets an entity's IHB credit limit and gives it to its IHB current accounts, whose copy (effectiveCreditLimit) every
+     * headroom check reads (PoboEnrolmentService.headroom, FundsAvailabilityService). The only way the limit changes,
+     * so the two never drift apart; not below what the entity has drawn.
+     * ponytail: each account carries the whole limit; with several IHB accounts per entity the gate should take the
+     * other accounts' debit balances off (IhbExposure) -- today every entity has one.
+     */
+    public static void applyCreditLimit(VirtualAccountRepository accounts, LegalEntity entity, BigDecimal limit) {
+        if (limit == null) return;
+        BigDecimal drawn = IhbExposure.of(accounts, entity).drawn();
+        if (limit.compareTo(drawn) < 0) {
+            throw new BusinessException(entity.getEntityCode() + "'s IHB credit limit cannot be less than its IHB debit balance: "
+                + drawn.toPlainString());
+        }
+        entity.setIhbCreditLimit(limit);
+        if (entity.getId() == null) return;
+        for (VirtualAccount va : accounts.findByOwningEntityId(entity.getId())) {
+            if (!va.isIhbCurrentAccount()) continue;
+            va.setEffectiveCreditLimit(limit);
+            va.followIhbCreditUse();
+            accounts.save(va);
+        }
     }
 
     /** What the entity has drawn on its IHB credit: see {@link IhbExposure}. */
@@ -1415,10 +1434,8 @@ public class IhbUnifiedService {
         InterestConfiguration interestConfig = getOrCreateIhbInterestConfig(
             participant, treasury, request);
 
-        // 10. Determine credit limit
-        BigDecimal creditLimit = request.getCreditLimit() != null
-            ? request.getCreditLimit()
-            : (participant.getIhbCreditLimit() != null ? participant.getIhbCreditLimit() : BigDecimal.ZERO);
+        // 10. Credit limit: the entity's IHB credit limit, one figure for the entity and its accounts (applyCreditLimit)
+        BigDecimal creditLimit = participant.getIhbCreditLimit() != null ? participant.getIhbCreditLimit() : BigDecimal.ZERO;
 
         // 11. Generate IHB account number
         String accountNumber = generateIhbCurrentAccountNumber(participant, request.getCurrencyCode());

@@ -290,12 +290,15 @@ Money / correctness first:
       home-bank shadow with no BIC (SHADOW-AED--AED-002 in the dump) would be refused. An IHB current account payer is
       paid out by treasury's account (in-house route), but the bank check looks at the IHB account's own program shadow.
 - [x] `IhbInterestAccrual` entity unused: now the per-account daily accrual record (Phase 4.3, V65, 13 Nov).
-- [ ] Two IHB credit limits: the entity's `ihbCreditLimit` (IhbExposure, the Position tab, the limit-change check) and
-      the account's `effectiveCreditLimit` (`PoboEnrolmentService.headroomRefusal`: what POBO and netting legs are
-      gated on), copied from the entity when the account is opened and never synced: a limit change on the entity does
-      not move the gate. Make one derive from the other.
-- [ ] `LegalEntityService.updateEntity` sets `ihbCreditLimit` without the "not below the IHB debit balance" check that
-      `IhbUnifiedService.updateIhbSettings` applies.
+- [x] Two IHB credit limits drifting (13 Nov): `IhbUnifiedService.applyCreditLimit` is now the only way an entity's
+      limit changes (enable, IHB settings, Legal Entities page): not below the debit balance, and it sets every IHB
+      current account's `effectiveCreditLimit` (+ utilised/available) to it. Opening an account takes the entity's limit
+      (the request's override and the form field are gone); `CreditLimitService` refuses a VA limit on an IHB current
+      account. No repair migration: vam-five's three IHB accounts already equal their entities (AED 1,000,000), local too.
+- [ ] Several IHB current accounts per entity are allowed and each carries the whole limit, so together they could
+      draw a multiple of it. Today every entity has one. Fix: the gate takes the entity's other accounts' debit balances
+      off (IhbExposure) when that changes.
+- [x] `LegalEntityService.updateEntity` limit check: via `applyCreditLimit` (13 Nov).
 - [ ] An interest configuration's rate edit reaches the accounts only at the 2:00 sync or `propagate`; the audit trail
       records it there (actor of that run), not who edited the configuration (configuration edits are not audited).
 - [ ] `AuditLogService` records `anonymousUser` as the actor in dev (permitAll); `CurrentUser.name()` says "system".

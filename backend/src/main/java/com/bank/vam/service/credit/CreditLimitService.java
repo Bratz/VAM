@@ -78,6 +78,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CreditLimitService {
 
+    /** An IHB current account's limit is its entity's IHB credit limit (IhbUnifiedService.applyCreditLimit). */
+    static final String IHB_LIMIT = "An in-house bank current account's credit limit is its entity's IHB credit limit; change it on the In-House Bank page";
+
     private final CreditLimitRepository limitRepository;
     private final CreditFacilityRepository facilityRepository;
     private final VirtualAccountRepository vaRepository;
@@ -1303,6 +1306,9 @@ public class CreditLimitService {
         if (!va.getCorporateId().equals(corporateId)) {
             throw new BusinessException("VA does not belong to this corporate");
         }
+        if (va.isIhbCurrentAccount()) {
+            throw new BusinessException(IHB_LIMIT);
+        }
 
         // Check if VA already has a limit
         Optional<CreditLimit> existingVaLimit = limitRepository.findVaLimit(vaId);
@@ -1380,6 +1386,10 @@ public class CreditLimitService {
 
         if (limit.getTargetType() != TargetType.VIRTUAL_ACCOUNT || !limit.isInternal()) {
             throw new BusinessException("This method is only for internal VA limits");
+        }
+
+        if (vaRepository.findById(limit.getTargetId()).map(VirtualAccount::isIhbCurrentAccount).orElse(false)) {
+            throw new BusinessException(IHB_LIMIT);
         }
 
         // Cannot reduce below current utilization

@@ -1404,7 +1404,6 @@ public class VirtualAccountDto {
         private UUID parentNodeId;
 
         // Optional overrides (defaults come from entity/treasury)
-        private BigDecimal creditLimit;       // Override entity's ihbCreditLimit
         private BigDecimal creditRate;        // Override treasury's credit rate
         private BigDecimal debitRate;         // Override treasury's debit rate
         private BigDecimal penaltyRate;       // Override treasury's penalty rate

@@ -419,9 +419,7 @@ public class LegalEntityService {
         if (request.getIhbEnabled() != null) {
             entity.setIhbEnabled(request.getIhbEnabled());
         }
-        if (request.getIhbCreditLimit() != null) {
-            entity.setIhbCreditLimit(request.getIhbCreditLimit());
-        }
+        com.bank.vam.service.treasury.IhbUnifiedService.applyCreditLimit(virtualAccountRepository, entity, request.getIhbCreditLimit());
         if (request.getIhbCurrency() != null) {
             // The IHB currency is the currency of the entity's IHB current accounts (IhbExposure.accountCurrency).
             String held = com.bank.vam.service.treasury.IhbExposure.accountCurrency(virtualAccountRepository, entity.getId())
