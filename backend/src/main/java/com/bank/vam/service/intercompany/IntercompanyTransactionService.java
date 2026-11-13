@@ -403,50 +403,97 @@ public class IntercompanyTransactionService {
     }
 
     /**
-     * Get transactions eligible for netting between entity pair.
+     * What a netting cycle would take now for one pair of the corporate's entities (spec R5): the pair's open
+     * intercompany invoices that pass netting's own checks, each invoice once (a payable linked to one of the group's
+     * receivables is netted as that receivable, {@link IntercompanyGroupPositionService#countedAsReceivable}), and the
+     * recharges awaiting netting that are in no cycle yet; plus the corporate's cycles still taking entries. Amounts
+     * stay per item and currency (this used to sum currencies and stamp AED). The legacy IC transaction rows are not
+     * offered: the Intercompany page does not show them, and Phase 3 retires them.
      */
     @Transactional(readOnly = true)
-    public NettingEligibilityResult getNettingEligibleTransactions(UUID entity1Id, UUID entity2Id) {
-        // Get bilateral position
-        BilateralPositionDetail position = getBilateralPosition(entity1Id, entity2Id);
-
-        // Get unsettled transactions
-        List<IntercompanyTransaction> eligibleTransactions = transactionRepository.findAll().stream()
-            .filter(tx -> (tx.getPayingEntityId().equals(entity1Id) && tx.getBehalfEntityId().equals(entity2Id)) ||
-                         (tx.getPayingEntityId().equals(entity2Id) && tx.getBehalfEntityId().equals(entity1Id)))
-            .filter(tx -> tx.getStatus() == IntercompanyTransaction.TransactionStatus.PROCESSED)
-            .collect(Collectors.toList());
-
-        // Get unsettled recharges
-        List<IntercompanyRecharge> eligibleRecharges = rechargeRepository.findAll().stream()
-            .filter(r -> (r.getPayerEntityId().equals(entity1Id) && r.getBehalfEntityId().equals(entity2Id)) ||
-                        (r.getPayerEntityId().equals(entity2Id) && r.getBehalfEntityId().equals(entity1Id)))
-            .filter(r -> r.getStatus() == IntercompanyRecharge.RechargeStatus.APPROVED ||
-                        r.getStatus() == IntercompanyRecharge.RechargeStatus.RECHARGED)
-            .collect(Collectors.toList());
-
-        // Find active netting cycle
-        Optional<NettingCycle> activeCycle = nettingCycleRepository.findAll().stream()
-            .filter(c -> c.getStatus() == NettingCycle.CycleStatus.OPEN ||
-                        c.getStatus() == NettingCycle.CycleStatus.CALCULATING)
-            .findFirst();
+    public NettingEligibilityResult getNettingEligibleTransactions(UUID corporateId, UUID entity1Id, UUID entity2Id) {
+        Map<UUID, LegalEntity> group = groupOf(corporateId);
+        LegalEntity e1 = group.get(entity1Id);
+        LegalEntity e2 = group.get(entity2Id);
+        if (e1 == null || e2 == null || e1 == e2) {
+            throw new BusinessException("Both entities must be two different entities of corporate " + corporateId);
+        }
+        Set<UUID> pair = Set.of(entity1Id, entity2Id);
+        List<NettingItem> items = new ArrayList<>();
+        String reason = checkNettingEligibility(e1, e2) ? null
+            : e1.getEntityCode() + " and " + e2.getEntityCode() + " must both be active and take part in netting";
+        if (reason == null) {
+            List<Receivable> icReceivables = receivableRepository.findIntercompanyReceivablesByCorporate(corporateId);
+            for (Receivable r : receivableRepository.findNettingEligibleReceivables(corporateId)) {
+                if (between(pair, r.getOwningEntityId(), r.getIntercompanyEntityId())) {
+                    items.add(new NettingItem("RECEIVABLE", r.getId(), r.getReceivableNumber(),
+                        group.get(r.getIntercompanyEntityId()).getEntityCode(), group.get(r.getOwningEntityId()).getEntityCode(),
+                        r.getNetAmount(), r.getCurrencyCode()));
+                }
+            }
+            for (Payable p : payableRepository.findNettingEligiblePayables(corporateId)) {
+                if (between(pair, p.getOwningEntityId(), p.getCounterpartyEntityId())
+                        && !IntercompanyGroupPositionService.countedAsReceivable(p, icReceivables)) {
+                    items.add(new NettingItem("PAYABLE", p.getId(), p.getPayableNumber(),
+                        group.get(p.getOwningEntityId()).getEntityCode(), group.get(p.getCounterpartyEntityId()).getEntityCode(),
+                        p.getNetAmount(), p.getCurrencyCode()));
+                }
+            }
+            for (IntercompanyRecharge r : rechargeRepository.findAll()) {
+                if (NettingService.awaitingNetting(r) && between(pair, r.getPayerEntityId(), r.getBehalfEntityId())
+                        && !nettingEntryRepository.existsByIntercompanyRechargeId(r.getId())) {
+                    boolean cobo = r.getRechargeType() == IntercompanyRecharge.RechargeType.COBO_COLLECTION;
+                    UUID debtor = cobo ? r.getPayerEntityId() : r.getBehalfEntityId();
+                    UUID creditor = cobo ? r.getBehalfEntityId() : r.getPayerEntityId();
+                    items.add(new NettingItem("RECHARGE", r.getId(), r.getRechargeReference(),
+                        group.get(debtor).getEntityCode(), group.get(creditor).getEntityCode(),
+                        r.getTotalRecharge(), r.getCurrencyCode()));
+                }
+            }
+        }
 
         return NettingEligibilityResult.builder()
             .entity1Id(entity1Id)
             .entity2Id(entity2Id)
-            .isEligible(!eligibleTransactions.isEmpty() || !eligibleRecharges.isEmpty())
-            .eligibleTransactionCount(eligibleTransactions.size())
-            .eligibleRechargeCount(eligibleRecharges.size())
-            .totalEligibleAmount(position.getNetPosition())
-            .grossPayables(position.getEntity1OwesEntity2())
-            .grossReceivables(position.getEntity2OwesEntity1())
-            .netAmount(position.getNetPosition())
-            .netDirection(position.getNetCreditorId().equals(entity1Id) ? "ENTITY1_RECEIVES" : "ENTITY2_RECEIVES")
-            .activeCycleId(activeCycle.map(NettingCycle::getId).orElse(null))
-            .activeCycleReference(activeCycle.map(NettingCycle::getCycleReference).orElse(null))
-            .transactionIds(eligibleTransactions.stream().map(IntercompanyTransaction::getId).collect(Collectors.toList()))
-            .rechargeIds(eligibleRecharges.stream().map(IntercompanyRecharge::getId).collect(Collectors.toList()))
+            .reason(reason)
+            .items(items)
+            .openCycles(openCyclesOf(group.keySet()))
             .build();
+    }
+
+    private Map<UUID, LegalEntity> groupOf(UUID corporateId) {
+        Map<UUID, LegalEntity> group = new LinkedHashMap<>();
+        legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).forEach(e -> group.put(e.getId(), e));
+        return group;
+    }
+
+    /** Both sides are in the set (the group's or the pair's entities) and they are two different entities. */
+    private static boolean between(Set<UUID> entityIds, UUID a, UUID b) {
+        return a != null && b != null && !a.equals(b) && entityIds.contains(a) && entityIds.contains(b);
+    }
+
+    /**
+     * The corporate's cycles still taking entries, leaving out any holding an entry whose source was already settled
+     * outside netting (NettingService.entriesSettledAtSource): adding to it would hand the treasurer a cycle that pays
+     * twice.
+     * ponytail: a netting cycle has no corporate; it counts as the corporate's when every entry is between its
+     * entities, so an empty cycle is offered to every corporate. Add netting_cycles.corporate_id when Netting Cycles
+     * is scoped (it lists every corporate's cycles today).
+     */
+    private List<OpenCycle> openCyclesOf(Set<UUID> entityIds) {
+        return nettingCycleRepository.findAll().stream()
+            .filter(NettingCycle::acceptsEntries)
+            .filter(c -> ofGroup(c, entityIds))
+            .filter(c -> nettingService.entriesSettledAtSource(c.getId()).isEmpty())
+            .sorted(Comparator.comparing(NettingCycle::getCycleReference))
+            .map(c -> new OpenCycle(c.getId(), c.getCycleReference(), c.getCycleName(), c.getStatus().name(),
+                c.getBaseCurrency()))
+            .collect(Collectors.toList());
+    }
+
+    private boolean ofGroup(NettingCycle cycle, Set<UUID> entityIds) {
+        return nettingEntryRepository.findByCycleId(cycle.getId()).stream()
+            .allMatch(e -> entityIds.contains(e.getPayerEntityId()) && entityIds.contains(e.getPayeeEntityId()));
     }
 
     // ========================================================================
@@ -942,50 +989,95 @@ public class IntercompanyTransactionService {
     }
 
     /**
-     * Add transactions to netting cycle. Delegates entry creation to
-     * {@link NettingService}, the canonical owner of {@link NettingEntry}
-     * construction — this method used to build entries itself on a separate
-     * {@code NE-IC-}/{@code NE-RC-} reference scheme and never updated the
-     * cycle's own entry collection or total, so {@code cycle.totalGross}
-     * silently missed everything added this way.
+     * Add the corporate's IC items to one of its netting cycles. Entry creation stays with {@link NettingService}, the
+     * canonical owner of {@link NettingEntry} construction. Everything is checked before anything is added: the cycle
+     * takes entries and holds no other corporate's, and each item is between two of the corporate's entities and still
+     * nettable (a payable linked to a receivable is netted as the receivable).
      */
     @Transactional
-    public AddToNettingResult addToNettingCycle(UUID cycleId, List<UUID> transactionIds, List<UUID> rechargeIds) {
+    public AddToNettingResult addToNettingCycle(UUID corporateId, UUID cycleId, List<UUID> transactionIds,
+                                                List<UUID> rechargeIds, List<UUID> payableIds, List<UUID> receivableIds) {
+        Set<UUID> group = groupOf(corporateId).keySet();
         NettingCycle cycle = nettingCycleRepository.findById(cycleId)
             .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + cycleId));
-
-        if (cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
+        if (!cycle.acceptsEntries()) {
             throw new BusinessException("Netting cycle is not open for additions");
         }
-
-        int transactionsAdded = 0;
-        int rechargesAdded = 0;
-
-        if (transactionIds != null) {
-            for (UUID txId : transactionIds) {
-                IntercompanyTransaction tx = transactionRepository.findById(txId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + txId));
-                nettingService.addTransactionToCycle(cycleId, tx);
-                transactionsAdded++;
-            }
+        if (!ofGroup(cycle, group)) {
+            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " holds another corporate's entries");
+        }
+        List<String> stale = nettingService.entriesSettledAtSource(cycleId);
+        if (!stale.isEmpty()) {
+            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " holds entries already settled "
+                + "outside netting: " + String.join(", ", stale));
         }
 
-        if (rechargeIds != null) {
-            for (UUID rechargeId : rechargeIds) {
-                IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-                nettingService.addRechargeToCycle(cycleId, recharge);
-                rechargesAdded++;
-            }
+        List<IntercompanyTransaction> txs = new ArrayList<>();
+        for (UUID id : nz(transactionIds)) {
+            IntercompanyTransaction tx = transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + id));
+            if (!between(group, tx.getPayingEntityId(), tx.getBehalfEntityId())) throw notTheCorporates(tx.getTransactionRef());
+            txs.add(tx);
         }
+        List<IntercompanyRecharge> recharges = new ArrayList<>();
+        for (UUID id : nz(rechargeIds)) {
+            IntercompanyRecharge r = rechargeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + id));
+            if (!between(group, r.getPayerEntityId(), r.getBehalfEntityId())) throw notTheCorporates(r.getRechargeReference());
+            if (!NettingService.awaitingNetting(r) || nettingEntryRepository.existsByIntercompanyRechargeId(r.getId())) {
+                throw new BusinessException("Recharge " + r.getRechargeReference() + " is not awaiting netting");
+            }
+            recharges.add(r);
+        }
+        List<Receivable> icReceivables = receivableRepository.findIntercompanyReceivablesByCorporate(corporateId);
+        List<Payable> payables = new ArrayList<>();
+        for (UUID id : nz(payableIds)) {
+            Payable p = payableRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payable not found: " + id));
+            if (!corporateId.equals(p.getCorporateId()) || !between(group, p.getOwningEntityId(), p.getCounterpartyEntityId())) {
+                throw notTheCorporates(p.getPayableNumber());
+            }
+            if (IntercompanyGroupPositionService.countedAsReceivable(p, icReceivables)) {
+                throw new BusinessException("Payable " + p.getPayableNumber()
+                    + " is the other side of an intercompany receivable; add the receivable");
+            }
+            if (!p.canAddToNetting()) {
+                throw new BusinessException("Payable " + p.getPayableNumber() + " is not eligible for netting");
+            }
+            payables.add(p);
+        }
+        List<Receivable> receivables = new ArrayList<>();
+        for (UUID id : nz(receivableIds)) {
+            Receivable r = receivableRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Receivable not found: " + id));
+            if (!corporateId.equals(r.getCorporateId()) || !between(group, r.getOwningEntityId(), r.getIntercompanyEntityId())) {
+                throw notTheCorporates(r.getReceivableNumber());
+            }
+            receivables.add(r);
+        }
+
+        txs.forEach(tx -> nettingService.addTransactionToCycle(cycleId, tx));
+        recharges.forEach(r -> nettingService.addRechargeToCycle(cycleId, r));
+        payables.forEach(p -> nettingService.addPayableToCycle(cycleId, p));
+        receivables.forEach(r -> nettingService.addReceivableToCycle(cycleId, r));
 
         return AddToNettingResult.builder()
             .cycleId(cycleId)
             .cycleReference(cycle.getCycleReference())
-            .transactionsAdded(transactionsAdded)
-            .rechargesAdded(rechargesAdded)
-            .totalAdded(transactionsAdded + rechargesAdded)
+            .transactionsAdded(txs.size())
+            .rechargesAdded(recharges.size())
+            .payablesAdded(payables.size())
+            .receivablesAdded(receivables.size())
+            .totalAdded(txs.size() + recharges.size() + payables.size() + receivables.size())
             .build();
+    }
+
+    private static List<UUID> nz(List<UUID> ids) {
+        return ids != null ? ids : List.of();
+    }
+
+    private static BusinessException notTheCorporates(String reference) {
+        return new BusinessException(reference + " is not between two entities of this corporate");
     }
 
     // ========================================================================
@@ -1349,19 +1441,16 @@ public class IntercompanyTransactionService {
     public static class NettingEligibilityResult {
         private UUID entity1Id;
         private UUID entity2Id;
-        private boolean isEligible;
-        private int eligibleTransactionCount;
-        private int eligibleRechargeCount;
-        private BigDecimal totalEligibleAmount;
-        private BigDecimal grossPayables;
-        private BigDecimal grossReceivables;
-        private BigDecimal netAmount;
-        private String netDirection;
-        private UUID activeCycleId;
-        private String activeCycleReference;
-        private List<UUID> transactionIds;
-        private List<UUID> rechargeIds;
+        private String reason;               // why the pair can't be netted at all; null when it can
+        private List<NettingItem> items;     // what a cycle would take now, one per invoice or recharge
+        private List<OpenCycle> openCycles;  // the corporate's cycles still taking entries
     }
+
+    /** One nettable item: kind RECEIVABLE, PAYABLE or RECHARGE; the debtor owes the creditor the amount. */
+    public record NettingItem(String kind, UUID id, String reference, String debtorCode, String creditorCode,
+                              BigDecimal amount, String currency) {}
+
+    public record OpenCycle(UUID id, String cycleReference, String cycleName, String status, String baseCurrency) {}
 
     @Data
     @Builder
@@ -1396,6 +1485,8 @@ public class IntercompanyTransactionService {
         private String cycleReference;
         private int transactionsAdded;
         private int rechargesAdded;
+        private int payablesAdded;
+        private int receivablesAdded;
         private int totalAdded;
     }
 

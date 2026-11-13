@@ -65,6 +65,8 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
     // ========================================================================
     
     List<Payable> findByCorporateIdOrderByCreatedAtDesc(UUID corporateId);
+
+    List<Payable> findByCorporateIdAndIsIntercompanyTrue(UUID corporateId);
     
     Page<Payable> findByCorporateId(UUID corporateId, Pageable pageable);
     

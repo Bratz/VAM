@@ -382,7 +382,7 @@ public class NettingService {
         NettingCycle cycle = cycleRepository.findById(nettingCycleId)
             .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
 
-        if (cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
+        if (!cycle.acceptsEntries()) {
             throw new BusinessException("Netting cycle is not open for additions");
         }
 
@@ -436,7 +436,7 @@ public class NettingService {
         NettingCycle cycle = cycleRepository.findById(nettingCycleId)
             .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
 
-        if (cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
+        if (!cycle.acceptsEntries()) {
             throw new BusinessException("Netting cycle is not open for additions");
         }
 
@@ -472,6 +472,94 @@ public class NettingService {
         log.debug("Added recharge {} to netting cycle {} (entry {})",
             recharge.getRechargeReference(), cycle.getCycleReference(), entry.getEntryReference());
         return entry;
+    }
+
+    /**
+     * Adds one explicitly-chosen intercompany receivable to a cycle, as {@link #addPayableToCycle} does for a payable and
+     * {@link #addIntercompanyReceivables} for the bulk scan: the debtor (its intercompany entity) pays the owner.
+     */
+    @Transactional
+    public NettingEntry addReceivableToCycle(UUID nettingCycleId, Receivable receivable) {
+        NettingCycle cycle = cycleRepository.findById(nettingCycleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
+        if (!cycle.acceptsEntries()) {
+            throw new BusinessException("Netting cycle is not open for additions");
+        }
+        if (!receivable.canAddToNetting()) {
+            throw new BusinessException("Receivable " + receivable.getReceivableNumber() + " is not eligible for netting");
+        }
+
+        NettingEntry entry = NettingEntry.fromIntercompanyReceivable(
+            cycle,
+            receivable.getId(),
+            receivable.getOwningEntityId(),
+            receivable.getOwningEntityCode(),
+            receivable.getOwningEntityName(),
+            receivable.getIntercompanyEntityId(),
+            receivable.getIntercompanyEntityCode(),
+            receivable.getIntercompanyEntityName(),
+            receivable.getNetAmount(),
+            receivable.getCurrencyCode(),
+            receivable.getDueDate(),
+            receivable.getReceivableNumber()
+        );
+        entry.setEntryReference("ENT-" + String.format("%06d", entrySequence.getAndIncrement()));
+        applyFxConversion(entry, cycle.getBaseCurrency());
+
+        cycle.getEntries().add(entry);
+        cycle.setTotalGross(cycle.getTotalGross().add(entry.getBaseAmount()));
+        entryRepository.save(entry);
+        cycleRepository.save(cycle);
+
+        receivable.addToNettingCycle(cycle.getId(), cycle.getCycleReference(), entry.getId());
+        receivableRepository.save(receivable);
+        return entry;
+    }
+
+    /**
+     * The cycle's entries whose source was already settled outside netting, as "ENT-… (source reference)": a recharge
+     * SETTLED or carrying a settlement reference (e.g. the IHB cut-over's), a payable or receivable PAID or NETTED.
+     * Settling such a cycle would move the money a second time; the one test for it, for the add-to-netting hand-off
+     * now and for refusing settlement or clearing those entries in Phase 2. Meant for cycles not yet settled (a
+     * settled cycle's own sources are settled by it).
+     */
+    @Transactional(readOnly = true)
+    public List<String> entriesSettledAtSource(UUID cycleId) {
+        return entryRepository.findByCycleId(cycleId).stream()
+            .filter(this::settledAtSource)
+            .map(e -> e.getEntryReference() + " (" + e.getSourceReference() + ")")
+            .collect(Collectors.toList());
+    }
+
+    boolean settledAtSource(NettingEntry e) {
+        if (e.getIntercompanyRechargeId() != null) {
+            return rechargeRepository.findById(e.getIntercompanyRechargeId())
+                .map(r -> r.getStatus() == IntercompanyRecharge.RechargeStatus.SETTLED || r.getSettlementReference() != null)
+                .orElse(false);
+        }
+        if (e.getPayableId() != null) {
+            return payableRepository.findById(e.getPayableId())
+                .map(p -> p.getStatus() == Payable.PayableStatus.PAID || p.getStatus() == Payable.PayableStatus.NETTED)
+                .orElse(false);
+        }
+        if (e.getReceivableId() != null) {
+            return receivableRepository.findById(e.getReceivableId())
+                .map(r -> r.getStatus() == Receivable.ReceivableStatus.PAID || r.getStatus() == Receivable.ReceivableStatus.NETTED)
+                .orElse(false);
+        }
+        return false;
+    }
+
+    /**
+     * A recharge a netting cycle takes (the rule of {@link #addPoboRecharges} / {@link #addCoboRecharges} without
+     * includePending): a manual (untyped) or COBO-collection recharge, approved or recharged, not yet settled. A
+     * POBO_PAYMENT recharge is already on the subsidiary's IHB current account and is never netted.
+     */
+    public static boolean awaitingNetting(IntercompanyRecharge r) {
+        return (r.getRechargeType() == null || r.getRechargeType() == IntercompanyRecharge.RechargeType.COBO_COLLECTION)
+            && (r.getStatus() == IntercompanyRecharge.RechargeStatus.APPROVED
+                || r.getStatus() == IntercompanyRecharge.RechargeStatus.RECHARGED)
+            && r.getSettlementReference() == null;
     }
 
     /**

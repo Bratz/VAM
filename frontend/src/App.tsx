@@ -619,10 +619,12 @@ const App: React.FC = () => {
       // ====================================================================
       // Phase 8: Intercompany Management
       // ====================================================================
-      case 'intercompany': return <IntercompanyDashboardPage defaultTab="overview" />;
-      case 'intercompany-pobo': return <IntercompanyDashboardPage defaultTab="pobo" />;
-      case 'intercompany-cobo': return <IntercompanyDashboardPage defaultTab="cobo" />;
-      case 'intercompany-settlement': return <IntercompanyDashboardPage defaultTab="settlement" />;
+      // The POBO / COBO / Settlement tabs are gone (POBO and COBO live on In-House Bank; settling is Netting
+      // Cycles); their old deep links land on the who-owes-whom view.
+      case 'intercompany':
+      case 'intercompany-pobo':
+      case 'intercompany-cobo':
+      case 'intercompany-settlement': return <IntercompanyDashboardPage />;
       
       // ====================================================================
       // E-commerce

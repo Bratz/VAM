@@ -10,16 +10,55 @@ netting); Netting Cycles is the only settlement path; `intercompany_transactions
 IntercompanyDashboardPage and services/api.ts.
 
 ### Phase 1 — Intercompany page: the group's who-owes-whom (D1, D2, D9; R1–R7)
-- [ ] 1.1 `GET /api/v1/intercompany/group-position?corporateId=`: per pair and currency three line kinds — IHB position
+- [x] 1.1 `GET /api/v1/intercompany/group-position?corporateId=`: per pair and currency three line kinds — IHB position
       (IC receivable/payable, ledger), open IC invoices (payables/receivables flagged intercompany, unsettled),
       recharges awaiting netting — plus a zero-sum control per currency (IHB positions; difference = break) and a total in
       the corporate's reporting currency at the day's rate (reuse the rate source behind the dashboard's "FX-converted"
       consolidated position; rate + date returned; never mid/margin/floor).
-- [ ] 1.2 Netting eligibility per pair and "add to cycle" (existing `/netting-eligibility`, `/add-to-netting/{cycleId}`),
+- [x] 1.2 Netting eligibility per pair and "add to cycle" (existing `/netting-eligibility`, `/add-to-netting/{cycleId}`),
       opening the cycle in Netting Cycles.
-- [ ] 1.3 Intercompany page rebuilt on 1.1–1.2; POBO / COBO / Entities / All Transactions / Settlement / Recharges tabs
+- [x] 1.3 Intercompany page rebuilt on 1.1–1.2; POBO / COBO / Entities / All Transactions / Settlement / Recharges tabs
       removed (recharges are lines in 1.1); old tab links land on the new view; corporate filter on every call.
-- [ ] 1.4 Tests: the three line kinds, zero-sum control and break, conversion labelling, scoping.
+- [x] 1.4 Tests: the three line kinds, zero-sum control and break, conversion labelling, scoping.
+
+Phase 1 done (13 Nov, uncommitted; `mvn test` 849/0 with the two follow-ups below, tsc + lint clean):
+- Endpoint: `GET /intercompany/group-position?corporateId=` (400 without). `{corporateId, allSettled, currencies[{currency,
+  outstanding, control{receivables, payables, difference, balanced}, pairs[{entityA, entityB, ihbPositions, openInvoices,
+  recharges, rechargesAwaitingApproval}]}], reportingTotal{currency, amount, conversions[{currency, amount, rate, rateDate, converted}],
+  unconvertedCurrencies}}`; each line group is `{lines[{kind, sourceId, reference, debtor, creditor, amount, currency,
+  status, dueDate}], net{debtor, creditor, amount}}`. IHB lines from `getIntercompanyPositions`; control per currency =
+  treasury's IC mirrors + the participants' IHB current accounts (credit owed to the entity, debit owed by it), so a
+  drifted mirror or a mirror-less account is a break. `allSettled` only when there are no lines at all.
+  Recharges awaiting approval (PENDING, same kinds netting takes) are a fourth line kind `RECHARGE_PENDING`: shown
+  apart, in no outstanding/reporting total (not owed until approved) and never in the control (IHB accounts only).
+- Double-count rule: payable and receivable are linked only by `Payable.counterpartyReceivableId` /
+  `Receivable.counterpartyPayableId` (no automatic matching exists). A payable linked either way to one of the group's
+  IC receivables is counted and netted as the receivable; unlinked documents count separately
+  (`IntercompanyGroupPositionService.countedAsReceivable`, also used by netting eligibility/add). Open = receivable not
+  DRAFT/PAID/CANCELLED/WRITTEN_OFF/NETTED, payable not DRAFT/REJECTED/CANCELLED/PAID/NETTED, both entities in the group.
+- Rate source: `FxRateService.getRate` (what the dashboard's consolidated position uses via BalanceStructureService) +
+  new `getRateDate`; only rate and date are returned. Reporting currency: no corporate field exists; the root legal
+  entity's reporting (else functional) currency, market default without entities (ponytail note).
+- Netting hand-off: `/netting-eligibility` and `/add-to-netting/{cycleId}` now take a required `corporateId`; eligibility
+  lists the pair's nettable invoices and recharges (`NettingService.awaitingNetting`, not already in a cycle) per item
+  and currency plus the corporate's open cycles; add refuses another corporate's items or cycles. "Open" = DRAFT or OPEN
+  (`NettingCycle.acceptsEntries`): nothing ever set OPEN, so add-to-netting could never add anything before.
+  `NettingService.addReceivableToCycle` added. Netting Cycles opens on `params.cycleId`.
+- Follow-up 1: `NettingService.entriesSettledAtSource(cycleId)` is the one test for an entry whose source was settled
+  outside netting (recharge SETTLED or with a settlement reference; payable/receivable PAID or NETTED). Such cycles are
+  not offered, and `/add-to-netting` refuses them with a 400 naming the entries. Phase 2: reuse it to refuse settlement
+  and to clear those entries (NET-202602-003 on vam-five).
+- Follow-up 2: Approve / Reject on the awaiting-approval recharge lines (`/pobo/recharges/{id}/approve|reject` now take
+  `corporateId`, 400 when neither payer nor behalf entity is the corporate's; reject needs a reason; the approver is
+  `CurrentUser.name()`, the request no longer names one). Only PENDING lines offer them; the view refreshes after.
+- Phases 2–4 need: Netting Cycles scoped to a corporate (cycles have no corporate; an empty cycle is offered to every
+  corporate); populate takes every corporate's recharges and both sides of a linked invoice; an OVERDUE IC receivable can
+  never be netted (`canAddToNetting` = OPEN/COBO_APPROVED); IHB lines have no account drill-down yet (Phase 4 movements).
+- Backend endpoints no page calls now (retire in Phase 3): `/intercompany/stats`, `/transactions` (GET, POST, `/{ref}`,
+  from-payable, from-receivable, validate-transfer-pricing), `/entities` (+ `/{id}`, position-detail, validate), `/pobo`,
+  `/cobo`, `/cobo/setup`, `/cobo/{ref}/collect`, `/unsettled`, `/settlement/calculate|execute|history|{ref}`,
+  `/bilateral-position`, `/entity-pairs`, `/position-summary`, `/entity-report/{id}`, `/settle-bilateral`,
+  `/activity-report`; `/pobo/recharges/pending`.
 
 ### Phase 2 — settle only through Netting Cycles (D4, D5, D6; R8–R11)
 - [ ] 2.1 Remove bilateral settle: `/settle-bilateral` (API) and its UI; anything else that posts IC settlement outside
@@ -97,7 +136,10 @@ Money / correctness first:
       `/intercompany/pobo|cobo|unsettled`, `/settlement/history` — scope or remove (Phase 3 of the IHB/IC plan).
 - [ ] `settleBilateralPosition.findIcReceivableVa` compares an enum to a String (always false) and falls back to the
       first "receivable" VA — wrong pair possible; Settle withdrawn from the UI, endpoint goes in Phase 2.
-- [ ] Recharges tab "Total Amount" sums currencies; recharge approve/reject records the header entity code as approver.
+- [x] Recharge approve/reject recorded the header entity code as approver: now the signed-in user, scoped, on the
+      Intercompany page (13 Nov). Open: NET-202602-003 (vam-five, DRAFT) holds six POBO_PAYMENT recharge entries, 151 x4 / 245 x2,
+      for two recharges already settled by the IHB cut-over: settling that cycle would charge them again (no longer
+      offered for adding; Phase 2 refuses its settlement / clears the entries).
 - [ ] `IhbInterestAccrual` entity unused: IHB interest has no accrual history (Phase 4.3 of the IHB/IC plan).
 Statement intake:
 - [ ] Each re-delivery of a file with an unknown account raises a new alert (dedup is per file id).
@@ -113,7 +155,7 @@ UI:
 Dead code / data:
 - [ ] `ihb_transactions` table (empty everywhere, entity deleted in e7dae35); legacy database/schema.sql,
       1_schema.sql, vam_schema.sql still define dropped IHB columns.
-- [ ] `/cobo/{ref}/collect` always throws; frontend services/intercompanyService.ts imported by nothing.
+- [ ] `/cobo/{ref}/collect` always throws (Phase 3 removes it); services/intercompanyService.ts deleted 13 Nov.
 - [ ] Seeded rule names name their old targets ("Helios NY USD ZBA → SF Header"); seed physical/shadow data sources
       disagree (BofA MT942 vs MT940, Mercator OB vs MT940); Citi Boston shadow named "(NYC)".
 - [ ] `GET /statements/lines` without its parameter and non-UUID path ids return 500 (catch-all handler).

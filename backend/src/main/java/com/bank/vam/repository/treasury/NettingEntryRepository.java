@@ -81,6 +81,9 @@ public interface NettingEntryRepository extends JpaRepository<NettingEntry, UUID
      * Find entry by intercompany recharge.
      */
     Optional<NettingEntry> findByIntercompanyRechargeId(UUID rechargeId);
+
+    /** True when the recharge is already in a netting cycle (safe where the same recharge was added twice). */
+    boolean existsByIntercompanyRechargeId(UUID rechargeId);
     
     /**
      * Find all entries from payables in a cycle.

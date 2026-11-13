@@ -10,6 +10,7 @@ import { useUser } from '../context/useUser';
 import { usePermissions } from '../hooks/usePermissions';
 import { TreasuryOnly } from '../components/permissions';
 import { usePageHeaderActions } from '../context/usePageHeader';
+import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -845,6 +846,20 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   useEffect(() => {
     fetchCycles();
   }, [fetchCycles]);
+
+  // Opened on one cycle (Intercompany "Add to netting" hands off here): show that cycle's details.
+  const { params } = useNavigation();
+  useEffect(() => {
+    if (!params.cycleId) return;
+    let current = true;
+    nettingApi.getCycleById(params.cycleId).then(r => {
+      if (current && r.success) {
+        setSelectedCycle(r.data);
+        setShowDetailModal(true);
+      }
+    }).catch(() => { /* the list still shows every cycle */ });
+    return () => { current = false; };
+  }, [params.cycleId]);
 
   const handleCreate = async (data: any) => {
     const response = await nettingApi.createCycle(data);

@@ -136,6 +136,30 @@ public class FxRateService {
     }
 
     /**
+     * The date of the stored rate(s) {@link #getRate(String, String)} converts with: the pair's own rate or its
+     * inverse, else the older leg of the hop. Empty when there is no rate. Same currency: today (no rate involved).
+     * ponytail: reads the repository, not getRate's 15-minute cache; a rate saved within that window may date the
+     * newer row while getRate still converts at the cached one.
+     */
+    @Transactional(readOnly = true)
+    public Optional<LocalDate> getRateDate(String fromCurrency, String toCurrency) {
+        if (fromCurrency.equals(toCurrency)) return Optional.of(LocalDate.now());
+        Optional<FxRate> pair = findLatestRate(fromCurrency, toCurrency, RateType.MID)
+            .or(() -> findLatestRate(toCurrency, fromCurrency, RateType.MID));
+        if (pair.isPresent()) return pair.map(FxRate::getRateDate);
+        for (String pivot : new String[]{"USD", "EUR", "AED"}) { // the hops tryMultiHopConversion tries, in its order
+            if (pivot.equals(fromCurrency) || pivot.equals(toCurrency)) continue;
+            Optional<FxRate> leg1 = findLatestRate(fromCurrency, pivot, RateType.MID);
+            Optional<FxRate> leg2 = findLatestRate(pivot, toCurrency, RateType.MID);
+            if (leg1.isPresent() && leg2.isPresent()) {
+                LocalDate d1 = leg1.get().getRateDate(), d2 = leg2.get().getRateDate();
+                return Optional.ofNullable(d1 == null || d2 == null ? null : d1.isBefore(d2) ? d1 : d2);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Get FxRate entity (with full metadata).
      */
     @Transactional(readOnly = true)

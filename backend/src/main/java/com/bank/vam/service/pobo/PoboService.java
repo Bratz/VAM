@@ -144,17 +144,13 @@ public class PoboService {
     }
 
     /**
-     * Approve intercompany recharge.
+     * Approve a pending recharge of the corporate's group. The approver is the signed-in user (CurrentUser), never a
+     * name from the request: the page used to send its header entity's code, which recorded the wrong approver.
      */
     @Transactional
-    public RechargeResponse approveRecharge(UUID rechargeId, String approver) {
-        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-
-        if (recharge.getStatus() != IntercompanyRecharge.RechargeStatus.PENDING) {
-            throw new BusinessException("Recharge is not pending approval");
-        }
-
+    public RechargeResponse approveRecharge(UUID corporateId, UUID rechargeId) {
+        IntercompanyRecharge recharge = pendingOfCorporate(corporateId, rechargeId);
+        String approver = com.bank.vam.config.CurrentUser.name();
         recharge.approve(approver);
         recharge = rechargeRepository.save(recharge);
 
@@ -162,23 +158,35 @@ public class PoboService {
         return toRechargeResponse(recharge);
     }
 
-    /**
-     * Reject intercompany recharge.
-     */
+    /** Reject a pending recharge of the corporate's group, with a reason; the rejector is the signed-in user. */
     @Transactional
-    public RechargeResponse rejectRecharge(UUID rechargeId, String rejector, String reason) {
-        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-
-        if (recharge.getStatus() != IntercompanyRecharge.RechargeStatus.PENDING) {
-            throw new BusinessException("Recharge is not pending approval");
+    public RechargeResponse rejectRecharge(UUID corporateId, UUID rechargeId, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BusinessException("A reason is required to reject a recharge");
         }
-
-        recharge.reject(rejector, reason);
+        IntercompanyRecharge recharge = pendingOfCorporate(corporateId, rechargeId);
+        String rejector = com.bank.vam.config.CurrentUser.name();
+        recharge.reject(rejector, reason.trim());
         recharge = rechargeRepository.save(recharge);
 
         log.info("Rejected recharge: {} by {} - Reason: {}", recharge.getRechargeReference(), rejector, reason);
         return toRechargeResponse(recharge);
+    }
+
+    /** The recharge, if its payer or behalf entity is the corporate's and it still awaits approval; else a 400. */
+    private IntercompanyRecharge pendingOfCorporate(UUID corporateId, UUID rechargeId) {
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
+            .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
+        Set<UUID> entityIds = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+            .map(com.bank.vam.entity.hierarchy.LegalEntity::getId).collect(Collectors.toSet());
+        if (!entityIds.contains(recharge.getPayerEntityId()) && !entityIds.contains(recharge.getBehalfEntityId())) {
+            throw new BusinessException("Recharge " + recharge.getRechargeReference() + " is not this corporate's");
+        }
+        if (recharge.getStatus() != IntercompanyRecharge.RechargeStatus.PENDING) {
+            throw new BusinessException("Recharge is not pending approval");
+        }
+        return recharge;
     }
 
     /**

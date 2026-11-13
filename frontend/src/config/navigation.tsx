@@ -136,18 +136,16 @@ export const navSections: NavSection[] = [
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Cash Concentration', href: 'sweeping' },
       { icon: <FlaskConical className="w-5 h-5" />, label: 'Simulator', href: 'simulator', isNew: true },
       { icon: <CircleDot className="w-5 h-5" />, label: 'Notional Pooling', href: 'notional-pooling' },
-      { icon: <Landmark className="w-5 h-5" />, label: 'In-House Bank', href: 'ihb' },
+      // POBO and COBO live on In-House Bank (spec ihb-intercompany-pages R1).
+      { icon: <Landmark className="w-5 h-5" />, label: 'In-House Bank', href: 'ihb', keywords: ['POBO', 'COBO', 'on behalf of'] },
       { icon: <GitMerge className="w-5 h-5" />, label: 'Netting Cycles', href: 'netting-enhanced', badge: 2 },
-      // POBO Payments and COBO Collections were separate entries under Payments
-      // & Collections, but all three opened THIS page — IntercompanyDashboardPage
-      // renders the pobo/cobo/settlement tabs from the same component. Three menu
-      // items for one page; folded into this one. The sub-routes still work as
-      // deep links, and `covers` keeps them highlighting here.
+      // The group's who-owes-whom. Its old POBO / COBO / Settlement sub-routes still work as deep links and land on
+      // that view; `covers` keeps them highlighting here.
       {
         icon: <Handshake className="w-5 h-5" />,
         label: 'Intercompany Dashboard',
         href: 'intercompany',
-        keywords: ['POBO', 'COBO', 'on behalf of', 'settlement', 'recharges', 'entity pairs'],
+        keywords: ['who owes whom', 'intercompany invoices', 'recharges', 'entity pairs', 'netting'],
         covers: ['intercompany-pobo', 'intercompany-cobo', 'intercompany-settlement'],
       },
     ]
@@ -250,8 +248,8 @@ export const pageTitles: Record<string, string> = {
   'transfers': 'Fund Transfers',
   'receivables': 'Accounts Receivable',
   'payables': 'Accounts Payable',
-  'intercompany-pobo': 'POBO Payments',
-  'intercompany-cobo': 'COBO Collections',
+  'intercompany-pobo': 'Intercompany Dashboard',
+  'intercompany-cobo': 'Intercompany Dashboard',
   'file-ingest': 'File Ingest Pipeline',
   'exceptions': 'Exception Transactions',
   // Liquidity Management
@@ -262,7 +260,7 @@ export const pageTitles: Record<string, string> = {
   'ihb': 'In-House Bank',
   'netting-enhanced': 'Netting Cycles',
   'intercompany': 'Intercompany Dashboard',
-  'intercompany-settlement': 'Intercompany Settlement',
+  'intercompany-settlement': 'Intercompany Dashboard',
   'fx-rates': 'FX Rate Management',
   // Foreign Exchange (fx-workspace is the retired single page; it opens Deals)
   'fx-market': 'Market Rates',

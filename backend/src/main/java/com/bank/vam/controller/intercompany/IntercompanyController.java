@@ -3,6 +3,8 @@ package com.bank.vam.controller.intercompany;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.intercompany.IntercompanyDto.*;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.service.intercompany.IntercompanyGroupPositionService;
+import com.bank.vam.service.intercompany.IntercompanyGroupPositionService.GroupPosition;
 import com.bank.vam.service.intercompany.IntercompanyService;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.CreateIntercompanyTransactionRequest;
@@ -54,6 +56,7 @@ public class IntercompanyController {
 
     private final IntercompanyService intercompanyService;
     private final IntercompanyTransactionService transactionService;
+    private final IntercompanyGroupPositionService groupPositionService;
 
     // ========================================================================
     // PHASE 6 TASK 6.1: UNIFIED TRANSACTION CREATION
@@ -113,6 +116,15 @@ public class IntercompanyController {
         return ResponseEntity.ok(ApiResponse.success(transactionService.getIntercompanyPositions(requireCorporate(corporateId))));
     }
 
+    @GetMapping("/group-position")
+    @Operation(summary = "Get the group's who-owes-whom",
+        description = "Per currency and pair of entities: in-house bank positions (ledger), open intercompany invoices "
+            + "and recharges awaiting netting; a zero-sum control per currency; a reporting-currency total with its rates")
+    public ResponseEntity<ApiResponse<GroupPosition>> getGroupPosition(
+            @RequestParam(required = false) UUID corporateId) {
+        return ResponseEntity.ok(ApiResponse.success(groupPositionService.getGroupPosition(requireCorporate(corporateId))));
+    }
+
     @GetMapping("/bilateral-position")
     @Operation(summary = "Get bilateral position", 
         description = "Get detailed position between two entities")
@@ -130,24 +142,27 @@ public class IntercompanyController {
 
     @GetMapping("/netting-eligibility")
     @Operation(summary = "Check netting eligibility", 
-        description = "Check if transactions between entities are eligible for netting")
+        description = "What a netting cycle would take now for a pair of the corporate's entities, and its open cycles")
     public ResponseEntity<ApiResponse<NettingEligibilityResult>> checkNettingEligibility(
+            @RequestParam(required = false) UUID corporateId,
             @RequestParam UUID entity1Id,
             @RequestParam UUID entity2Id) {
         log.debug("Checking netting eligibility: {} <-> {}", entity1Id, entity2Id);
-        NettingEligibilityResult result = transactionService.getNettingEligibleTransactions(entity1Id, entity2Id);
+        NettingEligibilityResult result = transactionService.getNettingEligibleTransactions(
+            requireCorporate(corporateId), entity1Id, entity2Id);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @PostMapping("/add-to-netting/{cycleId}")
-    @Operation(summary = "Add to netting cycle", 
-        description = "Add IC transactions and recharges to a netting cycle")
+    @Operation(summary = "Add to netting cycle",
+        description = "Add the corporate's IC invoices and recharges to one of its netting cycles")
     public ResponseEntity<ApiResponse<AddToNettingResult>> addToNettingCycle(
             @PathVariable UUID cycleId,
+            @RequestParam(required = false) UUID corporateId,
             @RequestBody AddToNettingRequest request) {
         log.info("Adding to netting cycle: {}", cycleId);
-        AddToNettingResult result = transactionService.addToNettingCycle(
-            cycleId, request.getTransactionIds(), request.getRechargeIds());
+        AddToNettingResult result = transactionService.addToNettingCycle(requireCorporate(corporateId), cycleId,
+            request.getTransactionIds(), request.getRechargeIds(), request.getPayableIds(), request.getReceivableIds());
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -399,5 +414,7 @@ public class IntercompanyController {
     public static class AddToNettingRequest {
         private List<UUID> transactionIds;
         private List<UUID> rechargeIds;
+        private List<UUID> payableIds;
+        private List<UUID> receivableIds;
     }
 }

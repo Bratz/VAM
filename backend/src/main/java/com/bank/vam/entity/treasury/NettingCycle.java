@@ -74,4 +74,12 @@ public class NettingCycle extends BaseEntity {
     public enum CycleStatus {
         DRAFT, OPEN, CALCULATING, PENDING_APPROVAL, APPROVED, SETTLED, CANCELLED
     }
+
+    /**
+     * Entries can still be added: DRAFT or OPEN, as populate and addEntry have always allowed. Nothing ever moves a
+     * cycle to OPEN (a new cycle is DRAFT), so the add paths that wanted OPEN alone could never add anything.
+     */
+    public boolean acceptsEntries() {
+        return status == CycleStatus.DRAFT || status == CycleStatus.OPEN;
+    }
 }

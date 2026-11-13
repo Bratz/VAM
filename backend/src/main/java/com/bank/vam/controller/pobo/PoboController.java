@@ -74,20 +74,20 @@ public class PoboController {
     }
     
     @PostMapping("/recharges/{id}/approve")
-    @Operation(summary = "Approve recharge")
+    @Operation(summary = "Approve a pending recharge of the corporate's group (approver: the signed-in user)")
     public ResponseEntity<RechargeResponse> approveRecharge(
             @PathVariable UUID id,
-            @RequestParam String approver) {
-        return ResponseEntity.ok(poboService.approveRecharge(id, approver));
+            @RequestParam(required = false) UUID corporateId) {
+        return ResponseEntity.ok(poboService.approveRecharge(corporateId, id));
     }
 
     @PostMapping("/recharges/{id}/reject")
-    @Operation(summary = "Reject recharge")
+    @Operation(summary = "Reject a pending recharge of the corporate's group, with a reason (rejector: the signed-in user)")
     public ResponseEntity<RechargeResponse> rejectRecharge(
             @PathVariable UUID id,
-            @RequestParam String rejector,
+            @RequestParam(required = false) UUID corporateId,
             @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(poboService.rejectRecharge(id, rejector, reason));
+        return ResponseEntity.ok(poboService.rejectRecharge(corporateId, id, reason));
     }
 
     @PostMapping("/recharges/{id}/settle/netting")

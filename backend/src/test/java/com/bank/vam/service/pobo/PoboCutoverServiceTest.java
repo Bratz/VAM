@@ -229,13 +229,15 @@ class PoboCutoverServiceTest {
         service.cutover(corp, false);
         when(entities.findById(treasury.getId())).thenReturn(Optional.of(treasury));
         when(entities.findById(dubai.getId())).thenReturn(Optional.of(dubai));
-        IntercompanyTransactionService ic = new IntercompanyTransactionService(icRecords, recharges, entities, null, null,
-            mock(com.bank.vam.repository.treasury.NettingCycleRepository.class), null, vas, ledger, null, null, null);
+        IntercompanyTransactionService ic = new IntercompanyTransactionService(icRecords, recharges, entities, payables,
+            mock(com.bank.vam.repository.receivables.ReceivableRepository.class),
+            mock(com.bank.vam.repository.treasury.NettingCycleRepository.class),
+            mock(com.bank.vam.repository.treasury.NettingEntryRepository.class), vas, ledger, null, null, null);
 
         var position = ic.getBilateralPosition(treasury.getId(), dubai.getId());
 
         assertThat(position.getEntity1OwesEntity2()).isEqualByComparingTo("0");
         assertThat(position.getEntity2OwesEntity1()).isEqualByComparingTo("0");
-        assertThat(ic.getNettingEligibleTransactions(treasury.getId(), dubai.getId()).getEligibleRechargeCount()).isZero();
+        assertThat(ic.getNettingEligibleTransactions(corp, treasury.getId(), dubai.getId()).getItems()).isEmpty();
     }
 }

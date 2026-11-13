@@ -4067,70 +4067,6 @@ export const taxChargeApi = {
 };
 
 // ============================================================================
-// INTERCOMPANY API
-export interface IntercompanyEntity {
-  id: string;
-  entityCode: string;
-  entityName: string;
-  entityType: 'HEADQUARTERS' | 'SUBSIDIARY' | 'BRANCH' | 'JOINT_VENTURE' | 'ASSOCIATE';
-  currencyCode: string;
-  creditLimit: number;
-  creditUsed: number;
-  creditAvailable: number;
-  currentBalance: number;
-  netPosition: number;
-  pendingPobo: number;
-  pendingCobo: number;
-  ihbBalance: number;
-  activeLoansCount: number;
-  activeDepositsCount: number;
-  interestRateLend: number;
-  interestRateBorrow: number;
-  lastSettlementDate?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-}
-
-interface EntityValidationResponse {
-  valid: boolean;
-  reason?: string;
-  availableLimit: number;
-  currentExposure: number;
-  proposedExposure: number;
-  utilizationPercent: number;
-  warnings: string[];
-}
-
-// NOTE: IntercompanyTransaction interface is defined later in this file (around line 7217)
-// with the complete set of fields. Do not duplicate here.
-
-export const intercompanyApi = {
-  getEntities: (status?: string, entityType?: string) =>
-    apiClient.get<ApiResponse<IntercompanyEntity[]>>('/intercompany/entities', { params: { status, entityType } }).then(r => r.data),
-  getEntity: (entityId: string) =>
-    apiClient.get<ApiResponse<IntercompanyEntity>>(`/intercompany/entities/${entityId}`).then(r => r.data),
-  getEntityPosition: (entityId: string) =>
-    apiClient.get<ApiResponse<any>>(`/intercompany/entities/${entityId}/position`).then(r => r.data),
-  validateEntity: (entityId: string, request: { transactionType: string; amount: number; currencyCode?: string }) =>
-    apiClient.post<ApiResponse<EntityValidationResponse>>(`/intercompany/entities/${entityId}/validate`, request).then(r => r.data),
-  getPoboTransactions: (entityId?: string, role?: string, status?: string) =>
-    apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/pobo', { params: { entityId, role, status } }).then(r => r.data),
-  setupCobo: (request: any) =>
-    apiClient.post<ApiResponse<any>>('/intercompany/cobo/setup', request).then(r => r.data),
-  processCoboCollection: (transactionRef: string, request: any) =>
-    apiClient.post<ApiResponse<any>>(`/intercompany/cobo/${transactionRef}/collect`, request).then(r => r.data),
-  getCoboTransactions: (entityId?: string, role?: string, status?: string) =>
-    apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/cobo', { params: { entityId, role, status } }).then(r => r.data),
-  getUnsettledTransactions: (entityId?: string) =>
-    apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/settlements/unsettled', { params: { entityId } }).then(r => r.data),
-  calculateNetSettlement: (entity1Id: string, entity2Id: string) =>
-    apiClient.post<ApiResponse<any>>('/intercompany/settlements/calculate-net', { entity1Id, entity2Id }).then(r => r.data),
-  executeSettlement: (transactionIds: string[], settlementDate: string, netAmount: boolean) =>
-    apiClient.post<ApiResponse<any>>('/intercompany/settlements/execute', { transactionIds, settlementDate, netAmount }).then(r => r.data),
-  getStats: (corporateId?: string) =>
-    apiClient.get<ApiResponse<any>>('/intercompany/stats', { params: { corporateId } }).then(r => r.data),
-};
-
-// ============================================================================
 // PARTIES API (Vendor/Customer Search)
 // ============================================================================
 
@@ -7545,44 +7481,6 @@ interface CreateNettingEntryRequest {
 // PHASE 8: INTERCOMPANY TYPES
 // ============================================================================
 
-export interface IntercompanyTransaction {
-  id: string;
-  transactionRef: string;
-  transactionType: 'POBO' | 'POBO_PAYMENT' | 'COBO' | 'COBO_COLLECTION' | 'SETTLEMENT' | 'INTEREST' | 'ADJUSTMENT' | 'IC_RECEIVABLE' | 'IC_PAYABLE';
-  payingEntityId: string;
-  payingEntityCode: string;
-  payingEntityName?: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName?: string;
-  amount: number;
-  currencyCode: string;
-  charges?: number;
-  netAmount?: number;
-  originalReference?: string;
-  viban?: string;
-  status: 'PENDING' | 'ACTIVE' | 'PROCESSED' | 'COMPLETED' | 'SETTLED' | 'REVERSED' | 'FAILED';
-  statusReason?: string;
-  settlementRef?: string;
-  settledAt?: string;
-  processedAt?: string;
-  createdAt?: string;
-}
-
-export interface EntityPairSummary {
-  entity1Id: string;
-  entity1Code: string;
-  entity2Id: string;
-  entity2Code: string;
-  entity1OwesEntity2: number;
-  entity2OwesEntity1: number;
-  netPosition: number;
-  netCreditor: string;
-  netDebtor: string;
-  totalTransactions: number;
-  pendingTransactions: number;
-}
-
 export interface SubsidiaryIntercompanyPosition {
   subsidiaryEntityId: string;
   subsidiaryEntityCode: string;
@@ -7593,124 +7491,80 @@ export interface SubsidiaryIntercompanyPosition {
   netPosition: number;
 }
 
-interface BilateralPosition {
-  entity1Id: string;
-  entity1Code: string;
-  entity1Name: string;
-  entity2Id: string;
-  entity2Code: string;
-  entity2Name: string;
-  entity1OwesEntity2: number;
-  entity2OwesEntity1: number;
-  netPosition: number;
-  netCreditorId: string;
-  netDebtorId: string;
-  transactionCount: number;
-  rechargeCount: number;
+/** The group's who-owes-whom (GET /intercompany/group-position). Every amount carries its currency. */
+export interface IcParty {
+  id: string;
+  code: string | null;
+  name: string | null;
+}
+
+/** RECHARGE_PENDING: a recharge awaiting approval; not owed yet, so in no total. */
+export type IcLineKind = 'IHB_POSITION' | 'RECEIVABLE' | 'PAYABLE' | 'RECHARGE' | 'RECHARGE_PENDING';
+
+/** debtor owes creditor `amount` in `currency`. sourceId: the invoice or recharge (null for an IHB position). */
+export interface IcLine {
+  kind: IcLineKind;
+  sourceId: string | null;
+  reference: string | null;
+  debtor: IcParty;
+  creditor: IcParty;
+  amount: number;
   currency: string;
-  asOfDate: string;
+  status: string | null;
+  dueDate: string | null;
 }
 
-interface NettingEligibility {
-  entity1Id: string;
-  entity2Id: string;
-  isEligible: boolean;
-  eligibleTransactionCount: number;
-  eligibleRechargeCount: number;
-  totalEligibleAmount: number;
-  grossPayables: number;
-  grossReceivables: number;
-  netAmount: number;
-  netDirection: 'ENTITY1_RECEIVES' | 'ENTITY2_RECEIVES';
-  activeCycleId?: string;
-  activeCycleReference?: string;
-  transactionIds: string[];
-  rechargeIds: string[];
+export interface IcLineGroup {
+  lines: IcLine[];
+  /** What the lines net to within the pair; debtor/creditor null when zero. */
+  net: { debtor: IcParty | null; creditor: IcParty | null; amount: number };
 }
 
-export interface IntercompanyStats {
-  totalPoboTransactions: number;
-  totalCoboTransactions: number;
-  pendingSettlement: number;
-  totalPoboVolume: number;
-  totalCoboVolume: number;
-  activeEntities: number;
+export interface IcPairPosition {
+  entityA: IcParty;
+  entityB: IcParty;
+  ihbPositions: IcLineGroup;
+  openInvoices: IcLineGroup;
+  recharges: IcLineGroup;
+  rechargesAwaitingApproval: IcLineGroup;
 }
 
-export interface CoboRequest {
-  collectingEntityId: string;
-  behalfEntityId: string;
-  amount: number;
-  currencyCode?: string;
-  description?: string;
-  generateViban?: boolean;
+export interface IcCurrencyPosition {
+  currency: string;
+  outstanding: number;
+  /** In-house bank positions across the group: owed to entities less owed by them; non-zero is a break. */
+  control: { receivables: number; payables: number; difference: number; balanced: boolean };
+  pairs: IcPairPosition[];
 }
 
-export interface CoboResult {
-  transactionRef: string;
-  status: string;
-  message: string;
-  collectingEntityId: string;
-  collectingEntityCode: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  amount: number;
-  currencyCode: string;
-  charges: number;
-  totalAmount: number;
-  viban?: string;
-  vibanId?: string;
-  createdAt: string;
-}
-
-interface BilateralSettlementRequest {
-  entity1Id: string;
-  entity2Id: string;
-  settlementMethod?: string;
-  settledBy?: string;
-  notes?: string;
-}
-
-interface BilateralSettlementResult {
-  settlementRef: string;
-  entity1Id: string;
-  entity2Id: string;
-  netAmount: number;
-  netCreditorId: string;
-  netDebtorId: string;
-  transactionsSettled: number;
-  rechargesSettled: number;
-  settlementMethod: string;
-  settledAt: string;
-  settledBy: string;
-}
-
-interface IntercompanyPositionSummary {
+export interface IcGroupPosition {
   corporateId: string;
-  totalEntities: number;
-  totalOutstandingPayables: number;
-  totalOutstandingReceivables: number;
-  netPosition: number;
-  pendingTransactions: number;
-  pendingRecharges: number;
-  currency: string;
-  asOfDate: string;
+  allSettled: boolean;
+  currencies: IcCurrencyPosition[];
+  reportingTotal: {
+    currency: string;
+    amount: number;
+    conversions: { currency: string; amount: number; rate: number; rateDate: string | null; converted: number }[];
+    unconvertedCurrencies: string[];
+  };
 }
 
-interface EntityIntercompanyReport {
-  entityId: string;
-  entityCode: string;
-  entityName: string;
-  reportPeriodStart: string;
-  reportPeriodEnd: string;
-  totalTransactions: number;
-  totalPaidOnBehalf: number;
-  totalReceivedOnBehalf: number;
-  netPosition: number;
-  poboTransactions: number;
-  coboTransactions: number;
+export interface IcNettingItem {
+  kind: 'RECEIVABLE' | 'PAYABLE' | 'RECHARGE';
+  id: string;
+  reference: string;
+  debtorCode: string;
+  creditorCode: string;
+  amount: number;
   currency: string;
-  generatedAt: string;
+}
+
+export interface IcNettingEligibility {
+  entity1Id: string;
+  entity2Id: string;
+  reason: string | null;
+  items: IcNettingItem[];
+  openCycles: { id: string; cycleReference: string; cycleName: string; status: string; baseCurrency: string }[];
 }
 
 // ============================================================================
@@ -7771,107 +7625,25 @@ const nettingApiEnhanced = {
 // ============================================================================
 
 export const intercompanyApiEnhanced = {
-  // Existing intercompanyApi methods if any...
-
-  // Create IC transaction
-  createTransaction: (data: { sourceEntityCode: string; targetEntityCode: string; amount: number; currencyCode?: string; transactionType?: string; description?: string }) =>
-    apiClient.post<ApiResponse<IntercompanyTransaction>>('/intercompany/transactions', data).then(r => r.data),
-
-  // Create from payable
-  createFromPayable: (payableId: string) =>
-    apiClient.post<ApiResponse<IntercompanyTransaction>>(`/intercompany/transactions/from-payable/${payableId}`).then(r => r.data),
-
-  // Create from receivable
-  createFromReceivable: (receivableId: string) =>
-    apiClient.post<ApiResponse<IntercompanyTransaction>>(`/intercompany/transactions/from-receivable/${receivableId}`).then(r => r.data),
-
-  // Get entity pairs
-  getEntityPairs: (corporateId: string) =>
-    apiClient.get<ApiResponse<EntityPairSummary[]>>('/intercompany/entity-pairs', { params: { corporateId } }).then(r => r.data),
-
-  // Get per-subsidiary IC Receivable/Payable positions (real VA balances, not IntercompanyTransaction/Recharge sums)
   getPositions: (corporateId: string) =>
     apiClient.get<ApiResponse<SubsidiaryIntercompanyPosition[]>>('/intercompany/positions', { params: { corporateId } }).then(r => r.data),
 
-  // Get bilateral position
-  getBilateralPosition: (entity1Id: string, entity2Id: string) =>
-    apiClient.get<ApiResponse<BilateralPosition>>('/intercompany/bilateral-position', { params: { entity1Id, entity2Id } }).then(r => r.data),
+  getGroupPosition: (corporateId: string) =>
+    apiClient.get<ApiResponse<IcGroupPosition>>('/intercompany/group-position', { params: { corporateId } }).then(r => r.data),
 
-  // Check netting eligibility
-  checkNettingEligibility: (entity1Id: string, entity2Id: string) =>
-    apiClient.get<ApiResponse<NettingEligibility>>('/intercompany/netting-eligibility', { params: { entity1Id, entity2Id } }).then(r => r.data),
+  getNettingEligibility: (corporateId: string, entity1Id: string, entity2Id: string) =>
+    apiClient.get<ApiResponse<IcNettingEligibility>>('/intercompany/netting-eligibility', { params: { corporateId, entity1Id, entity2Id } }).then(r => r.data),
 
-  // Add to netting cycle
-  addToNettingCycle: (cycleId: string, transactionIds: string[], rechargeIds: string[]) =>
-    apiClient.post<ApiResponse<{ transactionsAdded: number; rechargesAdded: number }>>(`/intercompany/add-to-netting/${cycleId}`, { transactionIds, rechargeIds }).then(r => r.data),
+  addToNetting: (corporateId: string, cycleId: string, ids: { rechargeIds: string[]; payableIds: string[]; receivableIds: string[] }) =>
+    apiClient.post<ApiResponse<{ cycleId: string; cycleReference: string; totalAdded: number }>>(
+      `/intercompany/add-to-netting/${cycleId}`, ids, { params: { corporateId } }).then(r => r.data),
 
-  // Settle bilateral
-  settleBilateral: (data: BilateralSettlementRequest) =>
-    apiClient.post<ApiResponse<BilateralSettlementResult>>('/intercompany/settle-bilateral', data).then(r => r.data),
+  // A pending recharge of the corporate's group; the backend records the signed-in user. Bare body, no envelope.
+  approveRecharge: (corporateId: string, rechargeId: string) =>
+    apiClient.post(`/pobo/recharges/${rechargeId}/approve`, null, { params: { corporateId } }).then(r => r.data),
 
-  // Validate transfer pricing
-  validateTransferPricing: (transactionId: string, notes?: string) =>
-    apiClient.post<ApiResponse<any>>(`/intercompany/transactions/${transactionId}/validate-transfer-pricing`, null, { params: { notes } }).then(r => r.data),
-
-  // Get position summary
-  getPositionSummary: (corporateId: string) =>
-    apiClient.get<ApiResponse<IntercompanyPositionSummary>>('/intercompany/position-summary', { params: { corporateId } }).then(r => r.data),
-
-  // Get entity report
-  getEntityReport: (entityId: string, startDate: string, endDate: string) =>
-    apiClient.get<ApiResponse<EntityIntercompanyReport>>(`/intercompany/entity-report/${entityId}`, { params: { startDate, endDate } }).then(r => r.data),
-
-  // Get stats
-  getStats: (corporateId?: string) =>
-    apiClient.get<ApiResponse<IntercompanyStats>>('/intercompany/stats', { params: { corporateId } }).then(r => r.data),
-
-  // POBO Operations
-  pobo: {
-    getTransactions: (entityId?: string, role?: string, status?: string) =>
-      apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/pobo', { params: { entityId, role, status } }).then(r => r.data),
-  },
-
-  // COBO Operations
-  cobo: {
-    setup: (data: CoboRequest) =>
-      apiClient.post<ApiResponse<CoboResult>>('/intercompany/cobo/setup', data).then(r => r.data),
-    
-    processCollection: (transactionRef: string, amount: number) =>
-      apiClient.post<ApiResponse<any>>(`/intercompany/cobo/${transactionRef}/collect`, { amount }).then(r => r.data),
-    
-    getTransactions: (entityId?: string, role?: string, status?: string) =>
-      apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/cobo', { params: { entityId, role, status } }).then(r => r.data),
-  },
-
-  // Settlement
-  settlement: {
-    getUnsettled: (entityId?: string) =>
-      apiClient.get<ApiResponse<IntercompanyTransaction[]>>('/intercompany/unsettled', { params: { entityId } }).then(r => r.data),
-    
-    calculateNet: (entity1Id: string, entity2Id: string) =>
-      apiClient.post<ApiResponse<any>>('/intercompany/settlement/calculate', { entity1Id, entity2Id }).then(r => r.data),
-    
-    execute: (transactionIds: string[], settlementMethod?: string) =>
-      apiClient.post<ApiResponse<any>>('/intercompany/settlement/execute', { transactionIds, settlementMethod }).then(r => r.data),
-    
-    getHistory: (entityId?: string) =>
-      apiClient.get<ApiResponse<any[]>>('/intercompany/settlement/history', { params: { entityId } }).then(r => r.data),
-  },
-
-  // Entities
-  entities: {
-    getAll: (status?: string) =>
-      apiClient.get<ApiResponse<any[]>>('/intercompany/entities', { params: { status } }).then(r => r.data),
-    
-    getWithPosition: (entityId: string) =>
-      apiClient.get<ApiResponse<any>>(`/intercompany/entities/${entityId}`).then(r => r.data),
-    
-    getPositionDetail: (entityId: string) =>
-      apiClient.get<ApiResponse<any>>(`/intercompany/entities/${entityId}/position-detail`).then(r => r.data),
-    
-    validate: (entityId: string, amount: number) =>
-      apiClient.post<ApiResponse<any>>(`/intercompany/entities/${entityId}/validate`, { amount }).then(r => r.data),
-  },
+  rejectRecharge: (corporateId: string, rechargeId: string, reason: string) =>
+    apiClient.post(`/pobo/recharges/${rechargeId}/reject`, null, { params: { corporateId, reason } }).then(r => r.data),
 };
 
 export default {
@@ -7899,7 +7671,6 @@ export default {
   balanceStructure: balanceStructureApi,
   integrations: integrationsApi,
   taxCharge: taxChargeApi,
-  intercompany: intercompanyApi,
   parties: partiesApi,
   hierarchy: hierarchyApi,
   hierarchyVa: hierarchyVaApi,
