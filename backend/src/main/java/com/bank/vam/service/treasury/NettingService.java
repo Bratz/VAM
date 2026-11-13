@@ -35,6 +35,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import com.bank.vam.iso20022.dto.Iso20022PaymentDto.OutwardPaymentRequest;
+import com.bank.vam.iso20022.dto.Iso20022PaymentDto.OutwardPaymentResponse;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * NettingService - Phase 4 Enhanced for Unified Netting Engine
@@ -65,6 +68,12 @@ public class NettingService {
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final FxRateService fxRateService;
     private final IhbMirrorService ihbMirrors;
+    private final com.bank.vam.repository.hierarchy.LegalEntityRepository legalEntityRepository;
+    private final com.bank.vam.service.TransactionService transactionService;
+    private final com.bank.vam.iso20022.service.Iso20022OutwardPaymentService outwardPayments;
+    private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
+    private final com.bank.vam.config.HomeBankProperties homeBank;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     private static final AtomicInteger cycleSequence = new AtomicInteger(1);
     private static final AtomicInteger entrySequence = new AtomicInteger(1);
@@ -128,9 +137,10 @@ public class NettingService {
     // EXISTING METHODS (Preserved with enhancements)
     // ========================================================================
 
+    /** The corporate's cycles (spec R7): a cycle with no corporate (V61 left it null) is no one's. */
     @Transactional(readOnly = true)
-    public List<NettingDto.CycleResponse> getAllCycles() {
-        return cycleRepository.findAll().stream()
+    public List<NettingDto.CycleResponse> getAllCycles(UUID corporateId) {
+        return cycleRepository.findByCorporateIdOrderByCreatedAtDesc(corporateId).stream()
                 .map(this::toCycleResponse)
                 .collect(Collectors.toList());
     }
@@ -144,7 +154,11 @@ public class NettingService {
 
     @Transactional
     public NettingDto.CycleResponse createCycle(NettingDto.CreateCycleRequest request) {
+        if (request.getCorporateId() == null) {
+            throw new BusinessException("corporateId is required: a netting cycle nets one corporate's entities");
+        }
         NettingCycle cycle = new NettingCycle();
+        cycle.setCorporateId(request.getCorporateId());
         String yearMonth = request.getPeriodStart().format(DateTimeFormatter.ofPattern("yyyyMM"));
         cycle.setCycleReference("NET-" + yearMonth + "-" + String.format("%03d", cycleSequence.getAndIncrement()));
         cycle.setCycleName(request.getCycleName());
@@ -226,6 +240,14 @@ public class NettingService {
             cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
             throw new BusinessException("Cannot populate cycle in status: " + cycle.getStatus());
         }
+        // The cycle's own corporate decides what it takes; a caller naming another is refused, not obeyed.
+        if (cycle.getCorporateId() == null) {
+            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " belongs to no corporate");
+        }
+        if (corporateId != null && !corporateId.equals(cycle.getCorporateId())) {
+            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " is another corporate's");
+        }
+        corporateId = cycle.getCorporateId();
 
         log.info("Populating netting cycle {} with all obligations for corporate {} (includePending={})",
             cycle.getCycleReference(), corporateId, includePending);
@@ -266,13 +288,18 @@ public class NettingService {
     @Transactional
     public int addIntercompanyPayables(NettingCycle cycle, UUID corporateId) {
         List<Payable> eligiblePayables = payableRepository.findNettingEligiblePayables(corporateId);
-        
+        Set<UUID> group = groupOf(corporateId);
+        List<Receivable> icReceivables = receivableRepository.findIntercompanyReceivablesByCorporate(corporateId);
+
         int addedCount = 0;
         for (Payable payable : eligiblePayables) {
-            if (!payable.canAddToNetting()) {
+            // Between two of the corporate's entities (a payable with no counterparty entity is no IC invoice), and each
+            // invoice once: a payable linked to one of the group's IC receivables is netted as that receivable.
+            if (!payable.canAddToNetting() || !between(group, payable.getOwningEntityId(), payable.getCounterpartyEntityId())
+                    || com.bank.vam.service.intercompany.IntercompanyGroupPositionService.countedAsReceivable(payable, icReceivables)) {
                 continue;
             }
-            
+
             // Create netting entry from payable
             NettingEntry entry = NettingEntry.fromIntercompanyPayable(
                 cycle,
@@ -283,7 +310,7 @@ public class NettingService {
                 payable.getCounterpartyEntityId(),
                 payable.getCounterpartyEntityCode(),
                 payable.getCounterpartyEntityName(),
-                payable.getNetAmount(),
+                owed(payable.getOutstandingAmount(), payable.getNetAmount()),
                 payable.getCurrencyCode(),
                 payable.getDueDate(),
                 payable.getPayableNumber()
@@ -330,6 +357,7 @@ public class NettingService {
         if (!payable.canAddToNetting()) {
             throw new IllegalStateException("Payable " + payable.getPayableNumber() + " is not eligible for netting");
         }
+        requireSameCorporate(cycle, payable.getCorporateId(), payable.getPayableNumber());
 
         NettingEntry entry = NettingEntry.fromIntercompanyPayable(
             cycle,
@@ -340,7 +368,7 @@ public class NettingService {
             payable.getCounterpartyEntityId(),
             payable.getCounterpartyEntityCode(),
             payable.getCounterpartyEntityName(),
-            payable.getNetAmount(),
+            owed(payable.getOutstandingAmount(), payable.getNetAmount()),
             payable.getCurrencyCode(),
             payable.getDueDate(),
             payable.getPayableNumber()
@@ -488,6 +516,7 @@ public class NettingService {
         if (!receivable.canAddToNetting()) {
             throw new BusinessException("Receivable " + receivable.getReceivableNumber() + " is not eligible for netting");
         }
+        requireSameCorporate(cycle, receivable.getCorporateId(), receivable.getReceivableNumber());
 
         NettingEntry entry = NettingEntry.fromIntercompanyReceivable(
             cycle,
@@ -498,7 +527,7 @@ public class NettingService {
             receivable.getIntercompanyEntityId(),
             receivable.getIntercompanyEntityCode(),
             receivable.getIntercompanyEntityName(),
-            receivable.getNetAmount(),
+            owed(receivable.getOutstandingAmount(), receivable.getNetAmount()),
             receivable.getCurrencyCode(),
             receivable.getDueDate(),
             receivable.getReceivableNumber()
@@ -533,8 +562,11 @@ public class NettingService {
 
     boolean settledAtSource(NettingEntry e) {
         if (e.getIntercompanyRechargeId() != null) {
+            // A POBO_PAYMENT recharge is settled through the subsidiary's IHB current account when the payment posts
+            // (POBO R11), with or without the cut-over's reference: netting it pays a second time.
             return rechargeRepository.findById(e.getIntercompanyRechargeId())
-                .map(r -> r.getStatus() == IntercompanyRecharge.RechargeStatus.SETTLED || r.getSettlementReference() != null)
+                .map(r -> r.getStatus() == IntercompanyRecharge.RechargeStatus.SETTLED || r.getSettlementReference() != null
+                    || r.getRechargeType() == IntercompanyRecharge.RechargeType.POBO_PAYMENT)
                 .orElse(false);
         }
         if (e.getPayableId() != null) {
@@ -562,6 +594,27 @@ public class NettingService {
             && r.getSettlementReference() == null;
     }
 
+    /** What is still owed on an invoice: its outstanding amount (a partly paid one), else its net amount. */
+    static BigDecimal owed(BigDecimal outstanding, BigDecimal net) {
+        return outstanding != null && outstanding.signum() > 0 ? outstanding : net;
+    }
+
+    private Set<UUID> groupOf(UUID corporateId) {
+        return legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+            .map(com.bank.vam.entity.hierarchy.LegalEntity::getId).collect(Collectors.toSet());
+    }
+
+    /** Both sides are entities of the group, and two different ones. */
+    private static boolean between(Set<UUID> group, UUID a, UUID b) {
+        return a != null && b != null && !a.equals(b) && group.contains(a) && group.contains(b);
+    }
+
+    private static void requireSameCorporate(NettingCycle cycle, UUID corporateId, String reference) {
+        if (cycle.getCorporateId() == null || !cycle.getCorporateId().equals(corporateId)) {
+            throw new BusinessException(reference + " is not of netting cycle " + cycle.getCycleReference() + "'s corporate");
+        }
+    }
+
     /**
      * Phase 4 Task 4.7: Add intercompany receivables to netting cycle.
      * 
@@ -578,10 +631,12 @@ public class NettingService {
     @Transactional
     public int addIntercompanyReceivables(NettingCycle cycle, UUID corporateId) {
         List<Receivable> eligibleReceivables = receivableRepository.findNettingEligibleReceivables(corporateId);
-        
+        Set<UUID> group = groupOf(corporateId);
+
         int addedCount = 0;
         for (Receivable receivable : eligibleReceivables) {
-            if (!receivable.canAddToNetting()) {
+            if (!receivable.canAddToNetting()
+                    || !between(group, receivable.getOwningEntityId(), receivable.getIntercompanyEntityId())) {
                 continue;
             }
             
@@ -597,13 +652,13 @@ public class NettingService {
                 receivable.getIntercompanyEntityId(), // Payer = entity that owes
                 receivable.getIntercompanyEntityCode(),
                 receivable.getIntercompanyEntityName(),
-                receivable.getNetAmount(),
+                owed(receivable.getOutstandingAmount(), receivable.getNetAmount()),
                 receivable.getCurrencyCode(),
                 receivable.getDueDate(),
                 receivable.getReceivableNumber()
             );
             entry.setEntryReference("ENT-" + String.format("%06d", entrySequence.getAndIncrement()));
-            
+
             // Apply FX if needed
             applyFxConversion(entry, cycle.getBaseCurrency());
             
@@ -636,7 +691,7 @@ public class NettingService {
      * - So in netting terms: Behalf Entity is PAYER, Payer Entity is PAYEE
      *
      * @param cycle The netting cycle
-     * @param corporateId Corporate ID filter (not currently used - recharges are cross-entity)
+     * @param corporateId the cycle's corporate: only recharges between two of its entities
      * @param includePending If true, also include PENDING (unapproved) recharges
      * @return Number of recharges added
      */
@@ -646,6 +701,7 @@ public class NettingService {
         // Untyped (manually created) recharges only: a POBO_PAYMENT recharge is a payment already posted to the
         // subsidiary's IHB current account, settled through that position -- netting it would debit the account
         // a second time (POBO spec R11 / D8).
+        Set<UUID> group = groupOf(corporateId);
         List<IntercompanyRecharge> eligibleRecharges = rechargeRepository.findAll().stream()
             .filter(r -> r.getRechargeType() == null)
             .filter(r -> {
@@ -655,7 +711,9 @@ public class NettingService {
                 return r.getStatus() == IntercompanyRecharge.RechargeStatus.APPROVED ||
                        r.getStatus() == IntercompanyRecharge.RechargeStatus.RECHARGED;
             })
-            .filter(r -> r.getSettlementReference() == null) // Not already in a netting cycle
+            .filter(r -> r.getSettlementReference() == null) // Not settled
+            .filter(r -> between(group, r.getPayerEntityId(), r.getBehalfEntityId())) // the cycle's corporate only
+            .filter(r -> !entryRepository.existsByIntercompanyRechargeId(r.getId())) // in no cycle yet (re-populate)
             .collect(Collectors.toList());
 
         log.info("Found {} eligible POBO recharges (includePending={})", eligibleRecharges.size(), includePending);
@@ -722,13 +780,14 @@ public class NettingService {
      * - This creates a RECEIVABLE for the Subsidiary (they will receive funds)
      *
      * @param cycle The netting cycle
-     * @param corporateId Corporate ID filter (not currently used - recharges are cross-entity)
+     * @param corporateId the cycle's corporate: only recharges between two of its entities
      * @param includePending If true, also include PENDING (unapproved) recharges
      * @return Number of COBO recharges added
      */
     @Transactional
     public int addCoboRecharges(NettingCycle cycle, UUID corporateId, boolean includePending) {
         // Find eligible COBO recharges: COBO_COLLECTION type, APPROVED or RECHARGED status, not yet settled
+        Set<UUID> group = groupOf(corporateId);
         List<IntercompanyRecharge> coboRecharges = rechargeRepository.findAll().stream()
             .filter(r -> r.getRechargeType() == IntercompanyRecharge.RechargeType.COBO_COLLECTION)
             .filter(r -> {
@@ -739,6 +798,8 @@ public class NettingService {
                        r.getStatus() == IntercompanyRecharge.RechargeStatus.RECHARGED;
             })
             .filter(r -> r.getSettlementReference() == null)  // Not yet settled
+            .filter(r -> between(group, r.getPayerEntityId(), r.getBehalfEntityId())) // the cycle's corporate only
+            .filter(r -> !entryRepository.existsByIntercompanyRechargeId(r.getId())) // in no cycle yet (re-populate)
             .collect(Collectors.toList());
 
         log.info("Found {} eligible COBO recharges (includePending={})", coboRecharges.size(), includePending);
@@ -840,6 +901,10 @@ public class NettingService {
     public NettingDto.CalculateNettingResponse calculateNetting(UUID cycleId) {
         NettingCycle cycle = cycleRepository.findByIdWithEntries(cycleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + cycleId));
+        // Recalculating a settled cycle would put its settled entries back in and let it settle again.
+        if (cycle.getStatus() == NettingCycle.CycleStatus.SETTLED || cycle.getStatus() == NettingCycle.CycleStatus.CANCELLED) {
+            throw new BusinessException("Cycle " + cycle.getCycleReference() + " is " + cycle.getStatus() + "; it cannot be recalculated");
+        }
 
         cycle.setStatus(NettingCycle.CycleStatus.CALCULATING);
 
@@ -961,236 +1026,351 @@ public class NettingService {
     }
 
     /**
-     * Phase 4 Task 4.10: Settle cycle with full multilateral accounting.
+     * Settle an approved cycle leg by leg (spec D5 / R10). The preview and the posting are one computation,
+     * {@link #settlementPlan}, so what the treasurer confirmed is what posts.
      *
-     * MULTILATERAL NETTING SETTLEMENT ACCOUNTING:
+     * <p>Legs: the payers' nets are matched to the receivers' nets, biggest first (ties by entity code); each leg is one
+     * payer paying one receiver, and per entity the legs add up to its net. Every entity settles on its own account in
+     * the cycle's base currency ({@link #findSettlementVaForEntity}). A leg is
+     * <ul>
+     * <li>LEDGER when both accounts are IHB current accounts, or sit on the same bank account (the shadow their payments
+     *     leave through, {@code TransactionService.payoutShadow}): the payer's account is debited and the receiver's
+     *     credited, the IHB mirrors follow (POBO R10);</li>
+     * <li>PAYMENT otherwise: an outward payment of the leg from the payer's account to the receiver's bank account (the
+     *     IBAN/BIC of the physical account behind its shadow) through the outward payment path, remittance = the cycle
+     *     reference. The receiver's account is credited when that payment comes in, by the inward path, not here;</li>
+     * <li>REFUSED when an account is missing, or the payer's account is at another bank: the home bank runs every payment
+     *     and cannot pay from another bank's account with an ordinary payment (that is an MT101 instruction).</li>
+     * </ul>
      *
-     * For each participant based on their net position:
-     *
-     * PAY Direction (net position < 0 - entity owes more than owed):
-     * | Leg | Account            | Debit | Credit | Description                    |
-     * |-----|-------------------|-------|--------|--------------------------------|
-     * | 1   | IHB Current Acct  | X     |        | Subsidiary pays net obligation |
-     * | 2   | Netting Suspense  |       | X      | Central clearing account       |
-     *
-     * RECEIVE Direction (net position > 0 - entity is owed more than owes):
-     * | Leg | Account            | Debit | Credit | Description                     |
-     * |-----|-------------------|-------|--------|---------------------------------|
-     * | 1   | Netting Suspense  | X     |        | Draw from central clearing      |
-     * | 2   | IHB Current Acct  |       | X      | Receiver's own account (else its settlement VA); the mirrors follow |
-     *
-     * The central Netting Suspense account should net to zero after all settlements.
+     * <p>State: the outward path books synchronously (its transactions are COMPLETED in the call), so a cycle goes
+     * APPROVED to SETTLED in one transaction: every leg books, or none does. Refused legs and entries settled at their
+     * source are refused before anything posts; a failed payment rolls the whole attempt back. Either way the cycle stays
+     * APPROVED with {@code settlementIssue} saying why (written in its own transaction), and no entry, source document or
+     * participant is marked settled.
+     * ponytail: no SETTLING state, since nothing is ever left half-booked; add it (and widen any CHECK on the status
+     * column, V46-style) when a payment leg books asynchronously.
      */
-    @Transactional
     public NettingDto.SettleCycleResponse settleCycle(UUID cycleId) {
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        try {
+            return tx.execute(s -> settleInOneTransaction(cycleId));
+        } catch (SettlementRefused e) {
+            tx.executeWithoutResult(s -> cycleRepository.findById(cycleId).ifPresent(c -> {
+                c.setSettlementIssue(e.getMessage());
+                cycleRepository.save(c);
+            }));
+            throw new BusinessException(e.getMessage());
+        }
+    }
+
+    /** A settlement attempt that must not post: it rolls back and its reason is recorded on the cycle. */
+    static class SettlementRefused extends RuntimeException {
+        SettlementRefused(String message) {
+            super(message);
+        }
+    }
+
+    /** What settling would post (R11), computed by {@link #settlementPlan} as {@link #settleCycle} computes it. */
+    @Transactional(readOnly = true)
+    public NettingDto.SettlementPreview previewSettlement(UUID cycleId) {
+        NettingCycle cycle = cycleRepository.findByIdWithSettlements(cycleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + cycleId));
+        return settlementPlan(cycle);
+    }
+
+    NettingDto.SettlementPreview settlementPlan(NettingCycle cycle) {
+        List<NettingDto.SettlementLeg> legs = legs(cycle);
+        List<String> stale = entriesSettledAtSource(cycle.getId());
+        List<String> blockers = new ArrayList<>();
+        if (cycle.getSettlements().isEmpty()) {
+            blockers.add("no positions calculated: calculate the cycle first");
+        }
+        if (!stale.isEmpty()) {
+            blockers.add("entries already settled outside netting: " + String.join(", ", stale));
+        }
+        legs.stream().filter(l -> l.getKind() == NettingDto.LegKind.REFUSED).forEach(l -> blockers.add(
+            l.getPayerEntityCode() + " to " + l.getReceiverEntityCode() + " " + l.getAmount() + " " + l.getCurrency() + ": " + l.getReason()));
+
+        NettingDto.SettlementPreview p = new NettingDto.SettlementPreview();
+        p.setCycleId(cycle.getId());
+        p.setCycleReference(cycle.getCycleReference());
+        p.setStatus(cycle.getStatus());
+        p.setCurrency(cycle.getBaseCurrency());
+        p.setSettlements(cycle.getSettlements().stream()
+            .sorted(Comparator.comparing(NettingSettlement::getEntityCode))
+            .map(this::toSettlementResponse).collect(Collectors.toList()));
+        p.setLegs(legs);
+        p.setStaleEntries(stale);
+        p.setBlockers(blockers);
+        p.setSettleable(cycle.getStatus() == NettingCycle.CycleStatus.APPROVED && blockers.isEmpty());
+        p.setSettlementIssue(cycle.getSettlementIssue());
+        return p;
+    }
+
+    private NettingDto.SettleCycleResponse settleInOneTransaction(UUID cycleId) {
         NettingCycle cycle = cycleRepository.findByIdWithSettlements(cycleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + cycleId));
 
         if (cycle.getStatus() != NettingCycle.CycleStatus.APPROVED) {
             throw new BusinessException("Cycle must be APPROVED to settle");
         }
-
-        log.info("Starting multilateral settlement for netting cycle {} with {} participants",
-            cycle.getCycleReference(), cycle.getSettlements().size());
-
-        int successCount = 0;
-        int failedCount = 0;
-        BigDecimal totalSettled = BigDecimal.ZERO;
-        List<Transaction> settlementLedgerEntries = new ArrayList<>();
-        String correlationId = "NETTING-" + cycle.getCycleReference();
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate valueDate = LocalDate.now();
-
-        for (NettingSettlement settlement : cycle.getSettlements()) {
-            if (settlement.isNeutral()) {
-                // Neutral position - no settlement needed
-                String settlementRef = generateNettingSettlementRef(cycle.getCycleReference());
-                settlement.markSettled(settlementRef, null);
-                successCount++;
-                log.debug("Entity {} has neutral position - no settlement needed", settlement.getEntityCode());
-                continue;
-            }
-
-            try {
-                BigDecimal settlementAmount = settlement.getSettlementAmount();
-                String settlementRef = generateNettingSettlementRef(cycle.getCycleReference());
-
-                // ===========================================================
-                // SETTLEMENT ACCOUNTING BASED ON DIRECTION
-                // ===========================================================
-
-                if (settlement.needsToPay()) {
-                    // PAY DIRECTION: Entity needs to pay net amount
-                    // Find their IHB Current Account (or IC Payable VA)
-                    VirtualAccount payerVa = findSettlementVaForEntity(settlement.getEntityId(), "PAYER");
-
-                    if (payerVa != null) {
-                        log.info("Processing PAY settlement for {}: amount={}, VA={}",
-                            settlement.getEntityCode(), settlementAmount, payerVa.getVaNumber());
-
-                        // LEG 1: DEBIT Payer's IHB Current Account (reduce their balance)
-                        BigDecimal balanceBefore = payerVa.getCurrentBalance();
-                        payerVa.setCurrentBalance(balanceBefore.subtract(settlementAmount));
-
-                        // Update available balance
-                        if (payerVa.getAvailableBalance() != null) {
-                            payerVa.setAvailableBalance(payerVa.getAvailableBalance().subtract(settlementAmount));
-                        }
-                        virtualAccountRepository.save(payerVa);
-
-                        Transaction debitTx = Transaction.builder()
-                            .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                            .corporateId(payerVa.getCorporateId())
-                            .legalEntityId(settlement.getEntityId())
-                            .vaId(payerVa.getId())
-                            .programId(payerVa.getProgramId())
-                            .amount(settlementAmount)
-                            .currencyCode(payerVa.getCurrencyCode())
-                            .balanceBefore(balanceBefore)
-                            .balanceAfter(payerVa.getCurrentBalance())
-                            .transactionDate(now)
-                            .valueDate(valueDate)
-                            .referenceNumber(generateLedgerReference("NETPAY"))
-                            .description("Netting settlement PAY - " + cycle.getCycleReference())
-                            .channel("NETTING_SETTLEMENT")
-                            .correlationId(correlationId)
-                            .status(Transaction.TransactionStatus.COMPLETED)
-                            .processingNotes("Multilateral netting - PAY direction for " + settlement.getEntityCode())
-                            .build();
-                        debitTx = ledgerTransactionRepository.save(debitTx);
-                        settlementLedgerEntries.add(debitTx);
-                        ihbMirrors.syncIhbMirrors(payerVa, "netting settlement PAY " + cycle.getCycleReference(), correlationId);
-
-                        settlement.setSettlementVaId(payerVa.getId());
-                        settlement.setSettlementTransactionId(debitTx.getId());
-                        settlement.setSettlementAccount(payerVa.getVaNumber());
-
-                        log.info("PAY settlement: {} balance {} → {}",
-                            payerVa.getVaNumber(), balanceBefore, payerVa.getCurrentBalance());
-                    } else {
-                        log.warn("No settlement VA found for PAY entity {}", settlement.getEntityCode());
-                    }
-
-                } else if (settlement.willReceive()) {
-                    // RECEIVE DIRECTION: Entity receives net amount
-                    // Find their IC Receivable VA or Settlement VA
-                    VirtualAccount receiverVa = findSettlementVaForEntity(settlement.getEntityId(), "RECEIVER");
-
-                    if (receiverVa != null) {
-                        log.info("Processing RECEIVE settlement for {}: amount={}, VA={}",
-                            settlement.getEntityCode(), settlementAmount, receiverVa.getVaNumber());
-
-                        // A credit to the receiver's own account (its IHB current account, else its settlement
-                        // account). Never treasury's IC receivable / payable: those mirrors follow the IHB current
-                        // positions (POBO spec R10) and are synced below, not moved by netting.
-                        BigDecimal balanceBefore = receiverVa.getCurrentBalance();
-                        receiverVa.setCurrentBalance(balanceBefore.add(settlementAmount));
-
-                        // Update available balance
-                        if (receiverVa.getAvailableBalance() != null) {
-                            receiverVa.syncAvailableToCurrent();
-                        }
-                        virtualAccountRepository.save(receiverVa);
-
-                        Transaction creditTx = Transaction.builder()
-                            .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                            .corporateId(receiverVa.getCorporateId())
-                            .legalEntityId(settlement.getEntityId())
-                            .vaId(receiverVa.getId())
-                            .programId(receiverVa.getProgramId())
-                            .amount(settlementAmount)
-                            .currencyCode(receiverVa.getCurrencyCode())
-                            .balanceBefore(balanceBefore)
-                            .balanceAfter(receiverVa.getCurrentBalance())
-                            .transactionDate(now)
-                            .valueDate(valueDate)
-                            .referenceNumber(generateLedgerReference("NETRCV"))
-                            .description("Netting settlement RECEIVE - " + cycle.getCycleReference())
-                            .channel("NETTING_SETTLEMENT")
-                            .correlationId(correlationId)
-                            .status(Transaction.TransactionStatus.COMPLETED)
-                            .processingNotes("Multilateral netting - RECEIVE direction for " + settlement.getEntityCode())
-                            .build();
-                        creditTx = ledgerTransactionRepository.save(creditTx);
-                        settlementLedgerEntries.add(creditTx);
-                        ihbMirrors.syncIhbMirrors(receiverVa, "netting settlement RECEIVE " + cycle.getCycleReference(), correlationId);
-
-                        settlement.setSettlementVaId(receiverVa.getId());
-                        settlement.setSettlementTransactionId(creditTx.getId());
-                        settlement.setSettlementAccount(receiverVa.getVaNumber());
-
-                        log.info("RECEIVE settlement: {} balance {} → {}",
-                            receiverVa.getVaNumber(), balanceBefore, receiverVa.getCurrentBalance());
-                    } else {
-                        log.warn("No settlement VA found for RECEIVE entity {}", settlement.getEntityCode());
-                    }
-                }
-
-                settlement.markSettled(settlementRef,
-                    settlementLedgerEntries.isEmpty() ? null :
-                    settlementLedgerEntries.get(settlementLedgerEntries.size() - 1).getId());
-
-                successCount++;
-                totalSettled = totalSettled.add(settlementAmount);
-
-            } catch (Exception e) {
-                log.error("Settlement failed for entity {}: {}", settlement.getEntityCode(), e.getMessage(), e);
-                settlement.markFailed();
-                failedCount++;
-            }
+        String ref = cycle.getCycleReference();
+        NettingDto.SettlementPreview plan = settlementPlan(cycle);
+        if (!plan.getBlockers().isEmpty()) {
+            throw new SettlementRefused("Netting cycle " + ref + " was not settled, nothing was posted: "
+                + String.join("; ", plan.getBlockers()));
         }
 
-        // Update entry statuses
+        log.info("Settling netting cycle {}: {} legs", ref, plan.getLegs().size());
+        String correlationId = "NETTING-" + ref;
+        Map<UUID, UUID> transactionOf = new HashMap<>();   // entity -> its last leg's transaction
+        Map<UUID, VirtualAccount> accountOf = new HashMap<>();
+        BigDecimal total = BigDecimal.ZERO;
+        int legNo = 0;
+        for (NettingDto.SettlementLeg leg : plan.getLegs()) {
+            legNo++;
+            VirtualAccount from = virtualAccountRepository.findById(leg.getFromVaId()).orElseThrow();
+            VirtualAccount to = virtualAccountRepository.findById(leg.getToVaId()).orElseThrow();
+            accountOf.put(leg.getPayerEntityId(), from);
+            accountOf.put(leg.getReceiverEntityId(), to);
+            if (leg.getKind() == NettingDto.LegKind.LEDGER) {
+                Transaction debit = postLedger(ref, from, leg.getPayerEntityId(), leg.getPayerEntityCode(), leg.getAmount(), true, correlationId);
+                Transaction credit = postLedger(ref, to, leg.getReceiverEntityId(), leg.getReceiverEntityCode(), leg.getAmount(), false, correlationId);
+                leg.setTransactionReference(debit.getReferenceNumber());
+                transactionOf.put(leg.getPayerEntityId(), debit.getId());
+                transactionOf.put(leg.getReceiverEntityId(), credit.getId());
+            } else {
+                OutwardPaymentResponse paid = outwardPayments.processOutwardPayment(OutwardPaymentRequest.builder()
+                    .sourceVaId(from.getId())
+                    .amount(leg.getAmount())
+                    .currency(leg.getCurrency())
+                    .creditorName(leg.getReceiverEntityName() != null ? leg.getReceiverEntityName() : leg.getReceiverEntityCode())
+                    .creditorAccount(leg.getBeneficiaryAccount())
+                    .creditorBic(leg.getBeneficiaryBic())
+                    .remittanceInfo(ref)
+                    .endToEndId(ref + "-" + legNo)
+                    .requestedExecutionDate(LocalDate.now())
+                    .build());
+                if (paid == null || !paid.isSuccess()) {
+                    throw new SettlementRefused("Netting cycle " + ref + " was not settled, nothing was posted: the payment "
+                        + leg.getPayerEntityCode() + " to " + leg.getReceiverEntityCode() + " " + leg.getAmount() + " "
+                        + leg.getCurrency() + " failed: " + (paid == null ? "no response" : paid.getErrorMessage()));
+                }
+                leg.setTransactionReference(paid.getTransactionReference());
+                transactionOf.put(leg.getPayerEntityId(), paid.getTransactionId());
+            }
+            total = total.add(leg.getAmount());
+        }
+
+        for (NettingSettlement settlement : cycle.getSettlements()) {
+            VirtualAccount account = accountOf.get(settlement.getEntityId());
+            if (account != null) {
+                settlement.setSettlementVaId(account.getId());
+                settlement.setSettlementAccount(account.getVaNumber());
+            }
+            settlement.markSettled(generateNettingSettlementRef(ref), transactionOf.get(settlement.getEntityId()));
+        }
         for (NettingEntry entry : cycle.getEntries()) {
             if (entry.getStatus() == NettingEntry.EntryStatus.INCLUDED) {
                 entry.markSettled();
             }
         }
-
-        // Update source documents with settlement reference
         updateSourceDocuments(cycle);
 
         cycle.setStatus(NettingCycle.CycleStatus.SETTLED);
         cycle.setSettledAt(LocalDateTime.now());
+        cycle.setSettlementIssue(null);
         cycleRepository.save(cycle);
-
-        // Post netting fees
         postNettingFees(cycle);
 
-        log.info("Completed multilateral netting settlement {}: {} success, {} failed, {} ledger entries, total={}",
-            cycle.getCycleReference(), successCount, failedCount, settlementLedgerEntries.size(), totalSettled);
-
+        log.info("Settled netting cycle {}: {} legs, total {} {}", ref, plan.getLegs().size(), total, cycle.getBaseCurrency());
         NettingDto.SettleCycleResponse response = new NettingDto.SettleCycleResponse();
         response.setCycleId(cycleId);
-        response.setCycleReference(cycle.getCycleReference());
+        response.setCycleReference(ref);
         response.setSettledAt(cycle.getSettledAt());
-        response.setSuccessfulSettlements(successCount);
-        response.setFailedSettlements(failedCount);
-        response.setTotalSettled(totalSettled);
-
+        response.setSuccessfulSettlements(plan.getLegs().size());
+        response.setFailedSettlements(0);
+        response.setTotalSettled(total);
+        response.setLegs(plan.getLegs());
         return response;
     }
 
+    /** One side of a ledger leg: the account moves, a COMPLETED ledger row records it, the IHB mirrors follow. */
+    private Transaction postLedger(String cycleRef, VirtualAccount va, UUID entityId, String entityCode, BigDecimal amount,
+                                   boolean debit, String correlationId) {
+        BigDecimal balanceBefore = va.getCurrentBalance();
+        va.setCurrentBalance(debit ? balanceBefore.subtract(amount) : balanceBefore.add(amount));
+        if (va.getAvailableBalance() != null) {
+            if (debit) {
+                va.setAvailableBalance(va.getAvailableBalance().subtract(amount));
+            } else {
+                va.syncAvailableToCurrent();
+            }
+        }
+        virtualAccountRepository.save(va);
+        String side = debit ? "PAY" : "RECEIVE";
+        Transaction row = ledgerTransactionRepository.save(Transaction.builder()
+            .movementType(Transaction.MovementType.IC_SETTLEMENT)
+            .corporateId(va.getCorporateId())
+            .legalEntityId(entityId)
+            .vaId(va.getId())
+            .programId(va.getProgramId())
+            .amount(amount)
+            .currencyCode(va.getCurrencyCode())
+            .balanceBefore(balanceBefore)
+            .balanceAfter(va.getCurrentBalance())
+            .transactionDate(LocalDateTime.now())
+            .valueDate(LocalDate.now())
+            .referenceNumber(generateLedgerReference(debit ? "NETPAY" : "NETRCV"))
+            .description("Netting settlement " + side + " - " + cycleRef)
+            .channel("NETTING_SETTLEMENT")
+            .correlationId(correlationId)
+            .status(Transaction.TransactionStatus.COMPLETED)
+            .processingNotes("Multilateral netting - " + side + " direction for " + entityCode)
+            .build());
+        ihbMirrors.syncIhbMirrors(va, "netting settlement " + side + " " + cycleRef, correlationId);
+        return row;
+    }
+
+    /** The payers' nets matched to the receivers', biggest first, ties by entity code (deterministic: preview = posting). */
+    private List<NettingDto.SettlementLeg> legs(NettingCycle cycle) {
+        Comparator<NettingSettlement> biggestFirst = Comparator.comparing(NettingSettlement::getSettlementAmount).reversed()
+            .thenComparing(NettingSettlement::getEntityCode);
+        List<NettingSettlement> payers = cycle.getSettlements().stream().filter(NettingSettlement::needsToPay)
+            .sorted(biggestFirst).collect(Collectors.toList());
+        List<NettingSettlement> receivers = cycle.getSettlements().stream().filter(NettingSettlement::willReceive)
+            .sorted(biggestFirst).collect(Collectors.toList());
+        BigDecimal[] due = receivers.stream().map(NettingSettlement::getSettlementAmount).toArray(BigDecimal[]::new);
+        Map<UUID, BigDecimal> drawn = new HashMap<>(); // per payer account: its ledger legs so far, checked together
+        List<NettingDto.SettlementLeg> legs = new ArrayList<>();
+        int r = 0;
+        for (NettingSettlement payer : payers) {
+            BigDecimal owes = payer.getSettlementAmount();
+            while (owes.signum() > 0 && r < receivers.size()) {
+                BigDecimal amount = owes.min(due[r]);
+                legs.add(leg(cycle.getBaseCurrency(), payer, receivers.get(r), amount, drawn));
+                owes = owes.subtract(amount);
+                due[r] = due[r].subtract(amount);
+                if (due[r].signum() == 0) r++;
+            }
+        }
+        return legs;
+    }
+
+    private NettingDto.SettlementLeg leg(String currency, NettingSettlement payer, NettingSettlement receiver, BigDecimal amount,
+                                         Map<UUID, BigDecimal> drawn) {
+        NettingDto.SettlementLeg leg = new NettingDto.SettlementLeg();
+        leg.setPayerEntityId(payer.getEntityId());
+        leg.setPayerEntityCode(payer.getEntityCode());
+        leg.setPayerEntityName(payer.getEntityName());
+        leg.setReceiverEntityId(receiver.getEntityId());
+        leg.setReceiverEntityCode(receiver.getEntityCode());
+        leg.setReceiverEntityName(receiver.getEntityName());
+        leg.setAmount(amount);
+        leg.setCurrency(currency);
+
+        VirtualAccount from = findSettlementVaForEntity(payer.getEntityId(), currency);
+        VirtualAccount to = findSettlementVaForEntity(receiver.getEntityId(), currency);
+        if (from == null || to == null) {
+            return refused(leg, (from == null ? payer : receiver).getEntityCode() + " has no active " + currency + " account to settle on");
+        }
+        leg.setFromVaId(from.getId());
+        leg.setFromAccount(from.getVaNumber());
+        leg.setToVaId(to.getId());
+        leg.setToAccount(to.getVaNumber());
+        if (Boolean.TRUE.equals(from.getIhbParticipant()) && Boolean.TRUE.equals(to.getIhbParticipant())) {
+            return ledger(leg, from, payer, drawn);
+        }
+        VirtualAccount fromBank = bankAccountOf(from);
+        VirtualAccount toBank = bankAccountOf(to);
+        if (fromBank != null && toBank != null && (fromBank.getId().equals(toBank.getId())
+                || (fromBank.getLinkedPhysicalAccountId() != null
+                    && fromBank.getLinkedPhysicalAccountId().equals(toBank.getLinkedPhysicalAccountId())))) {
+            return ledger(leg, from, payer, drawn);
+        }
+        if (fromBank == null) {
+            return refused(leg, payer.getEntityCode() + "'s account " + from.getVaNumber() + " has no " + currency
+                + " bank account to pay from");
+        }
+        if (fromBank.isOtherBankShadow(homeBank.getBic())) {
+            return refused(leg, "payer's account is at another bank (" + fromBank.getBankSwift() + "); settle it outside "
+                + "netting or through an external-bank instruction");
+        }
+        if (toBank == null) {
+            return refused(leg, receiver.getEntityCode() + "'s account " + to.getVaNumber() + " has no " + currency
+                + " bank account to be paid to");
+        }
+        com.bank.vam.entity.PhysicalAccount bank = toBank.getLinkedPhysicalAccountId() == null ? null
+            : physicalAccountRepository.findById(toBank.getLinkedPhysicalAccountId()).orElse(null);
+        String account = bank == null ? toBank.getBankAccountNumber() : bank.getIban() != null ? bank.getIban() : bank.getAccountNumber();
+        if (account == null) {
+            return refused(leg, receiver.getEntityCode() + "'s bank account has no IBAN or account number to pay to");
+        }
+        leg.setBeneficiaryAccount(account);
+        leg.setBeneficiaryBic(bank != null && bank.getBankCode() != null ? bank.getBankCode() : toBank.getBankSwift());
+        leg.setKind(NettingDto.LegKind.PAYMENT);
+        return leg;
+    }
+
     /**
-     * The account a participant settles on, paying or receiving: its IHB current account, else its settlement or
-     * transaction account, else any other account of its own. Only real accounts: an in-house mirror (IC receivable /
+     * A ledger leg, unless the payer's account cannot cover it together with its earlier ledger legs: an IHB current
+     * account up to its credit headroom (balance + credit limit, PoboEnrolmentService.headroomRefusal), any other account
+     * up to its available balance. Payment legs are checked by the outward path instead.
+     */
+    private static NettingDto.SettlementLeg ledger(NettingDto.SettlementLeg leg, VirtualAccount from, NettingSettlement payer,
+                                                   Map<UUID, BigDecimal> drawn) {
+        BigDecimal needed = drawn.merge(from.getId(), leg.getAmount(), BigDecimal::add);
+        String earlier = needed.compareTo(leg.getAmount()) > 0 ? "this leg and its earlier ones need " : "this leg needs ";
+        if (Boolean.TRUE.equals(from.getIhbParticipant())) {
+            String refusal = com.bank.vam.service.pobo.PoboEnrolmentService.headroomRefusal(from, needed);
+            if (refusal != null) return refused(leg, refusal);
+        } else {
+            BigDecimal available = from.getAvailableBalance() != null ? from.getAvailableBalance() : from.getCurrentBalance();
+            if (available == null || needed.compareTo(available) > 0) {
+                String ccy = from.getCurrencyCode();
+                return refused(leg, payer.getEntityCode() + "'s " + from.getVaNumber() + " has " + ccy + " "
+                    + String.format(Locale.ROOT, "%,.2f", available == null ? BigDecimal.ZERO : available) + " available; " + earlier
+                    + ccy + " " + String.format(Locale.ROOT, "%,.2f", needed));
+            }
+        }
+        leg.setKind(NettingDto.LegKind.LEDGER);
+        return leg;
+    }
+
+    private static NettingDto.SettlementLeg refused(NettingDto.SettlementLeg leg, String reason) {
+        leg.setKind(NettingDto.LegKind.REFUSED);
+        leg.setReason(reason);
+        return leg;
+    }
+
+    /** The bank account an account's money sits on: the shadow its payments leave through; null when it has none. */
+    private VirtualAccount bankAccountOf(VirtualAccount va) {
+        try {
+            return transactionService.payoutShadow(va);
+        } catch (BusinessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * The account a participant settles on, paying or receiving, in the cycle's currency: its IHB current account, else
+     * its settlement account, else a transaction account, else any other leaf account of its own; by account number
+     * among equals, so preview and posting pick the same. Only real accounts: an in-house mirror (IC receivable /
      * payable, IHB settlement) or a bank shadow is never moved by netting; the mirrors follow the IHB positions.
      */
-    private VirtualAccount findSettlementVaForEntity(UUID entityId, String direction) {
+    private VirtualAccount findSettlementVaForEntity(UUID entityId, String currency) {
         List<VirtualAccount> entityVas = virtualAccountRepository.findAll().stream()
             .filter(va -> entityId.equals(va.getOwningEntityId()))
             .filter(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE)
-            .filter(NettingService::isRealAccount)
+            .filter(va -> currency.equals(va.getCurrencyCode()))
+            .filter(va -> isRealAccount(va) && va.isLeafAccount())
+            .sorted(Comparator.comparing(VirtualAccount::getVaNumber, Comparator.nullsLast(Comparator.naturalOrder())))
             .collect(Collectors.toList());
-
-        if (entityVas.isEmpty()) {
-            log.debug("No VAs found for entity {} in {} direction", entityId, direction);
-            return null;
-        }
         return entityVas.stream().filter(va -> Boolean.TRUE.equals(va.getIhbParticipant())).findFirst()
-            .or(() -> entityVas.stream().filter(va -> va.isSettlementVa()
-                || VirtualAccount.AccountCategory.TRANSACTION == va.getAccountCategory()).findFirst())
-            .orElse(entityVas.get(0));
+            .or(() -> entityVas.stream().filter(VirtualAccount::isSettlementVa).findFirst())
+            .or(() -> entityVas.stream().filter(va -> VirtualAccount.AccountCategory.TRANSACTION == va.getAccountCategory()).findFirst())
+            .orElse(entityVas.isEmpty() ? null : entityVas.get(0));
     }
 
     static boolean isRealAccount(VirtualAccount va) {
@@ -1336,6 +1516,8 @@ public class NettingService {
         dto.setApprovedAt(cycle.getApprovedAt());
         dto.setSettledAt(cycle.getSettledAt());
         dto.setCreatedAt(cycle.getCreatedAt());
+        dto.setCorporateId(cycle.getCorporateId());
+        dto.setSettlementIssue(cycle.getSettlementIssue());
 
         if (cycle.getEntries() != null) {
             dto.setEntries(cycle.getEntries().stream()

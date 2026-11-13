@@ -61,15 +61,71 @@ Phase 1 done (13 Nov, uncommitted; `mvn test` 849/0 with the two follow-ups belo
   `/activity-report`; `/pobo/recharges/pending`.
 
 ### Phase 2 — settle only through Netting Cycles (D4, D5, D6; R8–R11)
-- [ ] 2.1 Remove bilateral settle: `/settle-bilateral` (API) and its UI; anything else that posts IC settlement outside
+- [x] 2.1 Remove bilateral settle: `/settle-bilateral` (API) and its UI; anything else that posts IC settlement outside
       netting.
-- [ ] 2.2 Netting settlement per entity net: ledger transfer when payer and receiver accounts are IHB current accounts or
+- [x] 2.2 Netting settlement per entity net: ledger transfer when payer and receiver accounts are IHB current accounts or
       sit on the same physical bank account; otherwise an outward payment of the net through the existing outward
       payment path; the cycle is SETTLING until those payments are booked, then SETTLED (failed payment → cycle
       flagged, legs not marked settled).
-- [ ] 2.3 Settlement preview in Netting Cycles: per entity debited/credited, which legs are ledger transfers and which
+- [x] 2.3 Settlement preview in Netting Cycles: per entity debited/credited, which legs are ledger transfers and which
       become payments, from which account to which.
-- [ ] 2.4 Tests: same-account ledger leg, cross-bank payment leg, IHB legs unchanged, preview = posting, failed payment.
+- [x] 2.4 Tests: same-account ledger leg, cross-bank payment leg, IHB legs unchanged, preview = posting, failed payment.
+
+Phase 2 done (13 Nov, uncommitted; `mvn test` 863/0 (849 + 14 in NettingSettlementTest), tsc + lint clean):
+- Removed: `POST /intercompany/settle-bilateral` + `settleBilateralPosition` and its helpers/DTOs; `POST
+  /pobo/recharges/{id}/settle/netting` (marked a recharge settled "via netting" with any reference, no cycle); dead
+  `settleCoboRecharge`, `PayablesService.markNettingSettled`, `ReceivableNettingService.markNettingSettled` /
+  `markCycleReceivablesSettled` and their bulk queries. `/settlement/execute` already refuses (Phase 3 removes it).
+- Leg rule (`NettingService.settlementPlan`, used by `GET /netting/cycles/{id}/settlement-preview` and by settle): payers'
+  nets matched to receivers' nets biggest first, ties by entity code, so per entity the legs add up to its net. Each
+  entity's account in the cycle's base currency: IHB current account, else settlement-marked, else transaction, else any
+  leaf account, by account number (deterministic). LEDGER when both are IHB current accounts or their bank account (the
+  shadow `TransactionService.payoutShadow` pays through) is the same physical account; else PAYMENT through
+  `Iso20022OutwardPaymentService.processOutwardPayment` (beneficiary = IBAN, else account number, and BIC of the
+  receiver's physical account; remittance and end-to-end = cycle reference); REFUSED when an account or bank account is
+  missing, or the payer's shadow is another bank's ("payer's account is at another bank; settle it outside netting or
+  through an external-bank instruction"; no MT101). A payment leg debits only the payer: the receiver is credited when
+  the payment comes in, by the inward path. A LEDGER leg must be covered by its payer's account, its earlier ledger legs
+  counted with it: an IHB current account up to its credit headroom (balance + effective credit limit,
+  `PoboEnrolmentService.headroomRefusal`), any other account up to its available balance; otherwise REFUSED with e.g.
+  "MNC-HOLDING's SETTLE-AED-3953 has AED 15.00 available; this leg needs AED 15,000.00". Payment legs are checked by the
+  outward path (funds check in `makePayment`).
+- Cycle states: the outward path books synchronously (COMPLETED in the call), so SETTLING would only ever exist inside
+  one transaction and is not added (no enum value, so no CHECK widening; there is no CHECK on `netting_cycles.status`
+  locally or in the vam-five dump anyway). Rule: every leg books in one transaction or none does. Stale entries, an
+  uncalculated cycle and refused legs are refused before anything posts; a failed payment rolls the attempt back. The
+  cycle stays APPROVED with `settlement_issue` (new nullable column, ddl-auto) saying why, written in its own
+  transaction; no entry, source document or participant is marked settled. Cleared on SETTLED.
+- Also: `settledAtSource` counts a POBO_PAYMENT recharge as settled (posted on the IHB current account, cut over or
+  not), so NET-202602-003 is refused locally too; a SETTLED/CANCELLED cycle can no longer be recalculated (that put its
+  settled entries back in and let it settle twice); populate skips a recharge already in a cycle (how NET-202602-003
+  got RCH-...5266 four times); approve takes the signed-in user (the page sent `approver` as a body to a query
+  parameter: every approve was a 400); Calculate shows on a populated DRAFT (it showed only on OPEN, which nothing sets).
+- Eligibility (a): receivables OPEN, OVERDUE, PARTIAL, COBO_APPROVED; payables APPROVED, POBO_APPROVED, PARTIAL, in
+  `canAddToNetting` and every netting-eligible query; a partly paid invoice nets its outstanding amount.
+- Scoping (c): `netting_cycles.corporate_id` (V62), set on create (required); `/netting/cycles` requires `corporateId`;
+  populate uses the cycle's corporate (refuses another, refuses a cycle with none), takes only invoices and recharges
+  between two of its entities, skips a payable linked to one of its IC receivables (`countedAsReceivable`) and a payable
+  with no group counterparty (PAY-2026-0003 would have failed populate with a NOT NULL violation); add-payable /
+  add-receivable refuse another corporate's cycle; Phase 1's open-cycle offer and add-to-netting use `corporate_id`. The
+  page has a corporate selector; the Payables / Receivables cycle picker passes the page's corporate.
+- Migrations (both folders; checked in scratch schemas from local and the vam-five dump, applied once then a no-op):
+  V61 `netting_entries.source_type` varchar(20) → 30 (INTERCOMPANY_RECEIVABLE is 23 characters: every IC receivable
+  added to a cycle was a 500, locally and on vam-five); V62 adds `corporate_id` and backfills from entries (vam-five:
+  NET-202602-003 → TestMNC; NET-202601-001, NET-202602-001, NET-202602-002 (empty DRAFTs) and NET-202411-ALBN,
+  NET-202412-MERC (PENDING_APPROVAL, entry_count 28 / 42 but no entry rows) stay null and are listed for no one); V63
+  removes NET-202602-003's six POBO_PAYMENT recharge entries (151 x4, 245 x2; guarded on cycle id/ref/DRAFT, entry
+  ids, PENDING, POBO_RECHARGE, recharge ids, amounts, POBO_PAYMENT) and recomputes it: 6 entries / AED 1,094.00 → 0 /
+  0.00, still DRAFT. Same state locally. No other cycle holds entries.
+- TestMNC with its four overdue IC receivables (vam-five data, 13 Nov): gross AED 122,000; HOLDING pays 15,000, MNC-UAE
+  pays 13,000, ABUDHABI receives 28,000, DUBAI nets to zero; both legs on program b110ec8e's AED bank account PA-AED-002.
+  Leg 1 SETTLE-AED-3953 → SETTLE-AED-7523 15,000.00 is REFUSED: "MNC-HOLDING's SETTLE-AED-3953 has AED 15.00 available;
+  this leg needs AED 15,000.00"; leg 2 IHB-MNC-UAE-AED-0001 → SETTLE-AED-7523 13,000.00 is a LEDGER leg (balance 0,
+  credit limit 1,000,000). Settle is refused, nothing posts, the cycle shows the reason. The treasurer funds
+  SETTLE-AED-3953 with at least AED 14,985 (HOLDING's other AED accounts hold 634) and settles again.
+- Phase 3 needs: the legacy-table readers/writers and endpoints as listed in Phase 1; NettingService still injects
+  `IntercompanyTransactionRepository` and has `addTransactionToCycle` (IC transaction rows into cycles), which go with
+  the table; `/settlement/execute` and `/settlement/*`. Retry after a fix is "Settle" again (nothing half-posted).
 
 ### Phase 3 — retire `intercompany_transactions` (D3; R12)
 - [ ] 3.1 Stop writing: POBO/COBO (`createIntercompanyTransactionRecord`), IC services, cut-over, netting; anything still
@@ -111,7 +167,8 @@ Money / correctness first:
             C1/C2/C6/C7 headline + positions from the ledger (who-owes-whom per currency from the IC mirrors, POBO/COBO
             per currency from the IHB accounts' ledger, fees apart), C5 Dubai interest (V59; reversals now take back
             the accrual), C4 MNC-UK IHB currency (V60; one IHB currency per entity, set by its first account).
-            Open: H1–H9, M1–M7, L1–L6; pair Settle removed until H4 (preview/confirm) and its mirror lookup are fixed.
+            Open: H1–H9, M1–M7, L1–L6; pair Settle and `/settle-bilateral` gone (D4); H4's preview/confirm is
+            Netting Cycles' settlement preview (Phase 2).
 - [ ] vam-five scheduler looks off (no sweep since 28 Sep): daily sweeps, the external-sweep 2-day expiry and the
       15-min refresh may never run there. Check `VAM_SCHEDULING_ENABLED` in deploy/oci (.env on the VM).
 - [x] Stale `LegalEntity.ihbCurrentExposure` → every reader uses `IhbExposure` (IHB current accounts' debit balance);
@@ -134,13 +191,24 @@ Money / correctness first:
 - [ ] 12,434 COMMITTED sweep executions (Jan–Sep) from the old EOD settlement, no instruction (local; likely vam-five).
 - [ ] Global (unscoped) endpoints no page calls today: `/ihb/entities`, `/pobo/recharges`, `/pobo/stats`,
       `/intercompany/pobo|cobo|unsettled`, `/settlement/history` — scope or remove (Phase 3 of the IHB/IC plan).
-- [ ] `settleBilateralPosition.findIcReceivableVa` compares an enum to a String (always false) and falls back to the
-      first "receivable" VA — wrong pair possible; Settle withdrawn from the UI, endpoint goes in Phase 2.
+- [x] `settleBilateralPosition.findIcReceivableVa` compares an enum to a String (always false) and falls back to the
+      first "receivable" VA — wrong pair possible. Gone with `/settle-bilateral` (Phase 2, 13 Nov).
 - [x] Recharge approve/reject recorded the header entity code as approver: now the signed-in user, scoped, on the
-      Intercompany page (13 Nov). Open: NET-202602-003 (vam-five, DRAFT) holds six POBO_PAYMENT recharge entries, 151 x4 / 245 x2,
-      for two recharges already settled by the IHB cut-over: settling that cycle would charge them again (no longer
-      offered for adding; Phase 2 refuses its settlement / clears the entries).
+      Intercompany page (13 Nov). NET-202602-003's six POBO_PAYMENT recharge entries removed by V63; settlement refuses
+      any entry settled at its source (Phase 2).
+- [x] Netting ledger legs checked neither funds nor the IHB credit limit: now refused in the settlement plan (available
+      balance, or IHB headroom; cumulative per account), approved by the user 13 Nov.
+- [ ] `ReceivableNettingService.addToNettingCycle` (Receivables page "Add to netting") builds its own entry: source type
+      INVOICE, no `receivable_id`, so settling never marks the receivable NETTED; route it through
+      `NettingService.addReceivableToCycle` (which checks the cycle's corporate).
+- [ ] NET-202411-ALBN / NET-202412-MERC (vam-five, PENDING_APPROVAL): entry_count 28 / 42, no entry or settlement rows,
+      no corporate (V62) so no one sees them; settling one now is refused ("no positions calculated"). Reseed or delete.
+- [ ] Payment legs: "payer at another bank" uses the shadow's `bank_swift` (`isOtherBankShadow`, as sweeps do); a
+      home-bank shadow with no BIC (SHADOW-AED--AED-002 in the dump) would be refused. An IHB current account payer is
+      paid out by treasury's account (in-house route), but the bank check looks at the IHB account's own program shadow.
 - [ ] `IhbInterestAccrual` entity unused: IHB interest has no accrual history (Phase 4.3 of the IHB/IC plan).
+- [ ] Netting Cycles has no way to remove an entry from a cycle; populate takes every eligible item, so one
+      unfundable leg blocks the whole cycle (e.g. TestMNC: MNC-HOLDING's SETTLE-AED-3953 holds AED 15 for a 15,000 leg).
 Statement intake:
 - [ ] Each re-delivery of a file with an unknown account raises a new alert (dedup is per file id).
 - [ ] Multipart intake limited to Spring's 1 MB default; raw body unlimited.

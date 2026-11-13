@@ -219,39 +219,6 @@ public class ReceivableNettingService {
     // SETTLEMENT
     // ========================================================================
 
-    /**
-     * Mark receivable as settled via netting.
-     * Called by NettingService when cycle is executed.
-     */
-    @Transactional
-    public void markNettingSettled(UUID receivableId, String settlementRef) {
-        log.info("Marking receivable {} as netting settled: {}", receivableId, settlementRef);
-        
-        Receivable receivable = receivableRepository.findById(receivableId)
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + receivableId));
-        
-        receivable.markNettingSettled(settlementRef);
-        receivableRepository.save(receivable);
-        
-        log.info("Receivable {} marked as netted with settlement {}", 
-            receivable.getReceivableNumber(), settlementRef);
-    }
-
-    /**
-     * Batch mark all receivables in a cycle as settled.
-     */
-    @Transactional
-    public int markCycleReceivablesSettled(UUID cycleId, String settlementRef) {
-        log.info("Marking all receivables in cycle {} as settled", cycleId);
-        
-        int updated = receivableRepository.markNettingSettledByCycle(
-            cycleId, settlementRef, LocalDateTime.now());
-        
-        log.info("Marked {} receivables as netting settled for cycle {}", updated, cycleId);
-        
-        return updated;
-    }
-
     // ========================================================================
     // ELIGIBILITY MANAGEMENT
     // ========================================================================

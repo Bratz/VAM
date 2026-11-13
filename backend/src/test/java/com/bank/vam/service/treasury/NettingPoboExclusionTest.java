@@ -24,8 +24,10 @@ import static org.mockito.Mockito.when;
 class NettingPoboExclusionTest {
 
     private final IntercompanyRechargeRepository recharges = mock(IntercompanyRechargeRepository.class);
-    private final NettingService service = new NettingService(null, null, null, null, recharges, null, null, null,
-        null, null, mock(FxRateService.class), null);
+    private final com.bank.vam.repository.hierarchy.LegalEntityRepository entities =
+        mock(com.bank.vam.repository.hierarchy.LegalEntityRepository.class);
+    private final NettingService service = new NettingService(null, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
+        null, null, recharges, null, null, null, null, null, mock(FxRateService.class), null, entities, null, null, null, null, null);
 
     private IntercompanyRecharge recharge(IntercompanyRecharge.RechargeType type) {
         IntercompanyRecharge r = IntercompanyRecharge.builder()
@@ -43,8 +45,12 @@ class NettingPoboExclusionTest {
         IntercompanyRecharge manual = recharge(null);
         when(recharges.findAll()).thenReturn(List.of(pobo, manual));
         NettingCycle cycle = new NettingCycle();
+        UUID corporate = UUID.randomUUID();
+        when(entities.findByCorporateIdOrderByHierarchyPath(corporate)).thenReturn(java.util.stream.Stream.of(pobo, manual)
+            .flatMap(r -> java.util.stream.Stream.of(r.getPayerEntityId(), r.getBehalfEntityId()))
+            .map(id -> { var e = new com.bank.vam.entity.hierarchy.LegalEntity(); e.setId(id); return e; }).toList());
 
-        assertThat(service.addPoboRecharges(cycle, UUID.randomUUID(), false)).isEqualTo(1);
+        assertThat(service.addPoboRecharges(cycle, corporate, false)).isEqualTo(1);
         assertThat(cycle.getEntries()).extracting(e -> e.getIntercompanyRechargeId()).containsExactly(manual.getId());
     }
 
@@ -63,7 +69,7 @@ class NettingPoboExclusionTest {
     void aNewDraftCycleTakesARechargeByHandAsTheBulkScanWould() {
         com.bank.vam.repository.treasury.NettingCycleRepository cycles = mock(com.bank.vam.repository.treasury.NettingCycleRepository.class);
         NettingService netting = new NettingService(cycles, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
-            null, null, recharges, null, null, null, null, null, mock(FxRateService.class), null);
+            null, null, recharges, null, null, null, null, null, mock(FxRateService.class), null, null, null, null, null, null, null);
         NettingCycle draft = new NettingCycle(); // createCycle makes DRAFT; nothing ever sets OPEN
         draft.setBaseCurrency("AED");
         UUID id = UUID.randomUUID();
@@ -86,7 +92,7 @@ class NettingPoboExclusionTest {
         var payables = mock(com.bank.vam.repository.payables.PayableRepository.class);
         var receivables = mock(com.bank.vam.repository.receivables.ReceivableRepository.class);
         NettingService netting = new NettingService(null, entries, payables, receivables, recharges, null, null, null,
-            null, null, mock(FxRateService.class), null);
+            null, null, mock(FxRateService.class), null, null, null, null, null, null, null);
         IntercompanyRecharge cutOver = recharge(IntercompanyRecharge.RechargeType.POBO_PAYMENT); // NET-202602-003's case
         cutOver.setStatus(IntercompanyRecharge.RechargeStatus.SETTLED);
         cutOver.setSettlementReference("IHB-POSITION-CUTOVER");

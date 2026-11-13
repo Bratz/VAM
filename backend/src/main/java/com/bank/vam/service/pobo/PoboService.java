@@ -190,21 +190,6 @@ public class PoboService {
     }
 
     /**
-     * Settle recharge via netting.
-     */
-    @Transactional
-    public RechargeResponse settleViaNetting(UUID rechargeId, String nettingReference) {
-        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-
-        recharge.settle(IntercompanyRecharge.SettlementMethod.NETTING, nettingReference);
-        recharge = rechargeRepository.save(recharge);
-        
-        log.info("Settled recharge {} via netting: {}", recharge.getRechargeReference(), nettingReference);
-        return toRechargeResponse(recharge);
-    }
-
-    /**
      * Validate arm's length pricing.
      */
     @Transactional

@@ -29,8 +29,11 @@ class NettingReceiveLegTest {
     private final NettingCycleRepository cycles = mock(NettingCycleRepository.class);
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final TransactionRepository ledger = mock(TransactionRepository.class);
-    private final NettingService service = new NettingService(cycles, null, null, null, null, null, vas, ledger,
-        mock(FeePostingService.class), null, mock(FxRateService.class), new IhbMirrorService(vas, ledger));
+    private final com.bank.vam.service.TransactionService transactions = mock(com.bank.vam.service.TransactionService.class);
+    private final NettingService service = new NettingService(cycles, mock(com.bank.vam.repository.treasury.NettingEntryRepository.class),
+        null, null, null, null, vas, ledger, mock(FeePostingService.class), null, mock(FxRateService.class),
+        new IhbMirrorService(vas, ledger), null, transactions, null, null, null,
+        mock(org.springframework.transaction.PlatformTransactionManager.class));
 
     private VirtualAccount va(String number, UUID owner, String balance) {
         VirtualAccount va = VirtualAccount.builder().vaNumber(number).currencyCode("AED").owningEntityId(owner)
@@ -62,9 +65,12 @@ class NettingReceiveLegTest {
         settlementVa.setSettlementMark(true);
         VirtualAccount ihbCurrent = va("IHB-SUB", sub, "-500");
         ihbCurrent.setIhbParticipant(true);
+        ihbCurrent.setEffectiveCreditLimit(new BigDecimal("1000")); // headroom 500 covers the 300 leg
         ihbCurrent.setMirrorAccountType(MirrorAccountType.IHB_CURRENT);
         ihbCurrent.setIcReceivableVaId(icReceivable.getId());
         when(vas.findAll()).thenReturn(List.of(icReceivable, settlementVa, ihbCurrent));
+        VirtualAccount bank = va("SHADOW-AED", treasury, "0"); // both accounts' program bank account: a ledger leg (D5)
+        when(transactions.payoutShadow(any())).thenReturn(bank);
         when(vas.save(any())).thenAnswer(i -> i.getArgument(0));
         when(ledger.save(any())).thenAnswer(i -> i.getArgument(0));
 

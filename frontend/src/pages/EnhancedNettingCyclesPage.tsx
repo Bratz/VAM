@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, Building2, Filter, Download, BarChart3, Layers, Send, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, Building2, Filter, Download, BarChart3, Layers, Send, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
-import { nettingApi, NettingCycle, corporatesApi, Corporate } from '../services/api';
-import { useUser } from '../context/useUser';
+import { nettingApi, NettingCycle, corporatesApi, Corporate, type NettingSettlementLeg, type NettingSettlementPreview } from '../services/api';
 import { usePermissions } from '../hooks/usePermissions';
 import { TreasuryOnly } from '../components/permissions';
 import { usePageHeaderActions } from '../context/usePageHeader';
@@ -14,6 +14,7 @@ import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
+import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
 // TYPES
@@ -48,17 +49,6 @@ interface NettingPosition {
   currency: string;
 }
 
-interface SettlementInstruction {
-  id: string;
-  fromEntityCode: string;
-  fromEntityName: string;
-  toEntityCode: string;
-  toEntityName: string;
-  amount: number;
-  currency: string;
-  status: string;
-}
-
 // ============================================================================
 // LOADING & ERROR COMPONENTS
 // ============================================================================
@@ -91,18 +81,17 @@ interface CreateCycleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => Promise<void>;
+  /** The page's corporate: a cycle nets one corporate's entities. */
+  corporate?: Corporate;
 }
 
-const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, onSave }) => {
+const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, onSave, corporate }) => {
   const [saving, setSaving] = useState(false);
-  const [corporates, setCorporates] = useState<Corporate[]>([]);
-  const [loadingCorporates, setLoadingCorporates] = useState(true);
   const today = new Date().toISOString().split('T')[0];
   const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const [formData, setFormData] = useState({
     cycleName: '',
-    corporateId: '',
     periodStart: today,
     periodEnd: nextMonth,
     settlementDate: '',
@@ -111,32 +100,11 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
     includePending: false, // Include PENDING recharges for testing
   });
 
-  // Load corporates on mount
-  useEffect(() => {
-    const loadCorporates = async () => {
-      try {
-        const response = await corporatesApi.getAll();
-        if (response.success && response.data) {
-          setCorporates(response.data);
-          if (response.data.length > 0) {
-            setFormData(prev => ({ ...prev, corporateId: response.data[0].id }));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load corporates:', err);
-      } finally {
-        setLoadingCorporates(false);
-      }
-    };
-    if (isOpen) {
-      loadCorporates();
-    }
-  }, [isOpen]);
-
   const handleSubmit = async () => {
+    if (!corporate) return;
     setSaving(true);
     try {
-      await onSave(formData);
+      await onSave({ ...formData, corporateId: corporate.id });
       onClose();
     } finally {
       setSaving(false);
@@ -146,26 +114,9 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create Netting Cycle" size="md">
       <div className="space-y-4">
-        {/* Corporate Picker */}
         <div>
-          <label className="field-label block mb-1">Corporate</label>
-          {loadingCorporates ? (
-            <div className="flex items-center gap-2 py-2 text-neutral-500 dark:text-neutral-400">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Loading corporates...
-            </div>
-          ) : (
-            <select
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500"
-              value={formData.corporateId}
-              onChange={(e) => setFormData({ ...formData, corporateId: e.target.value })}
-            >
-              <option value="">All Corporates</option>
-              {corporates.map(corp => (
-                <option key={corp.id} value={corp.id}>{corp.legalName}</option>
-              ))}
-            </select>
-          )}
+          <p className="field-label mb-1">Corporate</p>
+          <p className="body-strong">{corporate?.legalName ?? 'Select a corporate first'}</p>
         </div>
 
         <div>
@@ -238,9 +189,150 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
       
       <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} disabled={saving || !formData.cycleName}>
+        <Button onClick={handleSubmit} disabled={saving || !formData.cycleName || !corporate}>
           {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           Create Cycle
+        </Button>
+      </div>
+    </Modal>
+  );
+};
+
+// ============================================================================
+// SETTLEMENT LEGS + PREVIEW (spec R10, R11): what settling posts, from the code that posts it
+// ============================================================================
+
+const LEG_KIND: Record<NettingSettlementLeg['kind'], { label: string; variant: 'info' | 'warning' | 'error' }> = {
+  LEDGER: { label: 'Ledger transfer', variant: 'info' },
+  PAYMENT: { label: 'Payment', variant: 'warning' },
+  REFUSED: { label: 'Refused', variant: 'error' },
+};
+
+const SettlementLegs: React.FC<{ legs: NettingSettlementLeg[] }> = ({ legs }) => {
+  if (legs.length === 0) return <p className="body-sm">No money moves: every participant nets to zero.</p>;
+  return (
+    <div className="space-y-3">
+      {legs.map((leg, i) => (
+        <Card key={`${leg.payerEntityId}-${leg.receiverEntityId}-${i}`}>
+          <div className="p-4 space-y-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="body-strong">{leg.payerEntityCode}</p>
+                  <p className="caption">{leg.fromAccount ?? 'no account'}</p>
+                </div>
+                <ArrowRight className="w-5 h-5 text-primary-400" />
+                <div>
+                  <p className="body-strong">{leg.receiverEntityCode}</p>
+                  <p className="caption">{leg.toAccount ?? 'no account'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <p className="stat-value-xs">{formatCurrency(leg.amount, leg.currency)}</p>
+                <Badge variant={LEG_KIND[leg.kind].variant}>{LEG_KIND[leg.kind].label}</Badge>
+              </div>
+            </div>
+            {leg.kind === 'LEDGER' && (
+              <p className="caption">Both accounts sit on the same bank account or are in-house bank accounts: the balances move in the ledger.</p>
+            )}
+            {leg.kind === 'PAYMENT' && (
+              <p className="caption">
+                Outward payment to {leg.beneficiaryAccount}{leg.beneficiaryBic ? ` (${leg.beneficiaryBic})` : ''}; {leg.receiverEntityCode} is credited when it arrives.
+              </p>
+            )}
+            {leg.reason && <p className="body-sm text-error-600 dark:text-error-300">{leg.reason}</p>}
+            {leg.transactionReference && <p className="caption">Booked as {leg.transactionReference}</p>}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+const NET_LABEL: Record<string, string> = { PAY: 'Pays', RECEIVE: 'Receives', NEUTRAL: 'Nets to zero' };
+
+const SettlementPreviewModal: React.FC<{
+  cycle: NettingCycle | null; canSettle: boolean; onClose: () => void; onDone: () => void;
+}> = ({ cycle, canSettle, onClose, onDone }) => {
+  const [preview, setPreview] = useState<NettingSettlementPreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [settling, setSettling] = useState(false);
+
+  useEffect(() => {
+    setPreview(null);
+    setError(null);
+    if (!cycle) return;
+    let current = true;
+    nettingApi.previewSettlement(cycle.id)
+      .then(r => { if (current) setPreview(r.data); })
+      .catch((e: any) => { if (current) setError(e.response?.data?.message || e.message || 'Failed to load the settlement preview'); });
+    return () => { current = false; };
+  }, [cycle]);
+
+  const settle = async () => {
+    if (!cycle) return;
+    setSettling(true);
+    try {
+      const r = await nettingApi.settleCycle(cycle.id);
+      toast.success(`${r.data.cycleReference} settled: ${r.data.legs.length} leg${r.data.legs.length === 1 ? '' : 's'}`);
+    } catch (e: any) {
+      // Nothing was posted; the cycle now carries the reason.
+      toast.error(e.response?.data?.message || e.message || 'Settlement failed');
+    } finally {
+      setSettling(false);
+      onDone();
+      onClose();
+    }
+  };
+
+  return (
+    <Modal isOpen={!!cycle} onClose={onClose} title={`Settle ${cycle?.cycleReference ?? ''}`} size="lg">
+      <div className="space-y-5">
+        {error && <p className="body-sm text-error-600 dark:text-error-300">{error}</p>}
+        {!error && !preview && (
+          <div className="flex items-center gap-2 body-sm"><Loader2 className="w-4 h-4 animate-spin" /> Working out the legs…</div>
+        )}
+        {preview && (
+          <>
+            <div>
+              <h4 className="label mb-2">Per entity ({preview.currency})</h4>
+              <DataTable
+                data={preview.settlements}
+                keyExtractor={(s) => s.id}
+                columns={[
+                  { key: 'entityCode', header: 'Entity', minWidth: 160, render: (_v, s) => <span className="body-strong">{s.entityCode}</span> },
+                  { key: 'settlementDirection', header: 'Position', minWidth: 120, render: (_v, s) => (
+                    <Badge variant={s.settlementDirection === 'PAY' ? 'error' : s.settlementDirection === 'RECEIVE' ? 'success' : 'neutral'} size="sm">
+                      {NET_LABEL[s.settlementDirection] ?? s.settlementDirection}
+                    </Badge>
+                  ) },
+                  { key: 'netPosition', header: 'Net', align: 'right', minWidth: 140, render: (_v, s) => (
+                    <span className="body-strong">{formatCurrency(Math.abs(s.netPosition), preview.currency)}</span>
+                  ) },
+                ]}
+              />
+            </div>
+            <div>
+              <h4 className="label mb-2">Legs</h4>
+              <SettlementLegs legs={preview.legs} />
+            </div>
+            {preview.blockers.length > 0 && (
+              <div className="p-3 rounded-lg bg-error-50 dark:bg-error-500/10 space-y-1">
+                <p className="body-strong text-error-700 dark:text-error-300">This cycle cannot be settled:</p>
+                {preview.blockers.map(b => <p key={b} className="body-sm text-error-700 dark:text-error-300">{b}</p>)}
+              </div>
+            )}
+            {preview.settleable && (
+              <p className="body-sm">Every leg books, or none does: if a payment is refused, nothing is posted and the cycle shows why.</p>
+            )}
+          </>
+        )}
+      </div>
+      <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button onClick={settle} disabled={!preview?.settleable || !canSettle || settling}>
+          {settling && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+          Confirm and settle
         </Button>
       </div>
     </Modal>
@@ -264,7 +356,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
   const [, setLoading] = useState(false);
   const [entries, setEntries] = useState<NettingEntry[]>([]);
   const [positions, setPositions] = useState<NettingPosition[]>([]);
-  const [settlements, setSettlements] = useState<SettlementInstruction[]>([]);
+  const [legs, setLegs] = useState<NettingSettlementLeg[]>([]);
 
   useEffect(() => {
     if (cycle && isOpen) {
@@ -312,31 +404,12 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 currency: cycle.baseCurrency || 'AED',
               })));
 
-              // Create settlement instructions from positions
-              const payingEntities = cycleData.settlements.filter(s => s.settlementDirection === 'PAY');
-              const receivingEntities = cycleData.settlements.filter(s => s.settlementDirection === 'RECEIVE');
-
-              const instructions: SettlementInstruction[] = [];
-              payingEntities.forEach(payer => {
-                receivingEntities.forEach(receiver => {
-                  if (payer.netPosition !== 0) {
-                    instructions.push({
-                      id: `${payer.entityId}-${receiver.entityId}`,
-                      fromEntityCode: payer.entityCode,
-                      fromEntityName: payer.entityName,
-                      toEntityCode: receiver.entityCode,
-                      toEntityName: receiver.entityName,
-                      amount: Math.abs(payer.netPosition),
-                      currency: cycle.baseCurrency || 'AED',
-                      status: payer.settlementStatus === 'SETTLED' ? 'EXECUTED' : 'PENDING',
-                    });
-                  }
-                });
-              });
-              setSettlements(instructions);
+              // The legs settling posts (or posted), from the same computation as the settlement itself.
+              const preview = await nettingApi.previewSettlement(cycle.id);
+              setLegs(preview.data?.legs ?? []);
             } else {
               setPositions([]);
-              setSettlements([]);
+              setLegs([]);
             }
           }
         } catch (err) {
@@ -356,7 +429,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'entries', label: 'Entries', icon: Layers, count: entries.length },
     { id: 'positions', label: 'Positions', icon: Users, count: positions.length },
-    { id: 'settlement', label: 'Settlement', icon: Send, count: settlements.length },
+    { id: 'settlement', label: 'Settlement', icon: Send, count: legs.length },
   ];
 
   return (
@@ -471,13 +544,13 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                   <div className="flex items-center justify-between">
                     <span className="body-sm">With Netting</span>
                     <span className="text-body-sm font-medium text-success-600 dark:text-success-300">
-                      {settlements.length} payments
+                      {legs.length} transfers
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="text-body-sm font-medium">Reduction</span>
                     <span className="text-body-sm font-bold text-success-600 dark:text-success-300">
-                      {positions.length > 0 ? Math.round((1 - settlements.length / positions.length) * 100) : 0}%
+                      {positions.length > 0 ? Math.round((1 - legs.length / positions.length) * 100) : 0}%
                     </span>
                   </div>
                 </div>
@@ -616,52 +689,12 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
       {/* Settlement Tab */}
       {activeTab === 'settlement' && (
         <div className="space-y-4">
-          <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-lg border border-info-200/60">
-            <div className="flex items-center gap-3">
-              <StatusIconBadge tone="info" icon={TrendingUp} />
-              <p className="text-body-sm text-info-800 dark:text-info-300">
-                <strong>{settlements.length}</strong> settlement payments required to clear all positions.
-                This represents a <strong className="text-success-700 dark:text-success-300">{positions.length > 0 ? Math.round((1 - settlements.length / positions.length) * 100) : 0}%</strong> reduction
-                from individual bilateral settlements.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {settlements.map(instruction => (
-              <Card key={instruction.id} hover className="group">
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="error" icon={Building2} />
-                      <div>
-                        <p className="body-strong">{instruction.fromEntityCode}</p>
-                        <p className="caption">{instruction.fromEntityName}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-primary-400" />
-                    <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="success" icon={Building2} />
-                      <div>
-                        <p className="body-strong">{instruction.toEntityCode}</p>
-                        <p className="caption">{instruction.toEntityName}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="stat-value-xs">
-                        {formatCurrency(instruction.amount, instruction.currency)}
-                      </p>
-                    </div>
-                    <Badge variant={instruction.status === 'EXECUTED' ? 'success' : 'warning'}>
-                      {instruction.status}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          {cycle.settlementIssue && (
+            <p className="body-sm text-error-600 dark:text-error-300">Last settlement attempt: {cycle.settlementIssue}</p>
+          )}
+          {positions.length === 0
+            ? <p className="body-sm">Calculate the cycle to see how it settles.</p>
+            : <SettlementLegs legs={legs} />}
         </div>
       )}
     </Modal>
@@ -772,6 +805,13 @@ const CycleCard: React.FC<CycleCardProps> = ({
           </div>
         </div>
 
+        {cycle.settlementIssue && (
+          <div className="mb-4 p-3 rounded-lg bg-error-50 dark:bg-error-500/10 flex gap-2 text-body-sm text-error-700 dark:text-error-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{cycle.settlementIssue}</span>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-2 pt-3 border-t border-edge-subtle">
           {/* DRAFT: Show Populate button */}
@@ -781,8 +821,8 @@ const CycleCard: React.FC<CycleCardProps> = ({
               Populate
             </Button>
           )}
-          {/* OPEN: Show Calculate button */}
-          {cycle.status === 'OPEN' && (
+          {/* A cycle with entries is calculated from DRAFT (nothing ever moves one to OPEN). */}
+          {(cycle.status === 'DRAFT' || cycle.status === 'OPEN') && (cycle.entryCount || 0) > 0 && (
             <Button size="sm" variant="outline" onClick={onCalculate} disabled={isProcessing} className="flex-1">
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4 mr-1" />}
               Calculate
@@ -797,7 +837,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
           {cycle.status === 'APPROVED' && canSettle && (
             <Button size="sm" onClick={onSettle} disabled={isProcessing} className="flex-1">
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4 mr-1" />}
-              Settle
+              Settle…
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={onViewDetails} className="opacity-70 group-hover:opacity-100 transition-opacity">
@@ -814,11 +854,11 @@ const CycleCard: React.FC<CycleCardProps> = ({
 // ============================================================================
 
 const EnhancedNettingCyclesPage: React.FC = () => {
-  // User context and permissions
-  const { currentEntity } = useUser();
   const { canApproveNettingCycle, canSettleNettingCycle, isTreasury } = usePermissions();
-  const approverName = currentEntity?.entityCode || currentEntity?.entityName || 'System';
 
+  const [corporates, setCorporates] = useState<Corporate[]>([]);
+  const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  const [settlingCycle, setSettlingCycle] = useState<NettingCycle | null>(null);
   const [cycles, setCycles] = useState<NettingCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -828,20 +868,33 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   const [processingCycleId, setProcessingCycleId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
+  useEffect(() => {
+    corporatesApi.getAll(0, 100)
+      .then(r => {
+        const corps = r.data || [];
+        setCorporates(corps);
+        setSelectedCorporateId(prev => prev || corps[0]?.id || '');
+        if (corps.length === 0) setLoading(false);
+      })
+      .catch(() => { setCorporates([]); setLoading(false); });
+  }, []);
+
+  // The selected corporate's cycles only (spec R7).
   const fetchCycles = useCallback(async () => {
+    if (!selectedCorporateId) return;
     try {
       setLoading(true);
       setError(null);
-      const response = await nettingApi.getAllCycles();
+      const response = await nettingApi.getAllCycles(selectedCorporateId);
       if (response.success) {
         setCycles(response.data || []);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load netting cycles');
+      setError(err.response?.data?.message || err.message || 'Failed to load netting cycles');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCorporateId]);
 
   useEffect(() => {
     fetchCycles();
@@ -854,6 +907,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     let current = true;
     nettingApi.getCycleById(params.cycleId).then(r => {
       if (current && r.success) {
+        if (r.data.corporateId) setSelectedCorporateId(r.data.corporateId);
         setSelectedCycle(r.data);
         setShowDetailModal(true);
       }
@@ -871,7 +925,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
         try {
           const populateResponse = await nettingApi.populateCycle(
             createdCycle.id,
-            data.corporateId || undefined,
+            data.corporateId,
             data.includePending || false
           );
           if (populateResponse.success) {
@@ -888,45 +942,22 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     }
   };
 
-  const handleCalculate = async (cycleId: string) => {
+  // One wrapper for the cycle actions: a refusal from the API is shown, not swallowed.
+  const act = async (cycleId: string, action: () => Promise<unknown>) => {
     setProcessingCycleId(cycleId);
     try {
-      await nettingApi.calculateNetting(cycleId);
-      await fetchCycles();
+      await action();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || e.message || 'The action failed');
     } finally {
+      await fetchCycles();
       setProcessingCycleId(null);
     }
   };
-
-  const handleApprove = async (cycleId: string) => {
-    setProcessingCycleId(cycleId);
-    try {
-      await nettingApi.approveCycle(cycleId, approverName);
-      await fetchCycles();
-    } finally {
-      setProcessingCycleId(null);
-    }
-  };
-
-  const handleSettle = async (cycleId: string) => {
-    setProcessingCycleId(cycleId);
-    try {
-      await nettingApi.settleCycle(cycleId);
-      await fetchCycles();
-    } finally {
-      setProcessingCycleId(null);
-    }
-  };
-
-  const handlePopulate = async (cycleId: string) => {
-    setProcessingCycleId(cycleId);
-    try {
-      await nettingApi.populateCycle(cycleId, undefined, false);
-      await fetchCycles();
-    } finally {
-      setProcessingCycleId(null);
-    }
-  };
+  const handleCalculate = (cycleId: string) => act(cycleId, () => nettingApi.calculateNetting(cycleId));
+  const handleApprove = (cycleId: string) => act(cycleId, () => nettingApi.approveCycle(cycleId));
+  // The cycle's own corporate decides what populate takes.
+  const handlePopulate = (cycleId: string) => act(cycleId, () => nettingApi.populateCycle(cycleId, undefined, false));
 
   const handleViewDetails = (cycle: NettingCycle) => {
     setSelectedCycle(cycle);
@@ -967,10 +998,22 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     [fetchCycles]
   );
 
+  const scope = (
+    <ScopeSelector
+      mode="corporate-only"
+      requireSelection
+      corporates={corporates}
+      selectedCorporateId={selectedCorporateId}
+      onCorporateChange={setSelectedCorporateId}
+      loading={loading}
+    />
+  );
+
   if (loading) {
     return (
       <div className="space-y-4">
         <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
+        {scope}
         <LoadingSpinner />
       </div>
     );
@@ -980,6 +1023,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     return (
       <div className="space-y-4">
         <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
+        {scope}
         <ErrorMessage message={error} onRetry={fetchCycles} />
       </div>
     );
@@ -988,6 +1032,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   return (
     <Page>
       {/* Title + Quick Actions migrated to Aperture Layout header. */}
+      {scope}
 
       {/* Stats Cards */}
       <StatStrip>
@@ -1042,7 +1087,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
                 onPopulate={() => handlePopulate(cycle.id)}
                 onCalculate={() => handleCalculate(cycle.id)}
                 onApprove={() => handleApprove(cycle.id)}
-                onSettle={() => handleSettle(cycle.id)}
+                onSettle={() => setSettlingCycle(cycle)}
                 isProcessing={processingCycleId === cycle.id}
                 canPopulate={isTreasury}
                 canApprove={canApproveNettingCycle}
@@ -1057,7 +1102,14 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       <CreateCycleModal 
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
-        onSave={handleCreate} 
+        onSave={handleCreate}
+        corporate={corporates.find(c => c.id === selectedCorporateId)} 
+      />
+      <SettlementPreviewModal
+        cycle={settlingCycle}
+        canSettle={canSettleNettingCycle}
+        onClose={() => setSettlingCycle(null)}
+        onDone={fetchCycles}
       />
       <CycleDetailModal
         isOpen={showDetailModal}

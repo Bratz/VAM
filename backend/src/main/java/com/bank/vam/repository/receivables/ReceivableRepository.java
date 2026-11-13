@@ -702,32 +702,6 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
                                @Param("status") NettingStatus nettingStatus);
 
     /**
-     * Mark netting settled.
-     */
-    @Modifying
-    @Query("UPDATE Receivable r SET r.nettingStatus = 'SETTLED', " +
-           "r.nettingSettlementRef = :settlementRef, r.nettingSettledAt = :settledAt, " +
-           "r.status = 'NETTED', r.paymentStatus = 'COMPLETE', " +
-           "r.paidAmount = r.netAmount, r.outstandingAmount = 0, " +
-           "r.updatedAt = CURRENT_TIMESTAMP WHERE r.id = :id")
-    void markNettingSettled(@Param("id") UUID id,
-                            @Param("settlementRef") String settlementRef,
-                            @Param("settledAt") LocalDateTime settledAt);
-
-    /**
-     * Batch mark netting settled for a cycle.
-     */
-    @Modifying
-    @Query("UPDATE Receivable r SET r.nettingStatus = 'SETTLED', " +
-           "r.nettingSettlementRef = :settlementRef, r.nettingSettledAt = :settledAt, " +
-           "r.status = 'NETTED', r.paymentStatus = 'COMPLETE', " +
-           "r.paidAmount = r.netAmount, r.outstandingAmount = 0, " +
-           "r.updatedAt = CURRENT_TIMESTAMP WHERE r.nettingCycleId = :cycleId")
-    int markNettingSettledByCycle(@Param("cycleId") UUID nettingCycleId,
-                                   @Param("settlementRef") String settlementRef,
-                                   @Param("settledAt") LocalDateTime settledAt);
-
-    /**
      * Remove from netting cycle.
      */
     @Modifying
@@ -868,7 +842,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
      * 
      * Criteria:
      * - Intercompany = true OR nettingEligible = true
-     * - Status = OPEN or COBO_APPROVED
+     * - Status = OPEN, OVERDUE, PARTIAL or COBO_APPROVED
      * - nettingCycleId is null
      * - nettingStatus = NOT_INCLUDED
      */
@@ -876,7 +850,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         SELECT r FROM Receivable r 
         WHERE r.corporateId = :corporateId
         AND (r.isIntercompany = true OR r.nettingEligible = true)
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         AND r.nettingCycleId IS NULL
         AND r.nettingStatus = 'NOT_INCLUDED'
         ORDER BY r.dueDate ASC
@@ -891,7 +865,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         WHERE r.corporateId = :corporateId
         AND r.isIntercompany = true
         AND r.intercompanyEntityId = :counterpartyEntityId
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         AND r.nettingCycleId IS NULL
         ORDER BY r.dueDate ASC
         """)
@@ -913,7 +887,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         SELECT r FROM Receivable r 
         WHERE r.owningEntityId = :entityId
         AND (r.isIntercompany = true OR r.nettingEligible = true)
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         AND r.nettingCycleId IS NULL
         ORDER BY r.dueDate ASC
         """)
@@ -926,7 +900,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         SELECT COUNT(r) FROM Receivable r 
         WHERE r.corporateId = :corporateId
         AND (r.isIntercompany = true OR r.nettingEligible = true)
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         AND r.nettingCycleId IS NULL
         """)
     long countNettingEligibleReceivables(@Param("corporateId") UUID corporateId);
@@ -938,7 +912,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         SELECT COALESCE(SUM(r.netAmount), 0) FROM Receivable r 
         WHERE r.corporateId = :corporateId
         AND (r.isIntercompany = true OR r.nettingEligible = true)
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         AND r.nettingCycleId IS NULL
         """)
     BigDecimal sumNettingEligibleReceivables(@Param("corporateId") UUID corporateId);
@@ -963,7 +937,7 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
         AND r.owningEntityId = :owningEntityId
         AND r.intercompanyEntityId = :counterpartyEntityId
         AND r.isIntercompany = true
-        AND r.status IN ('OPEN', 'COBO_APPROVED')
+        AND r.status IN ('OPEN', 'OVERDUE', 'PARTIAL', 'COBO_APPROVED')
         ORDER BY r.dueDate ASC
         """)
     List<Receivable> findByEntityPair(

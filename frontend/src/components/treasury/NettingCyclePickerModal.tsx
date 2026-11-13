@@ -15,6 +15,8 @@ interface NettingCyclePickerItem {
 interface NettingCyclePickerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** The corporate whose cycles are offered: a netting cycle nets one corporate's entities. */
+  corporateId: string;
   items: NettingCyclePickerItem[];
   onConfirm: (cycleId: string) => Promise<void>;
 }
@@ -24,7 +26,7 @@ interface NettingCyclePickerModalProps {
 const OPEN_STATUSES = new Set(['DRAFT', 'OPEN']);
 
 export const NettingCyclePickerModal: React.FC<NettingCyclePickerModalProps> = ({
-  isOpen, onClose, items, onConfirm,
+  isOpen, onClose, corporateId, items, onConfirm,
 }) => {
   const [cycles, setCycles] = useState<NettingCycle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -36,15 +38,19 @@ export const NettingCyclePickerModal: React.FC<NettingCyclePickerModalProps> = (
     if (!isOpen) return;
     setSelectedCycleId('');
     setError('');
+    if (!corporateId) {
+      setCycles([]);
+      return;
+    }
     setLoading(true);
-    nettingApi.getAllCycles()
+    nettingApi.getAllCycles(corporateId)
       .then(res => {
         const all = Array.isArray(res.data) ? res.data : [];
         setCycles(all.filter(c => OPEN_STATUSES.has(c.status)));
       })
       .catch(err => setError(err.message || 'Failed to load netting cycles'))
       .finally(() => setLoading(false));
-  }, [isOpen]);
+  }, [isOpen, corporateId]);
 
   const totalAmount = items.reduce((s, i) => s + i.amount, 0);
   const currencyCode = items[0]?.currencyCode || 'AED';

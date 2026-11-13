@@ -810,8 +810,9 @@ public class Receivable extends BaseEntity {
      * Check if this receivable can be added to a netting cycle.
      */
     public boolean canAddToNetting() {
-        boolean isEligibleStatus = status == ReceivableStatus.OPEN 
-            || status == ReceivableStatus.COBO_APPROVED;
+        // Still owed: open, overdue or partly paid (an IC invoice settles only through netting, D6), or COBO-approved.
+        boolean isEligibleStatus = status == ReceivableStatus.OPEN || status == ReceivableStatus.OVERDUE
+            || status == ReceivableStatus.PARTIAL || status == ReceivableStatus.COBO_APPROVED;
         boolean isEligible = Boolean.TRUE.equals(nettingEligible) 
             || Boolean.TRUE.equals(isIntercompany);
         boolean notAlreadyInNetting = nettingCycleId == null 

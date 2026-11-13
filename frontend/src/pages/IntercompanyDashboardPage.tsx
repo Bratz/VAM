@@ -246,7 +246,7 @@ const NettingModal: React.FC<{ corporateId: string; pair: IcPairPosition | null;
           {eligibility.reason && <p className="body-sm text-warning-700 dark:text-warning-300">{eligibility.reason}</p>}
           {!eligibility.reason && eligibility.items.length === 0 && (
             <p className="body-sm">Nothing between these entities can go into a netting cycle now: netting takes an approved
-              payable, a receivable that is open and not yet overdue, and an approved recharge not already in a cycle.</p>
+              payable, a receivable still owed (open, overdue or partly paid), and an approved recharge not already in a cycle.</p>
           )}
           {eligibility.items.length > 0 && (
             <div className="space-y-2">

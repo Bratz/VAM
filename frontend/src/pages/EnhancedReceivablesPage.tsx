@@ -1510,6 +1510,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       {/* Netting Cycle Picker Modal */}
       <NettingCyclePickerModal
         isOpen={showNettingPicker}
+        corporateId={selectedCorporateId}
         onClose={() => { setShowNettingPicker(false); setNettingInvoice(null); }}
         items={nettingInvoice ? [{
           id: nettingInvoice.id,

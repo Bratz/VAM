@@ -13,8 +13,6 @@ import com.bank.vam.service.intercompany.IntercompanyTransactionService.EntityPa
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.BilateralPositionDetail;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.NettingEligibilityResult;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.AddToNettingResult;
-import com.bank.vam.service.intercompany.IntercompanyTransactionService.BilateralSettlementRequest;
-import com.bank.vam.service.intercompany.IntercompanyTransactionService.BilateralSettlementResult;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.TransferPricingValidation;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.IntercompanyPositionSummary;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.SubsidiaryIntercompanyPosition;
@@ -163,20 +161,6 @@ public class IntercompanyController {
         log.info("Adding to netting cycle: {}", cycleId);
         AddToNettingResult result = transactionService.addToNettingCycle(requireCorporate(corporateId), cycleId,
             request.getTransactionIds(), request.getRechargeIds(), request.getPayableIds(), request.getReceivableIds());
-        return ResponseEntity.ok(ApiResponse.success(result));
-    }
-
-    // ========================================================================
-    // PHASE 6 TASK 6.5: SETTLEMENT
-    // ========================================================================
-
-    @PostMapping("/settle-bilateral")
-    @Operation(summary = "Settle bilateral position", 
-        description = "Settle all outstanding transactions between two entities")
-    public ResponseEntity<ApiResponse<BilateralSettlementResult>> settleBilateral(
-            @RequestBody BilateralSettlementRequest request) {
-        log.info("Settling bilateral: {} <-> {}", request.getEntity1Id(), request.getEntity2Id());
-        BilateralSettlementResult result = transactionService.settleBilateralPosition(request);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 

@@ -48,7 +48,7 @@ class IntercompanyCorporateScopeTest {
 
     private final IntercompanyService intercompany = new IntercompanyService(icRows, entities, vas, ledger, null, null);
     private final IntercompanyTransactionService icTransactions = new IntercompanyTransactionService(icRows, recharges,
-        entities, null, null, null, null, vas, ledger, null, null, null);
+        entities, null, null, null, null, vas, null, null);
     private final IntercompanyController controller = new IntercompanyController(intercompany, icTransactions, null);
     private final PoboController pobo = new PoboController(
         new PoboService(recharges, entities, null, null), mock(PoboCutoverService.class));

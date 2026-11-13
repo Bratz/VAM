@@ -130,35 +130,6 @@ public class IntercompanyRechargeReceivableService {
             .build();
     }
 
-    /**
-     * Settle COBO recharge (mark as completed after fund transfer).
-     */
-    @Transactional
-    public CoboRechargeResult settleCoboRecharge(UUID rechargeId, String transactionRef) {
-        log.info("Settling COBO recharge {}", rechargeId);
-        
-        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-            .orElseThrow(() -> new IllegalArgumentException("Recharge not found: " + rechargeId));
-        
-        // Use the entity's settle method
-        recharge.settle(IntercompanyRecharge.SettlementMethod.DIRECT_PAYMENT, transactionRef);
-        recharge = rechargeRepository.save(recharge);
-        
-        log.info("COBO recharge {} settled with ref {}", recharge.getRechargeReference(), transactionRef);
-        
-        return CoboRechargeResult.builder()
-            .rechargeId(recharge.getId())
-            .rechargeNumber(recharge.getRechargeReference())
-            .receivableId(recharge.getOriginalPayableId()) // Reused for receivable ID
-            .amount(recharge.getRechargeAmount())
-            .currencyCode(recharge.getCurrencyCode())
-            .status(recharge.getStatus().name())
-            .settlementRef(transactionRef)
-            .settledAt(recharge.getSettlementDate() != null ? 
-                recharge.getSettlementDate().atStartOfDay() : LocalDateTime.now())
-            .build();
-    }
-
     // ========================================================================
     // INTERCOMPANY RECEIVABLE CREATION
     // ========================================================================

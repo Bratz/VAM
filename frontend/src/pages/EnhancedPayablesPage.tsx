@@ -1185,6 +1185,7 @@ const EnhancedPayablesPage: React.FC = () => {
       {/* Netting Cycle Picker Modal */}
       <NettingCyclePickerModal
         isOpen={showNettingPicker}
+        corporateId={selectedCorporateId}
         onClose={() => { setShowNettingPicker(false); setNettingPayable(null); }}
         items={nettingPayable ? [{
           id: nettingPayable.id,

@@ -65,6 +65,17 @@ public class NettingCycle extends BaseEntity {
     @Column(name = "settled_at")
     private LocalDateTime settledAt;
 
+    /** The corporate whose entities the cycle nets; null only on cycles made before it was recorded (V61). */
+    @Column(name = "corporate_id")
+    private java.util.UUID corporateId;
+
+    /**
+     * Why the last settlement attempt was refused or failed (a refused leg, a failed payment, entries settled at their
+     * source); nothing of that attempt was posted. Cleared when the cycle settles.
+     */
+    @Column(name = "settlement_issue", length = 1000)
+    private String settlementIssue;
+
     @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<NettingEntry> entries = new HashSet<>();
 

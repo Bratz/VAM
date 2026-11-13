@@ -1,7 +1,6 @@
 package com.bank.vam.service.intercompany;
 
 import com.bank.vam.dto.intercompany.IntercompanyDto.*;
-import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.intercompany.IntercompanyTransaction;
@@ -12,7 +11,6 @@ import com.bank.vam.entity.treasury.NettingCycle;
 import com.bank.vam.entity.treasury.NettingEntry;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
-import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
@@ -21,7 +19,6 @@ import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
 import com.bank.vam.repository.treasury.NettingCycleRepository;
 import com.bank.vam.repository.treasury.NettingEntryRepository;
-import com.bank.vam.service.treasury.IhbMirrorService;
 import com.bank.vam.service.treasury.NettingService;
 import lombok.Builder;
 import lombok.Data;
@@ -50,7 +47,6 @@ import java.util.stream.Collectors;
  * - COBO (Collect On Behalf Of) transactions  
  * - Intercompany recharges from payables/receivables
  * - Netting cycle integration
- * - Bilateral settlement
  * - Intercompany position tracking
  * 
  * Phase 6 Tasks:
@@ -78,13 +74,10 @@ public class IntercompanyTransactionService {
     private final NettingCycleRepository nettingCycleRepository;
     private final NettingEntryRepository nettingEntryRepository;
     private final VirtualAccountRepository virtualAccountRepository;
-    private final TransactionRepository ledgerTransactionRepository;
     private final NettingService nettingService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
-    private final IhbMirrorService ihbMirrors;
 
     private static final AtomicLong transactionSequence = new AtomicLong(1);
-    private static final AtomicLong settlementSequence = new AtomicLong(1);
 
     // ========================================================================
     // PHASE 6 TASK 6.1: UNIFIED INTERCOMPANY TRANSACTION CREATION
@@ -457,7 +450,7 @@ public class IntercompanyTransactionService {
             .entity2Id(entity2Id)
             .reason(reason)
             .items(items)
-            .openCycles(openCyclesOf(group.keySet()))
+            .openCycles(openCyclesOf(corporateId))
             .build();
     }
 
@@ -476,14 +469,10 @@ public class IntercompanyTransactionService {
      * The corporate's cycles still taking entries, leaving out any holding an entry whose source was already settled
      * outside netting (NettingService.entriesSettledAtSource): adding to it would hand the treasurer a cycle that pays
      * twice.
-     * ponytail: a netting cycle has no corporate; it counts as the corporate's when every entry is between its
-     * entities, so an empty cycle is offered to every corporate. Add netting_cycles.corporate_id when Netting Cycles
-     * is scoped (it lists every corporate's cycles today).
      */
-    private List<OpenCycle> openCyclesOf(Set<UUID> entityIds) {
-        return nettingCycleRepository.findAll().stream()
+    private List<OpenCycle> openCyclesOf(UUID corporateId) {
+        return nettingCycleRepository.findByCorporateIdOrderByCreatedAtDesc(corporateId).stream()
             .filter(NettingCycle::acceptsEntries)
-            .filter(c -> ofGroup(c, entityIds))
             .filter(c -> nettingService.entriesSettledAtSource(c.getId()).isEmpty())
             .sorted(Comparator.comparing(NettingCycle::getCycleReference))
             .map(c -> new OpenCycle(c.getId(), c.getCycleReference(), c.getCycleName(), c.getStatus().name(),
@@ -491,507 +480,10 @@ public class IntercompanyTransactionService {
             .collect(Collectors.toList());
     }
 
-    private boolean ofGroup(NettingCycle cycle, Set<UUID> entityIds) {
-        return nettingEntryRepository.findByCycleId(cycle.getId()).stream()
-            .allMatch(e -> entityIds.contains(e.getPayerEntityId()) && entityIds.contains(e.getPayeeEntityId()));
-    }
-
-    // ========================================================================
-    // PHASE 6 TASK 6.5: INTERCOMPANY SETTLEMENT
-    // ========================================================================
-
-    /**
-     * Settle bilateral position between two entities with proper accounting.
-     *
-     * For a fully IHB-configured pair (both IC Receivable and IC Payable VAs
-     * resolvable), the real VA balances are authoritative and get netted directly
-     * against each other first, with only the remainder settled via the IHB Current
-     * Account - see the two-step breakdown below. position.getNetPosition() is used
-     * only as a fallback for pairs without both real VAs, preserving the original
-     * behavior for subsidiaries never onboarded with 6-leg IHB.
-     *
-     * STEP 1 - Direct IC offset (only when both VAs exist and both carry a balance):
-     * | IC Receivable VA | debit  | the smaller of the two balances |
-     * | IC Payable VA     | debit  | the smaller of the two balances |
-     *
-     * STEP 2 - Settle whatever net remains via the IHB Current Account:
-     * | Subsidiary owes Treasury net (POBO-dominant) | Treasury owes subsidiary net (COBO-dominant) |
-     * |-----------------------------------------------|-----------------------------------------------|
-     * | debit IC Receivable VA                        | debit IC Payable VA                          |
-     * | credit IHB Current Account                    | debit IHB Current Account                    |
-     */
-    @Transactional
-    public BilateralSettlementResult settleBilateralPosition(BilateralSettlementRequest request) {
-        UUID entity1Id = request.getEntity1Id();
-        UUID entity2Id = request.getEntity2Id();
-
-        log.info("Settling bilateral position between {} and {} with full accounting", entity1Id, entity2Id);
-
-        // Used for the amount fallback below, and to gather the transaction/recharge
-        // lists that get marked SETTLED regardless of which amount source is used.
-        BilateralPositionDetail position = getBilateralPosition(entity1Id, entity2Id);
-
-        // Resolve real IC ledger VAs directly. Both finders key off whichever entity
-        // ID is actually treasury vs. subsidiary, not off "creditor"/"debtor" - COBO
-        // activity can make the subsidiary the net creditor, and we don't know yet
-        // at this point which of the two entities that would even be.
-        VirtualAccount icReceivableVa = findIcReceivableVa(entity1Id, entity2Id);
-        VirtualAccount icPayableVa = findIcPayableVa(entity1Id, entity2Id);
-        boolean useVaBalances = icReceivableVa != null && icPayableVa != null;
-
-        BigDecimal settlementAmount;
-        UUID netCreditorId;
-        UUID netDebtorId;
-        BigDecimal offsettable = BigDecimal.ZERO;
-
-        if (useVaBalances) {
-            // The real VA balances are authoritative for a fully IHB-configured pair.
-            // Using position.getNetPosition() here would risk double counting: the
-            // same COBO/POBO activity that moved these VA balances (via
-            // makeIhb6LegPoboPayment/makeIhb6LegCoboCollection) is ALSO folded into
-            // that figure via the IntercompanyRecharge rows created alongside it.
-            BigDecimal receivableBal = icReceivableVa.getCurrentBalance();
-            BigDecimal payableBal = icPayableVa.getCurrentBalance();
-            offsettable = receivableBal.min(payableBal).max(BigDecimal.ZERO);
-            BigDecimal net = receivableBal.subtract(payableBal);
-            settlementAmount = net.abs();
-
-            UUID treasuryEntityId = icReceivableVa.getOwningEntityId();
-            UUID subsidiaryEntityId = entity1Id.equals(treasuryEntityId) ? entity2Id : entity1Id;
-            if (net.signum() >= 0) {
-                netCreditorId = treasuryEntityId;
-                netDebtorId = subsidiaryEntityId;
-            } else {
-                netCreditorId = subsidiaryEntityId;
-                netDebtorId = treasuryEntityId;
-            }
-        } else {
-            settlementAmount = position.getNetPosition();
-            netCreditorId = position.getNetCreditorId();
-            netDebtorId = position.getNetDebtorId();
-        }
-
-        if (settlementAmount.compareTo(BigDecimal.ZERO) == 0 && offsettable.compareTo(BigDecimal.ZERO) == 0) {
-            throw new BusinessException("No outstanding position to settle");
-        }
-
-        // Get entities
-        LegalEntity creditorEntity = legalEntityRepository.findById(netCreditorId)
-            .orElseThrow(() -> new ResourceNotFoundException("Creditor entity not found"));
-        LegalEntity debtorEntity = legalEntityRepository.findById(netDebtorId)
-            .orElseThrow(() -> new ResourceNotFoundException("Debtor entity not found"));
-
-        // Generate settlement reference
-        String settlementRef = generateSettlementReference();
-        String correlationId = "SETTLE-" + UUID.randomUUID().toString().substring(0, 8);
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate valueDate = LocalDate.now();
-
-        // Get transactions to settle
-        List<IntercompanyTransaction> transactionsToSettle = transactionRepository.findAll().stream()
-            .filter(tx -> (tx.getPayingEntityId().equals(entity1Id) && tx.getBehalfEntityId().equals(entity2Id)) ||
-                         (tx.getPayingEntityId().equals(entity2Id) && tx.getBehalfEntityId().equals(entity1Id)))
-            .filter(tx -> tx.getStatus() == IntercompanyTransaction.TransactionStatus.PROCESSED)
-            .collect(Collectors.toList());
-
-        // Get recharges to settle
-        List<IntercompanyRecharge> rechargesToSettle = rechargeRepository.findAll().stream()
-            .filter(r -> (r.getPayerEntityId().equals(entity1Id) && r.getBehalfEntityId().equals(entity2Id)) ||
-                        (r.getPayerEntityId().equals(entity2Id) && r.getBehalfEntityId().equals(entity1Id)))
-            .filter(r -> r.getStatus() == IntercompanyRecharge.RechargeStatus.APPROVED ||
-                        r.getStatus() == IntercompanyRecharge.RechargeStatus.RECHARGED)
-            .collect(Collectors.toList());
-
-        List<Transaction> settlementLedgerEntries = new ArrayList<>();
-
-        // =====================================================================
-        // STEP 1: Net IC Receivable directly against IC Payable (COBO vs POBO)
-        // =====================================================================
-        if (offsettable.signum() > 0) {
-            BigDecimal recvBefore = icReceivableVa.getCurrentBalance();
-            icReceivableVa.setCurrentBalance(recvBefore.subtract(offsettable));
-            virtualAccountRepository.save(icReceivableVa);
-
-            Transaction offsetRecv = Transaction.builder()
-                .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                .corporateId(icReceivableVa.getCorporateId())
-                .legalEntityId(icReceivableVa.getOwningEntityId())
-                .vaId(icReceivableVa.getId())
-                .programId(icReceivableVa.getProgramId())
-                .amount(offsettable)
-                .currencyCode(icReceivableVa.getCurrencyCode())
-                .balanceBefore(recvBefore)
-                .balanceAfter(icReceivableVa.getCurrentBalance())
-                .transactionDate(now)
-                .valueDate(valueDate)
-                .referenceNumber(generateLedgerReference("ICSETT"))
-                .description("IC Settlement - Receivable netted against IC Payable")
-                .channel("IC_SETTLEMENT")
-                .correlationId(correlationId)
-                .counterpartyVaId(icPayableVa.getId())
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("Settlement offset - IC Receivable debit (netted against IC Payable)")
-                .build();
-            offsetRecv = ledgerTransactionRepository.save(offsetRecv);
-            settlementLedgerEntries.add(offsetRecv);
-
-            BigDecimal payBefore = icPayableVa.getCurrentBalance();
-            icPayableVa.setCurrentBalance(payBefore.subtract(offsettable));
-            virtualAccountRepository.save(icPayableVa);
-
-            Transaction offsetPay = Transaction.builder()
-                .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                .corporateId(icPayableVa.getCorporateId())
-                .legalEntityId(icPayableVa.getOwningEntityId())
-                .vaId(icPayableVa.getId())
-                .programId(icPayableVa.getProgramId())
-                .amount(offsettable)
-                .currencyCode(icPayableVa.getCurrencyCode())
-                .balanceBefore(payBefore)
-                .balanceAfter(icPayableVa.getCurrentBalance())
-                .transactionDate(now)
-                .valueDate(valueDate)
-                .referenceNumber(generateLedgerReference("ICSETT"))
-                .description("IC Settlement - Payable netted against IC Receivable")
-                .channel("IC_SETTLEMENT")
-                .correlationId(correlationId)
-                .counterpartyVaId(icReceivableVa.getId())
-                .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("Settlement offset - IC Payable debit (netted against IC Receivable)")
-                .build();
-            offsetPay = ledgerTransactionRepository.save(offsetPay);
-            settlementLedgerEntries.add(offsetPay);
-
-            log.info("IC offset applied: {} netted between IC Receivable {} and IC Payable {}",
-                offsettable, icReceivableVa.getVaNumber(), icPayableVa.getVaNumber());
-        }
-
-        // =====================================================================
-        // STEP 2: Settle whatever net amount remains via the IHB Current Account
-        // =====================================================================
-        if (settlementAmount.signum() > 0) {
-            // Direction of the remaining leg: true = subsidiary still owes Treasury
-            // (today's original behavior); false = Treasury still owes the
-            // subsidiary (only reachable via the VA-balance path, COBO-dominant).
-            boolean subsidiaryOwesTreasury = !useVaBalances || netCreditorId.equals(icReceivableVa.getOwningEntityId());
-
-            VirtualAccount ihbCurrentAccountVa = useVaBalances
-                ? virtualAccountRepository.findById(icReceivableVa.getMirrorsVaId()).orElse(null)
-                : findIhbCurrentAccountVa(debtorEntity.getId(), creditorEntity.getId());
-
-            if (subsidiaryOwesTreasury && icReceivableVa != null && ihbCurrentAccountVa != null) {
-                log.info("Creating settlement accounting entries: IC Receivable VA={}, IHB Current Account={}",
-                    icReceivableVa.getVaNumber(), ihbCurrentAccountVa.getVaNumber());
-
-                // LEG 1: DEBIT IC Receivable VA (decrease Treasury's receivable)
-                BigDecimal icReceivableBalanceBefore = icReceivableVa.getCurrentBalance();
-                icReceivableVa.setCurrentBalance(icReceivableBalanceBefore.subtract(settlementAmount));
-                virtualAccountRepository.save(icReceivableVa);
-
-                Transaction leg1 = Transaction.builder()
-                    .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                    .corporateId(creditorEntity.getCorporateId())
-                    .legalEntityId(creditorEntity.getId())
-                    .vaId(icReceivableVa.getId())
-                    .programId(icReceivableVa.getProgramId())
-                    .amount(settlementAmount)
-                    .currencyCode(icReceivableVa.getCurrencyCode())
-                    .balanceBefore(icReceivableBalanceBefore)
-                    .balanceAfter(icReceivableVa.getCurrentBalance())
-                    .transactionDate(now)
-                    .valueDate(valueDate)
-                    .referenceNumber(generateLedgerReference("ICSETT"))
-                    .description("IC Settlement - Receivable cleared from " + debtorEntity.getEntityCode())
-                    .channel("IC_SETTLEMENT")
-                    .correlationId(correlationId)
-                    .counterpartyVaId(ihbCurrentAccountVa.getId())
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .processingNotes("Settlement leg 1 of 2 - IC Receivable debit")
-                    .build();
-                leg1 = ledgerTransactionRepository.save(leg1);
-                settlementLedgerEntries.add(leg1);
-
-                // LEG 2: CREDIT IHB Current Account (restore subsidiary's position)
-                BigDecimal ihbCurrentBalanceBefore = ihbCurrentAccountVa.getCurrentBalance();
-                ihbCurrentAccountVa.setCurrentBalance(ihbCurrentBalanceBefore.add(settlementAmount));
-                // Update available balance considering credit limit
-                if (ihbCurrentAccountVa.getEffectiveCreditLimit() != null) {
-                    ihbCurrentAccountVa.setAvailableBalance(
-                        ihbCurrentAccountVa.getCurrentBalance().add(ihbCurrentAccountVa.getEffectiveCreditLimit()));
-                }
-                virtualAccountRepository.save(ihbCurrentAccountVa);
-
-                Transaction leg2 = Transaction.builder()
-                    .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                    .corporateId(debtorEntity.getCorporateId())
-                    .legalEntityId(debtorEntity.getId())
-                    .vaId(ihbCurrentAccountVa.getId())
-                    .programId(ihbCurrentAccountVa.getProgramId())
-                    .amount(settlementAmount)
-                    .currencyCode(ihbCurrentAccountVa.getCurrencyCode())
-                    .balanceBefore(ihbCurrentBalanceBefore)
-                    .balanceAfter(ihbCurrentAccountVa.getCurrentBalance())
-                    .transactionDate(now)
-                    .valueDate(valueDate)
-                    .referenceNumber(generateLedgerReference("ICSETT"))
-                    .description("IC Settlement - Payable cleared to " + creditorEntity.getEntityCode())
-                    .channel("IC_SETTLEMENT")
-                    .correlationId(correlationId)
-                    .counterpartyVaId(icReceivableVa.getId())
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .processingNotes("Settlement leg 2 of 2 - IHB Current Account credit")
-                    .build();
-                leg2 = ledgerTransactionRepository.save(leg2);
-                settlementLedgerEntries.add(leg2);
-                ihbMirrors.syncIhbMirrors(ihbCurrentAccountVa, "IC settlement " + settlementRef, correlationId);
-
-                log.info("Settlement accounting completed: IC Receivable {} → {}, IHB Current {} → {}",
-                    icReceivableBalanceBefore, icReceivableVa.getCurrentBalance(),
-                    ihbCurrentBalanceBefore, ihbCurrentAccountVa.getCurrentBalance());
-            } else if (!subsidiaryOwesTreasury && icPayableVa != null && ihbCurrentAccountVa != null) {
-                // Mirror of the above: Treasury nets owe the subsidiary (COBO activity
-                // dominates). Settling means Treasury's obligation clears (debit IC
-                // Payable) and the subsidiary's internal claim clears with it (debit
-                // IHB Current Account) - the same "this is now resolved by real cash"
-                // meaning as the credit above, just on the opposite side of the ledger.
-                log.info("Creating settlement accounting entries (payable-side): IC Payable VA={}, IHB Current Account={}",
-                    icPayableVa.getVaNumber(), ihbCurrentAccountVa.getVaNumber());
-
-                BigDecimal icPayableBalanceBefore = icPayableVa.getCurrentBalance();
-                icPayableVa.setCurrentBalance(icPayableBalanceBefore.subtract(settlementAmount));
-                virtualAccountRepository.save(icPayableVa);
-
-                Transaction leg1 = Transaction.builder()
-                    .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                    .corporateId(debtorEntity.getCorporateId())
-                    .legalEntityId(debtorEntity.getId())
-                    .vaId(icPayableVa.getId())
-                    .programId(icPayableVa.getProgramId())
-                    .amount(settlementAmount)
-                    .currencyCode(icPayableVa.getCurrencyCode())
-                    .balanceBefore(icPayableBalanceBefore)
-                    .balanceAfter(icPayableVa.getCurrentBalance())
-                    .transactionDate(now)
-                    .valueDate(valueDate)
-                    .referenceNumber(generateLedgerReference("ICSETT"))
-                    .description("IC Settlement - Payable cleared to " + creditorEntity.getEntityCode())
-                    .channel("IC_SETTLEMENT")
-                    .correlationId(correlationId)
-                    .counterpartyVaId(ihbCurrentAccountVa.getId())
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .processingNotes("Settlement leg 1 of 2 - IC Payable debit")
-                    .build();
-                leg1 = ledgerTransactionRepository.save(leg1);
-                settlementLedgerEntries.add(leg1);
-
-                BigDecimal ihbCurrentBalanceBefore = ihbCurrentAccountVa.getCurrentBalance();
-                ihbCurrentAccountVa.setCurrentBalance(ihbCurrentBalanceBefore.subtract(settlementAmount));
-                if (ihbCurrentAccountVa.getEffectiveCreditLimit() != null) {
-                    ihbCurrentAccountVa.setAvailableBalance(
-                        ihbCurrentAccountVa.getCurrentBalance().add(ihbCurrentAccountVa.getEffectiveCreditLimit()));
-                }
-                virtualAccountRepository.save(ihbCurrentAccountVa);
-
-                Transaction leg2 = Transaction.builder()
-                    .movementType(Transaction.MovementType.IC_SETTLEMENT)
-                    .corporateId(creditorEntity.getCorporateId())
-                    .legalEntityId(creditorEntity.getId())
-                    .vaId(ihbCurrentAccountVa.getId())
-                    .programId(ihbCurrentAccountVa.getProgramId())
-                    .amount(settlementAmount)
-                    .currencyCode(ihbCurrentAccountVa.getCurrencyCode())
-                    .balanceBefore(ihbCurrentBalanceBefore)
-                    .balanceAfter(ihbCurrentAccountVa.getCurrentBalance())
-                    .transactionDate(now)
-                    .valueDate(valueDate)
-                    .referenceNumber(generateLedgerReference("ICSETT"))
-                    .description("IC Settlement - Receivable cleared from " + debtorEntity.getEntityCode())
-                    .channel("IC_SETTLEMENT")
-                    .correlationId(correlationId)
-                    .counterpartyVaId(icPayableVa.getId())
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .processingNotes("Settlement leg 2 of 2 - IHB Current Account debit")
-                    .build();
-                leg2 = ledgerTransactionRepository.save(leg2);
-                settlementLedgerEntries.add(leg2);
-                ihbMirrors.syncIhbMirrors(ihbCurrentAccountVa, "IC settlement " + settlementRef, correlationId);
-
-                log.info("Settlement accounting completed (payable-side): IC Payable {} → {}, IHB Current {} → {}",
-                    icPayableBalanceBefore, icPayableVa.getCurrentBalance(),
-                    ihbCurrentBalanceBefore, ihbCurrentAccountVa.getCurrentBalance());
-            } else {
-                log.warn("Could not find VAs for settlement accounting - IC Receivable: {}, IC Payable: {}, IHB Current: {}",
-                    icReceivableVa != null, icPayableVa != null, ihbCurrentAccountVa != null);
-            }
-        }
-
-        // =====================================================================
-        // UPDATE INTERCOMPANY TRANSACTION STATUSES
-        // =====================================================================
-
-        int transactionsSettled = 0;
-        for (IntercompanyTransaction tx : transactionsToSettle) {
-            tx.setStatus(IntercompanyTransaction.TransactionStatus.SETTLED);
-            tx.setSettlementRef(settlementRef);
-            tx.setSettledAt(now);
-            tx.setSettledBy(request.getSettledBy());
-            transactionRepository.save(tx);
-            transactionsSettled++;
-        }
-
-        // Update recharge statuses
-        int rechargesSettled = 0;
-        for (IntercompanyRecharge recharge : rechargesToSettle) {
-            recharge.settle(
-                request.getSettlementMethod() != null
-                    ? IntercompanyRecharge.SettlementMethod.valueOf(request.getSettlementMethod())
-                    : IntercompanyRecharge.SettlementMethod.DIRECT_PAYMENT,
-                settlementRef
-            );
-            rechargeRepository.save(recharge);
-            rechargesSettled++;
-        }
-
-        // Create settlement record in IntercompanyTransaction for audit
-        createSettlementRecord(creditorEntity, debtorEntity, settlementAmount, settlementRef, correlationId);
-
-        log.info("Bilateral settlement {} completed with accounting: {} IC txns, {} recharges, {} ledger entries",
-            settlementRef, transactionsSettled, rechargesSettled, settlementLedgerEntries.size());
-
-        return BilateralSettlementResult.builder()
-            .settlementRef(settlementRef)
-            .entity1Id(entity1Id)
-            .entity2Id(entity2Id)
-            .netAmount(settlementAmount)
-            .netCreditorId(netCreditorId)
-            .netDebtorId(netDebtorId)
-            .transactionsSettled(transactionsSettled)
-            .rechargesSettled(rechargesSettled)
-            .settlementMethod(request.getSettlementMethod())
-            .settledAt(now)
-            .settledBy(request.getSettledBy())
-            .build();
-    }
-
-    /**
-     * Find IC Receivable VA for a creditor entity tracking receivables from a debtor.
-     */
-    private VirtualAccount findIcReceivableVa(UUID creditorEntityId, UUID debtorEntityId) {
-        // Look for VA with category INTERCOMPANY that tracks receivables
-        // First try to find by owning entity and counterparty
-        return virtualAccountRepository.findAll().stream()
-            .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(creditorEntityId))
-            .filter(va -> "INTERCOMPANY".equals(va.getAccountCategory()) ||
-                         (va.getVaName() != null && va.getVaName().toLowerCase().contains("receivable")))
-            .findFirst()
-            .orElseGet(() -> {
-                // Fallback: find any IC Receivable VA for the creditor
-                return virtualAccountRepository.findAll().stream()
-                    .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(creditorEntityId))
-                    .filter(va -> va.getIcReceivableVaId() != null)
-                    .map(va -> virtualAccountRepository.findById(va.getIcReceivableVaId()).orElse(null))
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-            });
-    }
-
-    /**
-     * Find IC Payable VA tracking Treasury's obligation to a subsidiary (COBO
-     * counterpart of {@link #findIcReceivableVa}). Like findIcReceivableVa, both
-     * strategies key off the SAME (first) parameter — the primary strategy finds it
-     * when that entity IS treasury (owns the named "IC Payable - ..." VA), the
-     * fallback when it's the subsidiary (owns the IHB Current Account that links
-     * forward to the real IC Payable VA via icPayableVaId) — so callers don't need
-     * to know in advance which of the two entities is which.
-     */
-    private VirtualAccount findIcPayableVa(UUID entityId, UUID counterpartyEntityId) {
-        return virtualAccountRepository.findAll().stream()
-            .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(entityId))
-            .filter(va -> va.getVaName() != null && va.getVaName().toLowerCase().contains("payable"))
-            .findFirst()
-            .orElseGet(() -> {
-                // Fallback: this entity owns the IHB Current Account that links to it
-                return virtualAccountRepository.findAll().stream()
-                    .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(entityId))
-                    .filter(va -> va.getIcPayableVaId() != null)
-                    .map(va -> virtualAccountRepository.findById(va.getIcPayableVaId()).orElse(null))
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-            });
-    }
-
-    /**
-     * Find IHB Current Account VA for a debtor entity.
-     */
-    private VirtualAccount findIhbCurrentAccountVa(UUID debtorEntityId, UUID creditorEntityId) {
-        // Look for IHB Current Account (ihbParticipant=true) for the debtor entity
-        return virtualAccountRepository.findAll().stream()
-            .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(debtorEntityId))
-            .filter(va -> Boolean.TRUE.equals(va.getIhbParticipant()))
-            .findFirst()
-            .orElseGet(() -> {
-                // Fallback: find any VA for the debtor with negative balance (indicating IHB debt)
-                return virtualAccountRepository.findAll().stream()
-                    .filter(va -> va.getOwningEntityId() != null && va.getOwningEntityId().equals(debtorEntityId))
-                    .filter(va -> va.getCurrentBalance() != null &&
-                                 va.getCurrentBalance().compareTo(BigDecimal.ZERO) < 0)
-                    .findFirst()
-                    .orElse(null);
-            });
-    }
-
-    /**
-     * Create a settlement record for audit trail.
-     */
-    private void createSettlementRecord(LegalEntity creditor, LegalEntity debtor,
-                                        BigDecimal amount, String settlementRef, String correlationId) {
-        try {
-            IntercompanyTransaction settlementRecord = IntercompanyTransaction.builder()
-                .transactionRef(settlementRef)
-                .transactionType(IntercompanyTransaction.TransactionType.SETTLEMENT)
-                .status(IntercompanyTransaction.TransactionStatus.SETTLED)
-                .payingEntityId(debtor.getId())
-                .payingEntityCode(debtor.getEntityCode())
-                .payingEntityName(debtor.getEntityName())
-                .behalfEntityId(creditor.getId())
-                .behalfEntityCode(creditor.getEntityCode())
-                .behalfEntityName(creditor.getEntityName())
-                .amount(amount)
-                .currencyCode("AED")
-                .netAmount(amount)
-                .originalReference(correlationId)
-                .originalReferenceType("BILATERAL_SETTLEMENT")
-                .processedAt(LocalDateTime.now())
-                .settledAt(LocalDateTime.now())
-                .settlementRef(settlementRef)
-                .description("Bilateral settlement: " + debtor.getEntityCode() + " → " + creditor.getEntityCode())
-                .createdBy("SYSTEM")
-                .build();
-
-            transactionRepository.save(settlementRecord);
-            log.info("Created settlement record {} for {} → {}",
-                settlementRef, debtor.getEntityCode(), creditor.getEntityCode());
-        } catch (Exception e) {
-            log.warn("Failed to create settlement record: {}", e.getMessage());
-        }
-    }
-
-    private String generateSettlementReference() {
-        String date = LocalDate.now().toString().replace("-", "");
-        return String.format("SETTLE-%s-%06d", date, settlementSequence.getAndIncrement());
-    }
-
-    private String generateLedgerReference(String prefix) {
-        String timestamp = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        return prefix + "-" + timestamp + "-" + String.format("%04d", (int)(Math.random() * 10000));
-    }
-
     /**
      * Add the corporate's IC items to one of its netting cycles. Entry creation stays with {@link NettingService}, the
      * canonical owner of {@link NettingEntry} construction. Everything is checked before anything is added: the cycle
-     * takes entries and holds no other corporate's, and each item is between two of the corporate's entities and still
+     * takes entries and is the corporate's, and each item is between two of the corporate's entities and still
      * nettable (a payable linked to a receivable is netted as the receivable).
      */
     @Transactional
@@ -1003,8 +495,8 @@ public class IntercompanyTransactionService {
         if (!cycle.acceptsEntries()) {
             throw new BusinessException("Netting cycle is not open for additions");
         }
-        if (!ofGroup(cycle, group)) {
-            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " holds another corporate's entries");
+        if (!corporateId.equals(cycle.getCorporateId())) {
+            throw new BusinessException("Netting cycle " + cycle.getCycleReference() + " is not this corporate's");
         }
         List<String> stale = nettingService.entriesSettledAtSource(cycleId);
         if (!stale.isEmpty()) {
@@ -1356,8 +848,7 @@ public class IntercompanyTransactionService {
     /**
      * Per-subsidiary intercompany position, sourced directly from the real IC
      * Receivable / IC Payable VA balances - not from summing IntercompanyTransaction/
-     * IntercompanyRecharge rows, which settleBilateralPosition() no longer trusts as
-     * the source of truth for exactly this reason (see its javadoc). One row per
+     * IntercompanyRecharge rows, which are not the source of truth for it. One row per
      * (subsidiary, currency): a subsidiary with multiple IHB Current Accounts in
      * different currencies gets one row per currency, matching how every other
      * FX-honest breakdown on this dashboard refuses to fabricate a cross-currency sum.
@@ -1451,32 +942,6 @@ public class IntercompanyTransactionService {
                               BigDecimal amount, String currency) {}
 
     public record OpenCycle(UUID id, String cycleReference, String cycleName, String status, String baseCurrency) {}
-
-    @Data
-    @Builder
-    public static class BilateralSettlementRequest {
-        private UUID entity1Id;
-        private UUID entity2Id;
-        private String settlementMethod;
-        private String settledBy;
-        private String notes;
-    }
-
-    @Data
-    @Builder
-    public static class BilateralSettlementResult {
-        private String settlementRef;
-        private UUID entity1Id;
-        private UUID entity2Id;
-        private BigDecimal netAmount;
-        private UUID netCreditorId;
-        private UUID netDebtorId;
-        private int transactionsSettled;
-        private int rechargesSettled;
-        private String settlementMethod;
-        private LocalDateTime settledAt;
-        private String settledBy;
-    }
 
     @Data
     @Builder

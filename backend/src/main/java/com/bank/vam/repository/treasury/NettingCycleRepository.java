@@ -16,6 +16,8 @@ import java.util.UUID;
 public interface NettingCycleRepository extends JpaRepository<NettingCycle, UUID> {
     
     Optional<NettingCycle> findByCycleReference(String cycleReference);
+
+    List<NettingCycle> findByCorporateIdOrderByCreatedAtDesc(UUID corporateId);
     
     @Query("SELECT c FROM NettingCycle c LEFT JOIN FETCH c.entries LEFT JOIN FETCH c.settlements WHERE c.id = :id")
     Optional<NettingCycle> findByIdWithEntries(@Param("id") UUID id);

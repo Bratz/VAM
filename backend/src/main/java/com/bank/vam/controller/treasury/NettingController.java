@@ -1,7 +1,9 @@
 package com.bank.vam.controller.treasury;
 
+import com.bank.vam.config.CurrentUser;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.NettingDto;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.service.treasury.NettingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,9 +23,11 @@ public class NettingController {
     private final NettingService nettingService;
 
     @GetMapping("/cycles")
-    @Operation(summary = "Get all netting cycles")
-    public ResponseEntity<ApiResponse<List<NettingDto.CycleResponse>>> getAllCycles() {
-        return ResponseEntity.ok(ApiResponse.success(nettingService.getAllCycles()));
+    @Operation(summary = "The corporate's netting cycles")
+    public ResponseEntity<ApiResponse<List<NettingDto.CycleResponse>>> getAllCycles(
+            @RequestParam(required = false) UUID corporateId) {
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+        return ResponseEntity.ok(ApiResponse.success(nettingService.getAllCycles(corporateId)));
     }
 
     @GetMapping("/cycles/{id}")
@@ -62,10 +66,15 @@ public class NettingController {
     }
 
     @PostMapping("/cycles/{id}/approve")
-    @Operation(summary = "Approve netting cycle")
-    public ResponseEntity<ApiResponse<NettingDto.CycleResponse>> approveCycle(
-            @PathVariable UUID id, @RequestParam String approver) {
-        return ResponseEntity.ok(ApiResponse.success(nettingService.approveCycle(id, approver), "Cycle approved"));
+    @Operation(summary = "Approve netting cycle (the approver is the signed-in user)")
+    public ResponseEntity<ApiResponse<NettingDto.CycleResponse>> approveCycle(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(nettingService.approveCycle(id, CurrentUser.name()), "Cycle approved"));
+    }
+
+    @GetMapping("/cycles/{id}/settlement-preview")
+    @Operation(summary = "What settling would post: per entity net, legs (ledger transfer, payment or refused), blockers")
+    public ResponseEntity<ApiResponse<NettingDto.SettlementPreview>> previewSettlement(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(nettingService.previewSettlement(id)));
     }
 
     @PostMapping("/cycles/{id}/settle")

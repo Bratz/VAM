@@ -106,7 +106,9 @@ public class NettingDto {
         private LocalDateTime approvedAt;
         private LocalDateTime settledAt;
         private LocalDateTime createdAt;
-        
+        private UUID corporateId;
+        private String settlementIssue;
+
         // Phase 4: Entry breakdown by direction
         private Integer payableEntryCount;
         private Integer receivableEntryCount;
@@ -224,6 +226,59 @@ public class NettingDto {
         private BigDecimal totalPaid;
         private BigDecimal totalReceived;
         private Integer documentsUpdated;
+        private List<SettlementLeg> legs;
+    }
+
+    /** How a leg settles (spec D5 / R10). */
+    public enum LegKind {
+        /** Both accounts are IHB current accounts, or sit on the same bank account: balances move in the ledger. */
+        LEDGER,
+        /** An outward payment of the amount from the payer's account to the receiver's bank account. */
+        PAYMENT,
+        /** Cannot be settled through netting; {@code reason} says why. */
+        REFUSED
+    }
+
+    /** One payer paying one receiver part or all of their nets, in the cycle's base currency. */
+    @Data
+    public static class SettlementLeg {
+        private UUID payerEntityId;
+        private String payerEntityCode;
+        private String payerEntityName;
+        private UUID receiverEntityId;
+        private String receiverEntityCode;
+        private String receiverEntityName;
+        private BigDecimal amount;
+        private String currency;
+        private LegKind kind;
+        private UUID fromVaId;
+        private String fromAccount;
+        private UUID toVaId;
+        private String toAccount;
+        /** PAYMENT: the receiver's bank account (IBAN, else account number) and its bank's BIC. */
+        private String beneficiaryAccount;
+        private String beneficiaryBic;
+        private String reason;
+        /** After settlement: the ledger row or the payment's transaction reference. */
+        private String transactionReference;
+    }
+
+    /**
+     * What settling the cycle would post, computed by the code that posts it: per entity net, the legs, and what blocks
+     * it (entries settled at their source, refused legs). {@code settleable} only when approved and nothing blocks.
+     */
+    @Data
+    public static class SettlementPreview {
+        private UUID cycleId;
+        private String cycleReference;
+        private CycleStatus status;
+        private String currency;
+        private List<SettlementResponse> settlements;
+        private List<SettlementLeg> legs;
+        private List<String> staleEntries;
+        private List<String> blockers;
+        private boolean settleable;
+        private String settlementIssue;
     }
     
     /**

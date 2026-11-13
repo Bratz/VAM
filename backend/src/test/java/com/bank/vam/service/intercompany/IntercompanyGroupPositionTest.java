@@ -61,7 +61,7 @@ class IntercompanyGroupPositionTest {
     private final MarketProfileProperties market = mock(MarketProfileProperties.class);
 
     private final IntercompanyTransactionService icTransactions = new IntercompanyTransactionService(icRows, recharges,
-        entities, payables, receivables, cycles, entries, vas, mock(TransactionRepository.class), netting, market, null);
+        entities, payables, receivables, cycles, entries, vas, netting, market);
     private final IntercompanyGroupPositionService service = new IntercompanyGroupPositionService(icTransactions,
         entities, vas, payables, receivables, recharges, fx, market);
     private final IntercompanyController controller = new IntercompanyController(null, icTransactions, service);
@@ -267,12 +267,9 @@ class IntercompanyGroupPositionTest {
             recharge("RCH-3", RechargeType.POBO_PAYMENT, RechargeStatus.APPROVED, "151")));
         NettingCycle mine = cycle("NET-202611-001", NettingCycle.CycleStatus.DRAFT); // nothing ever sets OPEN
         NettingCycle theirs = cycle("NET-202611-002", NettingCycle.CycleStatus.DRAFT);
+        theirs.setCorporateId(helios); // a cycle is its corporate's (V62), whatever it holds
         NettingCycle settled = cycle("NET-202610-001", NettingCycle.CycleStatus.SETTLED);
-        NettingEntry heliosEntry = new NettingEntry();
-        heliosEntry.setPayerEntityId(heliosHq.getId());
-        heliosEntry.setPayeeEntityId(UUID.randomUUID());
-        when(entries.findByCycleId(theirs.getId())).thenReturn(List.of(heliosEntry));
-        when(cycles.findAll()).thenReturn(List.of(mine, theirs, settled));
+        when(cycles.findByCorporateIdOrderByCreatedAtDesc(mnc)).thenReturn(List.of(mine, settled));
         when(recharges.findById(manual.getId())).thenReturn(Optional.of(manual));
         when(recharges.findById(alreadyInACycle.getId())).thenReturn(Optional.of(alreadyInACycle));
 
@@ -297,9 +294,9 @@ class IntercompanyGroupPositionTest {
         verify(netting).addRechargeToCycle(mine.getId(), manual);
 
         assertThatThrownBy(() -> controller.addToNettingCycle(theirs.getId(), mnc, add))
-            .isInstanceOf(BusinessException.class).hasMessageContaining("another corporate");
+            .isInstanceOf(BusinessException.class).hasMessageContaining("not this corporate's");
         assertThatThrownBy(() -> controller.addToNettingCycle(mine.getId(), helios, add))
-            .isInstanceOf(BusinessException.class).hasMessageContaining("not between two entities of this corporate");
+            .isInstanceOf(BusinessException.class).hasMessageContaining("is not this corporate's");
         IntercompanyController.AddToNettingRequest again = new IntercompanyController.AddToNettingRequest();
         again.setRechargeIds(List.of(alreadyInACycle.getId()));
         assertThatThrownBy(() -> controller.addToNettingCycle(mine.getId(), mnc, again))
@@ -317,7 +314,7 @@ class IntercompanyGroupPositionTest {
         when(recharges.findById(manual.getId())).thenReturn(Optional.of(manual));
         NettingCycle clean = cycle("NET-202602-002", NettingCycle.CycleStatus.DRAFT);
         NettingCycle stale = cycle("NET-202602-003", NettingCycle.CycleStatus.DRAFT); // vam-five: cut-over-settled POBO
-        when(cycles.findAll()).thenReturn(List.of(clean, stale));
+        when(cycles.findByCorporateIdOrderByCreatedAtDesc(mnc)).thenReturn(List.of(clean, stale));
         when(netting.entriesSettledAtSource(stale.getId()))
             .thenReturn(List.of("ENT-000101 (RCH-IHBPOBO-1770051223508-5266)", "ENT-000102 (RCH-IHBPOBO-1770391620201-5585)"));
 
@@ -448,6 +445,7 @@ class IntercompanyGroupPositionTest {
         c.setCycleReference(reference);
         c.setCycleName(reference);
         c.setStatus(status);
+        c.setCorporateId(mnc);
         when(cycles.findById(c.getId())).thenReturn(Optional.of(c));
         return c;
     }

@@ -1085,14 +1085,6 @@ public class PayablesService {
         return payableRepository.removeFromNettingCycle(nettingCycleId);
     }
 
-    /**
-     * Mark payables as settled via netting.
-     */
-    @Transactional
-    public int markNettingSettled(UUID nettingCycleId, String settlementRef) {
-        return payableRepository.markNettingSettled(nettingCycleId, settlementRef, LocalDateTime.now());
-    }
-
     // ========================================================================
     // APPROVAL WORKFLOW
     // ========================================================================

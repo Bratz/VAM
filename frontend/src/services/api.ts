@@ -1567,8 +1567,44 @@ export interface NettingCycle {
   approvedAt?: string;
   settledAt?: string;
   createdAt: string;
+  corporateId?: string;
+  /** Why the last settlement attempt was refused or failed; nothing of it was posted. */
+  settlementIssue?: string;
   entries?: NettingEntryResponse[];
   settlements?: NettingSettlementResponse[];
+}
+
+/** One payer paying one receiver, in the cycle's currency: a ledger transfer, an outward payment, or refused. */
+export interface NettingSettlementLeg {
+  payerEntityId: string;
+  payerEntityCode: string;
+  payerEntityName?: string;
+  receiverEntityId: string;
+  receiverEntityCode: string;
+  receiverEntityName?: string;
+  amount: number;
+  currency: string;
+  kind: 'LEDGER' | 'PAYMENT' | 'REFUSED';
+  fromAccount?: string;
+  toAccount?: string;
+  beneficiaryAccount?: string;
+  beneficiaryBic?: string;
+  reason?: string;
+  transactionReference?: string;
+}
+
+/** What settling would post, computed by the code that posts it. */
+export interface NettingSettlementPreview {
+  cycleId: string;
+  cycleReference: string;
+  status: string;
+  currency: string;
+  settlements: NettingSettlementResponse[];
+  legs: NettingSettlementLeg[];
+  staleEntries: string[];
+  blockers: string[];
+  settleable: boolean;
+  settlementIssue?: string;
 }
 
 interface PopulateCycleResponse {
@@ -1585,7 +1621,8 @@ interface PopulateCycleResponse {
 }
 
 export const nettingApi = {
-  getAllCycles: () => apiClient.get<ApiResponse<NettingCycle[]>>('/netting/cycles').then(r => r.data),
+  getAllCycles: (corporateId: string) =>
+    apiClient.get<ApiResponse<NettingCycle[]>>('/netting/cycles', { params: { corporateId } }).then(r => r.data),
   getCycleById: (id: string) => apiClient.get<ApiResponse<NettingCycle>>(`/netting/cycles/${id}`).then(r => r.data),
   createCycle: (data: any) => apiClient.post<ApiResponse<NettingCycle>>('/netting/cycles', data).then(r => r.data),
   populateCycle: (cycleId: string, corporateId?: string, includePending?: boolean) => {
@@ -1597,8 +1634,12 @@ export const nettingApi = {
   },
   addEntry: (cycleId: string, data: any) => apiClient.post<ApiResponse<any>>(`/netting/cycles/${cycleId}/entries`, data).then(r => r.data),
   calculateNetting: (cycleId: string) => apiClient.post<ApiResponse<any>>(`/netting/cycles/${cycleId}/calculate`).then(r => r.data),
-  approveCycle: (cycleId: string, approver: string) => apiClient.post<ApiResponse<NettingCycle>>(`/netting/cycles/${cycleId}/approve`, { approver }).then(r => r.data),
-  settleCycle: (cycleId: string) => apiClient.post<ApiResponse<NettingCycle>>(`/netting/cycles/${cycleId}/settle`).then(r => r.data),
+  // The approver is the signed-in user (the API used to ask for a query parameter this sent as a body: a 400).
+  approveCycle: (cycleId: string) => apiClient.post<ApiResponse<NettingCycle>>(`/netting/cycles/${cycleId}/approve`).then(r => r.data),
+  previewSettlement: (cycleId: string) =>
+    apiClient.get<ApiResponse<NettingSettlementPreview>>(`/netting/cycles/${cycleId}/settlement-preview`).then(r => r.data),
+  settleCycle: (cycleId: string) =>
+    apiClient.post<ApiResponse<{ cycleReference: string; legs: NettingSettlementLeg[]; totalSettled: number }>>(`/netting/cycles/${cycleId}/settle`).then(r => r.data),
 };
 
 // ============================================================================

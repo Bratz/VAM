@@ -341,13 +341,6 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
     int updateNettingStatusByCycle(@Param("cycleId") UUID nettingCycleId, @Param("status") NettingStatus status);
     
     /**
-     * Bulk mark payables as settled via netting.
-     */
-    @Modifying
-    @Query("UPDATE Payable p SET p.nettingStatus = 'SETTLED', p.nettingSettlementRef = :settlementRef, p.nettingSettledAt = :settledAt, p.status = 'NETTED', p.paymentStatus = 'PAID', p.paidAmount = p.netAmount, p.outstandingAmount = 0 WHERE p.nettingCycleId = :cycleId AND p.nettingStatus = 'INCLUDED'")
-    int markNettingSettled(@Param("cycleId") UUID nettingCycleId, @Param("settlementRef") String settlementRef, @Param("settledAt") LocalDateTime settledAt);
-    
-    /**
      * Remove payables from a cancelled netting cycle.
      */
     @Modifying
@@ -470,7 +463,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
      * 
      * Criteria:
      * - Intercompany = true OR nettingEligible = true
-     * - Status = APPROVED or POBO_APPROVED
+     * - Status = APPROVED, POBO_APPROVED or PARTIAL
      * - nettingCycleId is null
      * - nettingStatus = NOT_INCLUDED
      */
@@ -478,7 +471,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
         SELECT p FROM Payable p 
         WHERE p.corporateId = :corporateId
         AND (p.isIntercompany = true OR p.nettingEligible = true)
-        AND p.status IN ('APPROVED', 'POBO_APPROVED')
+        AND p.status IN ('APPROVED', 'POBO_APPROVED', 'PARTIAL')
         AND p.nettingCycleId IS NULL
         AND p.nettingStatus = 'NOT_INCLUDED'
         ORDER BY p.dueDate ASC
@@ -493,7 +486,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
         WHERE p.corporateId = :corporateId
         AND p.isIntercompany = true
         AND p.counterpartyEntityId = :counterpartyEntityId
-        AND p.status IN ('APPROVED', 'POBO_APPROVED')
+        AND p.status IN ('APPROVED', 'POBO_APPROVED', 'PARTIAL')
         AND p.nettingCycleId IS NULL
         ORDER BY p.dueDate ASC
         """)
@@ -517,7 +510,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
         SELECT p FROM Payable p 
         WHERE p.owningEntityId = :entityId
         AND (p.isIntercompany = true OR p.nettingEligible = true)
-        AND p.status IN ('APPROVED', 'POBO_APPROVED')
+        AND p.status IN ('APPROVED', 'POBO_APPROVED', 'PARTIAL')
         AND p.nettingCycleId IS NULL
         ORDER BY p.dueDate ASC
         """)
@@ -530,7 +523,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
         SELECT COUNT(p) FROM Payable p 
         WHERE p.corporateId = :corporateId
         AND (p.isIntercompany = true OR p.nettingEligible = true)
-        AND p.status IN ('APPROVED', 'POBO_APPROVED')
+        AND p.status IN ('APPROVED', 'POBO_APPROVED', 'PARTIAL')
         AND p.nettingCycleId IS NULL
         """)
     long countNettingEligiblePayables(@Param("corporateId") UUID corporateId);
@@ -542,7 +535,7 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
         SELECT COALESCE(SUM(p.netAmount), 0) FROM Payable p 
         WHERE p.corporateId = :corporateId
         AND (p.isIntercompany = true OR p.nettingEligible = true)
-        AND p.status IN ('APPROVED', 'POBO_APPROVED')
+        AND p.status IN ('APPROVED', 'POBO_APPROVED', 'PARTIAL')
         AND p.nettingCycleId IS NULL
         """)
     BigDecimal sumNettingEligiblePayables(@Param("corporateId") UUID corporateId);

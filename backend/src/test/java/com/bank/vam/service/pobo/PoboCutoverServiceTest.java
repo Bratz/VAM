@@ -232,7 +232,7 @@ class PoboCutoverServiceTest {
         IntercompanyTransactionService ic = new IntercompanyTransactionService(icRecords, recharges, entities, payables,
             mock(com.bank.vam.repository.receivables.ReceivableRepository.class),
             mock(com.bank.vam.repository.treasury.NettingCycleRepository.class),
-            mock(com.bank.vam.repository.treasury.NettingEntryRepository.class), vas, ledger, null, null, null);
+            mock(com.bank.vam.repository.treasury.NettingEntryRepository.class), vas, null, null);
 
         var position = ic.getBilateralPosition(treasury.getId(), dubai.getId());
 

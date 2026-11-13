@@ -777,8 +777,9 @@ public class Payable extends BaseEntity {
      */
     public boolean canAddToNetting() {
         // Must be approved and either IC or explicitly netting-eligible
+        // Approved and still owed, partly paid included (an IC invoice settles only through netting, D6).
         boolean isApproved = status == PayableStatus.APPROVED 
-            || status == PayableStatus.POBO_APPROVED;
+            || status == PayableStatus.POBO_APPROVED || status == PayableStatus.PARTIAL;
         boolean isEligible = Boolean.TRUE.equals(nettingEligible) 
             || Boolean.TRUE.equals(isIntercompany);
         boolean notAlreadyInNetting = nettingCycleId == null

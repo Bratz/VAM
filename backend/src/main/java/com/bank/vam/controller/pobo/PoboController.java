@@ -90,14 +90,6 @@ public class PoboController {
         return ResponseEntity.ok(poboService.rejectRecharge(corporateId, id, reason));
     }
 
-    @PostMapping("/recharges/{id}/settle/netting")
-    @Operation(summary = "Settle recharge via netting")
-    public ResponseEntity<RechargeResponse> settleViaNetting(
-            @PathVariable UUID id,
-            @RequestParam String nettingReference) {
-        return ResponseEntity.ok(poboService.settleViaNetting(id, nettingReference));
-    }
-    
     @PostMapping("/recharges/{id}/validate-arm-length")
     @Operation(summary = "Validate arm's length pricing", 
         description = "Mark transfer pricing as compliant")
