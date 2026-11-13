@@ -75,7 +75,7 @@ class CoboPaymentApplicationTest {
         new com.fasterxml.jackson.databind.ObjectMapper(),
         mock(com.bank.vam.repository.intercompany.IntercompanyTransactionRepository.class),
         new com.bank.vam.service.treasury.IhbMirrorService(vaRepo, txnRepo),
-        fx);
+        fx, mock(com.bank.vam.service.treasury.IhbUnifiedService.class));
 
     private final ReconciliationService reconciliation = new ReconciliationService(receivables, payments, unmatched,
         vibans, null, null, vaRepo, txnRepo, mock(ProgramRepository.class), transactionService);

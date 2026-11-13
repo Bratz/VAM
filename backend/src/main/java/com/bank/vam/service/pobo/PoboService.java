@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 public class PoboService {
 
     private final IntercompanyRechargeRepository rechargeRepository;
+    private final com.bank.vam.repository.hierarchy.LegalEntityRepository legalEntityRepository;
     private final ChargeService chargeService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
@@ -64,8 +65,12 @@ public class PoboService {
     }
 
     @Transactional(readOnly = true)
-    public List<RechargeResponse> getPendingRecharges() {
+    public List<RechargeResponse> getPendingRecharges(UUID corporateId) {
+        // The corporate's recharges only: either party is one of its legal entities.
+        Set<UUID> entityIds = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+            .map(com.bank.vam.entity.hierarchy.LegalEntity::getId).collect(Collectors.toSet());
         return rechargeRepository.findPendingRecharges().stream()
+            .filter(r -> entityIds.contains(r.getPayerEntityId()) || entityIds.contains(r.getBehalfEntityId()))
             .map(this::toRechargeResponse)
             .collect(Collectors.toList());
     }

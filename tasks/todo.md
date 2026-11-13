@@ -1,7 +1,78 @@
 # Active Work / Status Tracker
 
+## Planned: In-House Bank and Intercompany pages (spec: docs/specs/ihb-intercompany-pages.md, decisions D1–D10)
+Phases in order, reported after each; commit and push only when the user says so. Builds on the review fixes 1–4
+(cross-corporate scoping, ledger headline figures, Dubai interest, MNC-UK currency) — land and commit those first.
+Design: one backend read model for the group's who-owes-whom (IHB ledger positions + open IC invoices + recharges awaiting
+netting); Netting Cycles is the only settlement path; `intercompany_transactions` goes. Known writers of that table:
+`TransactionService.createIntercompanyTransactionRecord` (POBO/COBO, ~2175), `IntercompanyService`,
+`IntercompanyTransactionService`; readers also in `PoboCutoverService`, `NettingService`; frontend calls only from
+IntercompanyDashboardPage and services/api.ts.
+
+### Phase 1 — Intercompany page: the group's who-owes-whom (D1, D2, D9; R1–R7)
+- [ ] 1.1 `GET /api/v1/intercompany/group-position?corporateId=`: per pair and currency three line kinds — IHB position
+      (IC receivable/payable, ledger), open IC invoices (payables/receivables flagged intercompany, unsettled),
+      recharges awaiting netting — plus a zero-sum control per currency (IHB positions; difference = break) and a total in
+      the corporate's reporting currency at the day's rate (reuse the rate source behind the dashboard's "FX-converted"
+      consolidated position; rate + date returned; never mid/margin/floor).
+- [ ] 1.2 Netting eligibility per pair and "add to cycle" (existing `/netting-eligibility`, `/add-to-netting/{cycleId}`),
+      opening the cycle in Netting Cycles.
+- [ ] 1.3 Intercompany page rebuilt on 1.1–1.2; POBO / COBO / Entities / All Transactions / Settlement / Recharges tabs
+      removed (recharges are lines in 1.1); old tab links land on the new view; corporate filter on every call.
+- [ ] 1.4 Tests: the three line kinds, zero-sum control and break, conversion labelling, scoping.
+
+### Phase 2 — settle only through Netting Cycles (D4, D5, D6; R8–R11)
+- [ ] 2.1 Remove bilateral settle: `/settle-bilateral` (API) and its UI; anything else that posts IC settlement outside
+      netting.
+- [ ] 2.2 Netting settlement per entity net: ledger transfer when payer and receiver accounts are IHB current accounts or
+      sit on the same physical bank account; otherwise an outward payment of the net through the existing outward
+      payment path; the cycle is SETTLING until those payments are booked, then SETTLED (failed payment → cycle
+      flagged, legs not marked settled).
+- [ ] 2.3 Settlement preview in Netting Cycles: per entity debited/credited, which legs are ledger transfers and which
+      become payments, from which account to which.
+- [ ] 2.4 Tests: same-account ledger leg, cross-bank payment leg, IHB legs unchanged, preview = posting, failed payment.
+
+### Phase 3 — retire `intercompany_transactions` (D3; R12)
+- [ ] 3.1 Stop writing: POBO/COBO (`createIntercompanyTransactionRecord`), IC services, cut-over, netting; anything still
+      needed is read from the ledger, payables, receivables or recharges instead.
+- [ ] 3.2 Remove reads and endpoints built on it (`/transactions*`, `/unsettled`, `/stats`, `/settlement/*`, `/cobo/setup`,
+      `/cobo/{ref}/collect`, `/activity-report`, entity-pair/position-summary/entity-report where built on it) and their
+      frontend clients; keep or rebuild only what Phase 1 / 4 use.
+- [ ] 3.3 Flyway migration (both folders): drop the table and dependents after confirming no FK/view/function uses it,
+      locally and in the vam-five dump.
+- [ ] 3.4 Tests: POBO, COBO, recharges, netting and cut-over still work without the table.
+
+### Phase 4 — In-House Bank page (D7, D8, D10; R13–R19)
+- [ ] 4.1 Position matrix: entities × currencies — current account balance, credit limit, used, headroom, accrued interest
+      (IhbExposure + accounts) — with the IHB's funding (treasury's bank accounts) beside it.
+- [ ] 4.2 Movements on IHB current accounts (sweeps, POBO, COBO, interest, settlements): filter by entity, currency, type,
+      date; drill-down to the transaction; per-account statement for a period (opening/closing, value dates) with CSV
+      export (PDF/camt.053 via the existing statement generation if it fits).
+- [ ] 4.3 Interest history per account and period: day count, rate actually charged, accrued, posted.
+- [ ] 4.4 Limit/rate audit trail from the existing audit log (who, from → to, when).
+- [ ] 4.5 Rates shown = rates the interest run charges (D10); unused spreads no longer shown as applied; jargon removed
+      (no "mirror", config ids); currency on every amount. Set-up actions unchanged (D8).
+- [ ] 4.6 Tests for 4.1–4.4 read models; lint, typecheck.
+
+### Phase 5 — verification
+- [ ] 5.1 Spec acceptance 1–8 as tests; full suite; typecheck + lint.
+- [ ] 5.2 Localhost live run (backend-uae, backed up and restored): TestMNC positions, a netting cycle with a cross-bank
+      leg producing a payment and a same-account leg, the legacy table gone, the In-House Bank matrix and statement.
+- [ ] 5.3 vam-five after deploy: read-only checks of both pages (TestMNC and another corporate); a netting run only with
+      the user's go-ahead.
+
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
+- [ ] IHB + Intercompany Dashboard functional review (docs/reviews/ihb-intercompany-functional-review.md, 13 Nov):
+      7 critical, 3+ high. Verified live: `/intercompany/entities` + `/entity-pairs` ignore `corporateId` (Helios is
+      shown TestMNC's entities); the dashboard reads the legacy IC transaction table and says "all settled" while the
+      ledger-based `/intercompany/positions` shows treasury owing AED 1,114.49 (MNC-UK 1,100.01, Dubai 14.48).
+      - [x] Partly fixed 13 Nov (fixes 1–4, uncommitted): C3 scoping (every IC endpoint the two pages read takes a
+            required corporateId, 400 without; recharges were also never shown: the page read `.data` of a bare list),
+            C1/C2/C6/C7 headline + positions from the ledger (who-owes-whom per currency from the IC mirrors, POBO/COBO
+            per currency from the IHB accounts' ledger, fees apart), C5 Dubai interest (V59; reversals now take back
+            the accrual), C4 MNC-UK IHB currency (V60; one IHB currency per entity, set by its first account).
+            Open: H1–H9, M1–M7, L1–L6; pair Settle removed until H4 (preview/confirm) and its mirror lookup are fixed.
 - [ ] vam-five scheduler looks off (no sweep since 28 Sep): daily sweeps, the external-sweep 2-day expiry and the
       15-min refresh may never run there. Check `VAM_SCHEDULING_ENABLED` in deploy/oci (.env on the VM).
 - [x] Stale `LegalEntity.ihbCurrentExposure` → every reader uses `IhbExposure` (IHB current accounts' debit balance);
@@ -22,6 +93,12 @@ Money / correctness first:
 - [ ] Run Sweeps result sums amounts across currencies and labels them AED; Emirates NBD tile on Bank Accounts sums
       currencies; bank tiles group by raw code (HBUKGB4B vs HBUKGB4BXXX = two tiles).
 - [ ] 12,434 COMMITTED sweep executions (Jan–Sep) from the old EOD settlement, no instruction (local; likely vam-five).
+- [ ] Global (unscoped) endpoints no page calls today: `/ihb/entities`, `/pobo/recharges`, `/pobo/stats`,
+      `/intercompany/pobo|cobo|unsettled`, `/settlement/history` — scope or remove (Phase 3 of the IHB/IC plan).
+- [ ] `settleBilateralPosition.findIcReceivableVa` compares an enum to a String (always false) and falls back to the
+      first "receivable" VA — wrong pair possible; Settle withdrawn from the UI, endpoint goes in Phase 2.
+- [ ] Recharges tab "Total Amount" sums currencies; recharge approve/reject records the header entity code as approver.
+- [ ] `IhbInterestAccrual` entity unused: IHB interest has no accrual history (Phase 4.3 of the IHB/IC plan).
 Statement intake:
 - [ ] Each re-delivery of a file with an unknown account raises a new alert (dedup is per file id).
 - [ ] Multipart intake limited to Spring's 1 MB default; raw body unlimited.

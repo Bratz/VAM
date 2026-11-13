@@ -11,8 +11,9 @@ import java.math.RoundingMode;
  * An entity's use of its IHB credit limit, from the money: what it has drawn is the debit balance of its active IHB
  * current accounts in its IHB currency (the sum of max(0, -balance)). The stored LegalEntity exposure it replaces was
  * never maintained after IHB loans were retired (V58 drops it). Every screen and check reads this one figure.
- * ponytail: accounts in other currencies are left out (the limit is in the IHB currency); convert at the FX rate if
- * entities start drawing in several currencies.
+ * The IHB currency is the currency of the entity's IHB current accounts: the first one opened sets it and later ones
+ * must be in it ({@link #accountCurrency}, IhbUnifiedService.createIhbCurrentAccount), so no account is left out.
+ * ponytail: one IHB currency per entity; convert at the FX rate if entities start drawing in several currencies.
  */
 public record IhbExposure(BigDecimal creditLimit, BigDecimal drawn) {
 
@@ -24,6 +25,14 @@ public record IhbExposure(BigDecimal creditLimit, BigDecimal drawn) {
                     .map(IhbExposure::debit)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new IhbExposure(entity.getIhbCreditLimit() != null ? entity.getIhbCreditLimit() : BigDecimal.ZERO, drawn);
+    }
+
+    /** The currency of the entity's active IHB current accounts, if it has any (they share one, see above). */
+    public static java.util.Optional<String> accountCurrency(VirtualAccountRepository accounts, java.util.UUID entityId) {
+        return accounts.findByOwningEntityId(entityId).stream()
+                .filter(va -> va.isIhbParticipant() && va.isActive())
+                .map(VirtualAccount::getCurrencyCode)
+                .findFirst();
     }
 
     private static BigDecimal debit(VirtualAccount va) {

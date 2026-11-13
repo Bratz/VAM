@@ -228,11 +228,12 @@ public class IntercompanyTransactionService {
      */
     @Transactional(readOnly = true)
     public List<EntityPairSummary> getEntityPairs(UUID corporateId) {
-        // Get all legal entities for corporate
-        List<LegalEntity> entities = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId);
-        
-        // Get all IC transactions
-        List<IntercompanyTransaction> transactions = transactionRepository.findAll();
+        // The corporate's IC transactions only: either side is one of its legal entities
+        Set<UUID> entityIds = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+            .map(LegalEntity::getId).collect(Collectors.toSet());
+        List<IntercompanyTransaction> transactions = transactionRepository.findAll().stream()
+            .filter(tx -> entityIds.contains(tx.getPayingEntityId()) || entityIds.contains(tx.getBehalfEntityId()))
+            .collect(Collectors.toList());
         
         // Build pair summaries
         Map<String, EntityPairSummary> pairMap = new HashMap<>();
@@ -1252,6 +1253,8 @@ public class IntercompanyTransactionService {
         private UUID subsidiaryEntityId;
         private String subsidiaryEntityCode;
         private String subsidiaryEntityName;
+        private UUID treasuryEntityId;        // the treasury centre on the other side (owns the IC mirrors)
+        private String treasuryEntityCode;
         private String currencyCode;
         private BigDecimal receivableBalance; // Treasury's claim on subsidiary (POBO)
         private BigDecimal payableBalance;    // Treasury's obligation to subsidiary (COBO)
@@ -1269,8 +1272,7 @@ public class IntercompanyTransactionService {
      */
     @Transactional(readOnly = true)
     public List<SubsidiaryIntercompanyPosition> getIntercompanyPositions(UUID corporateId) {
-        List<VirtualAccount> icVas = virtualAccountRepository.findAll().stream()
-            .filter(va -> corporateId.equals(va.getCorporateId()))
+        List<VirtualAccount> icVas = virtualAccountRepository.findByCorporateId(corporateId).stream()
             .filter(va -> va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_RECEIVABLE
                        || va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_PAYABLE)
             .filter(va -> va.getMirrorsVaId() != null)
@@ -1278,7 +1280,7 @@ public class IntercompanyTransactionService {
 
         record Key(UUID subsidiaryId, String currency) {}
         Map<Key, BigDecimal[]> totals = new LinkedHashMap<>(); // [receivable, payable]
-        Map<Key, UUID> subsidiaryIdByKey = new LinkedHashMap<>();
+        Map<Key, UUID> treasuryIdByKey = new LinkedHashMap<>();
 
         for (VirtualAccount va : icVas) {
             VirtualAccount ihbCurrentAccount = virtualAccountRepository.findById(va.getMirrorsVaId()).orElse(null);
@@ -1293,7 +1295,7 @@ public class IntercompanyTransactionService {
             } else {
                 slot[1] = slot[1].add(balance);
             }
-            subsidiaryIdByKey.putIfAbsent(key, key.subsidiaryId());
+            treasuryIdByKey.putIfAbsent(key, va.getOwningEntityId()); // treasury owns the IC mirrors
         }
 
         List<SubsidiaryIntercompanyPosition> result = new ArrayList<>();
@@ -1303,11 +1305,15 @@ public class IntercompanyTransactionService {
             if (receivable.signum() == 0 && payable.signum() == 0) {
                 continue;
             }
-            LegalEntity subsidiary = legalEntityRepository.findById(subsidiaryIdByKey.get(entry.getKey())).orElse(null);
+            LegalEntity subsidiary = legalEntityRepository.findById(entry.getKey().subsidiaryId()).orElse(null);
+            UUID treasuryId = treasuryIdByKey.get(entry.getKey());
+            LegalEntity treasury = treasuryId != null ? legalEntityRepository.findById(treasuryId).orElse(null) : null;
             result.add(SubsidiaryIntercompanyPosition.builder()
                 .subsidiaryEntityId(entry.getKey().subsidiaryId())
                 .subsidiaryEntityCode(subsidiary != null ? subsidiary.getEntityCode() : null)
                 .subsidiaryEntityName(subsidiary != null ? subsidiary.getEntityName() : null)
+                .treasuryEntityId(treasuryId)
+                .treasuryEntityCode(treasury != null ? treasury.getEntityCode() : null)
                 .currencyCode(entry.getKey().currency())
                 .receivableBalance(receivable)
                 .payableBalance(payable)

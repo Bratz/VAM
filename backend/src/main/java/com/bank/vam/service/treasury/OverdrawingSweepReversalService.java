@@ -40,6 +40,7 @@ public class OverdrawingSweepReversalService {
 
     private final TransactionRepository transactionRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final IhbUnifiedService ihb;
 
     @Transactional
     public int reverseOverdrawingSweeps() {
@@ -87,6 +88,8 @@ public class OverdrawingSweepReversalService {
             target.debit(amount);
             BigDecimal sourceBefore = source.getCurrentBalance();
             source.credit(amount);
+            // The sweep was an error: the interest accrued on the overdraft it made goes too (an IHB source).
+            ihb.takeBackAccruedInterest(source, amount, sweep.getValueDate());
             virtualAccountRepository.save(target);
             virtualAccountRepository.save(source);
 

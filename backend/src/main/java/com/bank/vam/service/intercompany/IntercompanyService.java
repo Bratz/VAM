@@ -3,11 +3,13 @@ package com.bank.vam.service.intercompany;
 import com.bank.vam.dto.intercompany.IntercompanyDto.*;
 import com.bank.vam.dto.viban.VibanDto.VibanCreateRequest;
 import com.bank.vam.dto.viban.VibanDto.VibanResponse;
+import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.service.treasury.IhbExposure;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
@@ -42,6 +44,7 @@ public class IntercompanyService {
     private final IntercompanyTransactionRepository transactionRepository;
     private final LegalEntityRepository legalEntityRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final TransactionRepository ledger;
     private final VibanService vibanService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
@@ -50,17 +53,11 @@ public class IntercompanyService {
     // ========================================================================
 
     @Transactional(readOnly = true)
-    public List<EntityWithPositionResponse> getEntitiesWithPositions(String status, String entityType) {
-        // Get all IHB-enabled entities
-        List<LegalEntity> entities = legalEntityRepository.findByIhbEnabledTrue();
-        
-        // Also add treasury centers (they may not have ihbEnabled but can still participate)
-        List<LegalEntity> treasuryCenters = legalEntityRepository.findByCanLendTrue();
-        for (LegalEntity tc : treasuryCenters) {
-            if (!entities.contains(tc)) {
-                entities.add(tc);
-            }
-        }
+    public List<EntityWithPositionResponse> getEntitiesWithPositions(UUID corporateId, String status) {
+        // The corporate's IHB-enabled entities and treasury centres (which may lend without ihbEnabled)
+        List<LegalEntity> entities = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+                .filter(e -> Boolean.TRUE.equals(e.getIhbEnabled()) || Boolean.TRUE.equals(e.getCanLend()))
+                .collect(Collectors.toList());
         
         // Filter by status if provided
         if (status != null && !status.isEmpty()) {
@@ -488,47 +485,53 @@ public class IntercompanyService {
                 .build();
     }
 
+    /**
+     * POBO and COBO flows from the ledger of the corporate's IHB current accounts, per currency: a POBO payment is the
+     * subsidiary's POBO_DEBIT (principal; its fee is the row's feeAmount, reported apart), a COBO collection the
+     * IHB_COBO credit, less those returned. The legacy intercompany transaction table holds neither enrolment COBO nor
+     * every POBO, so it is not read here.
+     * ponytail: every movement of every IHB account is loaded (fees included); a grouped query if that gets slow.
+     */
     @Transactional(readOnly = true)
     public IntercompanyStatsResponse getStats(UUID corporateId) {
-        List<IntercompanyTransaction> all = transactionRepository.findAll();
-
-        // Same corporate-scoping pattern as getTransactions(): a transaction belongs to this
-        // corporate if either side of it is one of the corporate's legal entities.
-        List<LegalEntity> scopedEntities = corporateId != null
-                ? legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId)
-                : legalEntityRepository.findAll();
-
-        if (corporateId != null) {
-            Set<UUID> corporateEntityIds = scopedEntities.stream()
-                    .map(LegalEntity::getId)
-                    .collect(Collectors.toSet());
-            all = all.stream()
-                    .filter(tx -> corporateEntityIds.contains(tx.getPayingEntityId())
-                               || corporateEntityIds.contains(tx.getBehalfEntityId()))
-                    .collect(Collectors.toList());
+        Map<String, FlowVolume> byCurrency = new TreeMap<>();
+        int pobo = 0;
+        int cobo = 0;
+        for (VirtualAccount va : virtualAccountRepository.findByCorporateId(corporateId)) {
+            if (!va.isIhbParticipant()) continue;
+            for (Transaction t : ledger.findByVaId(va.getId())) {
+                if (t.getStatus() != Transaction.TransactionStatus.COMPLETED) continue;
+                boolean isPobo = t.getMovementType() == Transaction.MovementType.POBO_DEBIT;
+                boolean coboIn = "IHB_COBO".equals(t.getChannel()) && t.getMovementType() == Transaction.MovementType.TRANSFER_IN;
+                boolean coboBack = "IHB_COBO".equals(t.getChannel()) && t.getMovementType() == Transaction.MovementType.TRANSFER_OUT;
+                if (!isPobo && !coboIn && !coboBack) continue;
+                String ccy = t.getCurrencyCode() != null ? t.getCurrencyCode() : va.getCurrencyCode();
+                FlowVolume f = byCurrency.computeIfAbsent(ccy, c -> FlowVolume.builder().currency(c)
+                        .poboVolume(BigDecimal.ZERO).poboFees(BigDecimal.ZERO).coboVolume(BigDecimal.ZERO).build());
+                if (isPobo) {
+                    f.setPoboCount(f.getPoboCount() + 1);
+                    f.setPoboVolume(f.getPoboVolume().add(t.getAmount()));
+                    if (t.getFeeAmount() != null) f.setPoboFees(f.getPoboFees().add(t.getFeeAmount()));
+                    pobo++;
+                } else {
+                    int sign = coboIn ? 1 : -1;
+                    f.setCoboCount(f.getCoboCount() + sign);
+                    f.setCoboVolume(f.getCoboVolume().add(t.getAmount().multiply(BigDecimal.valueOf(sign))));
+                    cobo += sign;
+                }
+            }
         }
 
-        long totalPobo = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO_PAYMENT).count();
-        long totalCobo = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO_COLLECTION).count();
-        long pending = all.stream().filter(t -> t.getStatus() == IntercompanyTransaction.TransactionStatus.PROCESSED).count();
-
-        BigDecimal poboVol = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO_PAYMENT)
-                .map(t -> t.getNetAmount() != null ? t.getNetAmount() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal coboVol = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO_COLLECTION)
-                .map(t -> t.getNetAmount() != null ? t.getNetAmount() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Count IHB-enabled entities + treasury centers, scoped to the same entity set as above
-        long activeEntities = scopedEntities.stream()
+        // Count IHB-enabled entities + treasury centers of the corporate
+        long activeEntities = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
                 .filter(e -> e.getStatus() == LegalEntity.EntityStatus.ACTIVE)
                 .filter(e -> Boolean.TRUE.equals(e.getIhbEnabled()) || Boolean.TRUE.equals(e.getCanLend()))
                 .count();
 
         return IntercompanyStatsResponse.builder()
-                .totalPoboTransactions((int) totalPobo)
-                .totalCoboTransactions((int) totalCobo)
-                .pendingSettlement((int) pending)
-                .totalPoboVolume(poboVol)
-                .totalCoboVolume(coboVol)
+                .totalPoboTransactions(pobo)
+                .totalCoboTransactions(cobo)
+                .volumes(new ArrayList<>(byCurrency.values()))
                 .activeEntities((int) activeEntities)
                 .build();
     }
@@ -628,6 +631,7 @@ public class IntercompanyService {
                 .creditLimit(creditLimit)
                 .currentExposure(currentExposure)
                 .availableLimit(availableLimit)
+                .currency(entity.getEffectiveIhbCurrency())
                 .build();
     }
 

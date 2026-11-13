@@ -59,6 +59,8 @@ public class IntercompanyDto {
         private BigDecimal creditLimit;
         private BigDecimal currentExposure;
         private BigDecimal availableLimit;
+        /** The IHB currency the limit and exposure are in (IhbExposure). */
+        private String currency;
     }
 
     @Data
@@ -268,10 +270,21 @@ public class IntercompanyDto {
     public static class IntercompanyStatsResponse {
         private int totalPoboTransactions;
         private int totalCoboTransactions;
-        private int pendingSettlement;
-        private BigDecimal totalPoboVolume;
-        private BigDecimal totalCoboVolume;
+        /** POBO/COBO volume per currency, never summed across currencies. */
+        private List<FlowVolume> volumes;
         private int activeEntities;
+    }
+
+    /** One currency's POBO payments and COBO collections on the IHB current accounts; principal, fees apart. */
+    @Data
+    @Builder
+    public static class FlowVolume {
+        private String currency;
+        private int poboCount;
+        private BigDecimal poboVolume;
+        private BigDecimal poboFees;
+        private int coboCount;
+        private BigDecimal coboVolume;
     }
 
     @Data

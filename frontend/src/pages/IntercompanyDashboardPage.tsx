@@ -11,7 +11,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/usePageHeader';
-import { formatCompactCurrency, formatCurrency, cn } from '../utils';
+import { formatCurrency, cn } from '../utils';
 import { useUser } from '../context/useUser';
 import { useNavigation } from '../hooks/useNavigation';
 import { TreasuryOnly } from '../components/permissions';
@@ -68,20 +68,17 @@ interface LegalEntity {
   status: string;
 }
 
-interface EntityPairSummary {
-  entity1Id: string;
-  entity1Code: string;
-  entity1Name: string;
-  entity2Id: string;
-  entity2Code: string;
-  entity2Name: string;
-  entity1OwesEntity2: number;
-  entity2OwesEntity1: number;
-  netPosition: number;
-  netCreditorId: string;
-  netDebtorId: string;
-  totalTransactions: number;
-  pendingTransactions: number;
+/** One subsidiary's position with treasury in one currency, from the IC Receivable / IC Payable mirrors (the ledger). */
+interface IcPosition {
+  subsidiaryEntityId: string;
+  subsidiaryEntityCode: string;
+  subsidiaryEntityName: string;
+  treasuryEntityId: string;
+  treasuryEntityCode: string;
+  currencyCode: string;
+  receivableBalance: number; // the subsidiary owes treasury
+  payableBalance: number;    // treasury owes the subsidiary
+  netPosition: number;       // receivable - payable: positive = owed to treasury
 }
 
 interface IntercompanyTransaction {
@@ -106,25 +103,21 @@ interface IntercompanyTransaction {
   createdAt: string;
 }
 
+/** POBO payments and COBO collections on the IHB current accounts, one currency; principal, fees apart. */
+interface FlowVolume {
+  currency: string;
+  poboCount: number;
+  poboVolume: number;
+  poboFees: number;
+  coboCount: number;
+  coboVolume: number;
+}
+
 interface IntercompanyStats {
   totalPoboTransactions: number;
   totalCoboTransactions: number;
-  pendingSettlement: number;
-  totalPoboVolume: number;
-  totalCoboVolume: number;
+  volumes: FlowVolume[];
   activeEntities: number;
-}
-
-interface PositionSummary {
-  corporateId: string;
-  totalEntities: number;
-  totalOutstandingPayables: number;
-  totalOutstandingReceivables: number;
-  netPosition: number;
-  pendingTransactions: number;
-  pendingRecharges: number;
-  currency: string;
-  asOfDate: string;
 }
 
 // ============================================================================
@@ -151,22 +144,14 @@ const legalEntityApi = {
 
 const intercompanyApi = {
   // Stats
-  getStats: async (corporateId?: string): Promise<IntercompanyStats> => {
-    const params: any = {};
-    if (corporateId) params.corporateId = corporateId;
-    const response = await apiClient.get('/intercompany/stats', { params });
+  getStats: async (corporateId: string): Promise<IntercompanyStats> => {
+    const response = await apiClient.get('/intercompany/stats', { params: { corporateId } });
     return response.data.data;
   },
 
-  // Position Summary
-  getPositionSummary: async (corporateId: string): Promise<PositionSummary> => {
-    const response = await apiClient.get('/intercompany/position-summary', { params: { corporateId } });
-    return response.data.data;
-  },
-
-  // Entity Pairs
-  getEntityPairs: async (corporateId: string): Promise<EntityPairSummary[]> => {
-    const response = await apiClient.get('/intercompany/entity-pairs', { params: { corporateId } });
+  // Who owes whom, per currency, from the ledger
+  getPositions: async (corporateId: string): Promise<IcPosition[]> => {
+    const response = await apiClient.get('/intercompany/positions', { params: { corporateId } });
     return response.data.data || [];
   },
 
@@ -214,13 +199,8 @@ const intercompanyApi = {
     return response.data.data;
   },
 
-  settleBilateral: async (data: { entity1Id: string; entity2Id: string; settlementMethod?: string; settledBy?: string; notes?: string }) => {
-    const response = await apiClient.post('/intercompany/settle-bilateral', data);
-    return response.data.data;
-  },
-
   // Entities with positions
-  getEntitiesWithPositions: async (corporateId?: string) => {
+  getEntitiesWithPositions: async (corporateId: string) => {
     const response = await apiClient.get('/intercompany/entities', { params: { corporateId } });
     return response.data.data || [];
   },
@@ -487,89 +467,90 @@ const CoboModal: React.FC<CoboModalProps> = ({ isOpen, onClose, entities, onSucc
 };
 
 // ============================================================================
-// ENTITY PAIR CARD
+// LEDGER POSITIONS
 // ============================================================================
 
-interface EntityPairCardProps {
-  pair: EntityPairSummary;
-  onViewDetails: () => void;
-  onSettle: () => void;
-}
+/** One figure per currency, stacked; never summed across currencies. */
+const Amounts: React.FC<{ items: { currency: string; value: number }[] }> = ({ items }) =>
+  items.length === 0 ? <>—</> : (
+    <span className="flex flex-col">
+      {items.map(i => <TileAmount key={i.currency} value={i.value} currency={i.currency} />)}
+    </span>
+  );
 
-const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, onSettle }) => {
-  const netCreditor = pair.netPosition > 0 ? pair.entity1Code : pair.entity2Code;
-  const netDebtor = pair.netPosition > 0 ? pair.entity2Code : pair.entity1Code;
+/** Per currency: what subsidiaries owe treasury, what treasury owes them, and treasury's net (+ = owed to treasury). */
+const totalsByCurrency = (positions: IcPosition[]) => Object.values(positions.reduce((m, p) => {
+  const t = m[p.currencyCode] ?? (m[p.currencyCode] = { currency: p.currencyCode, owedToTreasury: 0, owedByTreasury: 0, net: 0 });
+  t.owedToTreasury += p.receivableBalance;
+  t.owedByTreasury += p.payableBalance;
+  t.net += p.netPosition;
+  return m;
+}, {} as Record<string, { currency: string; owedToTreasury: number; owedByTreasury: number; net: number }>));
 
+/** The debtor and creditor of a position: a positive net means the subsidiary owes treasury. */
+const owes = (p: IcPosition) => {
+  const treasury = p.treasuryEntityCode || 'Treasury';
+  return p.netPosition > 0
+    ? { debtor: p.subsidiaryEntityCode, creditor: treasury }
+    : { debtor: treasury, creditor: p.subsidiaryEntityCode };
+};
+
+/** "MNC-TREASURY owes MNC-UK AED 1,100.01" */
+const OwesLine: React.FC<{ position: IcPosition }> = ({ position: p }) => {
+  const { debtor, creditor } = owes(p);
+  return (
+    <span>
+      <span className="font-medium text-error-600 dark:text-error-300">{debtor}</span>
+      {' owes '}
+      <span className="font-medium text-success-600 dark:text-success-300">{creditor}</span>
+      {' '}
+      <span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(Math.abs(p.netPosition), p.currencyCode)}</span>
+    </span>
+  );
+};
+
+// ponytail: no Settle / Details here. The settle endpoint posts without a preview or confirmation (review H4) and
+// picks the IC mirrors by name, not by pair; wire it back once both are fixed.
+const PositionCard: React.FC<{ position: IcPosition }> = ({ position: p }) => {
+  const treasury = p.treasuryEntityCode || 'Treasury';
   return (
     <Card hover className="group">
       <div className="p-4">
-        {/* Premium Gradient Header */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <StatusIconBadge tone="primary" icon={Building2} />
-              <div>
-                <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
-                <p className="caption">{pair.entity1Name}</p>
-              </div>
+              <p className="font-medium text-primary-900 dark:text-neutral-50">{treasury}</p>
             </div>
             <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
             <div className="flex items-center gap-2">
               <StatusIconBadge tone="info" icon={Building2} />
               <div>
-                <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
-                <p className="caption">{pair.entity2Name}</p>
+                <p className="font-medium text-primary-900 dark:text-neutral-50">{p.subsidiaryEntityCode}</p>
+                <p className="caption">{p.subsidiaryEntityName}</p>
               </div>
             </div>
           </div>
-          <Badge variant={pair.pendingTransactions > 0 ? 'warning' : 'success'}>
-            {pair.pendingTransactions > 0 ? `${pair.pendingTransactions} pending` : 'Settled'}
-          </Badge>
+          <Badge variant="warning">{p.currencyCode} outstanding</Badge>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
-            <p className="label">{pair.entity1Code} owes</p>
-            <p className="font-semibold text-error-700 mt-1 dark:text-error-300">
-              {formatCompactCurrency(pair.entity1OwesEntity2, 'AED')}
-            </p>
+          <div className="text-center p-3 bg-surface-page rounded-lg">
+            <p className="label">{p.subsidiaryEntityCode} owes</p>
+            <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50">{formatCurrency(p.receivableBalance, p.currencyCode)}</p>
           </div>
-          <div className="text-center p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
-            <p className="label">{pair.entity2Code} owes</p>
-            <p className="font-semibold text-success-700 mt-1 dark:text-success-300">
-              {formatCompactCurrency(pair.entity2OwesEntity1, 'AED')}
-            </p>
+          <div className="text-center p-3 bg-surface-page rounded-lg">
+            <p className="label">{treasury} owes</p>
+            <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50">{formatCurrency(p.payableBalance, p.currencyCode)}</p>
           </div>
-          <div className={cn(
-            'text-center p-3 rounded-lg',
-            pair.netPosition > 0 ? 'bg-primary-50 dark:bg-primary-800/40' : 'bg-info-50 dark:bg-info-500/10'
-          )}>
-            <p className="label">Net Position</p>
-            <p className="font-bold text-primary-700 mt-1 dark:text-neutral-200">
-              {formatCompactCurrency(Math.abs(pair.netPosition), 'AED')}
-            </p>
+          <div className="text-center p-3 bg-primary-50 rounded-lg dark:bg-primary-800/40">
+            <p className="label">Net</p>
+            <p className="font-bold text-primary-700 mt-1 dark:text-neutral-200">{formatCurrency(Math.abs(p.netPosition), p.currencyCode)}</p>
           </div>
         </div>
 
-        <div className="body-sm text-center mb-4 p-2 bg-surface-page rounded-lg">
-          <span className="font-medium text-success-600 dark:text-success-300">{netCreditor}</span>
-          {' receives '}
-          <span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCompactCurrency(Math.abs(pair.netPosition), 'AED')}</span>
-          {' from '}
-          <span className="font-medium text-error-600 dark:text-error-300">{netDebtor}</span>
-        </div>
-
-        <div className="flex gap-2 pt-3 border-t border-edge-subtle">
-          <Button size="sm" variant="outline" onClick={onViewDetails} className="flex-1 opacity-70 group-hover:opacity-100 transition-opacity">
-            <Eye className="w-4 h-4 mr-1" /> Details
-          </Button>
-          {pair.pendingTransactions > 0 && (
-            <Button size="sm" onClick={onSettle} className="flex-1">
-              <Scale className="w-4 h-4 mr-1" /> Settle
-            </Button>
-          )}
+        <div className="body-sm text-center p-2 bg-surface-page rounded-lg">
+          <OwesLine position={p} />
         </div>
       </div>
     </Card>
@@ -668,11 +649,9 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
   // Data states
   const [stats, setStats] = useState<IntercompanyStats | null>(null);
-  const [positionSummary, setPositionSummary] = useState<PositionSummary | null>(null);
-  const [entityPairs, setEntityPairs] = useState<EntityPairSummary[]>([]);
+  const [positions, setPositions] = useState<IcPosition[]>([]);
   const [transactions, setTransactions] = useState<IntercompanyTransaction[]>([]);
   const [entitiesWithPositions, setEntitiesWithPositions] = useState<any[]>([]);
-  const [intercompanyVas, setIntercompanyVas] = useState<any[]>([]);
 
   // Recharges state
   const [pendingRecharges, setPendingRecharges] = useState<any[]>([]);
@@ -680,7 +659,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
   
   // Modal states
   const [showCoboModal, setShowCoboModal] = useState(false);
-  const [, setSelectedPair] = useState<EntityPairSummary | null>(null);
 
   // Determine selected entity role for filtering
   const selectedEntity = legalEntities.find(e => e.id === selectedEntityId);
@@ -743,32 +721,25 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       setLoading(true);
       setError(null);
       
-      const [statsData, positionData, pairsData, txData, entitiesData, icVasData, rechargesData] = await Promise.all([
+      const [statsData, positionsData, txData, entitiesData, rechargesData] = await Promise.all([
         intercompanyApi.getStats(selectedCorporateId).catch(() => null),
-        intercompanyApi.getPositionSummary(selectedCorporateId).catch(() => null),
-        intercompanyApi.getEntityPairs(selectedCorporateId).catch(() => []),
+        intercompanyApi.getPositions(selectedCorporateId).catch(() => []),
         intercompanyApi.getTransactions({
           corporateId: selectedCorporateId,
           entityId: selectedEntityId || undefined,
           size: 50
         }).catch(() => ({ content: [] })),
         intercompanyApi.getEntitiesWithPositions(selectedCorporateId).catch(() => []),
-        // Fetch INTERCOMPANY VAs
-        apiClient.get(`/virtual-accounts/corporate/${selectedCorporateId}/category/INTERCOMPANY`)
-          .then(r => r.data?.data || [])
-          .catch(() => []),
-        // Fetch pending POBO recharges
-        apiClient.get('/pobo/recharges/pending')
-          .then(r => r.data?.data || [])
+        // Pending POBO recharges: this endpoint answers with the bare list, not the { data } envelope
+        apiClient.get('/pobo/recharges/pending', { params: { corporateId: selectedCorporateId } })
+          .then(r => (Array.isArray(r.data) ? r.data : []))
           .catch(() => []),
       ]);
 
       setStats(statsData);
-      setPositionSummary(positionData);
-      setEntityPairs(pairsData);
+      setPositions(positionsData);
       setTransactions(txData?.content || txData || []);
       setEntitiesWithPositions(entitiesData);
-      setIntercompanyVas(icVasData);
       setPendingRecharges(rechargesData);
       
     } catch (err: any) {
@@ -781,21 +752,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const handleSettle = async (pair: EntityPairSummary) => {
-    try {
-      await intercompanyApi.settleBilateral({
-        entity1Id: pair.entity1Id,
-        entity2Id: pair.entity2Id,
-        settlementMethod: 'BILATERAL',
-        settledBy: approverName,
-      });
-      toast.success('Bilateral settlement completed');
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Settlement failed');
-    }
-  };
 
   const handleExport = () => {
     const csv = [
@@ -923,8 +879,30 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
     { id: 'recharges', label: 'Recharges', icon: Zap, count: pendingRecharges.length },
     { id: 'transactions', label: 'All Transactions', icon: Receipt, count: transactions.length },
     { id: 'entities', label: 'Entities', icon: Building2, count: entitiesWithPositions.length },
-    { id: 'pairs', label: 'Entity Pairs', icon: ArrowLeftRight, count: entityPairs.length },
+    { id: 'pairs', label: 'Entity Pairs', icon: ArrowLeftRight, count: positions.length },
   ];
+
+  // Headline figures: outstanding from the ledger (IC mirrors), flows from the IHB accounts' ledger, per currency.
+  const totals = totalsByCurrency(positions);
+  const volumes = stats?.volumes ?? [];
+  const poboVolumes = volumes.filter(v => v.poboCount !== 0).map(v => ({ currency: v.currency, value: v.poboVolume }));
+  const coboVolumes = volumes.filter(v => v.coboCount !== 0).map(v => ({ currency: v.currency, value: v.coboVolume }));
+  const poboFees = volumes.filter(v => v.poboFees > 0).map(v => formatCurrency(v.poboFees, v.currency)).join(', ');
+  const owedToTreasury = totals.filter(t => t.owedToTreasury !== 0).map(t => ({ currency: t.currency, value: t.owedToTreasury }));
+  const owedByTreasury = totals.filter(t => t.owedByTreasury !== 0).map(t => ({ currency: t.currency, value: t.owedByTreasury }));
+  const treasuryNet = totals.map(t => ({ currency: t.currency, value: t.net }));
+  const pendingRechargeCount = pendingRecharges.filter(r => r.status === 'PENDING').length;
+  const positionList = positions.length === 0 ? (
+    <div className="px-4 py-12 text-center">
+      <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
+      <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
+    </div>
+  ) : positions.map(p => (
+    <div key={`${p.subsidiaryEntityId}-${p.currencyCode}`} className="p-4 flex items-center justify-between body-sm">
+      <OwesLine position={p} />
+      <span className="caption">{p.subsidiaryEntityName}</span>
+    </div>
+  ));
 
   return (
     <Page>
@@ -954,12 +932,12 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           <HeroMetricCard
             primary={{
               label: 'POBO Volume',
-              value: <TileAmount value={stats.totalPoboVolume} currency="AED" />,
-              sub: `${stats.totalPoboTransactions} payments on behalf of subsidiaries`,
+              value: <Amounts items={poboVolumes} />,
+              sub: `${stats.totalPoboTransactions} payments on behalf of subsidiaries${poboFees ? ` · fees ${poboFees} not included` : ''}`,
             }}
             secondary={{
               label: 'COBO Volume',
-              value: <TileAmount value={stats.totalCoboVolume} currency="AED" />,
+              value: <Amounts items={coboVolumes} />,
               sub: `${stats.totalCoboTransactions} collections on behalf`,
             }}
             icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
@@ -969,7 +947,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           <StatStrip>
             <StatTile layout="row" tone="primary" icon={<CreditCard className="w-5 h-5" />} label="POBO Count" value={stats.totalPoboTransactions} delay="0.18s" />
             <StatTile layout="row" tone="info" icon={<Wallet className="w-5 h-5" />} label="COBO Count" value={stats.totalCoboTransactions} delay="0.21s" />
-            <StatTile layout="row" tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pendingSettlement} delay="0.24s" />
+            <StatTile layout="row" tone="warning" icon={<Clock className="w-5 h-5" />} label="Open Positions" value={positions.length} delay="0.24s" />
             <StatTile layout="row" tone="accent" icon={<Building2 className="w-5 h-5" />} label="Entities" value={stats.activeEntities} delay="0.27s" />
           </StatStrip>
         </>
@@ -1001,7 +979,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       </div>
 
       {/* Overview Tab */}
-      {activeTab === 'overview' && positionSummary && (
+      {activeTab === 'overview' && (
         <div className="grid grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="col-span-2">
             <Card hover>
@@ -1020,30 +998,12 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     big ones ("AED 1.2B" fits easily), so it was the SMALL
                     figures that got cut. Three across would need ~613px. */}
                 <StatStrip columns={2} className="mb-6">
-                  <StatTile tone="danger" label="Total Payables" value={<TileAmount value={positionSummary.totalOutstandingPayables} currency={positionSummary.currency} />} />
-                  <StatTile tone="success" label="Total Receivables" value={<TileAmount value={positionSummary.totalOutstandingReceivables} currency={positionSummary.currency} />} />
-                  <StatTile tone="primary" label="Net Position" value={<TileAmount value={positionSummary.netPosition} currency={positionSummary.currency} />} />
+                  <StatTile tone="success" label="Owed to Treasury" value={<Amounts items={owedToTreasury} />} />
+                  <StatTile tone="danger" label="Owed by Treasury" value={<Amounts items={owedByTreasury} />} />
+                  <StatTile tone="primary" label="Treasury Net" sub="+ owed to treasury" value={<Amounts items={treasuryNet} />} />
                 </StatStrip>
 
-                <div className="flex items-center justify-between p-4 bg-surface-page rounded-lg">
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <p className="label">Pending Transactions</p>
-                      <p className="stat-value-xs">{positionSummary.pendingTransactions}</p>
-                    </div>
-                    <div>
-                      <p className="label">Pending Recharges</p>
-                      <p className="stat-value-xs">{positionSummary.pendingRecharges}</p>
-                    </div>
-                    <div>
-                      <p className="label">Active Entities</p>
-                      <p className="stat-value-xs">{positionSummary.totalEntities}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport}>
-                    Export Report
-                  </Button>
-                </div>
+                <div className="divide-y divide-edge-subtle bg-surface-page rounded-lg">{positionList}</div>
               </div>
             </Card>
           </div>
@@ -1097,9 +1057,9 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               different amount formats. Matched to Overview's StatTile row. */}
           <StatStrip>
             <StatTile tone="primary" icon={<CreditCard className="w-5 h-5" />} label="Total POBO" value={stats?.totalPoboTransactions || 0} />
-            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="POBO Volume" value={<TileAmount value={stats?.totalPoboVolume || 0} currency="AED" />} />
-            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Recharges" value={positionSummary?.pendingRecharges || 0} />
-            <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Outstanding" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
+            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="POBO Volume" value={<Amounts items={poboVolumes} />} />
+            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Recharges" value={pendingRechargeCount} />
+            <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Owed to Treasury" value={<Amounts items={owedToTreasury} />} />
           </StatStrip>
 
           <Card hover>
@@ -1186,9 +1146,8 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {/* Same StatTile/TileAmount consistency fix as the POBO tab above. */}
           <StatStrip>
             <StatTile tone="info" icon={<Wallet className="w-5 h-5" />} label="Total COBO" value={stats?.totalCoboTransactions || 0} />
-            <StatTile tone="accent" icon={<Activity className="w-5 h-5" />} label="COBO Volume" value={<TileAmount value={stats?.totalCoboVolume || 0} currency="AED" />} />
-            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Distribution" value={stats?.pendingSettlement || 0} />
-            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Outstanding to Subsidiaries" value={<TileAmount value={positionSummary?.totalOutstandingReceivables || 0} currency="AED" />} />
+            <StatTile tone="accent" icon={<Activity className="w-5 h-5" />} label="COBO Volume" value={<Amounts items={coboVolumes} />} />
+            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Owed by Treasury" value={<Amounts items={owedByTreasury} />} />
           </StatStrip>
 
           <Card hover>
@@ -1279,140 +1238,26 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Same StatTile/TileAmount consistency fix as the POBO/COBO tabs. */}
           <StatStrip>
-            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Settlement" value={stats?.pendingSettlement || 0} />
-            <StatTile tone="danger" icon={<ArrowLeft className="w-5 h-5" />} label="Total Payables" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
-            <StatTile tone="success" icon={<ArrowRight className="w-5 h-5" />} label="Total Receivables" value={<TileAmount value={positionSummary?.totalOutstandingReceivables || 0} currency="AED" />} />
-            <StatTile tone="primary" icon={<Scale className="w-5 h-5" />} label="Net Position" value={<TileAmount value={positionSummary?.netPosition || 0} currency="AED" />} />
+            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Open Positions" value={positions.length} />
+            <StatTile tone="success" icon={<ArrowRight className="w-5 h-5" />} label="Owed to Treasury" value={<Amounts items={owedToTreasury} />} />
+            <StatTile tone="danger" icon={<ArrowLeft className="w-5 h-5" />} label="Owed by Treasury" value={<Amounts items={owedByTreasury} />} />
+            <StatTile tone="primary" icon={<Scale className="w-5 h-5" />} label="Treasury Net" sub="+ owed to treasury" value={<Amounts items={treasuryNet} />} />
           </StatStrip>
 
-          {/* Entity Pairs for Settlement */}
+          {/* Outstanding positions, from the ledger. The "Intercompany Virtual Accounts" cards that used to follow
+              showed the same IC mirror balances again as raw accounts; the positions below are those balances. */}
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-edge-subtle">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" />
                 <div>
-                  <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Entity Pairs - Ready for Settlement</h4>
-                  <p className="body-sm">Select pairs to settle bilaterally or add to netting cycle</p>
+                  <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Outstanding Intercompany Positions</h4>
+                  <p className="body-sm">Who owes whom, per currency, from the ledger</p>
                 </div>
               </div>
             </div>
-            <div className="divide-y divide-edge-subtle">
-              {entityPairs.filter(p => p.pendingTransactions > 0).length === 0 ? (
-                <div className="px-4 py-12 text-center">
-                  <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
-                  <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
-                </div>
-              ) : entityPairs.filter(p => p.pendingTransactions > 0).map((pair, _i) => (
-                <div key={`${pair.entity1Id}-${pair.entity2Id}`} className="p-4 hover:bg-primary-50/30 dark:hover:bg-primary-800/50 transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-3">
-                        <StatusIconBadge tone="primary" icon={Building2} />
-                        <div>
-                          <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
-                          <p className="caption">{pair.entity1Name}</p>
-                        </div>
-                      </div>
-                      <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
-                      <div className="flex items-center gap-3">
-                        <StatusIconBadge tone="info" icon={Building2} />
-                        <div>
-                          <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
-                          <p className="caption">{pair.entity2Name}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="label">Net Position</p>
-                        <p className="font-bold text-primary-600 dark:text-primary-200">{formatCompactCurrency(pair.netPosition, 'AED')}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="label">Pending</p>
-                        <Badge variant="warning">{pair.pendingTransactions}</Badge>
-                      </div>
-                      <div className="flex gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="outline" onClick={() => setSelectedPair(pair)}>
-                          <Eye className="w-4 h-4 mr-1" /> View
-                        </Button>
-                        <Button size="sm" onClick={() => handleSettle(pair)}>
-                          <Scale className="w-4 h-4 mr-1" /> Settle
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Intercompany Virtual Accounts */}
-          <Card hover>
-            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-            <div className="p-4 border-b border-edge-subtle">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" />
-                  <div>
-                    <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Intercompany Virtual Accounts</h4>
-                    <p className="body-sm">Virtual accounts for intercompany positions</p>
-                  </div>
-                </div>
-                <Badge variant="info">{intercompanyVas.length} Accounts</Badge>
-              </div>
-            </div>
-            <div className="divide-y divide-edge-subtle">
-              {intercompanyVas.length === 0 ? (
-                <div className="px-4 py-12 text-center">
-                  <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
-                  <p className="text-neutral-500 font-medium dark:text-neutral-400">No intercompany virtual accounts configured</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Intercompany VAs will appear here when created</p>
-                </div>
-              ) : (
-                <div className="grid gap-4 p-4 grid-cols-3">
-                  {intercompanyVas.map((va: any) => (
-                    <div key={va.id} className="p-4 rounded-lg border border-edge hover:border-info-300 hover:shadow-sm transition-all bg-surface-card">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" />
-                          <div>
-                            <p className="body-strong">{va.vaNumber}</p>
-                            <p className="caption">{va.vaName || 'Intercompany VA'}</p>
-                          </div>
-                        </div>
-                        <Badge variant={va.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
-                          {va.status}
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-body-sm">
-                          <span className="text-neutral-500 dark:text-neutral-400">Balance</span>
-                          <span className={cn(
-                            "font-semibold",
-                            (va.currentBalance || 0) >= 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300"
-                          )}>
-                            {formatCurrency(va.currentBalance || 0, va.currencyCode || 'AED')}
-                          </span>
-                        </div>
-                        {va.entityCode && (
-                          <div className="flex justify-between text-body-sm">
-                            <span className="text-neutral-500 dark:text-neutral-400">Entity</span>
-                            <span className="text-primary-700 font-medium dark:text-neutral-200">{va.entityCode}</span>
-                          </div>
-                        )}
-                        {va.counterpartyEntityCode && (
-                          <div className="flex justify-between text-body-sm">
-                            <span className="text-neutral-500 dark:text-neutral-400">Counterparty</span>
-                            <span className="text-info-600 font-medium dark:text-info-300">{va.counterpartyEntityCode}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <div className="divide-y divide-edge-subtle">{positionList}</div>
           </Card>
 
           {/* Settlement History */}
@@ -1628,7 +1473,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <p className="text-neutral-500 dark:text-neutral-400">No entities with intercompany positions</p>
             </Card>
           ) : entitiesWithPositions.map((entity, i) => (
-            <Card key={entity.id} hover className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
+            <Card key={entity.entityId} hover className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
               <div className="p-4">
                 {/* Premium Gradient Header */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
@@ -1667,11 +1512,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <div className="grid grid-cols-2 gap-2 text-body-sm">
                     <div className="p-3 bg-surface-page rounded-lg">
                       <p className="label">Limit</p>
-                      <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency="AED" /></p>
+                      <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency={entity.currency} /></p>
                     </div>
                     <div className="p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
                       <p className="label">Available</p>
-                      <p className="font-semibold text-success-600 mt-1 dark:text-success-300"><TileAmount value={entity.availableLimit || 0} currency="AED" /></p>
+                      <p className="font-semibold text-success-600 mt-1 dark:text-success-300"><TileAmount value={entity.availableLimit || 0} currency={entity.currency} /></p>
                     </div>
                   </div>
                 </div>
@@ -1681,21 +1526,14 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         </div>
       )}
 
-      {/* Entity Pairs Tab */}
+      {/* Entity Pairs Tab: one card per subsidiary and currency with a position open in the ledger */}
       {activeTab === 'pairs' && (
         <div className="grid gap-4 grid-cols-2">
-          {entityPairs.length === 0 ? (
-            <Card className="col-span-full text-center py-12 animate-fade-in">
-              <StatusIconBadge tone="neutral" icon={ArrowLeftRight} size="xl" className="mx-auto mb-4" />
-              <p className="text-neutral-500 dark:text-neutral-400">No entity pairs with intercompany positions</p>
-            </Card>
-          ) : entityPairs.map((pair, i) => (
-            <div key={`${pair.entity1Id}-${pair.entity2Id}`} className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
-              <EntityPairCard
-                pair={pair}
-                onViewDetails={() => setSelectedPair(pair)}
-                onSettle={() => handleSettle(pair)}
-              />
+          {positions.length === 0 ? (
+            <Card className="col-span-full animate-fade-in">{positionList}</Card>
+          ) : positions.map((p, i) => (
+            <div key={`${p.subsidiaryEntityId}-${p.currencyCode}`} className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
+              <PositionCard position={p} />
             </div>
           ))}
         </div>

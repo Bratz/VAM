@@ -53,8 +53,9 @@ public class PoboController {
     
     @GetMapping("/recharges/pending")
     @Operation(summary = "Get pending recharges")
-    public ResponseEntity<List<RechargeResponse>> getPendingRecharges() {
-        return ResponseEntity.ok(poboService.getPendingRecharges());
+    public ResponseEntity<List<RechargeResponse>> getPendingRecharges(@RequestParam(required = false) UUID corporateId) {
+        if (corporateId == null) throw new com.bank.vam.exception.BusinessException("corporateId is required");
+        return ResponseEntity.ok(poboService.getPendingRecharges(corporateId));
     }
     
     @GetMapping("/recharges/entity/{entityId}")

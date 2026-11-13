@@ -111,6 +111,8 @@ public class IhbUnifiedService {
         }
         entity.enableIhb(request.getCreditLimit(), request.isCanLend(), request.isCanBorrow(),
             request.getLendingRateSpread(), request.getBorrowingRateSpread());
+        // Re-enabled with IHB accounts still open: the IHB currency stays theirs, not the functional currency.
+        IhbExposure.accountCurrency(virtualAccountRepository, entity.getId()).ifPresent(entity::setIhbCurrency);
         if (request.getSettlementVaId() != null) {
             validateSettlementVa(request.getSettlementVaId(), entity);
             entity.setSettlementVaId(request.getSettlementVaId());
@@ -918,48 +920,23 @@ public class IhbUnifiedService {
     }
 
     private VirtualAccountDto.IhbInterestCalcResult calculateInterestForAccount(VirtualAccount va, LocalDate calcDate) {
-        BigDecimal balance = va.getCurrentBalance();
-        if (balance == null || balance.compareTo(BigDecimal.ZERO) == 0) {
+        DailyInterest day = dailyInterest(va, va.getCurrentBalance());
+        if (day == null) {
             va.setLastInterestCalcDate(calcDate);
             virtualAccountRepository.save(va);
             return null;
         }
-
-        // Day count: the account's interest configuration's convention when it carries one, else the currency's
-        // market default (ACT/365 for GBP, AED, SGD, ...; ACT/360 otherwise). Was 360 for every currency.
-        int dayBasis = Optional.ofNullable(va.getInternalInterestConfigId())
-            .flatMap(interestConfigRepository::findById)
-            .map(InterestConfiguration::getDayCountBasis)
-            .orElse("ACT/365".equals(InterestConfigurationService.defaultDayCount(va.getCurrencyCode())) ? 365 : 360);
-        BigDecimal rate;
-        String interestType;
-        boolean defaultRate = (balance.signum() > 0 ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate()) == null;
-
-        if (balance.compareTo(BigDecimal.ZERO) > 0) {
-            // Credit position - earns interest
-            rate = va.getEffectiveCreditRate() != null ? va.getEffectiveCreditRate() : DEFAULT_CREDIT_RATE;
-            interestType = "CREDIT";
-        } else {
-            // Debit position - pays interest
-            rate = va.getEffectiveDebitRate() != null ? va.getEffectiveDebitRate() : DEFAULT_DEBIT_RATE;
-            interestType = "DEBIT";
-            balance = balance.abs();
-        }
-        if (defaultRate) {
+        String interestType = day.credit() ? "CREDIT" : "DEBIT";
+        if (day.defaultRate()) {
             log.info("IHB interest on {} accrued at the default {} rate {}% (no rate configured)",
-                va.getVaNumber(), interestType.toLowerCase(), rate);
+                va.getVaNumber(), interestType.toLowerCase(), day.rate());
         }
-
-        // Daily interest = Balance * Rate / (100 * DayBasis)
-        BigDecimal dailyInterest = balance
-            .multiply(rate)
-            .divide(BigDecimal.valueOf(100L * dayBasis), 6, RoundingMode.HALF_UP);
 
         // Accrue interest
-        if ("CREDIT".equals(interestType)) {
-            va.accrueCredit(dailyInterest);
+        if (day.credit()) {
+            va.accrueCredit(day.amount());
         } else {
-            va.accrueDebit(dailyInterest);
+            va.accrueDebit(day.amount());
         }
         va.setLastInterestCalcDate(calcDate);
         virtualAccountRepository.save(va);
@@ -970,14 +947,75 @@ public class IhbUnifiedService {
             .calcDate(calcDate)
             .eodBalance(va.getCurrentBalance())
             .positionType(va.getIhbPositionType())
-            .rateApplied(rate)
-            .rateSource(defaultRate ? RATE_DEFAULT : "ACCOUNT")
-            .interestAmount(dailyInterest)
+            .rateApplied(day.rate())
+            .rateSource(day.defaultRate() ? RATE_DEFAULT : "ACCOUNT")
+            .interestAmount(day.amount())
             .interestType(interestType)
             .accruedCreditInterest(va.getAccruedCreditInterest())
             .accruedDebitInterest(va.getAccruedDebitInterest())
             .build();
     }
+
+    /** One day's interest on {@code balance}: credit (earned) or debit (owed). */
+    private record DailyInterest(boolean credit, BigDecimal amount, BigDecimal rate, boolean defaultRate) {
+    }
+
+    /** One day's interest on an IHB account at {@code balance}, as the daily accrual books it; null on a zero balance. */
+    private DailyInterest dailyInterest(VirtualAccount va, BigDecimal balance) {
+        if (balance == null || balance.signum() == 0) return null;
+        // Day count: the account's interest configuration's convention when it carries one, else the currency's
+        // market default (ACT/365 for GBP, AED, SGD, ...; ACT/360 otherwise). Was 360 for every currency.
+        int dayBasis = Optional.ofNullable(va.getInternalInterestConfigId())
+            .flatMap(interestConfigRepository::findById)
+            .map(InterestConfiguration::getDayCountBasis)
+            .orElse("ACT/365".equals(InterestConfigurationService.defaultDayCount(va.getCurrencyCode())) ? 365 : 360);
+        boolean credit = balance.signum() > 0;
+        BigDecimal configured = credit ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate();
+        BigDecimal rate = configured != null ? configured : credit ? DEFAULT_CREDIT_RATE : DEFAULT_DEBIT_RATE;
+        // Daily interest = Balance * Rate / (100 * DayBasis)
+        BigDecimal amount = balance.abs().multiply(rate).divide(BigDecimal.valueOf(100L * dayBasis), 6, RoundingMode.HALF_UP);
+        return new DailyInterest(credit, amount, rate, configured == null);
+    }
+
+    /**
+     * A reversal has just put {@code delta} back on an IHB account (its balance already carries it): the interest the
+     * daily accrual booked on the reversed movement, for the days it stood, comes off again, and the accrual is what
+     * the corrected balance earns or owes. The midnight run of day d accrues on the balance at the end of d-1, so the
+     * movement (value-dated {@code movedOn}) was in the runs from movedOn+1 to the last run; days already posted
+     * (up to the last posting) are left alone. A balance that never earned or owed anything is a no-op, and an accrual
+     * never goes below zero.
+     * ponytail: one run per day and the balance stood where it is now; a reversal after an interest posting does not
+     * refund the posted interest (both callers today reverse before the next month-end posting). Rebuild the accrual
+     * from the ledger's daily balances if either stops holding.
+     */
+    public void takeBackAccruedInterest(VirtualAccount va, BigDecimal delta, LocalDate movedOn) {
+        if (!va.isIhbParticipant() || va.getLastInterestCalcDate() == null || movedOn == null || delta.signum() == 0) return;
+        LocalDate from = movedOn.plusDays(1);
+        if (va.getLastInterestPostingDate() != null && !va.getLastInterestPostingDate().isBefore(from)) {
+            from = va.getLastInterestPostingDate().plusDays(1);
+        }
+        LocalDate to = va.getLastInterestCalcDate().isAfter(LocalDate.now()) ? LocalDate.now() : va.getLastInterestCalcDate();
+        long days = java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1;
+        if (days <= 0) return;
+
+        // Each day's accrual was stored to 4 places (the accrued columns' scale), so each day counts rounded the same way.
+        BigDecimal n = BigDecimal.valueOf(days);
+        DailyInterest wrong = dailyInterest(va, va.getCurrentBalance().subtract(delta));
+        DailyInterest right = dailyInterest(va, va.getCurrentBalance());
+        if (wrong != null) {
+            BigDecimal off = wrong.amount().setScale(4, RoundingMode.HALF_UP).multiply(n);
+            if (wrong.credit()) va.setAccruedCreditInterest(Objects.requireNonNullElse(va.getAccruedCreditInterest(), BigDecimal.ZERO).subtract(off).max(BigDecimal.ZERO));
+            else va.setAccruedDebitInterest(Objects.requireNonNullElse(va.getAccruedDebitInterest(), BigDecimal.ZERO).subtract(off).max(BigDecimal.ZERO));
+        }
+        if (right != null) {
+            BigDecimal on = right.amount().setScale(4, RoundingMode.HALF_UP).multiply(n);
+            if (right.credit()) va.accrueCredit(on);
+            else va.accrueDebit(on);
+        }
+        log.info("IHB interest on {} re-accrued for {} day(s) after a reversal of {}: credit {}, debit {}",
+            va.getVaNumber(), days, delta, va.getAccruedCreditInterest(), va.getAccruedDebitInterest());
+    }
+
 
     private VirtualAccountDto.IhbInterestPostingResult postInterestForAccount(VirtualAccount va) {
         BigDecimal creditGross = va.getAccruedCreditInterest();
@@ -1168,6 +1206,19 @@ public class IhbUnifiedService {
 
         if (!treasury.canLend()) {
             throw new BusinessException("Treasury Center cannot lend: " + treasury.getEntityCode());
+        }
+
+        // The IHB limit and exposure are in the entity's IHB currency (IhbExposure): its first IHB current account sets
+        // that currency, later ones must be in it. MNC-UK was enabled in GBP and given only an AED account (V60).
+        String ihbCurrency = IhbExposure.accountCurrency(virtualAccountRepository, participant.getId())
+            .orElse(request.getCurrencyCode());
+        if (!ihbCurrency.equals(request.getCurrencyCode())) {
+            throw new BusinessException(participant.getEntityCode() + "'s IHB accounts, limit and exposure are in "
+                + ihbCurrency + "; an IHB current account in " + request.getCurrencyCode() + " is not supported");
+        }
+        if (!ihbCurrency.equals(participant.getIhbCurrency())) {
+            participant.setIhbCurrency(ihbCurrency);
+            legalEntityRepository.save(participant);
         }
 
         // 5. Multiple IHB accounts per entity/currency are allowed

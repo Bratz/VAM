@@ -187,6 +187,7 @@ public class TransactionService {
     private final IntercompanyTransactionRepository intercompanyTransactionRepository;
     private final IhbMirrorService ihbMirrors;
     private final FxPaymentService fxPayments;
+    private final com.bank.vam.service.treasury.IhbUnifiedService ihb;
 
     // ========================================================================
     // CHARGE CODES (loaded from ChargeConfiguration - no hardcoded values)
@@ -1964,6 +1965,8 @@ public class TransactionService {
             va.setCurrentBalance(before.subtract(leg.getAmount()));
             va.setAvailableBalance(va.getCurrentBalance().add(
                 va.getEffectiveCreditLimit() != null ? va.getEffectiveCreditLimit() : BigDecimal.ZERO));
+            // The credit never was good money: the credit interest accrued on it while it stood comes off too.
+            ihb.takeBackAccruedInterest(va, leg.getAmount().negate(), leg.getValueDate());
             virtualAccountRepository.save(va);
             ownerDebit = transactionRepository.save(Transaction.builder()
                     .movementType(Transaction.MovementType.TRANSFER_OUT)

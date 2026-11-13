@@ -2,6 +2,7 @@ package com.bank.vam.controller.intercompany;
 
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.intercompany.IntercompanyDto.*;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.service.intercompany.IntercompanyService;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.CreateIntercompanyTransactionRequest;
@@ -97,9 +98,9 @@ public class IntercompanyController {
     @Operation(summary = "Get entity pairs with IC activity", 
         description = "List all entity pairs that have intercompany transactions")
     public ResponseEntity<ApiResponse<List<EntityPairSummary>>> getEntityPairs(
-            @RequestParam UUID corporateId) {
+            @RequestParam(required = false) UUID corporateId) {
         log.debug("Getting entity pairs for corporate: {}", corporateId);
-        List<EntityPairSummary> pairs = transactionService.getEntityPairs(corporateId);
+        List<EntityPairSummary> pairs = transactionService.getEntityPairs(requireCorporate(corporateId));
         return ResponseEntity.ok(ApiResponse.success(pairs));
     }
 
@@ -107,9 +108,9 @@ public class IntercompanyController {
     @Operation(summary = "Get per-subsidiary intercompany positions",
         description = "IC Receivable/Payable balances per subsidiary, sourced from the real VA ledger")
     public ResponseEntity<ApiResponse<List<SubsidiaryIntercompanyPosition>>> getIntercompanyPositions(
-            @RequestParam UUID corporateId) {
+            @RequestParam(required = false) UUID corporateId) {
         log.debug("Getting intercompany positions for corporate: {}", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(transactionService.getIntercompanyPositions(corporateId)));
+        return ResponseEntity.ok(ApiResponse.success(transactionService.getIntercompanyPositions(requireCorporate(corporateId))));
     }
 
     @GetMapping("/bilateral-position")
@@ -187,9 +188,9 @@ public class IntercompanyController {
     @Operation(summary = "Get corporate IC position summary", 
         description = "Get aggregated intercompany position for a corporate")
     public ResponseEntity<ApiResponse<IntercompanyPositionSummary>> getPositionSummary(
-            @RequestParam UUID corporateId) {
+            @RequestParam(required = false) UUID corporateId) {
         log.debug("Getting position summary for corporate: {}", corporateId);
-        IntercompanyPositionSummary summary = transactionService.getCorporatePositionSummary(corporateId);
+        IntercompanyPositionSummary summary = transactionService.getCorporatePositionSummary(requireCorporate(corporateId));
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
 
@@ -215,10 +216,9 @@ public class IntercompanyController {
     @Operation(summary = "Get entities with IHB positions")
     public ResponseEntity<ApiResponse<List<EntityWithPositionResponse>>> getEntitiesWithPositions(
             @RequestParam(required = false) UUID corporateId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String entityType) {
+            @RequestParam(required = false) String status) {
         return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.getEntitiesWithPositions(status, entityType)));
+            intercompanyService.getEntitiesWithPositions(requireCorporate(corporateId), status)));
     }
 
     @GetMapping("/entities/{entityId}")
@@ -314,7 +314,7 @@ public class IntercompanyController {
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "50") int size) {
         return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.getTransactions(corporateId, entityId, type, status, page, size)));
+            intercompanyService.getTransactions(requireCorporate(corporateId), entityId, type, status, page, size)));
     }
 
     // --- Settlement Operations ---
@@ -369,7 +369,7 @@ public class IntercompanyController {
     public ResponseEntity<ApiResponse<IntercompanyStatsResponse>> getStats(
             @RequestParam(required = false) UUID corporateId) {
         return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.getStats(corporateId)));
+            intercompanyService.getStats(requireCorporate(corporateId))));
     }
 
     @GetMapping("/activity-report")
@@ -380,6 +380,15 @@ public class IntercompanyController {
             @RequestParam(required = false) UUID entityId) {
         return ResponseEntity.ok(ApiResponse.success(
             intercompanyService.getActivityReport(startDate, endDate, entityId)));
+    }
+
+    /**
+     * Intercompany data belongs to one corporate's group; never all corporates' at once (neither page has a bank-wide
+     * view). Refused as a 400, as KycController / PayablesController do.
+     */
+    static UUID requireCorporate(UUID corporateId) {
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+        return corporateId;
     }
 
     // ========================================================================
