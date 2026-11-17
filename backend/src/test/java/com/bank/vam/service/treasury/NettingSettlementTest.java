@@ -114,6 +114,31 @@ class NettingSettlementTest {
         assertThat(cycle.getSettlements()).allMatch(s -> s.getSettlementStatus() == NettingSettlement.SettlementStatus.SETTLED);
     }
 
+    /** Spec acceptance 6: with intercompany_transactions gone, settling still closes the recharge and the invoice it nets. */
+    @Test
+    void settlingClosesTheRechargeAndTheInvoiceItNetted() {
+        UUID holding = UUID.randomUUID(), abuDhabi = UUID.randomUUID();
+        VirtualAccount bank = shadow("SHADOW-AED-002", UUID.randomUUID(), "EBILAEADXXX");
+        account("SETTLE-AED-3953", holding, "1000", bank);
+        account("SETTLE-AED-7523", abuDhabi, "0", bank);
+        NettingCycle cycle = approved(net(holding, "MNC-HOLDING", "-300"), net(abuDhabi, "MNC-UAE-ABUDHABI", "300"));
+        IntercompanyRecharge recharge = recharge(abuDhabi, holding);
+        when(recharges.findById(recharge.getId())).thenReturn(Optional.of(recharge));
+        entry(cycle, holding, abuDhabi, "75").setIntercompanyRechargeId(recharge.getId());
+        Receivable invoice = receivable(Receivable.ReceivableStatus.OVERDUE, "225", null);
+        when(receivables.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        entry(cycle, holding, abuDhabi, "225").setReceivableId(invoice.getId());
+
+        service.settleCycle(cycle.getId());
+
+        assertThat(recharge.getStatus()).isEqualTo(IntercompanyRecharge.RechargeStatus.SETTLED);
+        assertThat(recharge.getSettledVia()).isEqualTo(IntercompanyRecharge.SettlementMethod.NETTING);
+        assertThat(recharge.getSettlementReference()).contains("NET-202611-001");
+        assertThat(NettingService.awaitingNetting(recharge)).isFalse();
+        assertThat(invoice.getStatus()).isEqualTo(Receivable.ReceivableStatus.NETTED);
+        assertThat(invoice.getOutstandingAmount()).isEqualByComparingTo("0");
+    }
+
     @Test
     void twoIhbCurrentAccountsAreALedgerTransferWithoutAnyBankAccount() {
         UUID uk = UUID.randomUUID(), dubai = UUID.randomUUID();

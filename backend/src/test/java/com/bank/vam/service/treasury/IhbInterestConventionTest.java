@@ -117,6 +117,31 @@ class IhbInterestConventionTest {
         assertThat(aed.getAccruedDebitInterest()).isEqualByComparingTo(row.getValue().getAmount());
     }
 
+    /** Spec acceptance 8: the rates the account card and the Interest tab show are the rates the daily accrual applies. */
+    @Test
+    void theRatesOnScreenAreTheRatesTheAccrualApplies() {
+        VirtualAccount va = account("AED", "36500", null);
+        va.setEffectiveDebitRate(new BigDecimal("5.75")); // configured debit, no credit rate: the 2.50 default on that side
+        when(vas.findById(va.getId())).thenReturn(Optional.of(va));
+        VirtualAccountDto.IhbPositionResponse card = service.getIhbCurrentAccountPosition(va.getId());
+        IhbBookService.InterestHistory tab = new IhbBookService(vas, mock(LegalEntityRepository.class),
+            mock(PhysicalAccountRepository.class), txns, accruals, configs,
+            mock(com.bank.vam.repository.audit.AuditLogRepository.class), new com.fasterxml.jackson.databind.ObjectMapper())
+            .interestHistory(va.getCorporateId(), va.getId(), null, null);
+
+        BigDecimal creditCharged = accrue(va).getRateApplied();
+        va.setCurrentBalance(new BigDecimal("-36500"));
+        BigDecimal debitCharged = accrue(va).getRateApplied();
+
+        assertThat(creditCharged).isEqualByComparingTo("2.50");
+        assertThat(debitCharged).isEqualByComparingTo("5.75");
+        assertThat(card.getCreditRate()).isEqualByComparingTo(creditCharged);
+        assertThat(card.getDebitRate()).isEqualByComparingTo(debitCharged);
+        assertThat(tab.creditRateNow()).isEqualByComparingTo(creditCharged);
+        assertThat(tab.debitRateNow()).isEqualByComparingTo(debitCharged);
+        assertThat(tab.dayCountNow()).isEqualTo("ACT/365"); // what the accrual counted AED on (aedAccruesOn365AndUsdOn360)
+    }
+
     @Test
     void theAccountShowsTheRatesTheRunChargesNotZeroWhenNoneIsConfigured() {
         VirtualAccount va = account("AED", "100", null);

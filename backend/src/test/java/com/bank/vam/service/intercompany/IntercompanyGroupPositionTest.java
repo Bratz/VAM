@@ -207,6 +207,24 @@ class IntercompanyGroupPositionTest {
         });
     }
 
+    /** Spec acceptance 1: never "all settled" while anything is open, whichever kind it is and with no IHB position. */
+    @Test
+    void anyOneOpenLineAloneMeansNotAllSettled() {
+        when(receivables.findIntercompanyReceivablesByCorporate(mnc))
+            .thenReturn(List.of(receivable("IC-1", dubai, uk, "10", Receivable.ReceivableStatus.OPEN)));
+        assertThat(service.getGroupPosition(mnc).allSettled()).isFalse();
+
+        when(receivables.findIntercompanyReceivablesByCorporate(mnc)).thenReturn(List.of());
+        when(recharges.findAll()).thenReturn(List.of(recharge("RCH-1", null, RechargeStatus.APPROVED, "500")));
+        assertThat(service.getGroupPosition(mnc).allSettled()).isFalse();
+
+        when(recharges.findAll()).thenReturn(List.of(recharge("RCH-4", null, RechargeStatus.PENDING, "77")));
+        assertThat(service.getGroupPosition(mnc).allSettled()).isFalse();
+
+        when(recharges.findAll()).thenReturn(List.of(recharge("RCH-9", null, RechargeStatus.SETTLED, "77")));
+        assertThat(service.getGroupPosition(mnc).allSettled()).isTrue();
+    }
+
     @Test
     void theReportingTotalIsLabelledWithEachRateAndItsDateAndNoDealerFigures() {
         ledgerAsOnVamFive();

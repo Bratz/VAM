@@ -1333,7 +1333,7 @@ public class NettingService {
      * Marks payables and receivables as settled via netting.
      */
     private void updateSourceDocuments(NettingCycle cycle) {
-        String settlementRef = "NET-" + cycle.getCycleReference();
+        String settlementRef = cycle.getCycleReference(); // already "NET-YYYYMM-NNN"
         
         for (NettingEntry entry : cycle.getEntries()) {
             if (entry.getStatus() != NettingEntry.EntryStatus.SETTLED) continue;

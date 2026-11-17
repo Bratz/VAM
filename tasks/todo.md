@@ -233,14 +233,73 @@ tsc + lint clean; not run live: starting the backend applies V57–V65 to the lo
   Intercompany page's IHB lines to Movements filtered by entity (Phase 1 note).
 
 ### Phase 5 — verification
-- [ ] 5.1 Spec acceptance 1–8 as tests; full suite; typecheck + lint.
-- [ ] 5.2 Localhost live run (backend-uae, backed up and restored): TestMNC positions, a netting cycle with a cross-bank
-      leg producing a payment and a same-account leg, the legacy table gone, the In-House Bank matrix and statement.
-- [ ] 5.3 vam-five after deploy: read-only checks of both pages (TestMNC and another corporate); a netting run only with
-      the user's go-ahead.
+- [x] 5.1 Spec acceptance 1–8 as tests; full suite; typecheck + lint.
+
+5.1 done (13 Nov, uncommitted; `mvn test` 876/0 (871 + 5 added), tsc + lint clean; no bug found). Criterion → evidence:
+1. Treasury owes MNC-UK 1,100.01 / Dubai 14.48, control nets to zero, invoices and recharges separate lines, reporting
+   total with rate date: `IntercompanyGroupPositionTest#threeLineKindsPerPairEachWithItsOwnNet`,
+   `#theIhbControlNetsToZeroAndADriftedMirrorIsABreak`, `#theReportingTotalIsLabelledWithEachRateAndItsDateAndNoDealerFigures`,
+   `#oneInvoiceOnBothSidesIsCountedOnceAsTheReceivable`; never all settled while open: **added**
+   `#anyOneOpenLineAloneMeansNotAllSettled` (an open invoice, an approved recharge or a pending one alone → false; a
+   settled recharge only → true). The live vam-five figures are 5.3.
+2. Scoping: `IntercompanyGroupPositionTest#eachCorporateSeesOnlyItsOwnGroupAndNoCorporateIsRefused`,
+   `#nettingEligibilityAndAddAreScopedToTheCorporate`, `#rechargesAreApprovedAndRejectedWithinTheCorporateByTheSignedInUser`;
+   `IntercompanyCorporateScopeTest` (all three); `NettingSettlementTest#cyclesAndPopulateAreScopedToTheCycleCorporate`;
+   `IhbBookServiceTest#drillDownShowsTheTransactionsLegsWithinTheCorporateOnly`,
+   `#statementHasOpeningClosingAndValueDatedLinesAndRefusesAnotherCorporatesAccount` (404), `#termsHistory...ForTheCorporateOnly`.
+3. Checked by reading: `frontend/src/App.tsx` (`intercompany-pobo|cobo|settlement` render `IntercompanyDashboardPage`;
+   `config/navigation.tsx` covers them), `IntercompanyDashboardPage.tsx` (no tabs; calls only group-position,
+   netting-eligibility, add-to-netting, recharge approve/reject), `InHouseBankPage.tsx` + `IhbBookPanels.tsx` (tabs
+   Position, Movements, Interest, Limit and rate changes, Entities, Current Accounts, COBO, POBO; `/ihb/*` only, no
+   pair, recharge or control figure). The same IHB money as a pair line there and an entity balance here is by design (D1).
+4. **Added** `IntercompanySettlementSurfaceTest#theOnlyIntercompanySettleActionIsANettingCycles` (scans every
+   `@RestController`: no `settle-bilateral`; the only non-GET intercompany/POBO/COBO/recharge/netting path containing
+   "settle" is `/api/v1/netting/cycles/{id}/settle`). By reading: the only callers of `IntercompanyRecharge.settle` /
+   `markNettingSettled` are `NettingService.updateSourceDocuments` and `PoboCutoverService` (closes POBO recharges
+   already booked on the IHB; no money moves).
+5. `NettingSettlementTest#aPairOnTheSameBankAccountIsALedgerTransfer`, `#twoIhbCurrentAccountsAreALedgerTransferWithoutAnyBankAccount`,
+   `#aPairOnDifferentBankAccountsIsAnOutwardPaymentOfTheNet`, `#thePreviewIsWhatPosts` (preview legs = posted legs, LEDGER/PAYMENT each).
+6. **Added** `IntercompanySettlementSurfaceTest#noCodeReadsOrWritesTheLegacyTableAndV64DropsItInBothFolders` (no string
+   literal in `src/main/java` names the table; V64 in both folders, identical, `DROP TABLE IF EXISTS`). Flows:
+   `PoboLegsBalanceTest` (POBO six legs, no recharge), `CoboPaymentApplicationTest` (COBO in-house credits),
+   `PoboCutoverServiceTest`, recharge approve/reject and netting (criterion 2 tests); **added**
+   `NettingSettlementTest#settlingClosesTheRechargeAndTheInvoiceItNetted` (recharge SETTLED via NETTING, receivable
+   NETTED with nothing outstanding — nothing tested the source-document close before).
+7. `IhbBookServiceTest` (position matrix + funding, movements by kind and filters, drill-down legs, statement
+   opening/closing/value dates, interest history, terms history, audit writers). Export by reading: CSV client-side
+   (`IhbBookPanels.tsx` `downloadCsv`), camt.053 `IhbController#getStatementCamt053` goes through the scoped `book.statement`.
+8. **Added** `IhbInterestConventionTest#theRatesOnScreenAreTheRatesTheAccrualApplies` (configured debit, default
+   credit: account card `creditRate`/`debitRate` and Interest tab `creditRateNow`/`debitRateNow`/`dayCountNow` = the
+   rates and day count the daily accrual applies); also `#theAccountShowsTheRatesTheRunChargesNotZeroWhenNoneIsConfigured`,
+   `#eachAccrualIsRecordedWithItsBalanceRateDayCountAndAmount`. By reading: the open-account form's "Treasury Rates"
+   (`treasury-rates`, indicative) is a set-up proposal for a new account, not a rate shown as charged.
+  Also fixed: netting stamped settled documents "NET-" + cycle reference = "NET-NET-202611-001"; now the cycle reference.
+- [x] 5.2 Localhost live run (13 Nov; pg_dump before, pg_restore after: back at V56, legacy table and data as before).
+      V57-V65 applied on start; `intercompany_transactions` gone, `ihb_interest_accruals` in the new shape. TestMNC
+      cycle NET-202601-004 (4 overdue IC receivables, gross 122,000, net 28,000): as on vam-five, HOLDING's leg REFUSED
+      (AED 15 available) and MNC-UAE's IHB leg LEDGER. Local data has both settle accounts on one HSBC UK shadow and no
+      home-bank account in the program, so to get a cross-bank leg (local only, restored): SHADOW-AED--AED-002 moved into
+      program b110ec8e, SETTLE-AED-3953 on PRGAED81173684 (HSBC) with 20,000, backend on the UK profile (home HSBC).
+      Preview = settle: HOLDING → ABUDHABI 15,000 PAYMENT (PMT17945869938611802, beneficiary AE07... EBILAEADXXX;
+      payer 20,000 → 5,000, its HSBC shadow debited 15,000; receiver credited only by the inward payment), MNC-UAE →
+      ABUDHABI 13,000 LEDGER (IHB -7,212 → -20,212, SETTLE-AED-7523 44 → 13,044). Cycle SETTLED, 4 entries SETTLED, the
+      4 receivables PAID / netting SETTLED with ref NET-202601-004. The shadow went to -2,336.52 only because the payer
+      was funded without bank money (set-up artefact). UI of the matrix/statement checked on vam-five (5.3).
+- [x] 5.3 vam-five after deploy of 2d7ef51 (read-only, 13 Nov): Intercompany for TestMNC = treasury owes MNC-UK AED
+      1,100.01 and Dubai 14.48, control balanced, 4 overdue invoices as separate lines, AED 123,114.49, not all settled.
+      In-House Bank: Position (3 rows, limit 1,000,000 each, funding AED 10,013,112.66), Movements 1,737 with all 7 kinds,
+      drill-down legs, statement MNC-UK 0 → 1,100.01 (8 lines), interest history (rates 4.5/5.5 ACT/365, no accruals
+      yet), changes tab; `/ihb/position` without corporate 400. Helios: empty position, group position all settled, 0
+      movements; TestMNC's statement / movement / interest as Helios 404. Netting run on vam-five not done (needs the
+      user's go-ahead).
 
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
+- [ ] Outbound payment fee debited and credited on the payer's own account (5.2: SETTLE-AED-3953 "FEE DEBIT" 22.50 and
+      "FEE CREDIT" 22.50): the fee income account resolves to the payer, so no fee is collected. Check the fee account
+      resolution for outward payments.
+- [ ] vam-five: no IHB interest accrual rows since the Phase 4 release (daily run not running there? see the
+      scheduler item below).
 - [ ] IHB + Intercompany Dashboard functional review (docs/reviews/ihb-intercompany-functional-review.md, 13 Nov):
       7 critical, 3+ high. Verified live: `/intercompany/entities` + `/entity-pairs` ignore `corporateId` (Helios is
       shown TestMNC's entities); the dashboard reads the legacy IC transaction table and says "all settled" while the
@@ -317,6 +376,8 @@ Statement intake:
 - [ ] Statement for a CBS-fed account makes it look fresh although its balance comes from core banking.
 - [ ] OCI `fileingest_workspace` mount point likely root-owned (same issue fixed for the statement inbox) — unverified.
 UI:
+- [ ] In-House Bank: Movements calls a sweep reversal and "Deposit to IHB current account" "Other"; Position lists every
+      funding currency even with no IHB accounts in it; the stat strip says "1 lenders".
 - [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,
       keeps a refusal after Back, Program offers nothing.
 - [ ] Link External has no data-source field (hard-codes OPEN_BANKING_UAE); Add Account defaults BIC to EABORAEDXXX.
