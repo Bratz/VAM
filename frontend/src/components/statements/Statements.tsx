@@ -1,9 +1,10 @@
 // Bank statements, read-only (spec R2a, R11, R16 / D7): the intake log and an account's statement
 // lines. Nothing here submits a statement — they arrive through the inbox or the system intake endpoint.
 
-import React, { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
-import { Badge, Card, CardHeader, DataTable } from '../ui';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FileText } from 'lucide-react';
+import { Badge, Card, CardHeader, DataTable, Drawer } from '../ui';
+import { Tabs } from '../ui/enhanced';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils';
 import { statementApi, BankStatement, BankStatementLine, StatementFileLog } from '../../services/statementApi';
 
@@ -30,73 +31,121 @@ const StatementFlags: React.FC<{ s: BankStatement }> = ({ s }) => (
 
 const accountOf = (s: BankStatement) => s.iban || s.accountNumber || 'Unknown account';
 
-/** Intake log (R2a): every statement file the system took in, expandable to its statements. */
+type FileOutcome = 'processed' | 'refused' | 'failed';
+
+const FILE_OUTCOME: Record<FileOutcome, { label: string; variant: 'success' | 'warning' | 'error' }> = {
+  processed: { label: 'Processed', variant: 'success' },
+  refused: { label: 'Some refused', variant: 'warning' },
+  failed: { label: 'Not read', variant: 'error' },
+};
+
+const fileOutcome = ({ file }: StatementFileLog): FileOutcome =>
+  file.status === 'FAILED' ? 'failed' : file.refusedCount > 0 ? 'refused' : 'processed';
+
+const PAGE_SIZE = 10;
+/** The log's backend cap (StatementIntakeController MAX_FILES); paged and filtered here. */
+const FILES_FETCHED = 200;
+
+/** Intake log (R2a): every statement file the system took in; a file opens to its statements. */
 export const StatementIntakeLog: React.FC = () => {
   const [log, setLog] = useState<StatementFileLog[] | null>(null);
-  const [open, setOpen] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FileOutcome | 'all'>('processed');
+  const [page, setPage] = useState(1);
+  const [open, setOpen] = useState<StatementFileLog | null>(null);
 
   useEffect(() => {
     // A failed fetch hides the card rather than claiming no files arrived.
-    statementApi.files().then(setLog).catch(() => setLog(null));
+    statementApi.files(FILES_FETCHED).then(setLog).catch(() => setLog(null));
   }, []);
 
+  const counts = useMemo(() => {
+    const c: Record<FileOutcome, number> = { processed: 0, refused: 0, failed: 0 };
+    (log ?? []).forEach((f) => { c[fileOutcome(f)] += 1; });
+    return c;
+  }, [log]);
+  const shown = useMemo(() => (log ?? []).filter((f) => filter === 'all' || fileOutcome(f) === filter), [log, filter]);
+
   if (!log) return null;
+  const pick = (id: string) => { setFilter(id as FileOutcome | 'all'); setPage(1); };
   return (
     <Card>
       <CardHeader
-        title="Bank (automatic)"
-        subtitle="Bank statements taken in from the bank's delivery folder or its system-to-system feed. Read-only: nobody uploads a statement."
+        title="Bank statements (automatic)"
+        subtitle="Taken in from the bank's delivery folder or its system-to-system feed. Read-only: nobody uploads a statement."
       />
-      {log.length === 0 ? (
-        <p className="caption">No statement files received yet.</p>
-      ) : (
-        <div className="space-y-1 -mx-2">
-          {log.map(({ file, statements }) => {
-            const expanded = open === file.id;
-            return (
-              <div key={file.id}>
-                <button
-                  type="button"
-                  onClick={() => setOpen(expanded ? null : file.id)}
-                  className="w-full flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-left hover:bg-neutral-50 dark:hover:bg-primary-950 transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {expanded ? <ChevronDown className="w-4 h-4 shrink-0 text-neutral-400" /> : <ChevronRight className="w-4 h-4 shrink-0 text-neutral-400" />}
-                    <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
-                    <div className="min-w-0">
-                      <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{file.fileName}</p>
-                      <p className="caption">
-                        {file.channel === 'INBOX' ? 'Inbox' : 'API'} · {formatDateTime(file.receivedAt)} · {file.appliedCount} applied · {file.duplicateCount} duplicate · {file.refusedCount} refused
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant={file.status === 'FAILED' ? 'error' : file.refusedCount > 0 ? 'warning' : 'success'} size="sm">
-                    {file.status === 'FAILED' ? 'Not read' : file.refusedCount > 0 ? 'Some refused' : 'Processed'}
-                  </Badge>
-                </button>
-                {expanded && (
-                  <div className="ml-8 mr-2 mb-2 space-y-2">
-                    {file.error && <p className="caption-error">{file.error}</p>}
-                    {statements.map((s) => (
-                      <div key={s.id} className="p-2 rounded-lg border border-edge-subtle">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-caption text-primary-900 dark:text-neutral-50 truncate">{accountOf(s)}</span>
-                          <Badge variant={STATEMENT_STATUS[s.status]} size="xs">{s.status}</Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className="caption">{s.statementId ?? 'No id'} · {day(s.statementDate)}</span>
-                          <StatementFlags s={s} />
-                        </div>
-                        {s.reason && <p className="caption mt-1">{s.reason}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {log.length > 0 && (
+        <div className="mb-4 overflow-x-auto">
+          <Tabs
+            variant="pills"
+            size="sm"
+            activeTab={filter}
+            onChange={pick}
+            tabs={[
+              ...(Object.keys(FILE_OUTCOME) as FileOutcome[])
+                .filter((o) => o === 'processed' || counts[o] > 0)
+                .map((o) => ({ id: o, label: FILE_OUTCOME[o].label, badge: counts[o] })),
+              { id: 'all', label: 'All', badge: log.length },
+            ]}
+          />
         </div>
       )}
+      <DataTable
+        hairline
+        data={shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+        keyExtractor={({ file }) => file.id}
+        onRowClick={setOpen}
+        pagination
+        pageSize={PAGE_SIZE}
+        currentPage={page}
+        totalCount={shown.length}
+        onPageChange={setPage}
+        emptyIcon={<FileText className="w-10 h-10" />}
+        emptyTitle={log.length === 0 ? 'No statement files received yet' : `No files ${FILE_OUTCOME[filter as FileOutcome]?.label.toLowerCase() ?? ''}`.trim()}
+        emptyDescription={log.length === 0 ? 'Files appear here as the banks deliver them.' : 'Choose another filter to see the rest.'}
+        columns={[
+          { key: 'fileName', header: 'File', minWidth: 200, render: (_v, { file }) => (
+            <div className="min-w-0">
+              <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[16rem]" title={file.fileName}>{file.fileName}</p>
+              <p className="caption">{file.channel === 'INBOX' ? 'Delivery folder' : 'System feed'}</p>
+            </div>
+          ) },
+          { key: 'receivedAt', header: 'Received', minWidth: 150, dropOrder: 2, render: (_v, { file }) => (
+            <span className="caption">{formatDateTime(file.receivedAt)}</span>
+          ) },
+          { key: 'counts', header: 'Statements', minWidth: 170, dropOrder: 1, render: (_v, { file }) => (
+            <span className="caption">{file.appliedCount} applied · {file.duplicateCount} duplicate · {file.refusedCount} refused</span>
+          ) },
+          { key: 'status', header: 'Status', align: 'right', minWidth: 110, render: (_v, f) => (
+            <Badge variant={FILE_OUTCOME[fileOutcome(f)].variant} size="sm">{FILE_OUTCOME[fileOutcome(f)].label}</Badge>
+          ) },
+        ]}
+      />
+      <Drawer
+        isOpen={!!open}
+        onClose={() => setOpen(null)}
+        title={open?.file.fileName}
+        subtitle={open ? `${open.file.channel === 'INBOX' ? 'Delivery folder' : 'System feed'} · ${formatDateTime(open.file.receivedAt)}` : undefined}
+      >
+        {open && (
+          <div className="space-y-2">
+            {open.file.error && <p className="caption-error">{open.file.error}</p>}
+            {open.statements.length === 0 && !open.file.error && <p className="caption">No statements in this file.</p>}
+            {open.statements.map((s) => (
+              <div key={s.id} className="p-3 rounded-lg border border-edge-subtle">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-caption text-primary-900 dark:text-neutral-50 truncate">{accountOf(s)}</span>
+                  <Badge variant={STATEMENT_STATUS[s.status]} size="xs">{s.status}</Badge>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  <span className="caption">{s.statementId ?? 'No id'} · {day(s.statementDate)}</span>
+                  <StatementFlags s={s} />
+                </div>
+                {s.reason && <p className="caption mt-1">{s.reason}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </Drawer>
     </Card>
   );
 };

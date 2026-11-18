@@ -30,7 +30,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/ingest")
 public class FileIngestController {
 
-    private static final int MAX_JOBS_LISTED = 100;
+    /** ponytail: the page filters and pages these in the browser; page here once uploads run into the thousands. */
+    private static final int MAX_JOBS_LISTED = 500;
     private static final int MAX_ROWS_PER_PAGE = 500;
 
     private final IngestJobService ingestJobService;

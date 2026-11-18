@@ -83,8 +83,9 @@ export const ingestApi = {
     return res.data;
   },
 
+  /** The job's first 500 rows (the endpoint's page cap); the page pages them. */
   getRows: async (jobId: string): Promise<StagedRowResponse[]> => {
-    const res = await apiClient.get<StagedRowResponse[]>(`/ingest/jobs/${jobId}/rows`);
+    const res = await apiClient.get<StagedRowResponse[]>(`/ingest/jobs/${jobId}/rows`, { params: { size: 500 } });
     return res.data;
   },
 

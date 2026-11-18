@@ -43,9 +43,9 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, CardHeader, Button, Badge, DataTable } from '../components/ui';
-import { Stepper } from '../components/ui/enhanced';
+import { Stepper, Tabs } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
-import { formatFileSize } from '../utils';
+import { formatCurrency, formatDateTime, formatFileSize } from '../utils';
 import { useNavigation } from '../hooks/useNavigation';
 import { StatementIntakeLog } from '../components/statements/Statements';
 
@@ -317,6 +317,22 @@ function jobOutcome(job: IngestJobResponse): JobOutcome {
   return { kind: 'done', variant: 'success', label: 'Done' };
 }
 
+/** The uploads filter's groups, from the same outcome the badge shows. */
+type UploadGroup = 'done' | 'partial' | 'failed' | 'running';
+const uploadGroup = (j: IngestJobResponse): UploadGroup => {
+  const k = jobOutcome(j).kind;
+  return k === 'done' ? 'done' : k === 'partial' ? 'partial' : k === 'running' ? 'running' : 'failed';
+};
+const UPLOAD_GROUPS: { id: UploadGroup; label: string }[] = [
+  { id: 'done', label: 'Successful' },
+  { id: 'partial', label: 'Partly posted' },
+  { id: 'failed', label: 'Failed or blocked' },
+  { id: 'running', label: 'In progress' },
+];
+const UPLOADS_PAGE_SIZE = 10;
+const ROWS_PAGE_SIZE = 25;
+
+const domainLabel = (d: IngestDomain) => DOMAIN_OPTIONS.find((o) => o.value === d)?.label ?? d;
 
 const FileIngestUploadPage: React.FC = () => {
   const [domain, setDomain] = useState<IngestDomain>('RECEIVABLES');
@@ -334,6 +350,9 @@ const FileIngestUploadPage: React.FC = () => {
   const [now, setNow] = useState(() => Date.now());
   const [releasing, setReleasing] = useState(false);
   const [releaseNote, setReleaseNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [uploadFilter, setUploadFilter] = useState<UploadGroup | 'all'>('done');
+  const [uploadPage, setUploadPage] = useState(1);
+  const [rowsPage, setRowsPage] = useState(1);
   const { navigate } = useNavigation();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -389,6 +408,7 @@ const FileIngestUploadPage: React.FC = () => {
     stopPolling();
     setJob(pastJob);
     setRows([]);
+    setRowsPage(1);
     const jobTimeline = await ingestApi.getTimeline(pastJob.id).catch(() => []);
     setTimeline(jobTimeline);
     if (hasRows(pastJob.stage)) {
@@ -459,9 +479,25 @@ const FileIngestUploadPage: React.FC = () => {
     setJob(null);
     setTimeline([]);
     setRows([]);
+    setRowsPage(1);
     setFile(null);
     setUploadError(null);
   };
+
+  /** A corporate's name; uploads made before the corporate picker carry a free-text customer id, shown as is. */
+  const corporateName = (id: string) => {
+    const c = corporates.find((x) => x.id === id);
+    return c ? c.tradeName || c.legalName || id : id;
+  };
+  const groupCounts = useMemo(() => {
+    const c: Record<UploadGroup, number> = { done: 0, partial: 0, failed: 0, running: 0 };
+    history.forEach((j) => { c[uploadGroup(j)] += 1; });
+    return c;
+  }, [history]);
+  const shownUploads = useMemo(
+    () => history.filter((j) => uploadFilter === 'all' || uploadGroup(j) === uploadFilter),
+    [history, uploadFilter],
+  );
 
   const steps = job ? stepsForEvents(timeline) : [];
   const seenStageIndexes = timeline.map((e) => steps.indexOf(e.stage)).filter((i) => i >= 0);
@@ -515,7 +551,7 @@ const FileIngestUploadPage: React.FC = () => {
     <Page maxWidth="narrow">
       <PageHeader
         title="File Ingest Pipeline"
-        description="Upload a payables/receivables/payment file in any format — an analysis agent profiles it, a coding agent builds a transform for shapes it hasn't seen before, and the result is reconciled, staged and processed automatically."
+        description="Upload a receivables, invoice, payables, payment or collections file in any format. A layout it has seen before is read straight away; a new one is learnt first. Rows are then checked, staged and posted."
       />
 
       {/* Hidden while a job is open. The dropzone and the history list were already gated, but
@@ -528,7 +564,7 @@ const FileIngestUploadPage: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-body-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">What are you uploading?</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {DOMAIN_OPTIONS.map((opt) => {
                 const selected = domain === opt.value;
                 return (
@@ -617,8 +653,8 @@ const FileIngestUploadPage: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="caption">Customer</span>
-              <span className="body-strong">{customerId.trim() || '—'}</span>
+              <span className="caption">Corporate</span>
+              <span className="body-strong">{customerId.trim() ? corporateName(customerId.trim()) : '—'}</span>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-edge-subtle">
               <span className="caption">File</span>
@@ -651,7 +687,7 @@ const FileIngestUploadPage: React.FC = () => {
             <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
             <div>
               <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
-              <p className="text-caption text-warning-700 dark:text-warning-300 mt-0.5">Enter a customer ID above to continue.</p>
+              <p className="text-caption text-warning-700 dark:text-warning-300 mt-0.5">Choose a corporate above to continue.</p>
             </div>
           </div>
         )
@@ -676,30 +712,56 @@ const FileIngestUploadPage: React.FC = () => {
 
       {!job && history.length > 0 && (
         <Card>
-          <CardHeader title="Recent Uploads" subtitle="Pick one to see its record-by-record status." />
-          <div className="space-y-1 -mx-2">
-            {history.map((pastJob) => (
-              <button
-                key={pastJob.id}
-                onClick={() => handleSelectPastJob(pastJob)}
-                className="w-full flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-left hover:bg-neutral-50 dark:hover:bg-primary-950 transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
-                  <div className="min-w-0">
-                    <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{pastJob.originalFilename}</p>
-                    <p className="caption">
-                      {pastJob.domain} · {pastJob.customerId} · {new Date(pastJob.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                {(() => {
-                  const outcome = jobOutcome(pastJob);
-                  return <Badge variant={outcome.variant} size="sm">{outcome.label}</Badge>;
-                })()}
-              </button>
-            ))}
+          <CardHeader title="Recent uploads" subtitle="Open one to see its row-by-row status." />
+          <div className="mb-4 overflow-x-auto">
+            <Tabs
+              variant="pills"
+              size="sm"
+              activeTab={uploadFilter}
+              onChange={(id) => { setUploadFilter(id as UploadGroup | 'all'); setUploadPage(1); }}
+              tabs={[
+                ...UPLOAD_GROUPS.filter((g) => g.id === 'done' || groupCounts[g.id] > 0)
+                  .map((g) => ({ id: g.id, label: g.label, badge: groupCounts[g.id] })),
+                { id: 'all', label: 'All', badge: history.length },
+              ]}
+            />
           </div>
+          <DataTable
+            hairline
+            data={shownUploads.slice((uploadPage - 1) * UPLOADS_PAGE_SIZE, uploadPage * UPLOADS_PAGE_SIZE)}
+            keyExtractor={(j) => j.id}
+            onRowClick={handleSelectPastJob}
+            pagination
+            pageSize={UPLOADS_PAGE_SIZE}
+            currentPage={uploadPage}
+            totalCount={shownUploads.length}
+            onPageChange={setUploadPage}
+            emptyIcon={<FileText className="w-10 h-10" />}
+            emptyTitle={`No ${UPLOAD_GROUPS.find((g) => g.id === uploadFilter)?.label.toLowerCase() ?? ''} uploads`}
+            emptyDescription="Choose another filter to see the rest."
+            emptyAction={<Button variant="outline" size="sm" onClick={() => { setUploadFilter('all'); setUploadPage(1); }}>Show all</Button>}
+            columns={[
+              { key: 'originalFilename', header: 'File', minWidth: 200, render: (_v, j) => (
+                <div className="min-w-0">
+                  <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[16rem]" title={j.originalFilename}>{j.originalFilename}</p>
+                  <p className="caption">{domainLabel(j.domain)}</p>
+                </div>
+              ) },
+              { key: 'customerId', header: 'Corporate', minWidth: 130, dropOrder: 1, render: (_v, j) => (
+                <span className="caption block truncate max-w-[10rem]" title={j.customerId}>{corporateName(j.customerId)}</span>
+              ) },
+              { key: 'createdAt', header: 'Uploaded', minWidth: 150, dropOrder: 2, render: (_v, j) => (
+                <span className="caption">{formatDateTime(j.createdAt)}</span>
+              ) },
+              { key: 'rows', header: 'Rows posted', align: 'right', minWidth: 100, dropOrder: 3, render: (_v, j) => (
+                <span className="font-mono text-caption">{j.rows ? `${j.rows.processed} / ${j.rows.total}` : '—'}</span>
+              ) },
+              { key: 'stage', header: 'Status', align: 'right', minWidth: 120, render: (_v, j) => {
+                const o = jobOutcome(j);
+                return <Badge variant={o.variant} size="sm">{o.label}</Badge>;
+              } },
+            ]}
+          />
         </Card>
       )}
 
@@ -711,7 +773,7 @@ const FileIngestUploadPage: React.FC = () => {
           <Card>
             <CardHeader
               title={job.originalFilename}
-              subtitle={`${job.domain} · ${job.customerId}${job.jiraTicketKey ? ` · ${job.jiraTicketKey}` : ''}`}
+              subtitle={`${domainLabel(job.domain)} · ${corporateName(job.customerId)} · ${formatDateTime(job.createdAt)}${job.jiraTicketKey ? ` · ${job.jiraTicketKey}` : ''}`}
               action={
                 (() => {
                   if (!outcome) return null;
@@ -813,12 +875,17 @@ const FileIngestUploadPage: React.FC = () => {
           {rows.length > 0 && (
             <Card padding="none">
               <div className="p-6 pb-0">
-                <CardHeader title="Rows" subtitle={`${rows.length} row(s) from ${job.originalFilename}.`} />
+                <CardHeader title="Rows" subtitle={`${job.rows?.total ?? rows.length} row(s) from ${job.originalFilename}${(job.rows?.total ?? 0) > rows.length ? `; the first ${rows.length} are listed` : ''}.`} />
               </div>
               <DataTable
                 hairline
-                data={rows}
+                data={rows.slice((rowsPage - 1) * ROWS_PAGE_SIZE, rowsPage * ROWS_PAGE_SIZE)}
                 keyExtractor={(row) => row.sourceRowNumber}
+                pagination
+                pageSize={ROWS_PAGE_SIZE}
+                currentPage={rowsPage}
+                totalCount={rows.length}
+                onPageChange={setRowsPage}
                 columns={[
                   { key: 'sourceRowNumber', header: 'Row', minWidth: 80, render: (_v, row) => (
                     <span className="text-neutral-500 dark:text-neutral-400 font-mono text-caption">{row.sourceRowNumber}</span>
@@ -828,7 +895,7 @@ const FileIngestUploadPage: React.FC = () => {
                   ) },
                   { key: 'amount', header: 'Amount', align: 'right', minWidth: 150, render: (_v, row) => (
                     <span className="text-primary-900 dark:text-neutral-50 font-mono">
-                      {row.amount != null ? `${row.amount} ${row.currency ?? ''}` : '—'}
+                      {row.amount != null ? (row.currency ? formatCurrency(row.amount, row.currency) : row.amount) : '—'}
                     </span>
                   ) },
                   { key: 'targetAccountReference', header: 'Account', minWidth: 160, dropOrder: 2, render: (_v, row) => (
