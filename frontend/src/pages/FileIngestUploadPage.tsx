@@ -101,11 +101,11 @@ const AGENT_NAMES = {
 };
 
 const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
-  { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <Download className="w-5 h-5" /> },
-  { value: 'RECEIVABLES_INVOICE', label: 'Raise Invoices', description: 'Bulk-create new invoices awaiting payment', icon: <FileText className="w-5 h-5" /> },
-  { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
-  { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-5 h-5" /> },
-  { value: 'COLLECTIONS', label: 'Collections', description: 'Collect invoices by direct debit, or Request to Pay', icon: <Workflow className="w-5 h-5" /> },
+  { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <Download className="w-4 h-4" /> },
+  { value: 'RECEIVABLES_INVOICE', label: 'Raise invoices', description: 'Bulk-create new invoices awaiting payment', icon: <FileText className="w-4 h-4" /> },
+  { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-4 h-4" /> },
+  { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-4 h-4" /> },
+  { value: 'COLLECTIONS', label: 'Collections', description: 'Collect invoices by direct debit, or Request to Pay', icon: <Workflow className="w-4 h-4" /> },
 ];
 
 /** The pipeline has three possible shapes depending on what actually happens for this job's
@@ -564,32 +564,16 @@ const FileIngestUploadPage: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-body-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">What are you uploading?</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {DOMAIN_OPTIONS.map((opt) => {
-                const selected = domain === opt.value;
-                return (
-                  <Card
-                    key={opt.value}
-                    padding="sm"
-                    interactive={!job}
-                    onClick={() => !job && setDomain(opt.value)}
-                    className={
-                      selected
-                        ? 'border-accent-500 ring-1 ring-accent-500 dark:border-accent-500'
-                        : job
-                          ? 'opacity-60'
-                          : ''
-                    }
-                  >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? 'bg-accent-500 text-white' : 'bg-surface-muted text-neutral-500 dark:text-neutral-300'}`}>
-                      {opt.icon}
-                    </div>
-                    <p className="body-strong font-semibold">{opt.label}</p>
-                    <p className="caption mt-0.5">{opt.description}</p>
-                  </Card>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <Tabs
+                size="sm"
+                fullWidth
+                activeTab={domain}
+                onChange={(id) => setDomain(id as IngestDomain)}
+                tabs={DOMAIN_OPTIONS.map((o) => ({ id: o.value, label: o.label, icon: o.icon }))}
+              />
             </div>
+            <p className="caption mt-1.5">{DOMAIN_OPTIONS.find((o) => o.value === domain)?.description}</p>
           </div>
 
           <ScopeSelector

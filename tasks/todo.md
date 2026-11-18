@@ -376,6 +376,10 @@ Statement intake:
 - [ ] Statement for a CBS-fed account makes it look fresh although its balance comes from core banking.
 - [ ] OCI `fileingest_workspace` mount point likely root-owned (same issue fixed for the statement inbox) — unverified.
 UI:
+- [ ] UI density audit (docs/reviews/ui-density-audit.md, 18 Nov): 48 pages; wrong/made-up figures and ~30 dead
+      controls first, then stat strips / repeated explanations / jargon, then page merges (one hierarchy tree,
+      Multi-Bank grouped table, Statements single path, Collections pages, IHB set-up table, Netting tabs).
+      Decision open: IHB vs Intercompany shared figures (spec R3 vs acceptance 3).
 - [ ] In-House Bank: Movements calls a sweep reversal and "Deposit to IHB current account" "Other"; Position lists every
       funding currency even with no IHB accounts in it; the stat strip says "1 lenders".
 - [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,
