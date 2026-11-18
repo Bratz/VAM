@@ -9,7 +9,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  * - fxRateApi from api.ts → FxRateController.java at /api/v1/treasury/fx-rates/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Settings, Loader2, Eye, Calculator, X, XCircle, CheckCircle } from 'lucide-react';
+import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Loader2, Eye, Calculator, X, XCircle, CheckCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -87,22 +87,6 @@ const programsApi = {
     } catch { return []; }
   },
 };
-
-// Demo data fallback when API fails
-const DEMO_BREAKDOWNS: CurrencyBreakdown[] = [
-  { currency: 'AED', baseCurrency: 'AED', originalBalance: 5000000, fxRate: 1, fxRateAt: new Date().toISOString(), convertedBalance: 5000000, mirrorVaId: 'demo-1', mirrorVaNumber: 'M-AED-001', percentOfTotal: 50 },
-  { currency: 'USD', baseCurrency: 'AED', originalBalance: 500000, fxRate: 3.6725, fxRateAt: new Date().toISOString(), convertedBalance: 1836250, mirrorVaId: 'demo-2', mirrorVaNumber: 'M-USD-001', percentOfTotal: 18.36 },
-  { currency: 'EUR', baseCurrency: 'AED', originalBalance: 400000, fxRate: 4.05, fxRateAt: new Date().toISOString(), convertedBalance: 1620000, mirrorVaId: 'demo-3', mirrorVaNumber: 'M-EUR-001', percentOfTotal: 16.20 },
-  { currency: 'GBP', baseCurrency: 'AED', originalBalance: 200000, fxRate: 4.65, fxRateAt: new Date().toISOString(), convertedBalance: 930000, mirrorVaId: 'demo-4', mirrorVaNumber: 'M-GBP-001', percentOfTotal: 9.30 },
-  { currency: 'SAR', baseCurrency: 'AED', originalBalance: 600000, fxRate: 0.98, fxRateAt: new Date().toISOString(), convertedBalance: 588000, mirrorVaId: 'demo-5', mirrorVaNumber: 'M-SAR-001', percentOfTotal: 5.88 },
-];
-
-const DEMO_FX_RATES: FxRate[] = [
-  { id: 'fx-1', fromCurrency: 'USD', toCurrency: 'AED', rate: 3.6725, rateDate: new Date().toISOString(), rateTimestamp: new Date().toISOString(), rateType: 'SPOT', rateSource: 'REUTERS', isActive: true },
-  { id: 'fx-2', fromCurrency: 'EUR', toCurrency: 'AED', rate: 4.05, rateDate: new Date().toISOString(), rateTimestamp: new Date().toISOString(), rateType: 'SPOT', rateSource: 'REUTERS', isActive: true },
-  { id: 'fx-3', fromCurrency: 'GBP', toCurrency: 'AED', rate: 4.65, rateDate: new Date().toISOString(), rateTimestamp: new Date().toISOString(), rateType: 'SPOT', rateSource: 'REUTERS', isActive: true },
-  { id: 'fx-4', fromCurrency: 'SAR', toCurrency: 'AED', rate: 0.98, rateDate: new Date().toISOString(), rateTimestamp: new Date().toISOString(), rateType: 'FIXING', rateSource: 'CBS', isActive: true },
-];
 
 // Helper to extract data from ApiResponse
 const extractData = <T,>(response: ApiResponse<T>): T => {
@@ -252,10 +236,10 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
 
 interface FxRateRowProps {
   rate: FxRate;
-  onEdit: () => void;
 }
 
-const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
+// ponytail: no edit control until editing an FX rate exists.
+const FxRateRow: React.FC<FxRateRowProps> = ({ rate }) => {
   const fromStyle = getCurrencyStyle(rate.fromCurrency);
   const toStyle = getCurrencyStyle(rate.toCurrency);
 
@@ -282,9 +266,6 @@ const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
         {rate.rateType}
       </Badge>
 
-      <Button variant="ghost" size="sm" onClick={onEdit}>
-        <Settings className="w-4 h-4" />
-      </Button>
     </div>
   );
 };
@@ -308,7 +289,6 @@ const CurrencyMirrorPage: React.FC = () => {
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [loadingPrograms, setLoadingPrograms] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
 
   // Modals
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -385,55 +365,27 @@ const CurrencyMirrorPage: React.FC = () => {
     loadPrograms();
   }, [selectedCorporateId]);
 
-  // Load data from real APIs with demo fallback
+  // Load data from the APIs. An empty or failed load shows the empty state / error, never sample data.
   const loadData = useCallback(async () => {
     if (!selectedCorporateId) {
       setLoading(false);
       return;
     }
 
+    const empty = { totalInBase: 0, currencyCount: 0, lastRecalculated: null, staleRates: 0 };
     try {
       setLoading(true);
       setError(null);
-      setIsDemo(false);
 
-      // Validate IDs are valid UUIDs
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(selectedCorporateId)) {
-        console.warn('Invalid UUID, using demo data');
-        setBreakdowns(DEMO_BREAKDOWNS);
-        setFxRates(DEMO_FX_RATES);
-        setIsDemo(true);
-        const total = DEMO_BREAKDOWNS.reduce((sum, b) => sum + (b.convertedBalance || 0), 0);
-        setStats({ totalInBase: total, currencyCount: DEMO_BREAKDOWNS.length, lastRecalculated: new Date().toISOString(), staleRates: 0 });
-        setLoading(false);
-        return;
-      }
+      const byProgram = !!selectedProgramId && uuidRegex.test(selectedProgramId);
 
-      // Load currency breakdown - prefer program-based API for accurate breakdown
-      let breakdownData: CurrencyBreakdown[] = [];
-      let useDemo = false;
-      try {
-        let breakdownResponse;
-        if (selectedProgramId && uuidRegex.test(selectedProgramId)) {
-          // Use program-based API (preferred for multi-program corporates)
-          breakdownResponse = await currencyMirrorApi.getBreakdownListByProgram(selectedProgramId, undefined, baseCurrency);
-        } else {
-          // Fallback to corporate-based API
-          breakdownResponse = await currencyMirrorApi.getBreakdownList(selectedCorporateId, baseCurrency);
-        }
-        const data = extractData(breakdownResponse);
-        breakdownData = Array.isArray(data) ? data.map(d => ({ ...d })) : [];
-        if (breakdownData.length === 0) useDemo = true;
-      } catch (e) {
-        console.warn('Failed to load breakdown, using demo data:', e);
-        useDemo = true;
-      }
-
-      if (useDemo) {
-        breakdownData = DEMO_BREAKDOWNS;
-        setIsDemo(true);
-      }
+      // Currency breakdown - prefer the program-based API for multi-program corporates
+      const breakdownResponse = byProgram
+        ? await currencyMirrorApi.getBreakdownListByProgram(selectedProgramId, undefined, baseCurrency)
+        : await currencyMirrorApi.getBreakdownList(selectedCorporateId, baseCurrency);
+      const data = extractData(breakdownResponse);
+      const breakdownData: CurrencyBreakdown[] = Array.isArray(data) ? data.map(d => ({ ...d })) : [];
 
       // Calculate percentages
       const totalBase = breakdownData.reduce((sum, b) => sum + (b.convertedBalance || 0), 0);
@@ -442,43 +394,36 @@ const CurrencyMirrorPage: React.FC = () => {
       });
       setBreakdowns(breakdownData);
 
-      // Load consolidated balance - prefer program-based API for accuracy
+      // Consolidated balance - same program/corporate preference
       try {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const consolidatedData = (selectedProgramId && uuidRegex.test(selectedProgramId))
-          // Use program-based API (preferred)
+        const consolidatedData = byProgram
           ? extractData(await currencyMirrorApi.getConsolidatedBalanceByProgram(selectedProgramId, baseCurrency))
-          // Fallback to corporate-based API
           : extractData(await currencyMirrorApi.getConsolidatedBalance(selectedCorporateId, baseCurrency));
         setStats({
           totalInBase: consolidatedData?.totalBalance ?? totalBase,
           currencyCount: consolidatedData?.currencyCount ?? breakdownData.length,
-          lastRecalculated: consolidatedData?.asOf ?? new Date().toISOString(),
+          lastRecalculated: consolidatedData?.asOf ?? null,
           staleRates: 0,
         });
       } catch (e) {
         console.warn('Failed to load consolidated:', e);
-        setStats({ totalInBase: totalBase, currencyCount: breakdownData.length, lastRecalculated: new Date().toISOString(), staleRates: 0 });
+        setStats({ ...empty, totalInBase: totalBase, currencyCount: breakdownData.length });
       }
 
-      // Load FX rates
+      // FX rates
       try {
-        const ratesResponse = await fxRateApi.getAllActiveRates();
-        const ratesData = extractData(ratesResponse);
-        setFxRates(Array.isArray(ratesData) && ratesData.length > 0 ? ratesData : (useDemo ? DEMO_FX_RATES : []));
+        const ratesData = extractData(await fxRateApi.getAllActiveRates());
+        setFxRates(Array.isArray(ratesData) ? ratesData : []);
       } catch (e) {
         console.warn('Failed to load FX rates:', e);
-        if (useDemo) setFxRates(DEMO_FX_RATES);
+        setFxRates([]);
       }
 
     } catch (err) {
       console.error('Failed to load currency mirrors:', err);
-      // Fallback to demo on any error
-      setBreakdowns(DEMO_BREAKDOWNS);
-      setFxRates(DEMO_FX_RATES);
-      setIsDemo(true);
-      const total = DEMO_BREAKDOWNS.reduce((sum, b) => sum + (b.convertedBalance || 0), 0);
-      setStats({ totalInBase: total, currencyCount: DEMO_BREAKDOWNS.length, lastRecalculated: new Date().toISOString(), staleRates: 0 });
+      setBreakdowns([]);
+      setStats(empty);
+      setError('Failed to load currency mirrors.');
     } finally {
       setLoading(false);
     }
@@ -580,7 +525,7 @@ const CurrencyMirrorPage: React.FC = () => {
         </Button>
         <Button variant="outline" size="sm" onClick={() => setShowFxRateModal(true)}>
           <BarChart3 className="w-4 h-4 mr-1" />
-          FX Rates
+          Reference Rates
         </Button>
         <Button size="sm" onClick={handleRecalculateAll} disabled={recalculating}>
           {recalculating
@@ -654,19 +599,6 @@ const CurrencyMirrorPage: React.FC = () => {
           />
         </div>
       </div>
-
-      {/* Demo Mode Banner */}
-      {isDemo && (
-        <Card className="bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} />
-            <div>
-              <span className="font-semibold text-warning-800 dark:text-warning-300">Demo Mode:</span>
-              <span className="text-warning-700 dark:text-warning-300 ml-1">Showing sample data. Select a valid corporate with currency mirrors to view real data.</span>
-            </div>
-          </div>
-        </Card>
-      )}
 
       {/* Error Banner */}
       {error && (
@@ -827,12 +759,12 @@ const CurrencyMirrorPage: React.FC = () => {
       <Modal
         isOpen={showFxRateModal}
         onClose={() => setShowFxRateModal(false)}
-        title="FX Rate Management"
+        title="Reference Rates"
         size="lg"
       >
         <div className="p-4 space-y-4">
           <div className="flex justify-between items-center">
-            <p className="body-sm">Manage exchange rates used for currency conversion</p>
+            <p className="body-sm">Exchange rates used for currency conversion</p>
             <Button size="sm" onClick={handleRefreshRates}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh All
@@ -842,26 +774,13 @@ const CurrencyMirrorPage: React.FC = () => {
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {fxRates.length > 0 ? (
               fxRates.map(rate => (
-                <FxRateRow
-                  key={rate.id}
-                  rate={rate}
-                  onEdit={
-                    // eslint-disable-next-line no-console -- placeholder: editing an FX rate is not implemented, the row's edit control is a stub
-                    () => console.log('Edit:', rate.id)
-                  }
-                />
+                <FxRateRow key={rate.id} rate={rate} />
               ))
             ) : (
               <p className="body-sm text-center py-8">No FX rates available</p>
             )}
           </div>
 
-          <div className="pt-4 border-t">
-            <Button variant="outline" className="w-full">
-              <Settings className="w-4 h-4 mr-2" />
-              Configure Rate Sources
-            </Button>
-          </div>
         </div>
       </Modal>
 

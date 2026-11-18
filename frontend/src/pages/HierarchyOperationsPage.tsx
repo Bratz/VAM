@@ -9,6 +9,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, CheckCircle, XCircle, ArrowUpDown, Settings, MoreHorizontal } from 'lucide-react';
 import { Button as SharedButton, StatusIconBadge } from '../components/ui';
 import { usePageHeaderActions } from '../context/usePageHeader';
+import { useNavigation } from '../hooks/useNavigation';
 import { cn } from '../utils';
 import {
   hierarchyOperationsApi,
@@ -427,6 +428,9 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
 // ============================================================================
 
 const HierarchyOperationsPage: React.FC = () => {
+  // History, View All and operation details all open the full Operation History page.
+  const { navigate } = useNavigation();
+  const openHistory = () => navigate('operation-history');
   // ====== CORPORATE/PROGRAM SELECTION STATE ======
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
@@ -751,6 +755,7 @@ const HierarchyOperationsPage: React.FC = () => {
           variant="outline"
           size="sm"
           leftIcon={<History className="w-4 h-4" />}
+          onClick={openHistory}
         >
           History
         </SharedButton>
@@ -877,7 +882,7 @@ const HierarchyOperationsPage: React.FC = () => {
                     {pendingApprovals.slice(0, 3).map((op) => (
                       <PendingApprovalCard key={op.id} operation={op} onApprove={handleApprove} onReject={handleReject} />
                     ))}
-                    {pendingApprovals.length > 3 && <Button variant="ghost" className="w-full">View All Pending</Button>}
+                    {pendingApprovals.length > 3 && <Button variant="ghost" className="w-full" onClick={openHistory}>View All Pending</Button>}
                   </div>
                 </Card>
               )}
@@ -885,7 +890,7 @@ const HierarchyOperationsPage: React.FC = () => {
               <Card padding="none">
                 <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
                   <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Operations</h3>
-                  <Button variant="ghost" size="sm">View All</Button>
+                  <Button variant="ghost" size="sm" onClick={openHistory}>View All</Button>
                 </div>
                 <div className="divide-y divide-edge-subtle">
                   {history.length === 0 ? (
@@ -898,10 +903,7 @@ const HierarchyOperationsPage: React.FC = () => {
                       <OperationHistoryItem
                         key={op.id}
                         operation={op}
-                        onViewDetails={
-                          // eslint-disable-next-line no-console -- placeholder: operation detail view is not implemented (GET /history is itself a stub)
-                          (id) => console.log('View details:', id)
-                        }
+                        onViewDetails={openHistory}
                       />
                     ))
                   )}

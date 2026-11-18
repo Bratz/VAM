@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, Download, Upload, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
+import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
 import { Button, Badge, Input, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -149,7 +149,10 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: LucideIc
   </button>
 );
 
-const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j: TaxJurisdiction) => void; loading?: boolean }> = ({ jurisdictions, onEdit, loading }) => (
+// "ACTIVE" -> "Active", matching the status filter's options.
+const statusLabel = (s?: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : '');
+
+const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; loading?: boolean }> = ({ jurisdictions, loading }) => (
   <DataTable
     data={jurisdictions}
     keyExtractor={(j) => j.id}
@@ -178,8 +181,7 @@ const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j
         ),
       },
       { key: 'reportingCurrency', header: 'Currency', render: (_, j) => <Badge variant="neutral" size="sm">{j.reportingCurrency}</Badge> },
-      { key: 'status', header: 'Status', render: (_, j) => <Badge variant={j.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{j.status}</Badge> },
-      { key: 'actions', header: 'Actions', align: 'right', render: (_, j) => <Button variant="ghost" size="sm" onClick={() => onEdit(j)}><Pencil className="w-4 h-4" /></Button> },
+      { key: 'status', header: 'Status', render: (_, j) => <Badge variant={j.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{statusLabel(j.status)}</Badge> },
     ]}
   />
 );
@@ -232,7 +234,7 @@ const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxCon
           </div>
         ),
       },
-      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge> },
+      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{statusLabel(c.status)}</Badge> },
       {
         key: 'actions', header: 'Actions', align: 'right',
         render: (_, c) => (
@@ -302,7 +304,7 @@ const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: 
           </div>
         ),
       },
-      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge> },
+      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{statusLabel(c.status)}</Badge> },
       {
         key: 'actions', header: 'Actions', align: 'right',
         render: (_, c) => (
@@ -418,23 +420,16 @@ const TaxChargesSetupPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tax & Charges Setup"
+        title="Tax & Charges"
         description="Configure tax rates, jurisdictions, and fee schedules"
-        actions={<><Button variant="outline" onClick={
-          // eslint-disable-next-line no-console -- placeholder: export of tax/charge configs is not implemented, this control is a stub
-          () => console.log('Export configs')
-        }><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={
-          // eslint-disable-next-line no-console -- placeholder: import of tax/charge configs is not implemented, this control is a stub
-          () => console.log('Import configs')
-        }><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></>}
+        actions={<><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button>{activeTab !== 'jurisdictions' && <Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : 'Add Charge'}</Button>}</>}
       />
       <div className="grid gap-4 grid-cols-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" tone="info" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" tone="success" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2 dark:text-cat-2-fg" tone="cat-2" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" tone="warning" loading={loading} /></div>
       <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">
         <div className="flex items-center gap-2 p-4 border-b border-edge"><TabButton active={activeTab === 'taxes'} onClick={() => setActiveTab('taxes')} icon={Receipt} label="Tax Configurations" count={taxConfigs.length} /><TabButton active={activeTab === 'charges'} onClick={() => setActiveTab('charges')} icon={DollarSign} label="Charge Configurations" count={chargeConfigs.length} /><TabButton active={activeTab === 'jurisdictions'} onClick={() => setActiveTab('jurisdictions')} icon={Globe} label="Jurisdictions" count={jurisdictions.length} /></div>
         <div className="flex items-center gap-4 p-4 bg-surface-page border-b border-edge"><div className="flex-1 relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" /><Input className="pl-10" placeholder={`Search ${activeTab}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option value="ALL">All Status</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="PENDING">Pending</option></select>{activeTab === 'taxes' && <select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={filterJurisdiction} onChange={(e) => setFilterJurisdiction(e.target.value)}><option value="ALL">All Jurisdictions</option>{jurisdictions.map(j => (<option key={j.jurisdictionCode} value={j.jurisdictionCode}>{j.jurisdictionName}</option>))}</select>}</div>
-        <div className="p-4">{activeTab === 'jurisdictions' && <JurisdictionTable jurisdictions={jurisdictions} onEdit={() => {}} loading={loading} />}{activeTab === 'taxes' && <TaxConfigTable configs={filteredTaxConfigs} onEdit={(c) => { setEditingTax(c); setShowTaxModal(true); }} onDelete={handleDeleteTax} loading={loading} />}{activeTab === 'charges' && <ChargeConfigTable configs={filteredChargeConfigs} onEdit={(c) => { setEditingCharge(c); setShowChargeModal(true); }} onDelete={handleDeleteCharge} loading={loading} />}</div>
+        <div className="p-4">{activeTab === 'jurisdictions' && <JurisdictionTable jurisdictions={jurisdictions} loading={loading} />}{activeTab === 'taxes' && <TaxConfigTable configs={filteredTaxConfigs} onEdit={(c) => { setEditingTax(c); setShowTaxModal(true); }} onDelete={handleDeleteTax} loading={loading} />}{activeTab === 'charges' && <ChargeConfigTable configs={filteredChargeConfigs} onEdit={(c) => { setEditingCharge(c); setShowChargeModal(true); }} onDelete={handleDeleteCharge} loading={loading} />}</div>
       </div>
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle"><h3 className="body-strong font-semibold mb-3">Quick Reference</h3><div className="grid gap-4 grid-cols-4"><div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-500/10"><p className="text-caption text-blue-600 font-medium dark:text-blue-300">UAE VAT</p><p className="text-body-lg font-semibold text-blue-800 dark:text-blue-300">5%</p></div><div className="p-3 bg-green-50 rounded-lg dark:bg-green-500/10"><p className="text-caption text-green-600 font-medium dark:text-green-300">KSA VAT</p><p className="text-body-lg font-semibold text-green-800 dark:text-green-300">15%</p></div><div className="p-3 bg-cat-2-soft rounded-lg dark:bg-cat-2/15"><p className="text-caption text-cat-2 dark:text-cat-2-fg font-medium">UK VAT</p><p className="text-body-lg font-semibold text-cat-2 dark:text-cat-2-fg">20%</p></div><div className="p-3 bg-warning-50 rounded-lg dark:bg-warning-500/10"><p className="text-caption text-warning-600 font-medium dark:text-warning-300">India GST</p><p className="text-body-lg font-semibold text-warning-800 dark:text-warning-300">18%</p></div></div></div>
       <TaxConfigModal isOpen={showTaxModal} onClose={() => { setShowTaxModal(false); setEditingTax(undefined); }} config={editingTax} jurisdictions={jurisdictions} onSave={handleSaveTax} saving={saving} />
       <ChargeConfigModal isOpen={showChargeModal} onClose={() => { setShowChargeModal(false); setEditingCharge(undefined); }} config={editingCharge} onSave={handleSaveCharge} saving={saving} />
     </div>

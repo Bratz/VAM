@@ -378,9 +378,8 @@ const EntityCard: React.FC<EntityCardProps> = ({
     const sectionId = getSectionId(type);
     const isSectionExpanded = expandedSections.has(sectionId);
     const Icon = config.icon;
-
-    const totalBalance = accounts.reduce((sum, acc) =>
-      sum + (acc.localBalance || acc.mirrorBalance || 0), 0);
+    // No section total: these accounts can be in several currencies and the nodes carry no
+    // reliable converted balance (balanceInBase falls back to the raw amount). Rows show their own.
 
     return (
       <div key={type} className="border-t border-edge-subtle">
@@ -416,11 +415,6 @@ const EntityCard: React.FC<EntityCardProps> = ({
               )}
             </div>
             <p className="caption mt-0.5">{config.description}</p>
-          </div>
-          <div className="text-right">
-            <p className={cn('text-body-sm font-bold', config.color)}>
-              {formatCurrency(totalBalance, entity.functionalCurrency)}
-            </p>
           </div>
         </button>
 
@@ -832,9 +826,8 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
     const sectionId = getSectionId(type);
     const isSectionExpanded = expandedSections.has(sectionId);
     const Icon = config.icon;
-
-    const totalBalance = accounts.reduce((sum, acc) =>
-      sum + (acc.localBalance || acc.mirrorBalance || 0), 0);
+    // No section total: these accounts can be in several currencies and the nodes carry no
+    // reliable converted balance (balanceInBase falls back to the raw amount). Rows show their own.
 
     return (
       <div key={type} className="border-t border-edge-subtle">
@@ -870,11 +863,6 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
                 </Badge>
               )}
             </div>
-          </div>
-          <div className="text-right">
-            <p className={cn('text-caption font-bold', config.color)}>
-              {formatCurrency(totalBalance, entity.functionalCurrency)}
-            </p>
           </div>
         </button>
 

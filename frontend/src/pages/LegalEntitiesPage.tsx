@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, Plus, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, CreditCard, Landmark, FlaskConical, ArrowLeftRight, PiggyBank, Banknote, GitBranch, Copy, Lock, Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent, Mail, DollarSign, Zap, Save, Pencil } from 'lucide-react';
+import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, Plus, Eye, Search, RefreshCw, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, CreditCard, Landmark, FlaskConical, ArrowLeftRight, PiggyBank, Banknote, GitBranch, Copy, Lock, Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent, Mail, DollarSign, Zap, Save, Pencil } from 'lucide-react';
 import { Card, Button, Badge, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -639,14 +639,14 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                 <Checkbox variant="card" size="sm" checked={formData.canParticipateNetting} onChange={(v) => updateField('canParticipateNetting', v)} label="Can Participate in Netting" description="Intercompany netting cycles" />
               </div>
 
-              {/* Credit Limit Info - Managed via CreditLimitService */}
+              {/* Credit limits are allocated from the entity details panel */}
               <div className="border-t pt-4">
                 <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
                   <p className="text-body-sm text-info-800 dark:text-info-300">
                     <CreditCard className="w-4 h-4 inline mr-1" />
                     <strong>Internal Credit Limits</strong> are managed via the "Allocate Limit" button in the entity details panel (right side).
                   </p>
-                  <p className="caption-info mt-1">Limits are allocated from the Group Limit and tracked via CreditLimitService.</p>
+                  <p className="caption-info mt-1">Limits are allocated from the Group Limit.</p>
                 </div>
               </div>
 
@@ -1309,9 +1309,6 @@ const LegalEntitiesPage: React.FC = () => {
           {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
           Refresh
         </Button>
-        <Button variant="outline" size="sm">
-          <Download className="w-4 h-4 mr-1" />Export
-        </Button>
         <Button size="sm" onClick={handleAddEntity}>
           <Plus className="w-4 h-4 mr-1" />Add Entity
         </Button>
@@ -1512,41 +1509,6 @@ const LegalEntitiesPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Legend */}
-      <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
-        <div className="flex flex-wrap items-center gap-6">
-          <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-primary-100 dark:bg-primary-700"><Crown className="w-3 h-3 text-primary-700 dark:text-neutral-200" /></div>
-            <span className="caption">Holding</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-info-100 dark:bg-info-500/20"><Building2 className="w-3 h-3 text-info-700 dark:text-info-300" /></div>
-            <span className="caption">Subsidiary</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-cyan-100 dark:bg-cyan-500/20"><Building2 className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
-            <span className="caption">Branch</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div>
-            <span className="caption">Treasury Center</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-success-100 dark:bg-success-500/20"><Landmark className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
-            <span className="caption">Bank Customer</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-info-50 border border-info-300 dark:bg-info-500/10"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div>
-            <span className="caption">IHB Enabled</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-warning-100 dark:bg-warning-500/20"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div>
-            <span className="caption">Near Limit</span>
-          </div>
-        </div>
-      </Card>
 
       {/* Modals */}
       <EntityAllocationModal

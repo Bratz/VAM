@@ -1810,7 +1810,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <div>
                       <p className="text-body-sm font-medium text-success-800 dark:text-success-300">Ready to create</p>
                       <p className="text-caption text-success-700 mt-1 dark:text-success-300">
-                        {formData.sendInvoiceEmail ? 'Invoice will be emailed to customer' : 'Invoice will be created as draft'}
+                        {formData.sendInvoiceEmail ? 'Invoice will be emailed to customer' : 'Invoice will be issued; not emailed'}
                       </p>
                     </div>
                   </div>

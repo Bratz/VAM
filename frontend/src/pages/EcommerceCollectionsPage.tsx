@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Search, Loader2, RefreshCw, Eye, Download, XCircle } from 'lucide-react';
+import { CreditCard, Search, Loader2, RefreshCw, Eye, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
@@ -70,7 +70,6 @@ const EcommerceCollectionsPage: React.FC = () => {
     <Page>
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>Export</Button>
         <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>
       </div>
 
@@ -79,7 +78,7 @@ const EcommerceCollectionsPage: React.FC = () => {
         <div className="p-4 flex gap-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <Input className="pl-9" placeholder="Search by reference or merchant..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <Input className="pl-9" placeholder="Search by reference, payer or account..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <select className="border border-edge rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="ALL">All Status</option>

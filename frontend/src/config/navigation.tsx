@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical, Scale, ScrollText, Activity } from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical, Scale, ScrollText, Activity } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -121,10 +121,10 @@ export const navSections: NavSection[] = [
     items: [
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'All Transactions', href: 'transactions' },
       { icon: <Send className="w-5 h-5" />, label: 'Transfers', href: 'transfers' },
-      { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Receivables (AR)', href: 'receivables', badge: 2 },
-      { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Payables (AP)', href: 'payables', badge: 1 },
+      { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Receivables (AR)', href: 'receivables' },
+      { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Payables (AP)', href: 'payables' },
       { icon: <Upload className="w-5 h-5" />, label: 'File Ingest Pipeline', href: 'file-ingest' },
-      { icon: <AlertTriangle className="w-5 h-5" />, label: 'Exceptions', href: 'exceptions', badge: 12, badgeColor: 'warning' },
+      { icon: <AlertTriangle className="w-5 h-5" />, label: 'Exceptions', href: 'exceptions' },
     ]
   },
   // Liquidity Management — the strategic core. IHB + Netting + IC Dashboard all
@@ -138,7 +138,7 @@ export const navSections: NavSection[] = [
       { icon: <CircleDot className="w-5 h-5" />, label: 'Notional Pooling', href: 'notional-pooling' },
       // POBO and COBO live on In-House Bank (spec ihb-intercompany-pages R1).
       { icon: <Landmark className="w-5 h-5" />, label: 'In-House Bank', href: 'ihb', keywords: ['POBO', 'COBO', 'on behalf of'] },
-      { icon: <GitMerge className="w-5 h-5" />, label: 'Netting Cycles', href: 'netting-enhanced', badge: 2 },
+      { icon: <GitMerge className="w-5 h-5" />, label: 'Netting Cycles', href: 'netting-enhanced' },
       // The group's who-owes-whom. Its old POBO / COBO / Settlement sub-routes still work as deep links and land on
       // that view; `covers` keeps them highlighting here.
       {
@@ -192,16 +192,15 @@ export const navSections: NavSection[] = [
   // then the plumbing. Credit & Interest was its own top-level section and FX
   // Rates sat under Liquidity Management; both are things you configure once
   // and consult occasionally, not daily-flow tools, so they live here now.
-  // Ordered set-up first, Settings last.
+  // Ordered set-up first, plumbing last.
   {
     title: 'Administration',
     items: [
       { icon: <CreditCard className="w-5 h-5" />, label: 'Credit Limits', href: 'credit-limits' },
       { icon: <Percent className="w-5 h-5" />, label: 'Interest Configuration', href: 'interest-config' },
-      { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rate Table', href: 'fx-rates' },
+      { icon: <DollarSign className="w-5 h-5" />, label: 'Reference Rates', href: 'fx-rates', keywords: ['FX', 'rate table', 'valuation'] },
       { icon: <Receipt className="w-5 h-5" />, label: 'Tax & Charges', href: 'tax-charges' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Integrations', href: 'integrations' },
-      { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: 'settings' },
     ]
   },
 ];
@@ -261,7 +260,7 @@ export const pageTitles: Record<string, string> = {
   'netting-enhanced': 'Netting Cycles',
   'intercompany': 'Intercompany Dashboard',
   'intercompany-settlement': 'Intercompany Dashboard',
-  'fx-rates': 'FX Rate Management',
+  'fx-rates': 'Reference Rates',
   // Foreign Exchange (fx-workspace is the retired single page; it opens Deals)
   'fx-market': 'Market Rates',
   'fx-exposure': 'Exposure & Hedging',
@@ -284,9 +283,8 @@ export const pageTitles: Record<string, string> = {
   'ecommerce-collections': 'E-Commerce Collections',
   'seller-collections': 'Seller Collections',
   // Administration
-  'tax-charges': 'Tax & Charges Setup',
+  'tax-charges': 'Tax & Charges',
   'integrations': 'Integrations',
-  'settings': 'Settings',
 };
 
 // ----------------------------------------------------------------------------

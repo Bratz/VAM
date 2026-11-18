@@ -299,7 +299,7 @@ async function producePendingApprovals(_entityId?: string): Promise<AttentionIte
         timePressure: pressure,
         actions: [
           { label: 'Review', kind: 'drawer', actionId: 'review', requiresConfirmation: false },
-          { label: 'Open netting', kind: 'navigate', actionId: 'netting', requiresConfirmation: false },
+          { label: 'Open netting', kind: 'navigate', actionId: 'netting-enhanced', requiresConfirmation: false },
         ],
         createdAt: n.createdAt,
       });
@@ -315,7 +315,7 @@ async function producePendingApprovals(_entityId?: string): Promise<AttentionIte
         context: { entityId: k.corporateId, entityName: k.name },
         timePressure: pressure,
         actions: [
-          { label: 'Review', kind: 'navigate', actionId: 'kyc', requiresConfirmation: false },
+          { label: 'Review', kind: 'navigate', actionId: 'kycc', requiresConfirmation: false },
         ],
         createdAt: k.submittedAt,
       });

@@ -131,7 +131,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
 
   // Format and options state
   const [selectedFormat, setSelectedFormat] = useState<ISO20022StatementFormat>('PDF');
-  const [includeChildAccounts, setIncludeChildAccounts] = useState(false);
+  const [includeChildAccounts, setIncludeChildAccounts] = useState(true);
   const [showFormatDropdown, setShowFormatDropdown] = useState(false);
 
   // Loading and preview state

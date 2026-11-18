@@ -244,7 +244,7 @@ const CutoverModal: React.FC<{ corporateId: string; preview: PoboCutoverReport; 
     >
       <div className="space-y-6">
         {section('Payables back to Approved', report.payables, 'success')}
-        {section("Treasury's mirrors set from each IHB position", report.mirrors, 'info')}
+        {section('In-house balances corrected', report.mirrors, 'info')}
         {section('POBO recharges closed as settled by the IHB position', report.recharges, 'info')}
         {section('IHB credit use set from the balance', report.creditLimits, 'info')}
         {section('Sweep rules on in-house accounts stopped', report.sweepRules, 'info')}

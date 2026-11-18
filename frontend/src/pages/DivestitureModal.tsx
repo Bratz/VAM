@@ -289,7 +289,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                           <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
                             <li>• Remove aggregation from current hierarchy</li>
                             <li>• Create new corporate with own hierarchy</li>
-                            <li>• Update corporate_id for all child VAs</li>
+                            <li>• Move all its virtual accounts to the new corporate</li>
                           </ul>
                         </div>
                       </div>

@@ -380,6 +380,16 @@ UI:
       controls first, then stat strips / repeated explanations / jargon, then page merges (one hierarchy tree,
       Multi-Bank grouped table, Statements single path, Collections pages, IHB set-up table, Netting tabs).
       Decision open: IHB vs Intercompany shared figures (spec R3 vs acceptance 3).
+      Round 1 (wrong figures, dead controls) done 18 Nov. Found on the way, not fixed:
+      - Exceptions drawer timeline calls /treasury/exceptions/{id}/timeline, which has no endpoint.
+      - PayablesService.getStats never sets nettingIncludedCount, poboPendingApprovalCount, poboExecutedCount,
+        paidAmount, overdueAmount (frontend types declare them); the Payables Netting tab count now counts the
+        loaded rows, so it is low on the All tab until a backend count exists.
+      - Transactions stats have no per-direction counts: Credits/Debits tabs show none.
+      - Bank Accounts "not linked" count is per page (no server total).
+      - /ecommerce/collections and /ecommerce/settlements return 500 locally.
+      - "Consolidated position" means different things on Dashboard (entity hierarchy) and Multi-Bank Liquidity
+        (account balances x rates): needs a decision (rename one or share a source).
 - [ ] In-House Bank: Movements calls a sweep reversal and "Deposit to IHB current account" "Other"; Position lists every
       funding currency even with no IHB accounts in it; the stat strip says "1 lenders".
 - [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,

@@ -3,7 +3,6 @@ import {
   Shield,
   Plus,
   Search,
-  Filter,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -12,7 +11,6 @@ import {
   Calendar,
   Play,
   Flag,
-  Download,
   Loader2,
   RefreshCw,
 } from 'lucide-react';
@@ -481,14 +479,6 @@ const EscrowPage: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 leftIcon={<Search className="w-4 h-4" />}
               />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" leftIcon={<Filter className="w-4 h-4" />}>
-                Filters
-              </Button>
-              <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
-                Export
-              </Button>
             </div>
           </div>
         </div>

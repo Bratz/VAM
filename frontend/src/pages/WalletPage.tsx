@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Wallet, Plus, Search, CreditCard, ArrowUpRight, ArrowDownRight, Users, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, UserCheck, XCircle, LayoutDashboard, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, GitBranch, X, Pencil, ChevronRight } from 'lucide-react';
+import { Wallet, Plus, Search, CreditCard, ArrowUpRight, ArrowDownRight, Users, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Settings, Loader2, CheckCircle, Building2, Shield, Upload, UserCheck, XCircle, LayoutDashboard, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, X, Pencil, ChevronRight } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -197,15 +197,6 @@ interface CreatePartyRequest {
   country?: string;
   city?: string;
   addressLine1?: string;
-}
-
-interface HierarchyNode {
-  id: string;
-  nodeCode: string;
-  nodeName: string;
-  levelNumber: number;
-  materializedPath: string;
-  parentId?: string;
 }
 
 interface WalletStats {
@@ -874,14 +865,12 @@ const WalletPage: React.FC = () => {
     emiratesId: '',
     city: '',
     walletType: 'CONSUMER',
-    hierarchyNodeId: '',
     initialLoadAmount: '',
     dailyLimit: '',
     monthlyLimit: '',
     autoTriggerKyc: false,
   });
   const [selectedParty, setSelectedParty] = useState<Party | null>(null);
-  const [, setSelectedHierarchyNode] = useState<HierarchyNode | null>(null);
   const [, setPartyMode] = useState<'existing' | 'new'>('existing');
   
   // Other form states
@@ -927,7 +916,7 @@ const WalletPage: React.FC = () => {
           size: 20,
           query: searchQuery || undefined,
           status: statusFilter || undefined,
-          programId: selectedPartnerId || undefined,
+          corporateId: selectedPartnerId || undefined,
           kycVerified: kycFilter === 'verified' ? true : kycFilter === 'pending' ? false : undefined,
         });
         if (walletsData?.content) {
@@ -995,7 +984,6 @@ const WalletPage: React.FC = () => {
         holderEmail: selectedParty?.contactEmail || issueForm.holderEmail || undefined,
         emiratesId: issueForm.emiratesId || undefined,
         city: issueForm.city || undefined,
-        hierarchyNodeId: issueForm.hierarchyNodeId || undefined,
         walletType: issueForm.walletType,
         initialLoadAmount: issueForm.initialLoadAmount ? parseFloat(issueForm.initialLoadAmount) : undefined,
         dailyLimit: issueForm.dailyLimit ? parseFloat(issueForm.dailyLimit) : undefined,
@@ -1025,14 +1013,12 @@ const WalletPage: React.FC = () => {
       emiratesId: '',
       city: '',
       walletType: 'CONSUMER',
-      hierarchyNodeId: '',
       initialLoadAmount: '',
       dailyLimit: '',
       monthlyLimit: '',
       autoTriggerKyc: false,
     });
     setSelectedParty(null);
-    setSelectedHierarchyNode(null);
     setPartyMode('existing');
   };
 
@@ -1228,7 +1214,7 @@ const WalletPage: React.FC = () => {
             <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />} onClick={navigateToProgramsPage}>Go to Programs</Button>
           </div>
           <div className="grid gap-6 grid-cols-2">
-            {programs.map(p => <ProgramCard key={p.id} program={p} onClick={() => { setSelectedPartnerId(p.id); setActiveTab('wallets'); }} />)}
+            {programs.map(p => <ProgramCard key={p.id} program={p} onClick={() => { setSelectedPartnerId(p.corporateId ?? ''); setCurrentPage(0); setActiveTab('wallets'); }} />)}
             {!programs.length && <div className="col-span-2"><EmptyState icon={<Settings className="w-8 h-8" />} title="No programs" action={<Button onClick={navigateToProgramsPage}>Go to Programs</Button>} /></div>}
           </div>
         </div>
@@ -1255,9 +1241,6 @@ const WalletPage: React.FC = () => {
                   <option value="verified">Verified</option>
                   <option value="pending">Pending</option>
                 </select>
-                <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-                  <span className="inline">Export</span>
-                </Button>
               </div>
             </div>
           </div>
@@ -1442,33 +1425,10 @@ const WalletPage: React.FC = () => {
             )}
           </div>
 
-          {/* Step 3: Hierarchy */}
+          {/* Step 3: Settings */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
               <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">3</div>
-              <span className="font-medium">Hierarchy</span>
-              <span className="caption">(Optional)</span>
-            </div>
-            {issueForm.programId ? (
-              <div className="border border-edge rounded-lg p-3">
-                <div className="flex items-center gap-2 body-sm mb-2"><GitBranch className="w-4 h-4" />Place in hierarchy for reporting</div>
-                <select className="w-full border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={issueForm.hierarchyNodeId || ''} onChange={(e) => setIssueForm({ ...issueForm, hierarchyNodeId: e.target.value })}>
-                  <option value="">No hierarchy (flat)</option>
-                  <option value="node-uae">UAE Region</option>
-                  <option value="node-dubai">├── Dubai</option>
-                  <option value="node-abudhabi">├── Abu Dhabi</option>
-                  <option value="node-sharjah">└── Sharjah</option>
-                </select>
-              </div>
-            ) : (
-              <p className="text-body-sm text-neutral-400">Select program first</p>
-            )}
-          </div>
-
-          {/* Step 4: Settings */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
-              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">4</div>
               <span className="font-medium">Wallet Settings</span>
             </div>
             <div className="grid grid-cols-2 gap-4">

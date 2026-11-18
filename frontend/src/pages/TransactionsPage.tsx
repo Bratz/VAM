@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Download, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Calendar, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import { Search, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable, Toggle } from '../components/ui';
 import type { Column } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, formatRelativeTime, getStatusVariant, cn } from '../utils';
 import toast from 'react-hot-toast';
 import {
@@ -17,131 +17,6 @@ import {
 import { isCredit, isDebit, getAmountColorClass } from '../utils/transactionUtils';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector, type ScopeCorporate } from '../components/layout/ScopeSelector';
-
-// ============================================================================
-// DEMO DATA (Fallback)
-// ============================================================================
-
-const demoTransactions: Transaction[] = [
-  {
-    id: '1',
-    referenceNumber: 'TXN-2024-001234',
-    movementType: 'CREDIT',
-    amount: 125000,
-    currencyCode: 'AED',
-    vaId: 'va1',
-    vaNumber: 'VA001001',
-    vaName: 'Operating Account',
-    counterpartyName: 'Emirates Trading LLC',
-    counterpartyAccount: 'AE070331234567890123456',
-    description: 'Invoice Payment - INV-2024-0156',
-    channel: 'SWIFT',
-    status: 'COMPLETED',
-    transactionDate: new Date().toISOString(),
-    valueDate: new Date().toISOString().split('T')[0],
-    balanceBefore: 5125000,
-    balanceAfter: 5250000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    referenceNumber: 'TXN-2024-001235',
-    movementType: 'DEBIT',
-    amount: 85000,
-    currencyCode: 'AED',
-    vaId: 'va2',
-    vaNumber: 'VA001002',
-    vaName: 'Payroll Account',
-    counterpartyName: 'Staff Salaries - Feb 2024',
-    description: 'Monthly Salary Disbursement',
-    channel: 'INTERNAL',
-    status: 'COMPLETED',
-    transactionDate: new Date().toISOString(),
-    valueDate: new Date().toISOString().split('T')[0],
-    balanceBefore: 3185000,
-    balanceAfter: 3100000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    referenceNumber: 'TXN-2024-001236',
-    movementType: 'TRANSFER_OUT',
-    amount: 500000,
-    currencyCode: 'AED',
-    vaId: 'va1',
-    vaNumber: 'VA001001',
-    vaName: 'Operating Account',
-    counterpartyName: 'Treasury Account',
-    counterpartyAccount: 'VA001005',
-    description: 'Internal Treasury Transfer',
-    channel: 'INTERNAL',
-    status: 'PENDING',
-    transactionDate: new Date().toISOString(),
-    valueDate: new Date().toISOString().split('T')[0],
-    balanceBefore: 5750000,
-    balanceAfter: 5250000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    referenceNumber: 'TXN-2024-001237',
-    movementType: 'FEE_CREDIT',
-    amount: 250,
-    currencyCode: 'AED',
-    vaId: 'va-settlement',
-    vaNumber: 'SETTLEMENT-001',
-    vaName: 'Settlement Account',
-    counterpartyName: 'Fee from VA001001',
-    counterpartyAccount: 'VA001001',
-    description: 'Transfer Fee Credit',
-    channel: 'INTERNAL',
-    status: 'COMPLETED',
-    transactionDate: new Date().toISOString(),
-    valueDate: new Date().toISOString().split('T')[0],
-    balanceBefore: 14000,
-    balanceAfter: 14250,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    referenceNumber: 'TXN-2024-001238',
-    movementType: 'FEE',
-    amount: 250,
-    currencyCode: 'AED',
-    vaId: 'va1',
-    vaNumber: 'VA001001',
-    vaName: 'Operating Account',
-    counterpartyName: 'Settlement Account',
-    counterpartyAccount: 'SETTLEMENT-001',
-    description: 'Transfer Fee Debit',
-    channel: 'INTERNAL',
-    status: 'COMPLETED',
-    transactionDate: new Date().toISOString(),
-    valueDate: new Date().toISOString().split('T')[0],
-    balanceBefore: 5250000,
-    balanceAfter: 5250000,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const demoStats: TransactionStats = {
-  totalCredits: 375000,
-  totalDebits: 760000,
-  netFlow: -385000,
-  todayCredits: 375000,
-  todayDebits: 585000,
-  todayNetFlow: -210000,
-  totalCount: 6,
-  todayCount: 4,
-  pendingCount: 2,
-  failedCount: 1,
-  completedCount: 3,
-  swiftCount: 2,
-  rtgsCount: 1,
-  internalCount: 3,
-  averageAmount: 197500,
-  largestTransaction: 500000,
-};
 
 // ============================================================================
 // COMPONENTS
@@ -592,9 +467,6 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               Reverse
             </Button>
           )}
-          <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
-            Download Receipt
-          </Button>
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
@@ -1419,6 +1291,7 @@ const TransactionsPage: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<TransactionStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [reverseTargetId, setReverseTargetId] = useState<string | null>(null);
@@ -1456,6 +1329,7 @@ const TransactionsPage: React.FC = () => {
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const corporateId = selectedCorporateId || undefined;
 
@@ -1464,7 +1338,7 @@ const TransactionsPage: React.FC = () => {
       if (statsRes.success && statsRes.data) {
         setStats(statsRes.data);
       } else {
-        setStats(demoStats);
+        setStats(null);
       }
 
       // Determine direction filter for grouped view based on tab
@@ -1527,16 +1401,17 @@ const TransactionsPage: React.FC = () => {
           setTotalElements(txnRes.data.totalElements || 0);
         }
       } else {
-        // Use demo data on failure
-        setTransactions(demoTransactions);
-        if (viewMode === 'individual') {
-          setTotalElements(demoTransactions.length);
-        }
+        setTransactions([]);
+        if (viewMode === 'individual') setTotalElements(0);
+        setLoadError(txnRes.message || 'Could not load transactions.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch data:', error);
-      setStats(demoStats);
-      setTransactions(demoTransactions);
+      setStats(null);
+      setTransactions([]);
+      setGroupedTransactions([]);
+      setTotalElements(0);
+      setLoadError(error?.response?.data?.message || error?.message || 'Could not load transactions.');
     } finally {
       setLoading(false);
     }
@@ -1649,8 +1524,9 @@ const TransactionsPage: React.FC = () => {
   // Tabs configuration
   const tabs = [
     { id: 'all', label: 'All', count: totalElements },
-    { id: 'credit', label: 'Credits', count: stats?.completedCount || 0 },
-    { id: 'debit', label: 'Debits', count: stats?.completedCount || 0 },
+    // ponytail: stats carry no per-direction counts, so these tabs show none
+    { id: 'credit', label: 'Credits', count: undefined },
+    { id: 'debit', label: 'Debits', count: undefined },
     { id: 'pending', label: 'Pending', count: stats?.pendingCount || 0 },
   ];
 
@@ -1862,13 +1738,6 @@ const TransactionsPage: React.FC = () => {
       <div className="flex items-center justify-end gap-2">
         <Button
           variant="outline"
-          leftIcon={<Calendar className="w-4 h-4" />}
-          className="inline-flex"
-        >
-          Date Range
-        </Button>
-        <Button
-          variant="outline"
           leftIcon={<ArrowDownLeft className="w-4 h-4" />}
           onClick={() => setShowCollectionModal(true)}
           className="inline-flex"
@@ -1946,12 +1815,12 @@ const TransactionsPage: React.FC = () => {
                 )}
               >
                 {tab.label}
-                <span className={cn(
+                {tab.count !== undefined && <span className={cn(
                   'ml-2 px-2 py-0.5 rounded-full text-caption font-semibold',
                   activeTab === tab.id ? 'bg-primary-200 dark:bg-primary-700 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                 )}>
                   {tab.count}
-                </span>
+                </span>}
               </button>
             ))}
           </div>
@@ -2024,6 +1893,7 @@ const TransactionsPage: React.FC = () => {
 
         {/* Table */}
         <div className="p-6">
+          {loadError && <Alert variant="error" className="mb-4">{loadError}</Alert>}
           {viewMode === 'grouped' ? (
             <DataTable
               data={groupedTransactions}

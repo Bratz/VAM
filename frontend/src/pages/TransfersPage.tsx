@@ -2310,10 +2310,9 @@ export default function TransfersPage() {
   const bulkTotal = bulkItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
   // Calculate stats
-  const todayTransfers = recentTransfers.filter(t => {
-    const txnDate = new Date(t.transactionDate).toDateString();
-    return txnDate === new Date().toDateString();
-  });
+  const todayTransfers = recentTransfers.filter(t =>
+    t.status === 'COMPLETED' && new Date(t.transactionDate).toDateString() === new Date().toDateString()
+  );
   const todayVolume = todayTransfers.reduce((sum, t) => sum + t.amount, 0);
 
   // Steps for wizard
@@ -3293,9 +3292,6 @@ export default function TransfersPage() {
               <h3 className="section-title">Recent Transfers</h3>
               <p className="body-sm">Your transfer history</p>
             </div>
-            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-              Export
-            </Button>
           </div>
 
           {recentTransfers.length === 0 ? (

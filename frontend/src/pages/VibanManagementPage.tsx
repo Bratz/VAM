@@ -744,10 +744,14 @@ const VibanManagementPage: React.FC = () => {
   const filteredVibans = useMemo(() => {
     return vibans.filter(v => {
       if (selectedPool && v.poolId !== selectedPool) return false;
-      if (statusFilter !== 'ALL' && v.status !== statusFilter) return false;
+      // "Available (In Pool)" = RETURNED or AVAILABLE, the two statuses getStatusBadge labels "Available".
+      const statusOk = statusFilter === 'RETURNED'
+        ? v.status === 'RETURNED' || v.status === 'AVAILABLE'
+        : v.status === statusFilter;
+      if (statusFilter !== 'ALL' && !statusOk) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        return v.viban.toLowerCase().includes(q) || 
+        return v.viban.toLowerCase().includes(q) ||
                v.vaNumber?.toLowerCase().includes(q) || 
                v.poolCode?.toLowerCase().includes(q);
       }
@@ -861,7 +865,7 @@ const VibanManagementPage: React.FC = () => {
       />
 
       {/* Tab Content */}
-      {activeTab === 'overview' && <OverviewTab stats={stats} pools={pools} formatNumber={formatNumber} formatCurrency={formatCurrency} />}
+      {activeTab === 'overview' && <OverviewTab stats={stats} pools={pools} formatNumber={formatNumber} formatCurrency={formatCurrency} getStatusBadge={getStatusBadge} />}
       {activeTab === 'pools' && (
         <PoolsTab pools={filteredPools} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           statusFilter={statusFilter} setStatusFilter={setStatusFilter}
@@ -930,7 +934,8 @@ const VibanManagementPage: React.FC = () => {
 
 const OverviewTab: React.FC<{
   stats: VibanStats | null; pools: VibanPool[]; formatNumber: (n: number) => string; formatCurrency: (n: number) => string;
-}> = ({ stats, pools, formatNumber, formatCurrency }) => {
+  getStatusBadge: (status: string) => React.ReactNode;
+}> = ({ stats, pools, formatNumber, formatCurrency, getStatusBadge }) => {
   if (!stats) return <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">No statistics available</div>;
 
   const lowThresholdPools = pools.filter(p => p.status === 'ACTIVE' && (p.availableCount / p.poolSize) * 100 <= p.lowThresholdPercent);
@@ -953,7 +958,7 @@ const OverviewTab: React.FC<{
           sub: `Allocated across ${stats.totalPools} ${stats.totalPools === 1 ? 'pool' : 'pools'}`,
         }}
         secondary={{
-          label: 'Utilisation',
+          label: 'Assigned',
           value: `${utilPct.toFixed(1)}%`,
           trend: `${formatNumber(stats.assigned)} assigned`,
           trendTone: utilTone,
@@ -1032,7 +1037,7 @@ const OverviewTab: React.FC<{
         </div>
         <div className="divide-y">
           {pools.map(pool => {
-            const util = ((pool.assignedCount + pool.reservedCount) / pool.poolSize) * 100;
+            const util = pool.poolSize > 0 ? (pool.assignedCount / pool.poolSize) * 100 : 0;
             return (
               <div key={pool.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                 <div className="flex items-center gap-4">
@@ -1044,12 +1049,12 @@ const OverviewTab: React.FC<{
                 <div className="flex items-center gap-8">
                   <div className="text-right"><p className="text-body-sm font-medium">{formatNumber(pool.availableCount)} available</p><p className="caption">of {formatNumber(pool.poolSize)}</p></div>
                   <div className="w-32">
-                    <div className="flex justify-between text-caption mb-1"><span>Utilization</span><span>{util.toFixed(1)}%</span></div>
+                    <div className="flex justify-between text-caption mb-1"><span>Assigned</span><span>{util.toFixed(1)}%</span></div>
                     <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
                       <div className={`h-full ${util > 90 ? 'bg-error-500' : util > 70 ? 'bg-warning-500' : 'bg-success-500'}`} style={{ width: `${util}%` }} />
                     </div>
                   </div>
-                  <Badge variant={pool.status === 'ACTIVE' ? 'success' : pool.status === 'EXHAUSTED' ? 'error' : 'neutral'}>{pool.status}</Badge>
+                  {getStatusBadge(pool.status)}
                 </div>
               </div>
             );
@@ -1112,7 +1117,7 @@ const PoolsTab: React.FC<{
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
                 </div>
                 <div className="mb-4">
-                  <div className="flex justify-between text-caption mb-1"><span className="text-neutral-500 dark:text-neutral-400">Utilization</span><span>{((pool.assignedCount + pool.reservedCount) / pool.poolSize * 100).toFixed(1)}%</span></div>
+                  <div className="flex justify-between text-caption mb-1"><span className="text-neutral-500 dark:text-neutral-400">Assigned</span><span>{(pool.poolSize > 0 ? pool.assignedCount / pool.poolSize * 100 : 0).toFixed(1)}%</span></div>
                   <div className="h-2 bg-neutral-200 rounded-full overflow-hidden flex dark:bg-primary-800">
                     <div className="h-full bg-success-500" style={{ width: `${(pool.assignedCount / pool.poolSize) * 100}%` }} />
                     <div className="h-full bg-warning-500" style={{ width: `${(pool.reservedCount / pool.poolSize) * 100}%` }} />

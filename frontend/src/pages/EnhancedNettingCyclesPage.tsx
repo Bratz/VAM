@@ -97,7 +97,6 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
     settlementDate: '',
     baseCurrency: 'AED',
     autoPopulate: true,
-    includePending: false, // Include PENDING recharges for testing
   });
 
   const handleSubmit = async () => {
@@ -174,16 +173,6 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
             onChange={(checked) => setFormData({ ...formData, autoPopulate: checked })}
             label={<span className="text-body-sm font-normal text-neutral-700 dark:text-neutral-200">Auto-populate with eligible intercompany payables, receivables, and recharges</span>}
           />
-          {formData.autoPopulate && (
-            <div className="ml-6">
-              <Checkbox
-                size="sm"
-                checked={formData.includePending}
-                onChange={(checked) => setFormData({ ...formData, includePending: checked })}
-                label={<span className="body-sm font-normal">Include pending (unapproved) POBO recharges</span>}
-              />
-            </div>
-          )}
         </div>
       </div>
       
@@ -528,32 +517,6 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                     <dd className="text-body-sm font-medium">{cycle.baseCurrency}</dd>
                   </div>
                 </dl>
-              </div>
-            </Card>
-            
-            <Card>
-              <div className="p-4">
-                <h4 className="label mb-3">Netting Impact</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="body-sm">Without Netting</span>
-                    <span className="text-body-sm font-medium text-error-600 dark:text-error-300">
-                      {positions.length} payments
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="body-sm">With Netting</span>
-                    <span className="text-body-sm font-medium text-success-600 dark:text-success-300">
-                      {legs.length} transfers
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-body-sm font-medium">Reduction</span>
-                    <span className="text-body-sm font-bold text-success-600 dark:text-success-300">
-                      {positions.length > 0 ? Math.round((1 - legs.length / positions.length) * 100) : 0}%
-                    </span>
-                  </div>
-                </div>
               </div>
             </Card>
           </div>
@@ -926,7 +889,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
           const populateResponse = await nettingApi.populateCycle(
             createdCycle.id,
             data.corporateId,
-            data.includePending || false
+            false // approved recharges only
           );
           if (populateResponse.success) {
             // Refresh to get the updated cycle with entries
@@ -973,12 +936,15 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   const stats = {
     total: cycles.length,
     draft: cycles.filter(c => c.status === 'DRAFT').length,
-    open: cycles.filter(c => c.status === 'OPEN').length,
     pending: cycles.filter(c => c.status === 'PENDING_APPROVAL').length,
     settled: cycles.filter(c => c.status === 'SETTLED').length,
-    totalSavings: cycles
+    // Settled savings per base currency: cycles in different currencies are never added up
+    savings: Object.entries(cycles
       .filter(c => c.status === 'SETTLED')
-      .reduce((sum, c) => sum + (c.savingsAmount || 0), 0),
+      .reduce<Record<string, number>>((acc, c) => {
+        acc[c.baseCurrency] = (acc[c.baseCurrency] ?? 0) + (c.savingsAmount || 0);
+        return acc;
+      }, {})),
   };
 
   // Page toolbar actions in the Layout header.
@@ -998,6 +964,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     [fetchCycles]
   );
 
+  const header = <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />;
   const scope = (
     <ScopeSelector
       mode="corporate-only"
@@ -1012,7 +979,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
+        {header}
         {scope}
         <LoadingSpinner />
       </div>
@@ -1022,7 +989,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   if (error) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
+        {header}
         {scope}
         <ErrorMessage message={error} onRetry={fetchCycles} />
       </div>
@@ -1031,16 +998,18 @@ const EnhancedNettingCyclesPage: React.FC = () => {
 
   return (
     <Page>
-      {/* Title + Quick Actions migrated to Aperture Layout header. */}
+      {header}
       {scope}
 
       {/* Stats Cards */}
       <StatStrip>
         <StatTile tone="primary" icon={<GitMerge className="w-5 h-5" />} label="Total" value={stats.total} delay="0.15s" />
-        <StatTile tone="info" icon={<Layers className="w-5 h-5" />} label="Open" value={stats.open} delay="0.2s" />
+        <StatTile tone="info" icon={<Layers className="w-5 h-5" />} label="Draft" value={stats.draft} delay="0.2s" />
         <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pending} delay="0.25s" />
         <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Settled" value={stats.settled} delay="0.3s" />
-        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={<TileAmount value={stats.totalSavings} currency="AED" />} delay="0.35s" />
+        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={stats.savings.length === 0
+          ? <TileAmount value={0} showCurrency={false} />
+          : <span className="flex flex-wrap gap-x-4">{stats.savings.map(([c, v]) => <TileAmount key={c} value={v} currency={c} />)}</span>} delay="0.35s" />
       </StatStrip>
 
       {/* Filter */}
@@ -1053,7 +1022,6 @@ const EnhancedNettingCyclesPage: React.FC = () => {
         >
           <option value="all">All Cycles</option>
           <option value="DRAFT">Draft</option>
-          <option value="OPEN">Open</option>
           <option value="PENDING_APPROVAL">Pending Approval</option>
           <option value="APPROVED">Approved</option>
           <option value="SETTLED">Settled</option>

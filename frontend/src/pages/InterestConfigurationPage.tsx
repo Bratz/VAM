@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, ArrowUpRight, ArrowDownRight, Layers, Save, Copy, Pencil, CheckCircle, X, Landmark } from 'lucide-react';
+import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, Layers, Save, Copy, Pencil, CheckCircle, X } from 'lucide-react';
 import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { cn, formatDate } from '../utils';
-import { interestConfigurationApi, corporatesApi, programsApi, InterestConfiguration, InterestConfigurationStatistics, Corporate } from '../services/api';
+import { interestConfigurationApi, programsApi, InterestConfiguration } from '../services/api';
+import { useUser } from '../context/useUser';
 import toast from 'react-hot-toast';
 import { Page } from '../components/layout/Page';
 
@@ -121,6 +122,9 @@ const getStatusVariant = (status: ConfigStatus): 'success' | 'warning' | 'error'
   return CONFIG_STATUSES.find(s => s.value === status)?.variant || 'neutral';
 };
 
+const labelOf = (list: { value: string; label: string }[], value?: string): string =>
+  list.find(x => x.value === value)?.label ?? value ?? '';
+
 const formatRate = (rate?: number | string): string => {
   if (rate === undefined || rate === null || rate === '') return '-';
   const num = typeof rate === 'string' ? parseFloat(rate) : rate;
@@ -130,44 +134,6 @@ const formatRate = (rate?: number | string): string => {
 // ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
-
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: React.ReactNode;
-  trend?: 'up' | 'down';
-  color?: string;
-}> = ({ title, value, subtitle, icon, trend, color = 'info' }) => (
-  <Card hover className="p-4">
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <p className="label">{title}</p>
-        <p className="stat-value-sm mt-1">{value}</p>
-        {subtitle && (
-          <p className={cn(
-            "text-caption mt-1 flex items-center gap-1",
-            trend === 'up' ? 'text-success-600 dark:text-success-300' : trend === 'down' ? 'text-error-600 dark:text-error-300' : 'text-neutral-500 dark:text-neutral-400'
-          )}>
-            {trend === 'up' && <ArrowUpRight className="w-3 h-3" />}
-            {trend === 'down' && <ArrowDownRight className="w-3 h-3" />}
-            {subtitle}
-          </p>
-        )}
-      </div>
-      <div className={cn(
-        "w-10 h-10 rounded-lg flex items-center justify-center",
-        color === 'info' && 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300',
-        color === 'success' && 'bg-success-100 text-success-600 dark:bg-success-500/20 dark:text-success-300',
-        color === 'accent' && 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300',
-        color === 'error' && 'bg-error-100 text-error-600 dark:bg-error-500/20 dark:text-error-300',
-        color === 'primary' && 'bg-primary-100 text-primary-600 dark:bg-primary-700 dark:text-primary-200',
-      )}>
-        {icon}
-      </div>
-    </div>
-  </Card>
-);
 
 const ConfigCard: React.FC<{
   config: InterestConfiguration;
@@ -186,12 +152,12 @@ const ConfigCard: React.FC<{
         </div>
         <div>
           <h4 className="font-semibold text-primary-900 dark:text-neutral-50">{config.configName || 'Unnamed Config'}</h4>
-          <p className="caption">{config.currencyCode} • {config.targetType || 'CORPORATE'}</p>
+          <p className="caption">{config.currencyCode} • {labelOf(TARGET_TYPES, config.targetType || 'CORPORATE')}</p>
           {config.systemDefault && <span title="Created by the application with a built-in rate where none was given (credit 2.50, debit 5.00, penalty 7.00): not the bank's agreed terms"><Badge variant="warning" size="sm">Created with default rates</Badge></span>}
         </div>
       </div>
       <Badge variant={getStatusVariant(config.status as ConfigStatus)} size="sm">
-        {config.status}
+        {labelOf(CONFIG_STATUSES, config.status)}
       </Badge>
     </div>
 
@@ -257,25 +223,20 @@ const ConfigCard: React.FC<{
 // ============================================================================
 
 interface CorporateProgramFilterBarProps {
-  corporates: Corporate[];
   programs: ProgramOption[];
   selectedCorporateId: string;
   selectedProgramId: string;
-  onCorporateChange: (id: string) => void;
   onProgramChange: (id: string) => void;
   loading?: boolean;
 }
 
 const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
-  corporates,
   programs,
   selectedCorporateId,
   selectedProgramId,
-  onCorporateChange,
   onProgramChange,
   loading,
 }) => {
-  const selectedCorporate = corporates.find(c => c.id === selectedCorporateId);
   const selectedProgram = programs.find(p => p.id === selectedProgramId);
   const filteredPrograms = programs.filter(p => 
     !selectedCorporateId || p.corporateId === selectedCorporateId
@@ -285,31 +246,6 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
   return (
     <Card padding="sm" className="bg-gradient-to-r from-primary-50 to-info-50 border-primary-200 dark:border-primary-700 dark:from-primary-500/15 dark:to-info-500/15">
       <div className="flex items-center gap-4 flex-wrap">
-        {/* Corporate Selector */}
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-primary-100 rounded-lg dark:bg-primary-700">
-            <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" />
-          </div>
-          <div className="min-w-[12.5rem]">
-            <label className="text-caption font-medium text-primary-700 uppercase tracking-wide dark:text-neutral-200">Corporate</label>
-            <select
-              value={selectedCorporateId}
-              onChange={(e) => onCorporateChange(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 bg-surface-card border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
-              disabled={loading}
-            >
-              <option value="">Select Corporate...</option>
-              {corporates.map(corp => (
-                <option key={corp.id} value={corp.id}>
-                  {corp.tradeName || corp.legalName}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="h-10 w-px bg-primary-200 dark:bg-primary-700" />
-
         {/* Program Selector */}
         <div className="flex items-center gap-2">
           <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
@@ -337,12 +273,6 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
 
         {/* Selected Badges */}
         <div className="flex-1 flex items-center gap-3">
-          {selectedCorporate && (
-            <Badge variant="info" size="sm">
-              <Building2 className="w-3 h-3 mr-1" />
-              {selectedCorporate.tradeName || selectedCorporate.legalName}
-            </Badge>
-          )}
           {selectedProgram && (
             <Badge variant="info" size="sm">
               <Layers className="w-3 h-3 mr-1" />
@@ -350,7 +280,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
             </Badge>
           )}
           {!selectedCorporateId && !selectedProgramId && (
-            <span className="text-body-sm text-neutral-500 italic dark:text-neutral-400">Select a corporate and program</span>
+            <span className="text-body-sm text-neutral-500 italic dark:text-neutral-400">Select a corporate in the header</span>
           )}
         </div>
 
@@ -367,10 +297,9 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
 const InterestConfigurationPage: React.FC = () => {
   // State
   const [configs, setConfigs] = useState<InterestConfiguration[]>([]);
-  const [statistics, setStatistics] = useState<InterestConfigurationStatistics | null>(null);
-  const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
-  const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
+  // The header's corporate, like the FX pages; no second picker.
+  const selectedCorporateId = useUser().currentCorporateId ?? '';
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
@@ -389,20 +318,15 @@ const InterestConfigurationPage: React.FC = () => {
   const [form, setForm] = useState<InterestConfigForm>(DEFAULT_FORM);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load corporates on mount
+  // Load programs when the header corporate changes; the old program belongs to the old corporate.
   useEffect(() => {
-    loadCorporates();
-  }, []);
-
-  // Load programs when corporate changes
-  useEffect(() => {
+    setSelectedProgramId('');
     if (selectedCorporateId) {
       loadPrograms();
     } else {
       setPrograms([]);
-      setSelectedProgramId('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPrograms also reads selectedProgramId (only to auto-select a default); depending on it would refetch the program list every time the user picks a program.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPrograms is redefined every render; only the corporate should trigger a refetch.
   }, [selectedCorporateId]);
 
   const loadData = useCallback(async () => {
@@ -411,13 +335,8 @@ const InterestConfigurationPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [configsRes, statsRes] = await Promise.all([
-        interestConfigurationApi.getActiveByCorporate(selectedCorporateId),
-        interestConfigurationApi.getStatistics(selectedCorporateId),
-      ]);
-      
+      const configsRes = await interestConfigurationApi.getActiveByCorporate(selectedCorporateId);
       const configsData = configsRes?.data || configsRes || [];
-      const statsData = statsRes?.data || statsRes || null;
       
       // Filter by program if selected
       let filteredConfigs = Array.isArray(configsData) ? configsData : [];
@@ -428,12 +347,10 @@ const InterestConfigurationPage: React.FC = () => {
       }
       
       setConfigs(filteredConfigs);
-      setStatistics(statsData);
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load interest configurations.');
       setConfigs([]);
-      setStatistics(null);
     } finally {
       setLoading(false);
     }
@@ -445,23 +362,6 @@ const InterestConfigurationPage: React.FC = () => {
       loadData();
     }
   }, [selectedCorporateId, loadData]);
-
-  const loadCorporates = async () => {
-    try {
-      const response = await corporatesApi.getAll();
-      const data = response?.data || response;
-      const corporateList = Array.isArray(data) ? data : [];
-      setCorporates(corporateList);
-      if (corporateList.length > 0) {
-        setSelectedCorporateId(corporateList[0].id);
-      }
-    } catch (err) {
-      console.error('Failed to load corporates:', err);
-      setError('Failed to load corporates');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadPrograms = async () => {
     if (!selectedCorporateId) return;
@@ -497,8 +397,8 @@ const InterestConfigurationPage: React.FC = () => {
 
       // Auto-select first active program
       const activePrograms = programList.filter(p => p.status === 'ACTIVE');
-      if (activePrograms.length > 0 && !selectedProgramId) {
-        setSelectedProgramId(activePrograms[0].id);
+      if (activePrograms.length > 0) {
+        setSelectedProgramId(prev => prev || activePrograms[0].id);
       }
     } catch (err) {
       console.error('Failed to load programs:', err);
@@ -520,12 +420,6 @@ const InterestConfigurationPage: React.FC = () => {
   });
 
   // Handlers
-  const handleCorporateChange = (id: string) => {
-    setSelectedCorporateId(id);
-    setSelectedProgramId('');
-    setPrograms([]);
-  };
-
   const handleView = (config: InterestConfiguration) => {
     setSelectedConfig(config);
     setShowDetailModal(true);
@@ -690,50 +584,12 @@ const InterestConfigurationPage: React.FC = () => {
 
       {/* Corporate/Program Filter Bar */}
       <CorporateProgramFilterBar
-        corporates={corporates}
         programs={programs}
         selectedCorporateId={selectedCorporateId}
         selectedProgramId={selectedProgramId}
-        onCorporateChange={handleCorporateChange}
         onProgramChange={setSelectedProgramId}
         loading={loadingPrograms}
       />
-
-      {/* Statistics */}
-      {statistics && (
-        <div className="grid gap-4 animate-fade-in grid-cols-5" style={{ animationDelay: '0.15s' }}>
-          <StatCard
-            title="Total Configurations"
-            value={statistics.totalConfigs || 0}
-            icon={<Settings className="w-5 h-5" />}
-            color="info"
-          />
-          <StatCard
-            title="External (Bank)"
-            value={statistics.externalConfigs || 0}
-            icon={<Landmark className="w-5 h-5" />}
-            color="primary"
-          />
-          <StatCard
-            title="Internal (Treasury)"
-            value={statistics.internalConfigs || 0}
-            icon={<Layers className="w-5 h-5" />}
-            color="accent"
-          />
-          <StatCard
-            title="Avg Credit Rate"
-            value={formatRate(statistics.avgCreditRate)}
-            icon={<TrendingUp className="w-5 h-5" />}
-            color="success"
-          />
-          <StatCard
-            title="Avg Debit Rate"
-            value={formatRate(statistics.avgDebitRate)}
-            icon={<TrendingDown className="w-5 h-5" />}
-            color="error"
-          />
-        </div>
-      )}
 
       {/* Filters */}
       <Card className="p-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -831,11 +687,11 @@ const InterestConfigurationPage: React.FC = () => {
               <div>
                 <h3 className="text-body-lg font-semibold">{selectedConfig.configName}</h3>
                 <p className="body-sm">
-                  {selectedConfig.currencyCode} • {selectedConfig.configType} • {selectedConfig.targetType || 'CORPORATE'}
+                  {selectedConfig.currencyCode} • {labelOf(CONFIG_TYPES, selectedConfig.configType)} • {labelOf(TARGET_TYPES, selectedConfig.targetType || 'CORPORATE')}
                 </p>
               </div>
               <Badge variant={getStatusVariant(selectedConfig.status as ConfigStatus)}>
-                {selectedConfig.status}
+                {labelOf(CONFIG_STATUSES, selectedConfig.status)}
               </Badge>
             </div>
 

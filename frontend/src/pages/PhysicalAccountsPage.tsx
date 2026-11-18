@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Search, RefreshCw, Download, Eye, Settings, Landmark, CreditCard, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Shield, Wifi, Server, Banknote, ChevronRight, Zap, GitBranch, Unlink, AlertTriangle, Info, Loader2, Check, Users, UserPlus, Database, User, FileCheck, XCircle } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Plus, Search, RefreshCw, Download, Eye, Landmark, CreditCard, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Wifi, Server, Banknote, ChevronRight, Zap, GitBranch, Unlink, AlertTriangle, Info, Loader2, Check, UserPlus, Database, User, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable, Input } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -22,6 +21,7 @@ import {
   type ShadowAccount,
   type AccountAttachment,
 } from '../services/api';
+import { RELATIONSHIP_CONFIG } from './AccountAttachmentsPage';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8053/api/v1';
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -338,16 +338,6 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-// Shadow account "attach to entity" vocabulary — ported from the standalone
-// Shadow Accounts page as part of merging it into Bank Accounts.
-const RELATIONSHIP_TYPE_CONFIG: Record<string, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; description: string }> = {
-  OWNER: { label: 'Owner', icon: User, tone: 'info', description: 'Primary owner of the account' },
-  BENEFICIARY: { label: 'Beneficiary', icon: Users, tone: 'success', description: 'Beneficiary with read access' },
-  AUTHORIZED: { label: 'Authorized', icon: Shield, tone: 'cat-2', description: 'Authorized to transact with limits' },
-  GUARANTOR: { label: 'Guarantor', icon: FileCheck, tone: 'warning', description: 'Guarantor for credit facilities' },
-  COLLATERAL: { label: 'Collateral', icon: Banknote, tone: 'error', description: 'Collateral pledge for facilities' },
-};
-
 const getEntityTypeIcon = (type?: string) => {
   switch (type) {
     case 'HOLDING': return <Building2 className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
@@ -434,10 +424,13 @@ const BankCard: React.FC<{ bank: BankSummary; isSelected: boolean; onClick: () =
           </div>
           <p className="body-sm text-neutral-500 dark:text-neutral-400">{bank.bankCode} • {bank.accountCount} accounts</p>
         </div>
-        <div className="text-right">
-          <p className="label">Total Balance</p>
-          <p className="stat-value-xs">{formatCurrency(bank.totalBalance, bank.currencies[0] || 'AED')}</p>
-        </div>
+        {/* totalBalance is a raw sum across currencies, so it only means something for a single-currency bank. */}
+        {bank.currencies.length === 1 && (
+          <div className="text-right">
+            <p className="label">Total Balance</p>
+            <p className="stat-value-xs">{formatCurrency(bank.totalBalance, bank.currencies[0])}</p>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -629,7 +622,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
                   <p className="body-sm text-warning-800 dark:text-warning-300">No Hierarchy Found</p>
                   <p className="body-sm text-warning-700 mt-1 dark:text-warning-300">
                     Please initialize the corporate hierarchy first before linking physical accounts.
-                    Go to Treasury → Balance Structure to initialize.
+                    Go to Accounts &amp; Structure → Balance Hierarchy to initialize.
                   </p>
                 </div>
               </div>
@@ -833,7 +826,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
   };
 
   const selectedEntity = entities.find(e => e.id === formData.legalEntityId);
-  const selectedRelationType = RELATIONSHIP_TYPE_CONFIG[formData.relationshipType];
+  const selectedRelationType = RELATIONSHIP_CONFIG[formData.relationshipType];
   const filteredEntities = entities.filter(e =>
     !searchTerm || e.entityName.toLowerCase().includes(searchTerm.toLowerCase()) || e.entityCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -871,7 +864,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
             <label className="field-label block mb-2">Current Attachments</label>
             <div className="space-y-2 max-h-32 overflow-y-auto">
               {existingAttachments.map((att) => {
-                const typeConfig = RELATIONSHIP_TYPE_CONFIG[att.relationshipType];
+                const typeConfig = RELATIONSHIP_CONFIG[att.relationshipType];
                 const TypeIcon = typeConfig?.icon || User;
                 return (
                   <div key={att.id} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
@@ -895,7 +888,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
         <div>
           <label className="field-label block mb-2">Relationship Type <span className="text-error-500 dark:text-error-300">*</span></label>
           <div className="grid gap-2 grid-cols-3">
-            {Object.entries(RELATIONSHIP_TYPE_CONFIG).map(([type, config]) => {
+            {Object.entries(RELATIONSHIP_CONFIG).map(([type, config]) => {
               const TypeIcon = config.icon;
               const isSelected = formData.relationshipType === type;
               return (
@@ -1460,7 +1453,8 @@ const PhysicalAccountsPage: React.FC = () => {
             <StatusIconBadge tone="warning" icon={GitBranch} />
             <div className="flex-1">
               <p className="body-sm text-warning-800 dark:text-warning-300">
-                {unlinkedCount} account{unlinkedCount > 1 ? 's' : ''} not linked to hierarchy
+                {/* Counted from the loaded page; no server-side count exists, so say so when there are more pages. */}
+                {unlinkedCount} account{unlinkedCount > 1 ? 's' : ''}{totalPages > 1 ? ' on this page' : ''} not linked to hierarchy
               </p>
               <p className="body-sm text-warning-700 mt-0.5 dark:text-warning-300">
                 Link physical accounts to create Shadow Accounts for liquidity visibility
@@ -1781,7 +1775,6 @@ const PhysicalAccountsPage: React.FC = () => {
             <AccountStatementLines physicalAccountId={selectedAccount.id} currency={selectedAccount.currency} />
 
             <div className="flex gap-3 pt-4 border-t">
-              <Button variant="outline" className="flex-1" leftIcon={<Settings className="w-4 h-4" />}>Configure</Button>
               <Button variant="outline" className="flex-1" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={() => handleSyncAccount(selectedAccount)}>Sync Now</Button>
               {hasShadow(selectedAccount) ? (
                 <Button

@@ -91,7 +91,7 @@ const TABS: { label: string; page?: string; disabled?: boolean }[] = [
   { label: 'Liquidity', page: 'multi-bank-liquidity' },
   { label: 'FX', page: 'fx-rates' },
   { label: 'Reports', disabled: true },
-  { label: 'Admin', page: 'settings' },
+  { label: 'Admin', page: 'credit-limits' },
 ];
 
 // CR/DR classification for the statement-activity feed.
@@ -495,11 +495,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       key: c.code,
       label: c.code,
       meta: `${c.shadows.length} account${c.shadows.length === 1 ? '' : 's'}`,
-      // "available", not "current" — this is a sum of bankBalanceEffective,
-      // which nets out holds/commitments. It won't match a manual sum of
-      // the rows' Current column below whenever a shadow has money held,
-      // so the label has to say which figure it is.
-      subtitle: `${formatCurrency(c.effective, c.code)} avail.`,
+      // Sum of bankBalanceEffective (net of holds/commitments) — neither the
+      // Current nor the Available column, so it says "effective", the term
+      // Multi-Bank Liquidity uses for the same figure.
+      subtitle: `${formatCurrency(c.effective, c.code)} effective`,
       rows: c.shadows,
     }));
   }, [model, view]);
@@ -521,13 +520,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     <Page maxWidth="full">
       <PageHeader
         title="Cash position"
-        description={
-          <span>
-            Cash, accounts, sweeps, statement activity, the action queue and FX are{' '}
-            <span className="font-medium text-success-700 dark:text-success-300">live</span> from connected banks.
-            FX-honest: per-currency totals only — there is deliberately no synthetic cross-currency grand total.
-          </span>
-        }
+        description="Cash, payments and FX across your connected banks."
       />
 
       {/* Tab strip + corporate scope merged into one 44px row (density pass) —
@@ -637,7 +630,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 size: 'lg',
                 sublabel: (
                   <>
-                    {reportingCcy} · FX-converted, live rates
+                    {reportingCcy} · converted at indicative rates
                     {unassignedCash > 0 && (
                       <span className="block">Not included: {formatCurrency(unassignedCash, reportingCcy)} in bank accounts not yet in any program</span>
                     )}
@@ -656,23 +649,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           <div className="border-b border-edge pb-4">
             <div className="flex items-center justify-between gap-3 pb-2">
               <p className="section-title">Currency breakdown</p>
-              <div className="inline-flex rounded-sm border border-edge overflow-hidden">
-                {(['currency', 'bank'] as AcctView[]).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setView(v)}
-                    className={cn(
-                      'px-3 py-1 text-caption transition-colors capitalize',
-                      view === v
-                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
-                        : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
-                    )}
-                  >
-                    By {v}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {model && model.currencies.length > 0 ? (
@@ -824,6 +800,23 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           <div>
             <div className="flex items-center justify-between gap-3 pb-2">
               <p className="section-title">Accounts <span className="label font-normal">· all banks</span></p>
+              <div className="inline-flex rounded-sm border border-edge overflow-hidden ml-auto">
+                {(['currency', 'bank'] as AcctView[]).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setView(v)}
+                    className={cn(
+                      'px-3 py-1 text-caption transition-colors capitalize',
+                      view === v
+                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
+                        : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
+                    )}
+                  >
+                    By {v}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => nav('multi-bank-liquidity')}
@@ -1170,6 +1163,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               ) : (
                 attention.slice(0, 6).map((it) => {
                   const tri = TRIAGE[it.severity] ?? TRIAGE.medium;
+                  // ponytail: only 'navigate' actions are wired here; execute/drawer actions have no surface on this page.
+                  const go = it.actions?.find((a) => a.kind === 'navigate');
                   return (
                     <div key={it.id} className="px-4 py-2.5 border-b border-edge-subtle last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/40">
                       <div className="flex items-center gap-2">
@@ -1178,10 +1173,14 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                       </div>
                       <p className="text-caption font-medium text-primary-900 dark:text-neutral-50 mt-1.5 leading-snug">{it.headline}</p>
                       <p className="caption mt-0.5">{it.detail}</p>
-                      {it.actions?.[0] && (
-                        <p className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 mt-1.5">
-                          {it.actions[0].label} <ArrowRight className="w-3 h-3" />
-                        </p>
+                      {go && (
+                        <button
+                          type="button"
+                          onClick={() => nav(go.actionId)}
+                          className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline mt-1.5"
+                        >
+                          {go.label} <ArrowRight className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
                   );
@@ -1196,7 +1195,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <span className="section-title">FX rates</span>
               <button
                 type="button"
-                onClick={() => nav('fx-rates')}
+                onClick={() => nav('fx-deals')}
                 className="text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 Deal
@@ -1225,7 +1224,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             <div className="grid grid-cols-2 gap-px bg-neutral-100 dark:bg-primary-800/60">
               {[
                 { ic: <Plus className="w-4 h-4" />, label: 'New payment', sub: 'Wire · ACH · SEPA', act: () => nav('payables-create') },
-                { ic: <ArrowLeftRight className="w-4 h-4" />, label: 'FX deal', sub: 'Spot · forward', act: () => nav('fx-rates') },
+                { ic: <ArrowLeftRight className="w-4 h-4" />, label: 'FX deal', sub: 'Spot · forward', act: () => nav('fx-deals') },
                 { ic: <Download className="w-4 h-4" />, label: 'Statement', sub: 'CAMT · MT940', act: () => nav('statements') },
                 { ic: <Repeat className="w-4 h-4" />, label: 'Run sweep', sub: 'Cross-bank', act: () => nav('sweeping') },
                 { ic: <Landmark className="w-4 h-4" />, label: 'Open account', sub: 'Partner bank', act: () => nav('accounts') },

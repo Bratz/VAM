@@ -195,11 +195,10 @@ const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
     { label: 'Overdue', value: stats?.overdueCount || 0, tone: 'danger' as const, icon: AlertTriangle },
     { label: 'POBO', value: stats?.poboRequestedCount || 0, tone: 'info' as const, icon: Landmark },
     { label: 'Intercompany', value: stats?.intercompanyCount || 0, tone: 'accent' as const, icon: Building2 },
-    { label: 'In Netting', value: stats?.nettingIncludedCount || 0, tone: 'success' as const, icon: GitBranch },
   ];
 
   return (
-    <div className="grid gap-4 grid-cols-3 2xl:grid-cols-6">
+    <div className="grid gap-4 grid-cols-3 2xl:grid-cols-5">
       {statItems.map((item, idx) => {
         const Icon = item.icon;
         return (
@@ -835,7 +834,7 @@ const EnhancedPayablesPage: React.FC = () => {
       case 'pobo':
         return payablesList.filter(p => p.paymentRoute === 'POBO' || p.poboRequestStatus === 'PENDING_TREASURY_APPROVAL');
       case 'netting':
-        return payablesList.filter(p => p.nettingStatus === 'INCLUDED' || p.nettingEligible);
+        return payablesList.filter(p => p.nettingStatus === 'INCLUDED');
       default:
         return payablesList;
     }
@@ -978,7 +977,8 @@ const EnhancedPayablesPage: React.FC = () => {
       pending: stats?.pendingCount || payablesList.filter(p => p.status === 'PENDING_APPROVAL' || p.status === 'PENDING_POBO').length,
       intercompany: stats?.intercompanyCount || payablesList.filter(p => p.isIntercompany).length,
       pobo: stats?.poboRequestedCount || payablesList.filter(p => p.paymentRoute === 'POBO').length,
-      netting: stats?.nettingIncludedCount || payablesList.filter(p => p.nettingStatus === 'INCLUDED').length,
+      // ponytail: /payables/stats never fills nettingIncludedCount, so count the loaded rows (whole corpus on this tab)
+      netting: payablesList.filter(p => p.nettingStatus === 'INCLUDED').length,
     };
   }, [payables, stats]);
 

@@ -54,10 +54,10 @@ const SOURCE_CONFIG: Record<string, { label: string; icon: any }> = {
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'JPY', 'CHF', 'CNY', 'INR', 'SGD'];
 
-// Freshness model. 15 min is the SPOT freshness window — a treasurer
-// pricing a same-day deal treats anything older as needing a re-pull.
-// (Forward/fixing tolerate older data; per-type thresholds are a future
-// tuning point, hence the single constant rather than inline literals.)
+// Freshness model. 15 min is the SPOT freshness window — anything older needs a re-pull.
+// Only Spot rates are scored: a Fixing, Internal or Contract rate is set once and is
+// not "stale" after 15 minutes, so those show "—".
+// ponytail: Spot-only; add per-type thresholds if Forward/Fixing ever need scoring.
 const FRESH_THRESHOLD_MS = 15 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -81,7 +81,7 @@ const extractData = <T,>(response: ApiResponse<T>): T => {
 // (components/multiBank/FreshnessPill.tsx). Age-thresholded rather than
 // status-driven because FX rows carry a timestamp, not a fetch-status enum.
 // ============================================================================
-const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs, isActive }) => {
+const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean; isSpot: boolean }> = ({ ageMs, isActive, isSpot }) => {
   if (!isActive) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full caption bg-neutral-100 dark:bg-primary-800/60">
@@ -89,6 +89,7 @@ const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs,
       </span>
     );
   }
+  if (!isSpot) return <span className="text-neutral-400">—</span>;
   if (ageMs < FRESH_THRESHOLD_MS) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300">
@@ -116,11 +117,9 @@ const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs,
 interface RatesTableProps {
   rates: EnrichedRate[];
   onRowClick: (r: FxRate) => void;
-  onRefreshRow: (r: FxRate) => void;
-  refreshingIds: Set<string>;
 }
 
-const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow, refreshingIds }) => (
+const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick }) => (
   <Card>
     <DataTable
       data={rates}
@@ -203,22 +202,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           },
         },
         { key: '_ageMs', header: 'Updated', render: (_, rate) => <span className="body-sm">{relativeTime(rate._ageMs)}</span> },
-        { key: 'isActive', header: 'Status', render: (_, rate) => <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} /> },
-        {
-          key: 'actions',
-          header: 'Actions',
-          align: 'right',
-          render: (_, rate) => (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRefreshRow(rate); }}
-              disabled={refreshingIds.has(rate.id)}
-              aria-label={`Refresh ${rate.fromCurrency}/${rate.toCurrency}`}
-              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
-            >
-              {refreshingIds.has(rate.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            </button>
-          ),
-        },
+        { key: 'isActive', header: 'Status', render: (_, rate) => <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} isSpot={rate.rateType === 'SPOT'} /> },
       ]}
     />
   </Card>
@@ -331,7 +315,6 @@ const FxRatesPage: React.FC = () => {
   const [rates, setRates] = useState<FxRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshingIds, setRefreshingIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
@@ -386,28 +369,6 @@ const FxRatesPage: React.FC = () => {
     }
   };
 
-  // Per-row refresh. No per-rate endpoint exists on fxRateApi, so a single
-  // pair refresh collapses to a full cache refresh until the backend ships
-  // a `/fx-rates/{id}/refresh` route. The spinner is still scoped to the
-  // clicked row so the interaction reads as per-row.
-  const handleRefreshOne = async (rate: FxRate) => {
-    setRefreshingIds(prev => new Set(prev).add(rate.id));
-    try {
-      setError(null);
-      await fxRateApi.refreshCache();
-      await loadRates();
-    } catch (err) {
-      console.error('Failed to refresh rate:', err);
-      setError('Failed to refresh rate.');
-    } finally {
-      setRefreshingIds(prev => {
-        const next = new Set(prev);
-        next.delete(rate.id);
-        return next;
-      });
-    }
-  };
-
   // Create rate
   const handleCreate = async () => {
     if (!createForm.rate) return;
@@ -436,8 +397,9 @@ const FxRatesPage: React.FC = () => {
   const enriched: EnrichedRate[] = rates.map(r => {
     const ts = new Date(r.rateTimestamp).getTime();
     const ageMs = now - ts;
-    const isStale = ageMs > FRESH_THRESHOLD_MS;
-    const isFresh = !isStale && ageMs >= 0;
+    const isSpot = r.rateType === 'SPOT';
+    const isStale = isSpot && ageMs > FRESH_THRESHOLD_MS;
+    const isFresh = isSpot && !isStale && ageMs >= 0;
     const updatedToday = ageMs < ONE_DAY_MS;
     return { ...r, _ageMs: ageMs, _isStale: isStale, _isFresh: isFresh, _updatedToday: updatedToday };
   });
@@ -466,7 +428,7 @@ const FxRatesPage: React.FC = () => {
       statusFilter === 'all' ? true :
       statusFilter === 'fresh' ? rate._isFresh :
       statusFilter === 'stale' ? rate._isStale :
-      statusFilter === 'outdated' ? rate._ageMs > ONE_DAY_MS :
+      statusFilter === 'outdated' ? rate.rateType === 'SPOT' && rate._ageMs > ONE_DAY_MS :
       statusFilter === 'inactive' ? !rate.isActive : true;
     return matchesSearch && matchesType && matchesSource && matchesStatus;
   });
@@ -512,18 +474,8 @@ const FxRatesPage: React.FC = () => {
   return (
     <Page>
       <PageHeader
-        title="FX Rates"
-        description={
-          <span>
-            {stats.staleCount > 0 && (
-              <span className="text-warning-700 dark:text-warning-300 font-medium">
-                {stats.staleCount} rate{stats.staleCount === 1 ? '' : 's'} stale
-                <span className="text-neutral-500 dark:text-neutral-400"> · </span>
-              </span>
-            )}
-            Last cache refresh: {stats.lastRefreshLabel}
-          </span>
-        }
+        title="Reference Rates"
+        description={`Rates the platform uses to value balances and reports; not dealing prices. Last refresh ${stats.lastRefreshLabel}.`}
       />
 
       {/* Error Banner */}
@@ -611,8 +563,6 @@ const FxRatesPage: React.FC = () => {
       <RatesTable
         rates={filteredRates}
         onRowClick={(r) => { setSelectedRate(r); setShowDetailDrawer(true); }}
-        onRefreshRow={handleRefreshOne}
-        refreshingIds={refreshingIds}
       />
 
       {/* Create Modal — confirmation flow that takes focus, stays a <Modal> */}
@@ -656,12 +606,7 @@ const FxRatesPage: React.FC = () => {
               }}>
                 <Copy className="w-4 h-4 mr-1" /> Copy rate
               </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleRefreshOne(selectedRate)}>
-                  <RefreshCw className="w-4 h-4 mr-1" /> Refresh this pair
-                </Button>
-                <Button size="sm" onClick={() => setShowDetailDrawer(false)}>Done</Button>
-              </div>
+              <Button size="sm" onClick={() => setShowDetailDrawer(false)}>Done</Button>
             </div>
           ) : undefined
         }
@@ -707,18 +652,12 @@ const FxRatesPage: React.FC = () => {
                 <FreshnessBadge
                   ageMs={Date.now() - new Date(selectedRate.rateTimestamp).getTime()}
                   isActive={selectedRate.isActive}
+                  isSpot={selectedRate.rateType === 'SPOT'}
                 />
               } />
               <DetailField label="Active" value={selectedRate.isActive ? 'Yes' : 'No'} />
             </div>
 
-            {/* 7-day movement. fxRateApi.getHistoricalRates exists, but wiring
-                a sparkline is out of scope for this lookup-first redesign —
-                surfaced as an explicit next step rather than fake data. */}
-            <div className="border border-edge rounded-lg p-6 text-center">
-              <p className="label">7-day movement</p>
-              <p className="body-sm mt-2">Historical rate trend will appear here (a getHistoricalRates-backed sparkline is the next enhancement).</p>
-            </div>
           </div>
         )}
       </Drawer>

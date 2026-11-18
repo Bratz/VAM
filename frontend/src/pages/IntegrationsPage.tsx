@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import {
   Plus,
-  Settings,
   RefreshCw,
-  ExternalLink,
   Upload,
   Download,
   Play,
   Pause,
   Trash2,
   FileText,
-  Key,
   ArrowRight,
   ArrowLeftRight,
   Check,
@@ -128,12 +125,7 @@ const ConnectorCard: React.FC<{
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-edge-subtle flex items-center justify-between bg-neutral-50/50 dark:bg-primary-950/50">
-        {connector.documentationUrl && (
-          <button className="caption hover:text-neutral-700 flex items-center gap-1 transition-colors dark:hover:text-neutral-200">
-            Documentation <ExternalLink className="w-3 h-3" />
-          </button>
-        )}
+      <div className="px-6 py-3 border-t border-edge-subtle flex items-center justify-end bg-neutral-50/50 dark:bg-primary-950/50">
         <button
           onClick={onSetup}
           disabled={connector.status === 'COMING_SOON'}
@@ -228,7 +220,8 @@ const ConnectionCard: React.FC<{
         <button
           onClick={onDisconnect}
           className="p-2 text-neutral-400 hover:text-error-600 transition-colors dark:text-neutral-400"
-          title="Disconnect"
+          title="Delete connection"
+          aria-label="Delete connection"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -443,13 +436,6 @@ const SetupWizardModal: React.FC<{
                   You will be redirected to your bank to authorize access. This uses {connector.authType.replace('_', ' ')} authentication.
                 </p>
               </div>
-            </div>
-          </div>
-          <div>
-            <label className="block label mb-2">TPP Certificate</label>
-            <div className="border border-dashed border-edge-strong p-6 text-center">
-              <Upload className="w-6 h-6 text-neutral-400 mx-auto mb-2 dark:text-neutral-400" />
-              <p className="caption">Drop certificate file or click to upload</p>
             </div>
           </div>
         </div>
@@ -800,9 +786,6 @@ const ConnectionDetailModal: React.FC<{
                   <div>
                     <p className="text-body-sm font-medium text-error-800 dark:text-error-300">Connection Error</p>
                     <p className="text-body-sm text-error-700 mt-1 dark:text-error-300">{connection.errorMessage}</p>
-                    <button className="mt-3 px-3 py-1.5 text-caption font-medium border border-error-300 text-error-700 hover:bg-error-100 transition-colors dark:text-error-300 dark:hover:bg-error-500/20">
-                      Re-authenticate
-                    </button>
                   </div>
                 </div>
               </div>
@@ -835,12 +818,6 @@ const ConnectionDetailModal: React.FC<{
             <div className="flex gap-2">
               <button onClick={onSync} className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" /> Sync Now
-              </button>
-              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
-                <Settings className="w-4 h-4" /> Settings
-              </button>
-              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
-                <Key className="w-4 h-4" /> Credentials
               </button>
             </div>
           </div>
@@ -1142,9 +1119,6 @@ const IntegrationsPage: React.FC = () => {
             description="Connect ERP, treasury, and banking systems"
             actions={
               <>
-                <button className="px-4 py-2 text-body-sm border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> API Docs
-                </button>
                 <button
                   onClick={() => setActiveTab('connectors')}
                   className="px-4 py-2 text-body-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-2"
@@ -1178,7 +1152,7 @@ const IntegrationsPage: React.FC = () => {
         <div className="max-w-[1680px] mx-auto">
           <div className="flex gap-8">
             {[
-              { id: 'connections', label: 'Active Connections', count: connections.length },
+              { id: 'connections', label: 'Connections', count: connections.length },
               { id: 'connectors', label: 'Available Connectors', count: connectors.length },
               { id: 'logs', label: 'Sync History', count: syncLogs.length },
             ].map(tab => (
@@ -1207,7 +1181,7 @@ const IntegrationsPage: React.FC = () => {
             <p className="text-body-sm text-error-700 dark:text-error-300">Could not load integrations: {error}</p>
           </div>
         )}
-        {/* Active Connections */}
+        {/* Connections */}
         {activeTab === 'connections' && (
           <div className="grid gap-4 grid-cols-2">
             {connections.map(connection => (
@@ -1255,7 +1229,7 @@ const IntegrationsPage: React.FC = () => {
                         : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50"
                     )}
                   >
-                    {cat === 'all' ? 'All' : cat === 'OPEN_BANKING' ? 'Open Banking' : cat.charAt(0) + cat.slice(1).toLowerCase()}
+                    {cat === 'all' ? 'All' : categoryConfig[cat as ConnectorCategory].label}
                   </button>
                 ))}
               </div>

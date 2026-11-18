@@ -543,13 +543,13 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                               </div>
                               <div>
                                 <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.assignedCount}</p>
-                                <p className="caption">Used</p>
+                                <p className="caption">Assigned</p>
                               </div>
                             </div>
                             {/* Usage Progress Bar */}
                             <div className="mt-3">
                               <div className="flex justify-between caption mb-1">
-                                <span>Pool Usage</span>
+                                <span>Assigned</span>
                                 <span>{Math.round((vibanPool.assignedCount / vibanPool.poolSize) * 100)}%</span>
                               </div>
                               <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">

@@ -54,19 +54,22 @@ interface CreateAttachmentForm {
 // CONSTANTS
 // ============================================================================
 
-const RELATIONSHIP_CONFIG: Record<RelationshipType, { 
-  label: string; 
-  icon: LucideIcon; 
-  color: string; 
+// The one definition of the entity-to-account relationship types; the Bank Accounts
+// "Attach to Entity" modal imports it. Meanings follow AccountAttachment.RelationshipType.
+// eslint-disable-next-line react-refresh/only-export-components
+export const RELATIONSHIP_CONFIG: Record<RelationshipType, {
+  label: string;
+  icon: LucideIcon;
+  color: string;
   bgColor: string;
   tone: React.ComponentProps<typeof StatusIconBadge>['tone'];
   description: string;
 }> = {
-  OWNER: { label: 'Owner', icon: Key, tone: 'info', color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner with full control' },
-  BENEFICIARY: { label: 'Beneficiary', icon: Users, tone: 'success', color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receives benefits from the account' },
-  AUTHORIZED: { label: 'Authorized', icon: UserCheck, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to perform transactions within limits' },
-  GUARANTOR: { label: 'Guarantor', icon: Shield, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantees obligations on the account' },
-  COLLATERAL: { label: 'Collateral', icon: Lock, tone: 'error', color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Account used as collateral for facilities' },
+  OWNER: { label: 'Owner', icon: Key, tone: 'info', color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Legal owner of the account' },
+  BENEFICIARY: { label: 'Beneficiary', icon: Users, tone: 'success', color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Beneficial owner, where different from the legal owner' },
+  AUTHORIZED: { label: 'Authorized', icon: UserCheck, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Can transact on the account, within limits' },
+  GUARANTOR: { label: 'Guarantor', icon: Shield, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantees the account\'s obligations' },
+  COLLATERAL: { label: 'Collateral', icon: Lock, tone: 'error', color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Account pledged as collateral for a facility' },
 };
 
 const STATUS_CONFIG: Record<AttachmentStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' }> = {

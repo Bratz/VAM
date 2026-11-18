@@ -36,7 +36,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onAddMember })
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-primary-900 dark:text-neutral-50">{pool.poolName}</h3>
               <Badge variant={pool.status === 'ACTIVE' ? 'success' : 'warning'} size="sm">
-                {pool.status}
+                {pool.status.charAt(0) + pool.status.slice(1).toLowerCase()}
               </Badge>
             </div>
             <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{pool.poolReference}</p>

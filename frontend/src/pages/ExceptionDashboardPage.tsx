@@ -17,9 +17,10 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, Trash2, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Search, RefreshCw, Loader2, Eye, Trash2, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
+import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile, TextArea } from '../components/ui';
+import { Modal } from '../components/ui/enhanced';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
 import { AllocationModal } from '../components/treasury/AllocationModal';
@@ -217,7 +218,7 @@ const ExceptionRow: React.FC<{
           </div>
           <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onView(); }}><Eye className="w-4 h-4" /></Button>
-            {exception.status === 'OPEN' && (
+            {['OPEN', 'IN_PROGRESS'].includes(exception.status) && (
               <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); onAllocate(); }}><Target className="w-4 h-4 mr-1" />Allocate</Button>
             )}
           </div>
@@ -239,7 +240,8 @@ const ExceptionDetailDrawer: React.FC<{
   onAllocate: () => void;
   onInvestigate: () => void;
   onWriteOff: () => void;
-}> = ({ exception, timeline, loading, onClose, onAllocate, onInvestigate, onWriteOff }) => {
+  busy: boolean;
+}> = ({ exception, timeline, loading, onClose, onAllocate, onInvestigate, onWriteOff, busy }) => {
   if (!exception) return null;
   const statusConfig = EXCEPTION_STATUS_CONFIG[exception.status];
   const typeConfig = EXCEPTION_TYPE_CONFIG[exception.exceptionType];
@@ -255,9 +257,9 @@ const ExceptionDetailDrawer: React.FC<{
       subtitle={<span className="flex items-center gap-2"><Badge variant={statusConfig.variant}><StatusIcon className="w-3 h-3 mr-1" />{statusConfig.label}</Badge><Badge variant="neutral">{typeConfig.label}</Badge></span>}
       footer={(
         <div className="space-y-2">
-          {exception.status === 'OPEN' && <Button variant="primary" className="w-full" onClick={onAllocate}><Target className="w-4 h-4 mr-2" />Allocate</Button>}
+          {['OPEN', 'IN_PROGRESS'].includes(exception.status) && <Button variant="primary" className="w-full" onClick={onAllocate}><Target className="w-4 h-4 mr-2" />Allocate</Button>}
           <div className="flex gap-2">
-            {['OPEN', 'IN_PROGRESS'].includes(exception.status) && <Button variant="outline" className="flex-1" onClick={onInvestigate}><Search className="w-4 h-4 mr-2" />Investigate</Button>}
+            {exception.status === 'OPEN' && <Button variant="outline" className="flex-1" onClick={onInvestigate} disabled={busy}><Search className="w-4 h-4 mr-2" />Investigate</Button>}
             {['OPEN', 'IN_PROGRESS'].includes(exception.status) && <Button variant="ghost" className="flex-1" onClick={onWriteOff}><Trash2 className="w-4 h-4 mr-2" />Write Off</Button>}
           </div>
         </div>
@@ -311,6 +313,8 @@ const ExceptionDashboardPage: React.FC = () => {
   const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [allocationException, setAllocationException] = useState<ExceptionTransaction | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+  const [writeOffReason, setWriteOffReason] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
 
   // Corporate/program scope — the backend only filters by programId (there's
   // no corporateId param on GET /treasury/exceptions), so the corporate
@@ -380,9 +384,6 @@ const ExceptionDashboardPage: React.FC = () => {
         >
           Refresh
         </Button>
-        <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-          Export
-        </Button>
       </>
     ),
     [refreshing, loadData]
@@ -415,16 +416,38 @@ const ExceptionDashboardPage: React.FC = () => {
     setFilters(prev => ({ ...prev, status: filters.status === status ? undefined : status, page: 0 }));
   };
 
-  const handleInvestigate = useCallback(() => {
+  const apiError = (err: any) => err?.response?.data?.message || err?.message || 'Request failed';
+
+  const handleInvestigate = useCallback(async () => {
     if (!selectedException) return;
-    addToast('info', 'Investigation Started', `Exception ${selectedException.exceptionNumber} is now being investigated`, 5000);
-    loadData(false);
+    setActionBusy(true);
+    try {
+      await exceptionApi.investigate(selectedException.id, { notes: '' });
+      addToast('info', 'Investigation Started', `Exception ${selectedException.exceptionNumber} is now In Progress`, 5000);
+      setSelectedException(null);
+      loadData(false);
+    } catch (err) {
+      addToast('error', 'Could not start investigation', apiError(err), 6000);
+    } finally { setActionBusy(false); }
   }, [selectedException, addToast, loadData]);
 
-  const handleWriteOff = useCallback(() => {
-    if (!selectedException) return;
-    addToast('warning', 'Write-off Pending', `Write-off for ${selectedException.exceptionNumber} requires manager approval`, 0);
-  }, [selectedException, addToast]);
+  const confirmWriteOff = async () => {
+    if (!selectedException || !writeOffReason?.trim()) return;
+    setActionBusy(true);
+    try {
+      // ponytail: the server records the signed-in user as approver; approvedBy is ignored
+      await exceptionApi.writeOff(selectedException.id, { reason: writeOffReason.trim(), approvedBy: '' });
+      addToast('success', 'Written Off', `Exception ${selectedException.exceptionNumber} was written off`, 5000);
+      setWriteOffReason(null);
+      setSelectedException(null);
+      loadData(false);
+    } catch (err) {
+      addToast('error', 'Could not write off', apiError(err), 6000);
+    } finally { setActionBusy(false); }
+  };
+
+  const page = filters.page ?? 0;
+  const size = filters.size ?? 20;
 
   return (
     <Page>
@@ -439,8 +462,8 @@ const ExceptionDashboardPage: React.FC = () => {
         programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
         selectedCorporateId={selectedCorporateId}
         selectedProgramId={selectedProgramId}
-        onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}
-        onProgramChange={setSelectedProgramId}
+        onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); setFilters(prev => ({ ...prev, page: 0 })); }}
+        onProgramChange={(id) => { setSelectedProgramId(id); setFilters(prev => ({ ...prev, page: 0 })); }}
         loading={loadingSelectors}
         disableChildUntilParent
       />
@@ -471,7 +494,6 @@ const ExceptionDashboardPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               {filters.status && <Badge variant="info">{EXCEPTION_STATUS_CONFIG[filters.status].label}<button className="ml-1" onClick={() => handleStatusFilter(undefined)}><X className="w-3 h-3" /></button></Badge>}
-              <Button variant="ghost" size="sm" leftIcon={<Filter className="w-4 h-4" />}>Filters</Button>
             </div>
           </div>
         </div>
@@ -488,13 +510,37 @@ const ExceptionDashboardPage: React.FC = () => {
         ) : exceptions.length === 0 ? (
           <EmptyState icon={<CheckCircle className="w-12 h-12" />} title="No exceptions found" description={filters.status ? 'Try adjusting your filters' : 'All payments have been matched'} />
         ) : (
-          <div>{exceptions.map((exception) => <ExceptionRow key={exception.id} exception={exception} onView={() => loadExceptionDetail(exception)} onAllocate={() => handleOpenAllocation(exception)} selected={selectedException?.id === exception.id} />)}</div>
+          <>
+            <div>{exceptions.map((exception) => <ExceptionRow key={exception.id} exception={exception} onView={() => loadExceptionDetail(exception)} onAllocate={() => handleOpenAllocation(exception)} selected={selectedException?.id === exception.id} />)}</div>
+            {totalElements > size && (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-edge">
+                <p className="caption">Showing {page * size + 1}–{Math.min((page + 1) * size, totalElements)} of {totalElements}</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setFilters(prev => ({ ...prev, page: page - 1 }))}>Previous</Button>
+                  <Button variant="outline" size="sm" disabled={(page + 1) * size >= totalElements} onClick={() => setFilters(prev => ({ ...prev, page: page + 1 }))}>Next</Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Card>
 
       {selectedException && (
-        <ExceptionDetailDrawer exception={selectedException} timeline={exceptionTimeline} loading={detailLoading} onClose={() => setSelectedException(null)} onAllocate={() => handleOpenAllocation(selectedException)} onInvestigate={handleInvestigate} onWriteOff={handleWriteOff} />
+        <ExceptionDetailDrawer exception={selectedException} timeline={exceptionTimeline} loading={detailLoading} onClose={() => setSelectedException(null)} onAllocate={() => handleOpenAllocation(selectedException)} onInvestigate={handleInvestigate} onWriteOff={() => setWriteOffReason('')} busy={actionBusy} />
       )}
+
+      <Modal isOpen={writeOffReason !== null} onClose={() => setWriteOffReason(null)} title="Write off exception" size="sm">
+        <div className="space-y-4">
+          <p className="body-sm">The amount stays on the exception account and the exception is closed. This cannot be undone.</p>
+          <TextArea label="Reason" value={writeOffReason ?? ''} onChange={(e) => setWriteOffReason(e.target.value)} rows={3} />
+          <div className="flex justify-end gap-3 pt-4 border-t border-edge">
+            <Button variant="secondary" onClick={() => setWriteOffReason(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmWriteOff} disabled={actionBusy || !writeOffReason?.trim()}>
+              {actionBusy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}Write Off
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <AllocationModal isOpen={showAllocationModal} exception={allocationException} onClose={() => { setShowAllocationModal(false); setAllocationException(null); }} onSuccess={handleAllocationSuccess} />
     </Page>

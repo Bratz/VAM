@@ -104,7 +104,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             <div>
               <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{pool.poolReference}</p>
               <Badge variant={pool.status === 'ACTIVE' ? 'success' : 'warning'}>
-                {pool.status}
+                {pool.status.charAt(0) + pool.status.slice(1).toLowerCase()}
               </Badge>
             </div>
           </div>
@@ -259,7 +259,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             <Percent className="w-4 h-4" /> Calculation Method
           </p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">
-            {pool.interestCalculationMethod?.replace('_', ' ')}
+            {pool.interestCalculationMethod && { DAILY_AVERAGE: 'Daily average', MONTH_END: 'Month end', TIER_BASED: 'Tiered' }[pool.interestCalculationMethod]}
           </p>
         </div>
         <div>

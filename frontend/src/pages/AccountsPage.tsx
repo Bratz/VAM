@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 // ============================================================================
 // Features:
 // - Corporate & Program Selectors (session-only)
-// - Table View (default) & Simplified Tree View
+// - Table view (the hierarchy lives on Balance Hierarchy)
 // - Account Detail Panel with tabs (Overview, Statements, Activity)
 // - Owning Entity display for POBO/COBO
 // - Status management with transitions
@@ -13,9 +13,9 @@ import type { LucideIcon } from 'lucide-react';
 // - Premium animations and polish
 // ============================================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '../hooks/useNavigation';
-import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil, Landmark } from 'lucide-react';
+import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Landmark } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton, Drawer, StatusIconBadge, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -41,7 +41,6 @@ type AccountCategory = 'TRANSACTION' | 'COLLECTION' | 'DISBURSEMENT' | 'SETTLEME
                        'EXCEPTION' | 'SUSPENSE' | 'ROOT' | 'AGGREGATION' | 
                        'PHYSICAL_MIRROR' | 'EXTERNAL_MIRROR' | 'CURRENCY_MIRROR' |
                        'INTERCOMPANY' | 'ESCROW' | 'NETTING';
-type ViewMode = 'table' | 'tree';
 type DetailTab = 'overview' | 'statements' | 'activity';
 
 interface VirtualAccount {
@@ -361,9 +360,9 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
   // Operational tiles only — the headline financial figures (Total Balance,
   // Available) are now rendered above this strip by HeroMetricCard.
   const cards = [
-    { label: 'Total Accounts', value: stats.totalAccounts, icon: Layers, color: 'primary', trend: null, isBalance: false },
-    { label: 'Active', value: stats.activeAccounts, icon: CheckCircle, color: 'success', trend: '+12%', isBalance: false },
-    { label: 'Suspended', value: stats.suspendedAccounts, icon: PauseCircle, color: 'warning', trend: null, isBalance: false },
+    { label: 'Total Accounts', value: stats.totalAccounts, icon: Layers, color: 'primary', isBalance: false },
+    { label: 'Active', value: stats.activeAccounts, icon: CheckCircle, color: 'success', isBalance: false },
+    { label: 'Suspended', value: stats.suspendedAccounts, icon: PauseCircle, color: 'warning', isBalance: false },
   ];
 
   const colorMap: Record<string, { gradient: string }> = {
@@ -419,9 +418,6 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
                 )}>
                   {card.value}
                 </p>
-                {card.trend && (
-                  <span className="text-caption text-success-600 font-medium dark:text-success-300">{card.trend}</span>
-                )}
               </div>
             </div>
           </Card>
@@ -445,11 +441,11 @@ const accountMeta = (account: VirtualAccount) => {
 interface AccountActionsProps {
   account: VirtualAccount;
   onView: (a: VirtualAccount) => void;
-  onEdit: (a: VirtualAccount) => void;
   onStatusChange: (id: string, status: VaStatus) => void;
 }
 
-const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit, onStatusChange }) => {
+// ponytail: no "Edit Account" until a real edit form exists (VaCreateModal is create-only).
+const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onStatusChange }) => {
   const [showActions, setShowActions] = useState(false);
   const [showVibans, setShowVibans] = useState(false);
   return (
@@ -469,12 +465,6 @@ const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit
               className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
             >
               <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
-            </button>
-            <button
-              onClick={() => { onEdit(account); setShowActions(false); }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
-            >
-              <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
             </button>
             <button
               onClick={() => { setShowVibans(true); setShowActions(false); }}
@@ -517,7 +507,6 @@ const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit
 
 const buildAccountColumns = (
   onView: (a: VirtualAccount) => void,
-  onEdit: (a: VirtualAccount) => void,
   onStatusChange: (id: string, status: VaStatus) => void,
 ): Column<VirtualAccount>[] => [
   {
@@ -626,7 +615,7 @@ const buildAccountColumns = (
     width: '4rem',
     minWidth: 64,
     render: (_, account) => (
-      <AccountActions account={account} onView={onView} onEdit={onEdit} onStatusChange={onStatusChange} />
+      <AccountActions account={account} onView={onView} onStatusChange={onStatusChange} />
     ),
   },
 ];
@@ -719,160 +708,18 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
 };
 
 // ============================================================================
-// SIMPLIFIED TREE VIEW
-// ============================================================================
-
-interface TreeNodeProps {
-  account: VirtualAccount;
-  level: number;
-  expanded: Set<string>;
-  onToggle: (id: string) => void;
-  onView: (a: VirtualAccount) => void;
-}
-
-const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle, onView }) => {
-  const isExpanded = expanded.has(account.id);
-  const hasChildren = account.children && account.children.length > 0;
-  const category = account.accountCategory || 'TRANSACTION';
-  const categoryConfig = accountCategoryConfig[category] || accountCategoryConfig.TRANSACTION;
-  const CategoryIcon = categoryConfig.icon;
-
-  return (
-    <div className="select-none">
-      <div 
-        className={cn(
-          "flex items-center gap-2 py-2 px-3 rounded-lg transition-colors cursor-pointer group hover:bg-neutral-50 dark:hover:bg-primary-800/50"
-        )}
-        style={{ paddingLeft: `${level * 20 + 8}px` }}
-        onClick={() => onView(account)}
-      >
-        {/* Expand Toggle */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); onToggle(account.id); }}
-          className={cn("w-5 h-5 flex items-center justify-center rounded-md", hasChildren ? "hover:bg-neutral-200 dark:hover:bg-primary-700" : "invisible")}
-        >
-          {hasChildren && (
-            <ChevronRightIcon className={cn("w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400", isExpanded && "rotate-90")} />
-          )}
-        </button>
-
-        {/* Icon */}
-        <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} size="sm" subtle className="shrink-0" />
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{account.vaName}</span>
-            <Badge variant={statusConfig[account.status]?.variant as any} size="sm">
-              {statusConfig[account.status]?.label}
-            </Badge>
-            {account.owningEntityCode && (
-              <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
-                {account.owningEntityCode}
-              </Badge>
-            )}
-          </div>
-          <span className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{account.vaNumber}</span>
-        </div>
-
-        {/* Balance */}
-        <div className="text-right shrink-0">
-          <p className="body-strong font-semibold">
-            {formatCurrency(getEffectiveBalance(account), account.currencyCode)}
-          </p>
-        </div>
-      </div>
-
-      {/* Children */}
-      {isExpanded && hasChildren && (
-        <div>
-          {account.children!.map(child => (
-            <TreeNode key={child.id} account={child} level={level + 1} expanded={expanded} onToggle={onToggle} onView={onView} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface TreeViewProps {
-  accounts: VirtualAccount[];
-  loading: boolean;
-  onView: (a: VirtualAccount) => void;
-}
-
-const TreeView: React.FC<TreeViewProps> = ({ accounts, loading, onView }) => {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  // Build tree from flat list
-  const treeData = useMemo(() => {
-    const idMap = new Map<string, VirtualAccount>();
-    accounts.forEach(a => idMap.set(a.id, { ...a, children: [] }));
-
-    const roots: VirtualAccount[] = [];
-    idMap.forEach(account => {
-      if (account.parentAccountId && idMap.has(account.parentAccountId)) {
-        const parent = idMap.get(account.parentAccountId)!;
-        parent.children = parent.children || [];
-        parent.children.push(account);
-      } else {
-        roots.push(account);
-      }
-    });
-
-    return roots;
-  }, [accounts]);
-
-  const toggleExpand = (id: string) => {
-    setExpanded(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-        <span className="ml-2 text-neutral-500 dark:text-neutral-400">Loading...</span>
-      </div>
-    );
-  }
-
-  if (treeData.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <FolderTree className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
-        <p className="text-neutral-500 dark:text-neutral-400">No accounts with hierarchy</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border border-edge rounded-lg divide-y divide-edge-subtle">
-      {treeData.map(account => (
-        <TreeNode key={account.id} account={account} level={0} expanded={expanded} onToggle={toggleExpand} onView={onView} />
-      ))}
-    </div>
-  );
-};
-
-// ============================================================================
 // ACCOUNT DETAIL PANEL
 // ============================================================================
 
 interface AccountDetailPanelProps {
   account: VirtualAccount;
   onClose: () => void;
-  onEdit: (a: VirtualAccount) => void;
   onStatusChange: (id: string, status: VaStatus, reason?: string) => void;
   /** Set or clear the settlement mark; the page owns the refresh. */
   onSettlementMarkChange: (id: string, mark: boolean) => void;
 }
 
-const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClose, onEdit, onStatusChange, onSettlementMarkChange }) => {
+const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClose, onStatusChange, onSettlementMarkChange }) => {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const [statement, setStatement] = useState<Statement | null>(null);
   const [stmtLoading, setStmtLoading] = useState(false);
@@ -977,9 +824,6 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             {account.settlementMark ? 'Clear settlement mark' : 'Mark as settlement'}
           </Button>
         )}
-        <Button onClick={() => onEdit(account)}>
-          <Pencil className="w-4 h-4 mr-1" /> Edit Account
-        </Button>
       </div>
     </div>
   );
@@ -1509,7 +1353,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
   const [selectedProgramId, setSelectedProgramId] = useState(navParams.programId ?? '');
 
   // UI state
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ status: '', currency: '', accountCategory: '' });
@@ -1520,7 +1363,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
 
   // Modal/Detail state
   const [selectedAccount, setSelectedAccount] = useState<VirtualAccount | null>(null);
-  const [editAccount, setEditAccount] = useState<VirtualAccount | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Load reference data
@@ -1723,8 +1565,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         primary={{
           label: 'Total Balance',
           value: <TileAmount value={stats.totalBalance} />,
-          trend: '+8.2%',
-          trendTone: 'success',
           sub: 'Sum of current balances across programs and currencies',
         }}
         secondary={{
@@ -1751,28 +1591,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 onChange={(e) => setSearchQuery(e.target.value)}
                 leftIcon={<Search className="w-4 h-4" />}
               />
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-surface-muted rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('table')}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'table' ? "bg-surface-card text-primary-600 shadow-sm dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
-                )}
-              >
-                <CreditCard className="w-4 h-4" /> Table
-              </button>
-              <button
-                onClick={() => setViewMode('tree')}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'tree' ? "bg-surface-card text-primary-600 shadow-sm dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
-                )}
-              >
-                <FolderTree className="w-4 h-4" /> Tree
-              </button>
             </div>
 
             {/* Actions */}
@@ -1811,12 +1629,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         />
 
         {/* Content */}
-        {viewMode === 'tree' ? (
-          <div className="p-4">
-            <TreeView accounts={accounts} loading={loading} onView={setSelectedAccount} />
-          </div>
-        ) : (
-          <>
             {accounts.length > 0 ? (
               <>
                 {/* Desktop Table View */}
@@ -1824,7 +1636,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                   hairline
                   className="p-0"
                   data={accounts}
-                  columns={buildAccountColumns(setSelectedAccount, setEditAccount, handleStatusChange)}
+                  columns={buildAccountColumns(setSelectedAccount, handleStatusChange)}
                   keyExtractor={(a) => a.id}
                   onRowClick={setSelectedAccount}
                   mobileCardRenderer={(account, idx) => (
@@ -1919,8 +1731,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 />
               </div>
             )}
-          </>
-        )}
       </Card>
 
       {/* Legend */}
@@ -1945,7 +1755,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         <AccountDetailPanel
           account={selectedAccount}
           onClose={() => setSelectedAccount(null)}
-          onEdit={(a) => { setSelectedAccount(null); setEditAccount(a); }}
           onStatusChange={handleStatusChange}
           onSettlementMarkChange={handleSettlementMarkChange}
         />
@@ -1959,21 +1768,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         corporates={corporates}
         programs={programs}
       />
-
-      {/* Edit Modal - Note: VaCreateModal is now create-only; for edit, reload data */}
-      {editAccount && (
-        <VaCreateModal
-          isOpen={!!editAccount}
-          onClose={() => setEditAccount(null)}
-          onSuccess={() => {
-            loadData();
-            setEditAccount(null);
-            toast.success('Account updated');
-          }}
-          corporates={corporates}
-          programs={programs}
-        />
-      )}
     </Page>
   );
 };

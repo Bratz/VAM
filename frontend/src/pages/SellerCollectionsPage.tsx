@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Loader2, RefreshCw, Download, Eye, CreditCard, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ShoppingBag, Search, Loader2, RefreshCw, Eye, CreditCard, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
@@ -60,7 +60,6 @@ const SellerCollectionsPage: React.FC = () => {
     <Page>
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>Export</Button>
         <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>
       </div>
 
@@ -135,7 +134,7 @@ const SellerCollectionsPage: React.FC = () => {
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="p-4 relative">
               <Search className="w-4 h-4 absolute left-7 top-1/2 -translate-y-1/2 text-neutral-400" />
-              <Input className="pl-9" placeholder="Search by reference or seller..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <Input className="pl-9" placeholder="Search by reference, payer or account..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
           </Card>
 

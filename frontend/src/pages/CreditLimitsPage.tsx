@@ -10,7 +10,7 @@ import { Page } from '../components/layout/Page';
  * 5. Currency breakdown in Entity Tree
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Plus, RefreshCw, Search, Loader2, CheckCircle, AlertTriangle, Lock, Unlock, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, DollarSign, Layers, CreditCard, Pencil } from 'lucide-react';
+import { Building2, Plus, RefreshCw, Search, Loader2, AlertTriangle, Lock, Unlock, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Layers, CreditCard, Pencil } from 'lucide-react';
 import { StatusIconBadge, RadioGroup } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import {
@@ -19,6 +19,7 @@ import {
 } from '../components/credit/EntityAllocationModal';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import FxLineCard from '../components/credit/FxLineCard';
+import { useUser } from '../context/useUser';
 import { formatCurrency } from '../utils';
 import { Amount } from '../components/Amount';
 
@@ -71,12 +72,6 @@ const availableCurrencies = ['AED', 'USD', 'EUR', 'GBP', 'SAR', 'QAR', 'KWD', 'C
 
 type EntityType = 'HOLDING' | 'SUBSIDIARY' | 'BRANCH' | 'REPRESENTATIVE' | 'JOINT_VENTURE' | 'ASSOCIATE' | 'SPV' | 'TREASURY_CENTER';
 type LimitType = 'OVERDRAFT' | 'INTRADAY' | 'DAYLIGHT' | 'OVERNIGHT' | 'AGGREGATE' | 'TRANSACTION' | 'DAILY' | 'MONTHLY';
-
-interface Corporate {
-  id: string;
-  legalName: string;
-  shortName?: string;
-}
 
 interface LegalEntity {
   id: string;
@@ -176,15 +171,6 @@ const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementT
 // ============================================================================
 
 const API_BASE = '/api/v1';
-
-const corporateApi = {
-  getAll: async (): Promise<Corporate[]> => {
-    const response = await fetch(`${API_BASE}/corporates`);
-    if (!response.ok) throw new Error('Failed to fetch corporates');
-    const result = await response.json();
-    return result.data || [];
-  },
-};
 
 const legalEntityApi = {
   getByCorporate: async (corporateId: string): Promise<LegalEntity[]> => {
@@ -476,7 +462,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
               </div>
               <div className="flex justify-between text-caption mt-1">
                 <span className="text-primary-700 font-medium dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /> allocated ({allocationPct.toFixed(0)}%)</span>
-                <span className="text-success-700 font-medium dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /> avail.</span>
+                <span className="text-success-700 font-medium dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /> unallocated</span>
               </div>
             </div>
           </div>
@@ -501,89 +487,6 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
           </div>
         </>
       )}
-    </div>
-  );
-};
-
-// ============================================================================
-// STATS CARDS
-// ============================================================================
-
-const StatsCards: React.FC<{
-  groupLimits: InternalLimitResponse[];
-  entityCount: number;
-  allocatedEntityCount: number;
-  loading: boolean;
-}> = ({ groupLimits, entityCount, allocatedEntityCount, loading }) => {
-  const totalGroupLimit = groupLimits.reduce((sum, l) => sum + safeNumber(l.limitAmount), 0);
-  const totalAllocated = groupLimits.reduce((sum, l) => sum + safeNumber(l.allocatedToChildren), 0);
-  const totalUtilized = groupLimits.reduce((sum, l) => sum + safeNumber(l.utilizedAmount), 0);
-  const currencyCount = groupLimits.length;
-  const entityPercent = entityCount > 0 ? Math.round((allocatedEntityCount / entityCount) * 100) : 0;
-  const allocationPercent = safePercent(totalAllocated, totalGroupLimit);
-  const utilizationPercent = safePercent(totalUtilized, totalGroupLimit);
-
-  return (
-    <div className="grid gap-4 grid-cols-4">
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="label">Currencies</p>
-            <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount}</p>
-            <p className="caption mt-1">{currencyCount > 0 ? groupLimits.map(l => l.currency).join(', ') : 'No group limits'}</p>
-          </div>
-          <StatusIconBadge tone="primary" icon={DollarSign} />
-        </div>
-      </div>
-
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="label">Total Limits</p>
-            <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount > 0 ? `${currencyCount} currencies` : 'Not Set'}</p>
-            <p className="caption mt-1">{allocationPercent.toFixed(0)}% allocated overall</p>
-          </div>
-          <StatusIconBadge tone="info" icon={Target} />
-        </div>
-        {currencyCount > 0 && (
-          <div className="mt-3">
-            <div className="w-full bg-neutral-200 rounded-full h-2 dark:bg-primary-800">
-              <div className={cn('h-2 rounded-full', allocationPercent > 90 ? 'bg-error-500' : 'bg-primary-600')} style={{ width: `${allocationPercent}%` }} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="label">Entity Limits</p>
-            <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${allocatedEntityCount} / ${entityCount}`}</p>
-            <p className="caption mt-1">{entityCount > 0 ? `${entityPercent}% entities allocated` : 'No entities'}</p>
-          </div>
-          <StatusIconBadge tone="success" icon={Building2} />
-        </div>
-      </div>
-
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '0.25s' }}>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="label">Utilization</p>
-            <p className={cn('mt-1', utilizationPercent > 80 ? 'stat-value-warning' : 'stat-value-success')}>{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${utilizationPercent.toFixed(0)}%`}</p>
-            <p className="caption mt-1">across all currencies</p>
-          </div>
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', utilizationPercent > 80 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-success-100 dark:bg-success-500/20')}>
-            {utilizationPercent > 80 ? <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" /> : <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />}
-          </div>
-        </div>
-        {currencyCount > 0 && (
-          <div className="mt-3">
-            <div className="w-full bg-neutral-200 rounded-full h-2 dark:bg-primary-800">
-              <div className={cn('h-2 rounded-full', utilizationPercent > 90 ? 'bg-error-500' : utilizationPercent > 80 ? 'bg-warning-500' : 'bg-success-500')} style={{ width: `${utilizationPercent}%` }} />
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
@@ -1047,8 +950,8 @@ const VaLimitsModal: React.FC<{
 
 const CreditLimitsPage: React.FC = () => {
   // Data
-  const [corporates, setCorporates] = useState<Corporate[]>([]);
-  const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  // The header's corporate, like the FX pages; no second picker.
+  const selectedCorporateId = useUser().currentCorporateId ?? '';
   const [entities, setEntities] = useState<LegalEntity[]>([]);
   const [groupLimits, setGroupLimits] = useState<InternalLimitResponse[]>([]);
   const [entityLimitsMap, setEntityLimitsMap] = useState<Record<string, Record<string, InternalLimitResponse>>>({});
@@ -1058,7 +961,6 @@ const CreditLimitsPage: React.FC = () => {
 
   // UI
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -1070,19 +972,6 @@ const CreditLimitsPage: React.FC = () => {
   const [editingEntityLimit, setEditingEntityLimit] = useState<InternalLimitResponse | null>(null);
   const [showVaModal, setShowVaModal] = useState(false);
   const [vaModalCurrency, setVaModalCurrency] = useState('AED');
-
-  // Load corporates
-  useEffect(() => {
-    const loadCorporates = async () => {
-      try {
-        const data = await corporateApi.getAll();
-        setCorporates(data);
-        if (data.length > 0) setSelectedCorporateId(data[0].id);
-      } catch { setError('Failed to load corporates'); }
-      finally { setInitialLoading(false); }
-    };
-    loadCorporates();
-  }, []);
 
   // Load data when corporate changes
   const loadData = useCallback(async () => {
@@ -1205,8 +1094,7 @@ const CreditLimitsPage: React.FC = () => {
     return filtered.filter(e => !e.parentEntityId);
   }, [entities, searchQuery]);
 
-  // Toolbar actions in Aperture Layout header. Corporate selector remains
-  // inline as a filter input (not an action).
+  // Toolbar actions in Aperture Layout header.
   usePageHeaderActions(
     () => (
       <>
@@ -1219,33 +1107,13 @@ const CreditLimitsPage: React.FC = () => {
           <RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />
           Refresh
         </button>
-        <button
-          type="button"
-          className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg hover:bg-neutral-50 bg-surface-card dark:hover:bg-primary-800/50 inline-flex items-center"
-        >
-          <Download className="w-4 h-4 mr-1" />
-          Export
-        </button>
       </>
     ),
     [loading]
   );
 
-  if (initialLoading) {
-    return <div className="min-h-screen bg-surface-page flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>;
-  }
-
   return (
     <Page>
-      {/* Refresh + Export migrated to Aperture Layout header. Corporate
-          selector stays here as a filter input. */}
-      <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <select className="px-3 py-2 border border-edge-strong rounded-lg min-w-[12.5rem] bg-surface-card text-body-sm font-medium" value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)}>
-            <option value="">Select Corporate...</option>
-            {corporates.map(c => <option key={c.id} value={c.id}>{c.legalName}</option>)}
-          </select>
-      </div>
-
       {/* Error Banner */}
       {error && (
         <div className="bg-error-50 border border-error-200 rounded-lg p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
@@ -1260,7 +1128,6 @@ const CreditLimitsPage: React.FC = () => {
       {/* Content Area */}
       {selectedCorporateId ? (
         <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <StatsCards groupLimits={groupLimits} entityCount={entities.length} allocatedEntityCount={allocatedEntityCount} loading={loading} />
           <MultiCurrencyGroupLimitsCard groupLimits={groupLimits} onEdit={handleEditGroupLimit} onAddCurrency={handleAddGroupCurrency} />
 
           {groupLimits.length > 0 && (
@@ -1324,7 +1191,7 @@ const CreditLimitsPage: React.FC = () => {
       ) : (
         <div className="bg-surface-card rounded-lg border border-edge-subtle p-12 text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
-          <p className="text-neutral-500 dark:text-neutral-400">Select a corporate to view credit limits</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Select a corporate in the header to view credit limits</p>
         </div>
       )}
 

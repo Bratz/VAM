@@ -117,18 +117,11 @@ export const useSweeping = () => {
     fetchHistory();
   }, [fetchRules, fetchHistory]);
 
-  const stats = {
-    activeRules: rules.filter(r => r.status === 'ACTIVE').length,
-    totalAccounts: rules.reduce((s, r) => s + ((r as any).sourceAccounts?.length || 0), 0),
-    totalRules: rules.length,
-  };
-
   return {
     rules,
     executions,
     loading,
     error,
-    stats,
     fetchRules,
     fetchHistory,
     createRule,

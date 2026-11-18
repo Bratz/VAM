@@ -335,12 +335,11 @@ const ForecastingPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Currency filter — empty = all currencies summed (engines emit native ccy) */}
+            {/* Currency filter — one currency at a time; until picked, the server reports
+                the market default currency (else the first one the forecast has). */}
             <CurrencyPicker
-              value={currency}
+              value={currency || summary?.currency || ''}
               onChange={setCurrency}
-              allowEmpty
-              emptyLabel="All ccy"
               className="h-9 text-body-sm rounded-lg border-neutral-200 dark:border-primary-800/60"
             />
 
@@ -636,6 +635,8 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
 
     const grid: Record<string, { label: string; cells: number[]; total: number }> = {};
     for (const l of lines) {
+      // Lines come back in every currency; only sum the one the page shows.
+      if (l.currency && l.currency !== currency) continue;
       const idx = cellAt(l.valueDate);
       if (idx === -1) continue;
       const key = l.categoryCode || 'UNCATEGORISED';
@@ -656,7 +657,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
     const rows = Object.entries(grid).map(([code, v]) => ({ code, ...v }));
     rows.sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
     return rows;
-  }, [lines, weeklyBuckets]);
+  }, [lines, weeklyBuckets, currency]);
 
   return (
     <Card padding="md">

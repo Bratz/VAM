@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
+import { Search, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
 import { Card, Badge, Button, DataTable, StatusIconBadge, Checkbox, Toggle } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
@@ -1600,7 +1600,7 @@ const PartyDetailModal: React.FC<{
                 <OwningEntityBadge entityCode={party.owningEntityCode} />
                 <PoboBadge eligible={party.poboEligible} defaultPayerCode={party.poboDefaultPayerEntityCode} />
                 <IntercompanyBadge isIntercompany={party.isIntercompany} linkedEntityCode={party.linkedLegalEntityCode} settlementMethod={party.icSettlementMethod} />
-                <NettingBadge eligible={party.nettingEligible || party.isIntercompany} />
+                <NettingBadge eligible={party.canParticipateInNetting} />
                 {party.isIntercompany && <IcCreditBadge limit={party.icCreditLimit} exposure={party.icCurrentExposure} />}
               </div>
             </div>
@@ -1655,7 +1655,7 @@ const PartyDetailModal: React.FC<{
                 </Card>
                 <h3 className="body-strong font-semibold">Payment Factory</h3>
                 <Card padding="sm" className="space-y-3">
-                  <div className="flex items-center justify-between"><span className="body-sm">POBO Eligible</span><Badge variant={party.canReceivePoboPayment ? 'success' : 'neutral'} size="sm">{party.canReceivePoboPayment ? 'Yes' : 'No'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">POBO Eligible</span><Badge variant={party.poboEligible ? 'success' : 'neutral'} size="sm">{party.poboEligible ? 'Yes' : 'No'}</Badge></div>
                   <div className="flex items-center justify-between"><span className="body-sm">Intercompany</span><Badge variant={party.isIntercompany ? 'info' : 'neutral'} size="sm">{party.isIntercompany ? party.linkedLegalEntityCode : 'No'}</Badge></div>
                   <div className="flex items-center justify-between"><span className="body-sm">Netting Eligible</span><Badge variant={party.canParticipateInNetting ? 'success' : 'neutral'} size="sm">{party.canParticipateInNetting ? 'Yes' : 'No'}</Badge></div>
                 </Card>
@@ -2305,7 +2305,7 @@ const PartiesPage: React.FC = () => {
     kycExpired: 0, highRisk: 0, sanctionsAlerts: 0,
     poboEligibleVendors: parties.filter(p => p.poboEligible).length,
     intercompanyParties: parties.filter(p => p.isIntercompany).length,
-    nettingEligibleParties: parties.filter(p => p.nettingEligible || p.isIntercompany).length,
+    nettingEligibleParties: parties.filter(p => p.canParticipateInNetting).length,
   };
 
   const roleTabs = [
@@ -2329,9 +2329,6 @@ const PartiesPage: React.FC = () => {
           disabled={loading}
         >
           Refresh
-        </Button>
-        <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-          Export
         </Button>
         <Button
           size="sm"
@@ -2553,7 +2550,7 @@ const PartiesPage: React.FC = () => {
                     <div className="flex flex-wrap justify-center gap-1">
                       <PoboBadge eligible={party.poboEligible} />
                       <IntercompanyBadge isIntercompany={party.isIntercompany} linkedEntityCode={party.linkedLegalEntityCode} />
-                      <NettingBadge eligible={party.nettingEligible || party.isIntercompany} />
+                      <NettingBadge eligible={party.canParticipateInNetting} />
                       {party.isIntercompany && party.icCreditLimit && <IcCreditBadge limit={party.icCreditLimit} exposure={party.icCurrentExposure} />}
                     </div>
                   ),
@@ -2580,7 +2577,6 @@ const PartiesPage: React.FC = () => {
                     <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedParty(party)}><Eye className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><MoreHorizontal className="w-4 h-4" /></Button>
                     </div>
                   ),
                 },

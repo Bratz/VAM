@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, TrendingUp, Wallet, RefreshCw, Plus, Loader2, X, Briefcase, XCircle } from 'lucide-react';
+import { Building2, Wallet, RefreshCw, Plus, Loader2, X, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
-import { corporatesApi, programsApi } from '../services/api';
+import { corporatesApi } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
@@ -34,14 +35,6 @@ interface Corporate {
   corporateId: string;
   legalName: string;
   tradeName?: string;
-}
-
-interface Program {
-  id: string;
-  programCode: string;
-  programName: string;
-  corporateId?: string;
-  currencyCode?: string;
 }
 
 interface IhbEntity {
@@ -120,33 +113,6 @@ interface IhbCurrentAccount {
   treasuryEntityCode?: string;    // Treasury center entity code
 }
 
-interface TreasuryRates {
-  treasuryCenterId?: string;
-  treasuryCenterCode?: string;
-  treasuryCenterName?: string;
-  ihbCurrency: string;
-  // Lending rates (what borrowers pay)
-  lendingBaseRate: number;
-  lendingBaseRateType: string;
-  treasuryLendingSpread: number;
-  indicativeLendingRate: number;
-  // Deposit rates (what depositors earn)
-  depositBaseRate: number;
-  depositBaseRateType: string;
-  treasuryDepositSpread: number;
-  indicativeDepositRate: number;
-  // Limits
-  minLoanAmount: number;
-  maxLoanAmount?: number;
-  minDepositAmount: number;
-  // Config info
-  hasInterestConfig: boolean;
-  /** DEFAULT: built-in rates (base 5.00), not ones the bank set. */
-  rateSource?: string;
-  dayCountConvention?: string;
-  compoundingFrequency?: string;
-}
-
 // ============================================================================
 // IHB UNIFIED API SERVICE
 // ============================================================================
@@ -178,10 +144,6 @@ const ihbUnifiedApi = {
 
   disableIhb: (entityId: string) =>
     fetch(`${API_BASE}/entities/${entityId}/disable`, { method: 'POST' }).then(r => r.json()) as Promise<ApiResponse<void>>,
-
-  // Treasury Rates
-  getTreasuryRates: (corporateId: string) =>
-    fetch(`${API_BASE}/corporate/${corporateId}/treasury-rates`).then(r => r.json()) as Promise<ApiResponse<TreasuryRates>>,
 
   // IHB Current Accounts (Creates TRANSACTION VA with ihbParticipant=true)
   createCurrentAccount: (data: {
@@ -236,15 +198,6 @@ const ihbUnifiedApi = {
 // ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
-
-// ============================================================================
-// CORPORATE & PROGRAM SELECTOR BAR
-// ============================================================================
-
-// Picker now uses the shared `<ScopeSelector mode="corporate-program">`
-// primitive from components/layout/. The inline `SelectorBar` (Desktop +
-// Mobile variants) is removed. IHB-specific filter (only IHB-type programs)
-// is applied at the call site before passing into ScopeSelector.
 
 /**
  * An entity's in-house bank set-up: its role and credit limit. Balances, use of the limit and interest are on the
@@ -318,12 +271,9 @@ const InHouseBankPage: React.FC = () => {
   // State
   const [activeTab, setActiveTab] = useState<'position' | 'movements' | 'interest' | 'changes' | 'entities' | 'current-accounts' | 'cobo' | 'pobo'>('position');
   const [corporates, setCorporates] = useState<Corporate[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
-  const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [entities, setEntities] = useState<IhbEntity[]>([]);
   const [currentAccounts, setCurrentAccounts] = useState<IhbCurrentAccount[]>([]);
-  const [treasuryRates, setTreasuryRates] = useState<TreasuryRates | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingSelectors, setLoadingSelectors] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -345,9 +295,9 @@ const InHouseBankPage: React.FC = () => {
     vaName: '',
   });
 
-  // Load corporates and programs on mount
+  // Load corporates on mount
   useEffect(() => {
-    loadCorporatesAndPrograms();
+    loadCorporates();
   }, []);
 
   const loadData = useCallback(async () => {
@@ -357,15 +307,13 @@ const InHouseBankPage: React.FC = () => {
     setError(null);
 
     try {
-      const [entitiesRes, currentAccountsRes, ratesRes] = await Promise.all([
+      const [entitiesRes, currentAccountsRes] = await Promise.all([
         ihbUnifiedApi.getEntitiesByCorporate(selectedCorporateId),
         ihbUnifiedApi.getCurrentAccountsByCorporate(selectedCorporateId).catch(() => ({ data: [] })),
-        ihbUnifiedApi.getTreasuryRates(selectedCorporateId).catch(() => null),
       ]);
 
       setEntities(entitiesRes?.data || []);
       setCurrentAccounts(currentAccountsRes?.data || []);
-      setTreasuryRates(ratesRes?.data || null);
     } catch (err) {
       console.error('Failed to load IHB data:', err);
       setError('Failed to load IHB data. The unified API may not be deployed yet.');
@@ -382,39 +330,23 @@ const InHouseBankPage: React.FC = () => {
       // Clear data when no corporate selected
       setEntities([]);
       setCurrentAccounts([]);
-      setTreasuryRates(null);
     }
   }, [selectedCorporateId, loadData]);
 
-  const loadCorporatesAndPrograms = async () => {
+  const loadCorporates = async () => {
     setLoadingSelectors(true);
     try {
-      const [corporatesRes, programsRes] = await Promise.all([
-        corporatesApi.getAll(),
-        programsApi.getAll().catch(() => ({ data: { programs: [] } })),
-      ]);
-
-      // Extract corporates
+      const corporatesRes = await corporatesApi.getAll();
       const corporateData = corporatesRes?.data || corporatesRes;
       const corporateList = Array.isArray(corporateData) ? corporateData : [];
       setCorporates(corporateList);
-
-      // Extract programs - handle nested structure
-      const programData = programsRes?.data;
-      let programList: Program[] = [];
-      if (programData?.programs && Array.isArray(programData.programs)) {
-        programList = programData.programs;
-      } else if (Array.isArray(programData)) {
-        programList = programData;
-      }
-      setPrograms(programList);
 
       // Auto-select first corporate
       if (corporateList.length > 0) {
         setSelectedCorporateId(corporateList[0].id);
       }
     } catch (err) {
-      console.error('Failed to load corporates/programs:', err);
+      console.error('Failed to load corporates:', err);
       setError('Failed to load corporates');
     } finally {
       setLoadingSelectors(false);
@@ -440,7 +372,7 @@ const InHouseBankPage: React.FC = () => {
   // Handle creating IHB Current Account (TRANSACTION VA with ihbParticipant=true)
   const handleCreateCurrentAccount = async () => {
     if (!currentAccountForm.participantEntityId) {
-      alert('Please select a participant entity');
+      toast.error('Please select a participant entity');
       return;
     }
 
@@ -466,13 +398,13 @@ const InHouseBankPage: React.FC = () => {
           ihbSweepEnabled: false, targetCashBalance: '', ihbSweepFrequency: 'DAILY', vaName: '',
         });
         await loadData();
-        alert('Current account opened at the in-house bank');
+        toast.success('Current account opened at the in-house bank');
       } else {
-        alert(result?.message || 'Failed to create current account');
+        toast.error(result?.message || 'Failed to create current account');
       }
     } catch (err) {
       console.error('Failed to create current account:', err);
-      alert('Failed to create current account');
+      toast.error('Failed to create current account');
     }
   };
 
@@ -485,18 +417,6 @@ const InHouseBankPage: React.FC = () => {
       creditLimit: entity.creditLimit?.toString() || '',
     }));
     setShowCurrentAccountModal(true);
-  };
-
-  // Helper to fill current account form with treasury rates
-  const fillCurrentAccountRatesFromTreasury = () => {
-    if (treasuryRates) {
-      setCurrentAccountForm(prev => ({
-        ...prev,
-        currencyCode: treasuryRates.ihbCurrency || prev.currencyCode,
-        creditRate: treasuryRates.indicativeDepositRate?.toString() || '',
-        debitRate: treasuryRates.indicativeLendingRate?.toString() || '',
-      }));
-    }
   };
 
   // Calculated values
@@ -524,42 +444,24 @@ const InHouseBankPage: React.FC = () => {
 
   return (
     <Page>
-      {/* Corporate & Program Selector */}
+      {/* Corporate only: IHB accounts take their program from the parent they hang under, not from a pick here. */}
       <ScopeSelector
-        mode="corporate-program"
+        mode="corporate-only"
         corporates={corporates}
-        // Scoped by corporate only. Filtering on a program flag implied a
-        // constraint that does not exist: the selection here is shown in the
-        // breadcrumb and sent to nothing, and IHB accounts take their program
-        // from the parent they hang under, not from a program the user picks.
-        programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
         selectedCorporateId={selectedCorporateId}
-        selectedProgramId={selectedProgramId}
-        onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}
-        onProgramChange={setSelectedProgramId}
+        onCorporateChange={setSelectedCorporateId}
         loading={loadingSelectors}
-        disableChildUntilParent
       />
 
-      {/* Quick Actions migrated to Aperture Layout header. Context badges
-          (selected Corporate / Program) stay on the page body since they're
-          informational, not actionable. */}
-      {(selectedCorporateId || selectedProgramId) && (
+      {/* Quick Actions migrated to Aperture Layout header. The corporate badge stays on the page body. */}
+      {selectedCorporateId && (
         <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          {selectedCorporateId && (
-            <Badge variant="info" size="sm" className="px-3 py-1">
-              <Building2 className="w-3 h-3 mr-1.5" />
-              {corporates.find(c => c.id === selectedCorporateId)?.tradeName ||
-               corporates.find(c => c.id === selectedCorporateId)?.legalName ||
-               'Selected'}
-            </Badge>
-          )}
-          {selectedProgramId && (
-            <Badge variant="warning" size="sm" className="px-3 py-1">
-              <Briefcase className="w-3 h-3 mr-1.5" />
-              {programs.find(p => p.id === selectedProgramId)?.programName || 'Program'}
-            </Badge>
-          )}
+          <Badge variant="info" size="sm" className="px-3 py-1">
+            <Building2 className="w-3 h-3 mr-1.5" />
+            {corporates.find(c => c.id === selectedCorporateId)?.tradeName ||
+             corporates.find(c => c.id === selectedCorporateId)?.legalName ||
+             'Selected'}
+          </Badge>
         </div>
       )}
 
@@ -859,30 +761,6 @@ const InHouseBankPage: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Treasury Rates Preview */}
-          {treasuryRates && (
-            <div className="bg-surface-page border border-edge rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="label">Treasury Rates</p>
-                  <div className="flex gap-6 mt-2">
-                    <div>
-                      <p className="caption-success">Credit Rate (Earn)</p>
-                      <p className="stat-value-sm text-success-700 dark:text-success-300">{treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</p>
-                    </div>
-                    <div>
-                      <p className="caption-error">Debit Rate (Pay)</p>
-                      <p className="stat-value-sm text-error-700 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</p>
-                    </div>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={fillCurrentAccountRatesFromTreasury} className="text-caption text-cat-2 dark:text-cat-2-fg">
-                  <TrendingUp className="w-3 h-3 mr-1" /> Use Treasury Rates
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Participant Selection */}
           <div>

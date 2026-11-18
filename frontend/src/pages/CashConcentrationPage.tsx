@@ -92,7 +92,6 @@ const CashConcentrationPage: React.FC = () => {
     executions,
     loading,
     error,
-    stats,
     fetchRules,
     fetchHistory,
     createRule,
@@ -240,24 +239,28 @@ const CashConcentrationPage: React.FC = () => {
     return true;
   });
 
-  // Filter executions by rule
-  const filteredExecutions = executions.filter(exec => {
-    if (historyRuleFilter !== 'all' && (exec as any).ruleId !== historyRuleFilter) {
-      return false;
-    }
-    return true;
-  });
+  // Executions of the rules in scope (all of them when nothing is picked), then by the history rule filter
+  const scoped = selectedCorporate !== 'all' || selectedProgram !== 'all';
+  const scopedRuleIds = new Set(filteredRules.map(r => r.id));
+  const scopedExecutions = scoped ? executions.filter(exec => scopedRuleIds.has(exec.ruleId)) : executions;
+  const filteredExecutions = historyRuleFilter === 'all'
+    ? scopedExecutions
+    : scopedExecutions.filter(exec => exec.ruleId === historyRuleFilter);
+
+  const activeRules = filteredRules.filter(r => r.status === 'ACTIVE').length;
+  // An account feeding two rules is one account
+  const linkedAccounts = new Set(filteredRules.flatMap(r => (r.sourceAccounts ?? []).map(a => a.accountId))).size;
 
   // Today's swept, per currency: settled, legacy SUCCESS and instructed-at-another-bank (COMMITTED) executions.
-  // ponytail: from the history page loaded (latest 20), as before; a backend daily total if that ever falls short.
+  // ponytail: from the history page loaded (latest 20 runs, labelled so); a backend daily total if that falls short.
   const today = new Date().toDateString();
-  const todaySwept = sumByCurrency(executions
+  const todaySwept = sumByCurrency(scopedExecutions
     .filter(exec => {
       const execDate = (exec as any).executionTime || (exec as any).executedAt;
       return execDate && new Date(execDate).toDateString() === today && SWEPT_STATUSES.includes(exec.status);
     })
     .map(exec => [exec.currencyCode, (exec as any).sweepAmount || (exec as any).amountSwept || 0]));
-  const totalSwept = sumByCurrency(rules.map(r => [r.currencyCode, (r as any).totalSwept || 0]));
+  const totalSwept = sumByCurrency(filteredRules.map(r => [r.currencyCode, (r as any).totalSwept || 0]));
 
   const tabs = [
     { id: 'rules', label: 'Sweep Rules', icon: Layers, count: filteredRules.length },
@@ -297,8 +300,8 @@ const CashConcentrationPage: React.FC = () => {
         programs={programs}
         selectedCorporateId={selectedCorporate === 'all' ? '' : selectedCorporate}
         selectedProgramId={selectedProgram === 'all' ? '' : selectedProgram}
-        onCorporateChange={(id) => setSelectedCorporate(id || 'all')}
-        onProgramChange={(id) => setSelectedProgram(id || 'all')}
+        onCorporateChange={(id) => { setSelectedCorporate(id || 'all'); setHistoryRuleFilter('all'); }}
+        onProgramChange={(id) => { setSelectedProgram(id || 'all'); setHistoryRuleFilter('all'); }}
         loading={loadingCorporates || loadingPrograms}
       />
 
@@ -311,20 +314,20 @@ const CashConcentrationPage: React.FC = () => {
         primary={{
           label: 'Total Swept',
           value: <CurrencyTotals totals={totalSwept} />,
-          sub: 'Cumulative funds concentrated across all rules',
+          sub: 'Cumulative funds concentrated by the rules shown',
         }}
         secondary={{
           label: "Today's Swept",
           value: <CurrencyTotals totals={todaySwept} />,
-          sub: 'Net concentration today',
+          sub: 'From the latest 20 runs',
         }}
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}
       <StatStrip className="animate-fade-in [animation-delay:0.18s]">
-        <StatTile layout="row" tone="primary" icon={<Layers className="w-5 h-5" />} label="Active Rules" value={stats.activeRules} />
-        <StatTile layout="row" tone="success" icon={<Building2 className="w-5 h-5" />} label="Linked Accounts" value={stats.totalAccounts} />
+        <StatTile layout="row" tone="primary" icon={<Layers className="w-5 h-5" />} label="Active Rules" value={activeRules} />
+        <StatTile layout="row" tone="success" icon={<Building2 className="w-5 h-5" />} label="Linked Accounts" value={linkedAccounts} />
       </StatStrip>
 
       {/* Tabs with Filter — icon + pill-count style matches Intercompany Dashboard's tab row. */}
@@ -352,7 +355,7 @@ const CashConcentrationPage: React.FC = () => {
         </div>
 
         {/* History Rule Filter */}
-        {activeTab === 'history' && rules.length > 0 && (
+        {activeTab === 'history' && filteredRules.length > 0 && (
           <div className="flex items-center gap-2 pb-2">
             <Filter className="w-4 h-4 text-neutral-400" />
             <div className="w-52">
@@ -362,7 +365,7 @@ const CashConcentrationPage: React.FC = () => {
                 onChange={(e) => setHistoryRuleFilter(e.target.value)}
                 options={[
                   { value: 'all', label: 'All Rules' },
-                  ...rules.map((rule) => ({ value: rule.id, label: rule.ruleName })),
+                  ...filteredRules.map((rule) => ({ value: rule.id, label: rule.ruleName })),
                 ]}
               />
             </div>

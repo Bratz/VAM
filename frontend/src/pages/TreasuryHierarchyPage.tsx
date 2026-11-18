@@ -545,12 +545,12 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                   </div>
                 </div>
                 
-                {/* EOD Sweep Configuration */}
+                {/* Sweep Configuration (daily or real-time, chosen below) */}
                 <div className="flex items-center justify-between p-3 bg-surface-card rounded-lg border border-info-100 dark:border-info-500/30">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-5 h-5 text-info-600 dark:text-info-300" />
                     <div>
-                      <p className="text-body-sm font-medium text-neutral-800 dark:text-neutral-100">EOD Auto-Sweep</p>
+                      <p className="text-body-sm font-medium text-neutral-800 dark:text-neutral-100">Auto-Sweep</p>
                       <p className="caption">Automatically balance positions</p>
                     </div>
                   </div>
@@ -1340,7 +1340,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency: fall
         <div className="p-2 bg-info-50 dark:bg-info-500/10 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-info-600 dark:text-info-300" />
-            <span className="text-body-sm text-info-700 dark:text-info-300">EOD Sweep</span>
+            <span className="text-body-sm text-info-700 dark:text-info-300">Sweep</span>
           </div>
           <Badge variant="info" size="sm">
             {ihb.sweepFrequency === 'REAL_TIME' ? 'Real-time' : 'Daily'}
