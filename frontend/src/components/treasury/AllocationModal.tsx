@@ -276,7 +276,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       isOpen={isOpen}
       onClose={onCancel}
       title="Confirm Allocation"
-      subtitle="Please review before proceeding"
       size="sm"
       footer={
         <div className="flex justify-end gap-3">
@@ -354,8 +353,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           <div className="flex items-start gap-2 p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
             <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
             <p className="text-caption text-warning-700 dark:text-warning-300">
-              This action will permanently allocate the exception amount to the target account. 
-              This operation cannot be undone without creating a reversal.
+              Can only be undone by a reversal.
             </p>
           </div>
         </div>
@@ -1414,9 +1412,6 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               <p className="text-body-lg font-bold text-primary-900 dark:text-neutral-50">
                 {formatCurrency(exception.amount, exception.currencyCode)}
               </p>
-              <p className="caption">
-                {exception.status === 'OPEN' ? 'Ready to allocate' : exception.status}
-              </p>
             </div>
           </div>
 
@@ -1710,24 +1705,6 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             />
             <p className="caption mt-1 text-right">{notes.length}/500</p>
           </div>
-
-          {/* Allocation Preview Banner */}
-          {selectedVa && validationErrors.length === 0 && (
-            <div className="flex items-start gap-3 p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
-              <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
-              <div className="text-body-sm text-success-700 dark:text-success-300">
-                <p className="font-medium mb-1">Allocation Preview</p>
-                <p>
-                  {formatCurrency(exception.amount, exception.currencyCode)} will be transferred 
-                  from Exception VA <span className="font-mono font-medium">{exception.exceptionVaNumber || 'EXCEPTION-VA'}</span> to 
-                  target <span className="font-mono font-medium">{selectedVa.vaNumber}</span>.
-                </p>
-                <p className="caption-success mt-1">
-                  Target balance after allocation: {formatCurrency(selectedVa.balance + exception.amount, selectedVa.currencyCode)}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </Modal>
     </>

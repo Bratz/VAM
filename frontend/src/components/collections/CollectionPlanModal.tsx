@@ -64,7 +64,7 @@ export const CollectionPlanModal: React.FC<{
       isOpen={isOpen}
       onClose={onClose}
       title={sent ? `Collection run ${sent.run.runRef}` : 'Collection plan'}
-      subtitle={sent ? 'Sent. Direct debits settle on their dates and are held for the return window.' : 'How these invoices would be collected. Nothing is sent until you send it.'}
+      subtitle={sent ? 'Sent.' : 'Nothing is sent until you send it.'}
       size="xl"
       footer={sent ? (
         <>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Loader2, RefreshCw, Eye, CreditCard, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
+import { ShoppingBag, Search, Loader2, RefreshCw, Eye, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Card, Button, Badge, Input, StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
 import { formatCurrency } from '../utils';
@@ -63,44 +63,11 @@ const SellerCollectionsPage: React.FC = () => {
         <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <Card hover>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="primary" icon={CreditCard} />
-            </div>
-            <p className="stat-value-sm mt-3">{collections.length}</p>
-            <p className="label">Total Collections</p>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="success" icon={TrendingUp} />
-            </div>
-            <p className="stat-value-sm mt-3 text-success-600 dark:text-success-300">{formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0))}</p>
-            <p className="label">Total Amount</p>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="warning" icon={Clock} />
-            </div>
-            <p className="stat-value-warning mt-3">{settlements.reduce((sum, s) => sum + s.accountsSwept, 0)}</p>
-            <p className="label">Accounts Swept</p>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="info" icon={CheckCircle} />
-            </div>
-            <p className="stat-value-sm mt-3">{formatCurrency(settlements.reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
-            <p className="label">Settled Amount</p>
-          </div>
-        </Card>
+      {/* Summary Stats — the collection count is the tab label */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatTile layout="row" tone="success" label="Total Amount" value={formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0))} icon={<TrendingUp className="w-5 h-5" />} delay="0.1s" />
+        <StatTile layout="row" tone="neutral" label="Accounts Swept" value={settlements.reduce((sum, s) => sum + s.accountsSwept, 0)} icon={<Clock className="w-5 h-5" />} delay="0.1s" />
+        <StatTile layout="row" tone="info" label="Settled Amount" value={formatCurrency(settlements.reduce((sum, s) => sum + (s.netAmount || 0), 0))} icon={<CheckCircle className="w-5 h-5" />} delay="0.1s" />
       </div>
 
       {error && (
@@ -179,19 +146,12 @@ const SellerCollectionsPage: React.FC = () => {
       {/* Settlements Tab */}
       {activeTab === 'settlements' && (
         <>
-          <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="p-4 flex justify-between items-center">
-              <h3 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Settlement Batches</h3>
-              <p className="caption">Settlement runs are produced by the sweep engine as it moves
-              collected money off these accounts.</p>
-            </div>
-          </Card>
-
           <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
             <DataTable
               data={settlements}
               keyExtractor={(s) => s.id}
               emptyTitle="No settlements found"
+              emptyDescription="Settlement runs appear as sweeps move collected money off these accounts."
               columns={[
                 { key: 'settlementDate', header: 'Run date', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementDate}</span> },
                 { key: 'currencyCode', header: 'Currency', render: (_, s) => <span className="body-strong">{s.currencyCode}</span> },

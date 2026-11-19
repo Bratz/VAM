@@ -167,9 +167,8 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
           <div className="rounded-lg border border-edge-strong divide-y divide-neutral-100 dark:divide-primary-800/40 max-h-40 overflow-auto">
             {eligible.length === 0 ? (
               <p className="px-3 py-3 body-sm text-neutral-500 dark:text-neutral-400">
-                No home-bank (INTERNAL) shadows yet. Only home-bank accounts
-                can be pooled — external / group accounts are sweep
-                participants, not pool members.
+                No home-bank planned accounts yet. Only accounts at your home
+                bank can be pooled; accounts at other banks join by sweep.
               </p>
             ) : (
               eligible.map((s) => (

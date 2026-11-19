@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { AlertTriangle, ArrowLeftRight, Building2, CheckCircle, Clock, GitMerge, Landmark, Loader2, Receipt, RefreshCw, Scale, XCircle, Zap } from 'lucide-react';
-import { Card, Button, Badge, Input, StatusIconBadge, StatTile, Checkbox } from '../components/ui';
+import { AlertTriangle, ArrowLeftRight, Building2, CheckCircle, Clock, GitMerge, Info, Landmark, Loader2, Receipt, RefreshCw, Scale, XCircle, Zap } from 'lucide-react';
+import { Card, Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Page } from '../components/layout/Page';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Modal } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/usePageHeader';
@@ -62,12 +61,15 @@ const LINE_LABEL: Record<IcLine['kind'], string> = {
 /** One kind of line within a pair: its lines and what they net to. */
 const LineSection: React.FC<{
   title: string; icon: React.ComponentType<{ className?: string }>; group: IcLineGroup; currency: string;
+  /** Tooltip on the title. */
+  hint?: string;
   actions?: (line: IcLine) => React.ReactNode;
-}> = ({ title, icon: Icon, group, currency, actions }) => (
+}> = ({ title, icon: Icon, group, currency, hint, actions }) => (
   <div className="p-3 bg-surface-page rounded-lg">
     <div className="flex items-center justify-between mb-2">
-      <span className="flex items-center gap-2 label"><Icon className="w-4 h-4" />{title}</span>
-      {group.lines.length > 0 && (
+      <span className="flex items-center gap-2 label" title={hint}><Icon className="w-4 h-4" />{title}</span>
+      {/* One line is its own net: the net is said only over two or more. */}
+      {group.lines.length > 1 && (
         <span className="caption">
           {group.net.amount === 0 ? `Nets to ${formatCurrency(0, currency)}` : <>Net: <Owes debtor={group.net.debtor} creditor={group.net.creditor} amount={group.net.amount} currency={currency} /></>}
         </span>
@@ -128,7 +130,7 @@ const PairCard: React.FC<{
         <LineSection title="Recharges awaiting netting" icon={Zap} group={pair.recharges} currency={currency} />
         {pair.rechargesAwaitingApproval.lines.length > 0 && (
           // The backend approves or rejects a recharge only while it is pending, which every line here is.
-          <LineSection title="Recharges awaiting approval (not owed until approved)" icon={Clock}
+          <LineSection title="Awaiting approval" hint="Recharges are not owed until approved" icon={Clock}
             group={pair.rechargesAwaitingApproval} currency={currency}
             actions={l => l.sourceId && (
               <TreasuryOnly>
@@ -245,8 +247,8 @@ const NettingModal: React.FC<{ corporateId: string; pair: IcPairPosition | null;
         <div className="space-y-4">
           {eligibility.reason && <p className="body-sm text-warning-700 dark:text-warning-300">{eligibility.reason}</p>}
           {!eligibility.reason && eligibility.items.length === 0 && (
-            <p className="body-sm">Nothing between these entities can go into a netting cycle now: netting takes an approved
-              payable, a receivable still owed (open, overdue or partly paid), and an approved recharge not already in a cycle.</p>
+            <p className="body-sm" title="Netting takes an approved payable, a receivable still owed (open, overdue or partly paid), and an approved recharge not already in a cycle.">
+              Nothing here can be netted yet.</p>
           )}
           {eligibility.items.length > 0 && (
             <div className="space-y-2">
@@ -376,10 +378,9 @@ const IntercompanyDashboardPage: React.FC = () => {
   }
 
   const pairs = position.currencies.flatMap(c => c.pairs);
-  const count = (pick: (p: IcPairPosition) => IcLineGroup) => pairs.reduce((n, p) => n + pick(p).lines.length, 0);
-  const breaks = position.currencies.filter(c => !c.control.balanced);
-  const awaitingApproval = count(p => p.rechargesAwaitingApproval);
+  const awaitingApproval = pairs.reduce((n, p) => n + p.rechargesAwaitingApproval.lines.length, 0);
   const total = position.reportingTotal;
+  const rates = conversionLabel(total, position.currencies.filter(c => c.outstanding > 0).map(c => c.currency));
 
   return (
     <Page>
@@ -389,24 +390,27 @@ const IntercompanyDashboardPage: React.FC = () => {
         primary={{
           label: `Intercompany outstanding in ${total.currency}`,
           value: <TileAmount value={total.amount} currency={total.currency} />,
-          sub: conversionLabel(total, position.currencies.filter(c => c.outstanding > 0).map(c => c.currency)),
-        }}
-        secondary={{
-          label: 'Group control',
-          value: breaks.length === 0 ? 'Balanced' : `${breaks.length} break${breaks.length > 1 ? 's' : ''}`,
-          sub: breaks.length === 0
-            ? 'In-house bank positions net to zero in every currency'
-            : breaks.map(b => formatCurrency(b.control.difference, b.currency)).join(', '),
+          // The rates sit in a tooltip; a currency left out for want of a rate stays in view. The group
+          // control is each currency's badge below, and recharges awaiting approval are counted here.
+          sub: (
+            <span className="flex flex-wrap items-center gap-x-3">
+              {total.conversions.length > 0 ? (
+                <span className="inline-flex items-center gap-1 cursor-help" title={rates}>
+                  {total.conversions.map(c => c.currency).join(', ')} converted to {total.currency}
+                  {(() => {
+                    // Spec acceptance 1: the total shows its rate date; the rates themselves are in the tooltip.
+                    const dates = [...new Set(total.conversions.map(c => c.rateDate).filter(Boolean))] as string[];
+                    return dates.length === 1 ? ` at rates of ${formatDate(dates[0])}` : dates.length > 1 ? ' at rates of several dates' : ' (rate date unknown)';
+                  })()} <Info className="w-3.5 h-3.5" />
+                </span>
+              ) : total.unconvertedCurrencies.length === 0 && rates}
+              {total.unconvertedCurrencies.length > 0 && <span>Not included (no rate): {total.unconvertedCurrencies.join(', ')}</span>}
+              {awaitingApproval > 0 && <Badge variant="warning" size="sm">{awaitingApproval} recharge{awaitingApproval === 1 ? '' : 's'} awaiting approval</Badge>}
+            </span>
+          ),
         }}
         icon={<Scale className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
-
-      <StatStrip>
-        <StatTile layout="row" tone="primary" icon={<Landmark className="w-5 h-5" />} label="In-house bank positions" value={count(p => p.ihbPositions)} delay="0.18s" />
-        <StatTile layout="row" tone="warning" icon={<Receipt className="w-5 h-5" />} label="Open invoices" value={count(p => p.openInvoices)} delay="0.21s" />
-        <StatTile layout="row" tone="info" icon={<Zap className="w-5 h-5" />} label="Recharges awaiting netting" value={count(p => p.recharges)} sub={awaitingApproval > 0 ? `${awaitingApproval} more awaiting approval` : undefined} delay="0.24s" />
-        <StatTile layout="row" tone="accent" icon={<ArrowLeftRight className="w-5 h-5" />} label="Entity pairs" value={pairs.length} delay="0.27s" />
-      </StatStrip>
 
       {position.allSettled && (
         <Card className="animate-fade-in">
@@ -424,7 +428,10 @@ const IntercompanyDashboardPage: React.FC = () => {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
               <h3 className="section-title">{c.currency}</h3>
-              <span className="body-sm">{formatCurrency(c.outstanding, c.currency)} outstanding between entities</span>
+              {/* With one currency the hero already is this figure. */}
+              {position.currencies.length > 1 && (
+                <span className="body-sm">{formatCurrency(c.outstanding, c.currency)} outstanding between entities</span>
+              )}
             </div>
             <ControlBadge position={c} />
           </div>

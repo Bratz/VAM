@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Wallet, RefreshCw, Plus, Loader2, X, XCircle } from 'lucide-react';
+import { Building2, Wallet, RefreshCw, Plus, Loader2, X, XCircle, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input, Select, EmptyState, StatusIconBadge, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -9,7 +9,6 @@ import { corporatesApi } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { StatStrip } from '../components/layout/StatStrip';
 import { CoboEnrolmentsPanel } from '../components/treasury/CoboEnrolmentsPanel';
 import { PoboEnrolmentsPanel } from '../components/treasury/PoboEnrolmentsPanel';
 import { IhbChangesPanel, IhbInterestPanel, IhbMovementsPanel, IhbPositionPanel } from '../components/treasury/IhbBookPanels';
@@ -221,7 +220,7 @@ const EntityCard: React.FC<{
             <StatusIconBadge tone={isTreasuryCenter ? 'warning' : 'primary'} icon={Building2} />
             <div>
               <p className="body-strong font-semibold tracking-tight">{entity.entityName}</p>
-              <p className="caption">{entity.entityCode} • {entity.entityType}</p>
+              <p className="caption">{entity.entityCode} • {entity.entityType.charAt(0) + entity.entityType.slice(1).toLowerCase().replace('_', ' ')}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -420,7 +419,6 @@ const InHouseBankPage: React.FC = () => {
   };
 
   // Calculated values
-  const lenders = entities.filter(e => e.canLend);
   const borrowers = entities.filter(e => e.canBorrow);
 
   const tabs = [
@@ -453,18 +451,6 @@ const InHouseBankPage: React.FC = () => {
         loading={loadingSelectors}
       />
 
-      {/* Quick Actions migrated to Aperture Layout header. The corporate badge stays on the page body. */}
-      {selectedCorporateId && (
-        <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <Badge variant="info" size="sm" className="px-3 py-1">
-            <Building2 className="w-3 h-3 mr-1.5" />
-            {corporates.find(c => c.id === selectedCorporateId)?.tradeName ||
-             corporates.find(c => c.id === selectedCorporateId)?.legalName ||
-             'Selected'}
-          </Badge>
-        </div>
-      )}
-
       {/* Error Banner */}
       {error && (
         <Card padding="sm" className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
@@ -494,30 +480,6 @@ const InHouseBankPage: React.FC = () => {
       {/* Content when corporate is selected */}
       {selectedCorporateId && (
         <>
-          {/* Stats */}
-          <StatStrip>
-            <StatTile
-              layout="row"
-              tone="primary"
-              icon={<Building2 className="w-5 h-5" />}
-              label="IHB Entities"
-              value={entities.length}
-              sub={`${lenders.length} lenders, ${borrowers.length} borrowers`}
-              loading={loading}
-              delay="0.15s"
-            />
-            <StatTile
-              layout="row"
-              tone="info"
-              icon={<Wallet className="w-5 h-5" />}
-              label="Current Accounts"
-              value={currentAccounts.length}
-              sub="At the in-house bank"
-              loading={loading}
-              delay="0.2s"
-            />
-          </StatStrip>
-
       {/* Tabs */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
         <div className="border-b border-edge-subtle">
@@ -563,7 +525,7 @@ const InHouseBankPage: React.FC = () => {
                   onCreateCurrentAccount={() => handleQuickCurrentAccount(entity)}
                 />
               ))}
-              {entities.length === 0 && (
+              {entities.length === 0 && !loading && (
                 <div className="col-span-full text-center py-12">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No IHB-enabled entities</p>
@@ -584,12 +546,6 @@ const InHouseBankPage: React.FC = () => {
           {/* Current Accounts Tab */}
           {activeTab === 'current-accounts' && (
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="body-sm">{currentAccounts.length} IHB Current Accounts</p>
-                <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCurrentAccountModal(true)}>
-                  New Current Account
-                </Button>
-              </div>
               {currentAccounts.length > 0 ? (
                 <div className="grid gap-4 grid-cols-3">
                   {currentAccounts.map(account => (
@@ -693,7 +649,6 @@ const InHouseBankPage: React.FC = () => {
                               <span className="font-medium text-error-600 dark:text-error-300">{account.debitRate?.toFixed(2) ?? '-'}%</span>
                             </div>
                           </div>
-                          {account.defaultRates && <p className="caption mt-1">Built-in default rate on a side with none configured</p>}
                         </div>
 
                         {/* IHB Configuration Details */}
@@ -725,7 +680,7 @@ const InHouseBankPage: React.FC = () => {
                     </Card>
                   ))}
                 </div>
-              ) : (
+              ) : !loading && (
                 <EmptyState
                   icon={<Wallet className="w-12 h-12" />}
                   title="No IHB Current Accounts"
@@ -748,23 +703,8 @@ const InHouseBankPage: React.FC = () => {
         size="lg"
       >
         <div className="space-y-5">
-          {/* Description */}
-          <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:bg-cat-2/15">
-            <div className="flex items-start gap-3">
-              <StatusIconBadge tone="cat-2" icon={Wallet} className="shrink-0" />
-              <div>
-                <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">In-house bank current account</p>
-                <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
-                  The entity&apos;s account at the in-house bank: it earns credit interest on a positive balance and pays
-                  debit interest when overdrawn, up to its credit limit.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Participant Selection */}
           <div>
-            <p className="label mb-3">Participant</p>
             <div>
               <label className="field-label block mb-1">Entity *</label>
               <Select
@@ -778,20 +718,18 @@ const InHouseBankPage: React.FC = () => {
                   }));
                 }}
               >
-                <option value="">Select participant entity...</option>
+                <option value="">Select an entity that may borrow…</option>
                 {borrowers.map(e => (
                   <option key={e.id} value={e.id}>
                     {e.entityName} ({e.entityCode}) {e.settlementVaId ? '- Has Account' : ''}
                   </option>
                 ))}
               </Select>
-              <p className="caption mt-1">Only entities that may borrow from the in-house bank can have a current account</p>
             </div>
           </div>
 
           {/* Account Details */}
           <div>
-            <p className="label mb-3">Account Details</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label block mb-1">Currency</label>
@@ -802,7 +740,7 @@ const InHouseBankPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="field-label block mb-1">Credit Limit (Overdraft)</label>
+                <label className="field-label block mb-1">Credit limit (set on the entity)</label>
                 {(() => {
                   const participant = entities.find(en => en.id === currentAccountForm.participantEntityId);
                   return (
@@ -810,7 +748,6 @@ const InHouseBankPage: React.FC = () => {
                       {participant
                         ? formatCurrency(participant.creditLimit ?? 0, participant.ihbCurrency || currentAccountForm.currencyCode)
                         : '—'}
-                      <span className="caption block">The entity's IHB credit limit; change it on the entity</span>
                     </p>
                   );
                 })()}
@@ -818,101 +755,95 @@ const InHouseBankPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Interest Rates (Optional Override) */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="label">Interest Rates (Optional Override)</p>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
+          {/* Rate overrides, sweep and account name: optional, folded under Advanced. */}
+          <details className="group rounded-lg border border-edge">
+            <summary className="p-3 cursor-pointer list-none flex items-center justify-between">
+              <span className="field-label">Advanced: rate overrides, sweep, account name</span>
+              <ChevronRight className="w-4 h-4 text-neutral-400 transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="px-3 pb-3 space-y-5">
               <div>
-                <label className="field-label block mb-1">Credit Rate (%)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={currentAccountForm.creditRate}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, creditRate: e.target.value })}
-                  placeholder="Treasury default"
-                />
-                <p className="caption-success mt-1">Earned on positive balance</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="field-label block mb-1">Credit Rate (%)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={currentAccountForm.creditRate}
+                      onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, creditRate: e.target.value })}
+                      placeholder="Treasury default"
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label block mb-1">Debit Rate (%)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={currentAccountForm.debitRate}
+                      onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, debitRate: e.target.value })}
+                      placeholder="Treasury default"
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label block mb-1">Penalty Rate (%)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={currentAccountForm.penaltyRate}
+                      onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, penaltyRate: e.target.value })}
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+                <p className="caption mt-2">
+                  Rate overrides apply only where neither the entity nor treasury has a rate configuration in this currency.
+                </p>
               </div>
-              <div>
-                <label className="field-label block mb-1">Debit Rate (%)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={currentAccountForm.debitRate}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, debitRate: e.target.value })}
-                  placeholder="Treasury default"
-                />
-                <p className="caption-error mt-1">Charged on overdraft</p>
-              </div>
-              <div>
-                <label className="field-label block mb-1">Penalty Rate (%)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={currentAccountForm.penaltyRate}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, penaltyRate: e.target.value })}
-                  placeholder="Optional"
-                />
-                <p className="caption mt-1">On limit breach</p>
-              </div>
-            </div>
-            <p className="caption mt-2">
-              Used only when neither the entity nor treasury has a rate configuration in this currency; otherwise that configuration&apos;s rates apply.
-            </p>
-          </div>
 
-          {/* IHB Sweep Configuration */}
-          <div>
-            <p className="label mb-3">
-              IHB Sweep Configuration (Optional)
-            </p>
-            <div className="grid grid-cols-3 gap-4">
+              {/* IHB Sweep Configuration */}
               <div>
-                <Checkbox size="sm" label="Enable Auto-Sweep" checked={currentAccountForm.ihbSweepEnabled} onChange={(checked) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepEnabled: checked })} className="field-label" />
-                <p className="caption mt-1">Auto-sweep surplus to treasury pool</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Checkbox size="sm" label="Sweep surplus to treasury" checked={currentAccountForm.ihbSweepEnabled} onChange={(checked) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepEnabled: checked })} className="field-label" />
+                  </div>
+                  <div>
+                    <label className="field-label block mb-1">Target Balance</label>
+                    <Input
+                      type="number"
+                      value={currentAccountForm.targetCashBalance}
+                      onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, targetCashBalance: e.target.value })}
+                      placeholder="0 = sweep all"
+                      disabled={!currentAccountForm.ihbSweepEnabled}
+                    />
+                  </div>
+                  <div>
+                    <label className="field-label block mb-1">Sweep Frequency</label>
+                    <Select
+                      value={currentAccountForm.ihbSweepFrequency}
+                      onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepFrequency: e.target.value })}
+                      disabled={!currentAccountForm.ihbSweepEnabled}
+                    >
+                      <option value="DAILY">Daily</option>
+                      <option value="REAL_TIME">Real-Time</option>
+                      <option value="WEEKLY">Weekly</option>
+                    </Select>
+                  </div>
+                </div>
               </div>
+
+              {/* Custom VA Name (Optional) */}
               <div>
-                <label className="field-label block mb-1">Target Balance</label>
+                <label className="field-label block mb-1">
+                  Account Name (Optional)
+                </label>
                 <Input
-                  type="number"
-                  value={currentAccountForm.targetCashBalance}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, targetCashBalance: e.target.value })}
-                  placeholder="0 = sweep all"
-                  disabled={!currentAccountForm.ihbSweepEnabled}
+                  value={currentAccountForm.vaName}
+                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, vaName: e.target.value })}
+                  placeholder="Default: IHB Current - {Entity Name}"
                 />
-                <p className="caption mt-1">0 = sweep all surplus</p>
-              </div>
-              <div>
-                <label className="field-label block mb-1">Sweep Frequency</label>
-                <Select
-                  value={currentAccountForm.ihbSweepFrequency}
-                  onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepFrequency: e.target.value })}
-                  disabled={!currentAccountForm.ihbSweepEnabled}
-                >
-                  <option value="DAILY">Daily</option>
-                  <option value="REAL_TIME">Real-Time</option>
-                  <option value="WEEKLY">Weekly</option>
-                </Select>
               </div>
             </div>
-          </div>
-
-          {/* Custom VA Name (Optional) */}
-          <div>
-            <label className="field-label block mb-1">
-              Account Name (Optional)
-            </label>
-            <Input
-              value={currentAccountForm.vaName}
-              onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, vaName: e.target.value })}
-              placeholder="IHB Current - {Entity Name}"
-            />
-            <p className="caption mt-1">
-              Leave empty to auto-generate: IHB Current - [Entity Name]
-            </p>
-          </div>
+          </details>
 
           {/* Actions */}
           <div className="flex gap-3 pt-4 border-t">

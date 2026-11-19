@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, Skeleton } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { Page } from '../components/layout/Page';
@@ -140,37 +140,6 @@ function validate(form: CreateForm): Partial<Record<keyof CreateForm, string>> {
   }
   return errors;
 }
-
-// Stats Card
-const StatCard: React.FC<{
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  trend?: { value: number; positive: boolean };
-}> = ({ label, value, icon, color, trend }) => (
-  <Card hover>
-    <div className="p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">{label}</p>
-          <p className="stat-value-sm mt-1">{value}</p>
-          {trend && (
-            <p className={cn(
-              'text-caption mt-1',
-              trend.positive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
-            )}>
-              {trend.positive ? '↑' : '↓'} {trend.value}% vs last month
-            </p>
-          )}
-        </div>
-        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', color)}>
-          {icon}
-        </div>
-      </div>
-    </div>
-  </Card>
-);
 
 // Main Page Component
 const EscrowPage: React.FC = () => {
@@ -413,56 +382,27 @@ const EscrowPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Stats */}
-      <div className="grid gap-4 animate-fade-in grid-cols-4" style={{ animationDelay: '0.15s' }}>
-        {loading && !stats ? (
-          <>
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-          </>
-        ) : (
-          <>
-            <StatCard
-              label={reporting ? `Total Contract Value (${reporting})` : 'Total Contract Value'}
-              value={money(stats?.totalValue)}
-              icon={<DollarSign className="w-5 h-5 text-primary-600 dark:text-primary-200" />}
-              color="bg-primary-100 dark:bg-primary-700"
-            />
-            <StatCard
-              label="Active Contracts"
-              value={stats?.activeEscrows ?? 0}
-              icon={<Play className="w-5 h-5 text-success-600 dark:text-success-300" />}
-              color="bg-success-100 dark:bg-success-500/20"
-            />
-            <StatCard
-              label="Under Dispute"
-              value={stats?.disputed ?? 0}
-              icon={<AlertTriangle className="w-5 h-5 text-error-600 dark:text-error-300" />}
-              color="bg-error-100 dark:bg-error-500/20"
-            />
-            <StatCard
-              label={reporting ? `Escrow Balance (${reporting})` : 'Escrow Balance'}
-              value={money(stats?.escrowBalance)}
-              icon={<Shield className="w-5 h-5 text-info-600 dark:text-info-300" />}
-              color="bg-info-100 dark:bg-info-500/20"
-            />
-          </>
-        )}
+      {/* Money only: contract counts are the tab badges below */}
+      <div className="grid gap-4 grid-cols-2">
+        <StatTile
+          layout="row"
+          tone="primary"
+          label={reporting ? `Total contract value (${reporting})` : 'Total contract value'}
+          value={money(stats?.totalValue)}
+          icon={<DollarSign className="w-5 h-5" />}
+          loading={loading && !stats}
+          delay="0.15s"
+        />
+        <StatTile
+          layout="row"
+          tone="info"
+          label={reporting ? `Escrow balance (${reporting})` : 'Escrow balance'}
+          value={money(stats?.escrowBalance)}
+          icon={<Shield className="w-5 h-5" />}
+          loading={loading && !stats}
+          delay="0.15s"
+        />
       </div>
-
-      {/* Disputed Alert */}
-      {(stats?.disputed ?? 0) > 0 && (
-        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <Alert variant="warning" title="Contracts Under Dispute">
-            You have {stats?.disputed} contract(s) with active disputes requiring attention.
-            <Button variant="ghost" size="sm" className="ml-2" onClick={() => setActiveTab('disputed')}>
-              View Disputes
-            </Button>
-          </Alert>
-        </div>
-      )}
 
       {/* Contracts Table */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -761,7 +701,10 @@ const EscrowPage: React.FC = () => {
         onClose={closeMoneyModal}
         title={moneyAction?.mode === 'fund' ? 'Fund Escrow' : 'Release Funds'}
         subtitle={moneyAction
-          ? `${moneyAction.contract.escrowReference} · ${formatCurrency(moneyAction.contract.currentBalance, moneyAction.contract.currencyCode)} held in escrow`
+          // release: the amount hint already gives the balance
+          ? moneyAction.mode === 'fund'
+            ? `${moneyAction.contract.escrowReference} · ${formatCurrency(moneyAction.contract.currentBalance, moneyAction.contract.currencyCode)} held in escrow`
+            : moneyAction.contract.escrowReference
           : undefined}
         size="md"
         footer={
@@ -796,7 +739,7 @@ const EscrowPage: React.FC = () => {
               value={moneyForm.amount}
               error={moneyErrors.amount}
               hint={moneyAction.mode === 'fund'
-                ? `${formatCurrency(Math.max(0, moneyAction.contract.contractAmount - moneyAction.contract.fundedAmount), moneyAction.contract.currencyCode)} still to fund`
+                ? `${formatCurrency(Math.max(0, moneyAction.contract.contractAmount - moneyAction.contract.fundedAmount), moneyAction.contract.currencyCode)} still to fund${(moneyAction.contract.setupFee ?? 0) > 0 && (moneyAction.contract.totalFeesCharged ?? 0) === 0 ? '; the setup fee is taken from this first payment' : ''}`
                 : `${formatCurrency(moneyAction.contract.currentBalance, moneyAction.contract.currencyCode)} available, less the release fee`}
               onChange={(e) => setMoneyField('amount', e.target.value)}
             />
@@ -836,11 +779,6 @@ const EscrowPage: React.FC = () => {
                 />
               </>
             )}
-            <p className="caption">
-              {moneyAction.mode === 'fund'
-                ? 'The setup fee is taken from the escrow account on the first payment in.'
-                : 'A release fee is taken from the escrow account alongside the released amount.'}
-            </p>
           </form>
         )}
       </Modal>

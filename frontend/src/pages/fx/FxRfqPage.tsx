@@ -22,14 +22,13 @@ import { QUOTE_BADGE } from '../fxDealBadges';
 import NewDealDrawer, { TicketPrefill } from './NewDealDrawer';
 import { downloadCsv, errorText, fmt, fmtRate, when } from './fxFormat';
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'All outcomes' },
-  { value: 'ACCEPTED', label: 'Accepted' },
-  { value: 'QUOTED', label: 'Firm price (open)' },
-  { value: 'EXPIRED', label: 'Expired' },
-  { value: 'REJECTED', label: 'Declined' },
-  { value: 'CANCELLED', label: 'Withdrawn' },
-];
+// The outcome tiles are the filter. "Expired or withdrawn" is two statuses, so it is filtered here, not on the server.
+type Outcome = '' | 'ACCEPTED' | 'LAPSED' | 'REJECTED';
+const OUTCOME_STATUSES: Record<Exclude<Outcome, ''>, QuoteStatus[]> = {
+  ACCEPTED: ['ACCEPTED'],
+  LAPSED: ['EXPIRED', 'CANCELLED'],
+  REJECTED: ['REJECTED'],
+};
 
 const PERIOD_OPTIONS = [
   { value: '1', label: 'Last 24 hours' },
@@ -43,7 +42,7 @@ const FxRfqPage: React.FC = () => {
   const corporateId = currentCorporateId ?? '';
 
   const [pairs, setPairs] = useState<string[]>([]);
-  const [status, setStatus] = useState('');
+  const [outcome, setOutcome] = useState<Outcome>('');
   const [pair, setPair] = useState('');
   const [days, setDays] = useState('30');
   const [query, setQuery] = useState('');
@@ -68,14 +67,15 @@ const FxRfqPage: React.FC = () => {
     if (!corporateId) return;
     setLoading(true);
     try {
-      setLog(await fxDealApi.rfqLog(corporateId, { status: (status || undefined) as QuoteStatus | undefined, pair: pair || undefined, days: Number(days) }));
+      const statuses = outcome ? OUTCOME_STATUSES[outcome] : [];
+      setLog(await fxDealApi.rfqLog(corporateId, { status: statuses.length === 1 ? statuses[0] : undefined, pair: pair || undefined, days: Number(days) }));
       setError(null);
     } catch (err) {
       setError(errorText(err));
     } finally {
       setLoading(false);
     }
-  }, [corporateId, status, pair, days]);
+  }, [corporateId, outcome, pair, days]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -89,9 +89,11 @@ const FxRfqPage: React.FC = () => {
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (log?.quotes ?? []).filter((r) => !q || r.quote.pair.toLowerCase().includes(q) || (r.dealRef ?? '').toLowerCase().includes(q)
-      || (r.quote.purpose ?? '').toLowerCase().includes(q));
-  }, [log, query]);
+    return (log?.quotes ?? []).filter((r) => (!outcome || OUTCOME_STATUSES[outcome].includes(r.quote.status))
+      && (!q || r.quote.pair.toLowerCase().includes(q) || (r.dealRef ?? '').toLowerCase().includes(q)
+      || (r.quote.purpose ?? '').toLowerCase().includes(q)));
+  }, [log, query, outcome]);
+  const pick = (o: Outcome) => setOutcome((cur) => (cur === o ? '' : o));
 
   const askAgain = (r: RfqRow) => {
     const q = r.quote;
@@ -168,24 +170,26 @@ const FxRfqPage: React.FC = () => {
     <Page>
       <PageHeader
         title="RFQ Log"
-        description="Every request for a price, including those that expired, were withdrawn or were declined and so never became a deal. Hit rate is accepted over settled requests; a price still open and a request the desk declined do not count against it."
+        description="Every price request, including those that never became a deal."
         actions={<Button onClick={() => setTicket({ prefill: {} })} leftIcon={<Plus className="w-4 h-4" />}>New Deal</Button>}
       />
 
       <StatStrip columns={5}>
-        <StatTile tone="primary" icon={<Inbox className="w-5 h-5" />} label="Requests" value={String(s?.requests ?? 0)} sub={`${s?.priced ?? 0} priced`} loading={loading && !log} />
+        <StatTile tone="primary" icon={<Inbox className="w-5 h-5" />} label="Requests" value={String(s?.requests ?? 0)} sub={`${s?.priced ?? 0} priced`} loading={loading && !log}
+          onClick={() => setOutcome('')} active={!outcome} />
         <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Accepted" value={String(s?.accepted ?? 0)}
-          sub={s?.avgSecondsToAccept === undefined ? undefined : `in about ${s.avgSecondsToAccept}s`} />
+          sub={s?.avgSecondsToAccept === undefined ? undefined : `in about ${s.avgSecondsToAccept}s`} onClick={() => pick('ACCEPTED')} active={outcome === 'ACCEPTED'} />
         <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Expired or withdrawn" value={String((s?.expired ?? 0) + (s?.withdrawn ?? 0))}
-          sub={`${s?.expired ?? 0} expired, ${s?.withdrawn ?? 0} withdrawn`} />
-        <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Declined" value={String(s?.declined ?? 0)} sub="by the desk" />
-        <StatTile tone="info" icon={<Percent className="w-5 h-5" />} label="Hit rate" value={s?.hitRate === undefined ? '-' : `${Math.round(s.hitRate * 100)}%`} sub="accepted of settled" />
+          sub={`${s?.expired ?? 0} expired, ${s?.withdrawn ?? 0} withdrawn`} onClick={() => pick('LAPSED')} active={outcome === 'LAPSED'} />
+        <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Declined" value={String(s?.declined ?? 0)} sub="by the desk"
+          onClick={() => pick('REJECTED')} active={outcome === 'REJECTED'} />
+        <StatTile tone="info" icon={<Percent className="w-5 h-5" />} label="Hit rate" value={s?.hitRate === undefined ? '-' : `${Math.round(s.hitRate * 100)}%`} sub="accepted of decided" />
       </StatStrip>
 
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
 
       <Card>
-        <CardHeader title="Requests" subtitle={`${rows.length} shown`} />
+        <CardHeader title="Requests" />
         <DataTable<RfqRow>
           data={rows}
           columns={columns}
@@ -201,7 +205,6 @@ const FxRfqPage: React.FC = () => {
           emptyDescription="Nothing matches these filters in the period."
           actions={
             <>
-              <Select aria-label="Outcome" selectSize="sm" value={status} onChange={(e) => setStatus(e.target.value)} options={STATUS_OPTIONS} />
               <Select aria-label="Pair" selectSize="sm" value={pair} onChange={(e) => setPair(e.target.value)} options={[{ value: '', label: 'All pairs' }, ...pairs.map((p) => ({ value: p, label: p }))]} />
               <Select aria-label="Period" selectSize="sm" value={days} onChange={(e) => setDays(e.target.value)} options={PERIOD_OPTIONS} />
               <Button size="sm" variant="outline" onClick={refresh} leftIcon={<RefreshCw className="w-4 h-4" />}>Refresh</Button>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play, Send, RefreshCw } from 'lucide-react';
+import { Layers, Loader2, UserPlus, Trash2, Calendar, Percent, Pencil, PauseCircle, XCircle, Play, Send, RefreshCw } from 'lucide-react';
 import { Button, Badge, DataTable, Input, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
@@ -137,14 +137,8 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <p className="caption">Net at last run</p>
-            <p className="section-title">
-              {f?.lastRunDate ? formatCurrency(f.lastRunNet ?? 0, pool.poolCurrency) : '—'}
-            </p>
-            <p className="caption">{f?.lastRunDate ? `End of day ${f.lastRunDate}` : 'No run yet'}</p>
-          </div>
+        {/* Net and last day's interest are the first Daily runs row; members are counted in their heading. */}
+        <div className="grid grid-cols-5 gap-4">
           <div>
             <p className="caption">Credit / Debit Rate</p>
             <p className="section-title">
@@ -155,25 +149,14 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             )}
           </div>
           <div>
-            <p className="caption">Last day's interest</p>
-            <p className="section-title">
-              {f?.lastRunDate ? formatCurrency(f.lastRunPooledInterest ?? 0, pool.poolCurrency) : '—'}
-            </p>
-          </div>
-          <div>
-            <p className="caption">Members</p>
-            <p className="section-title">{members.length}</p>
-          </div>
-          <div>
             <p className="caption">Interest, month to date</p>
             <p className="section-title">{formatCurrency(f?.mtdPooledInterest ?? 0, pool.poolCurrency)}</p>
           </div>
           <div>
-            <p className="caption">Benefit, month to date</p>
+            <p className="caption" title="Pooled interest minus the interest each member would earn on its own">Benefit, month to date</p>
             <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">
               {formatCurrency(f?.mtdBenefit ?? 0, pool.poolCurrency)}
             </p>
-            <p className="caption">Pooled − standalone interest</p>
           </div>
           <div>
             <p className="caption">Benefit, year to date</p>
@@ -194,7 +177,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       {/* Members Section */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h4 className="font-medium text-primary-900 dark:text-neutral-50">Pool Members</h4>
+          <h4 className="font-medium text-primary-900 dark:text-neutral-50">Pool members ({members.length})</h4>
           <p className="caption">
             Header: <span className="font-mono">{header?.accountNumber || '—'}</span>
             {pool.poolFloor != null && <> · Debit floor {formatCurrency(pool.poolFloor, pool.poolCurrency)}</>}
@@ -247,7 +230,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       <DailyRuns pool={pool} onRuns={setRuns} />
 
       {/* Pool Info Footer */}
-      <div className="mt-6 pt-4 border-t grid grid-cols-3 gap-4 text-body-sm">
+      <div className="mt-6 pt-4 border-t grid grid-cols-2 gap-4 text-body-sm">
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
             <Calendar className="w-4 h-4" /> Effective From
@@ -259,14 +242,10 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
             <Percent className="w-4 h-4" /> Calculation Method
           </p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">
-            {pool.interestCalculationMethod && { DAILY_AVERAGE: 'Daily average', MONTH_END: 'Month end', TIER_BASED: 'Tiered' }[pool.interestCalculationMethod]}
+            {pool.interestCalculationMethod
+              ? ({ DAILY_AVERAGE: 'Daily average', MONTH_END: 'Month end', TIER_BASED: 'Tiered' } as Record<string, string>)[pool.interestCalculationMethod] ?? pool.interestCalculationMethod
+              : '-'}
           </p>
-        </div>
-        <div>
-          <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-            <Calculator className="w-4 h-4" /> Last Calculated
-          </p>
-          <p className="font-medium text-primary-900 dark:text-neutral-50">{pool.lastCalculationDate || 'Never'}</p>
         </div>
       </div>
 
@@ -353,7 +332,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
       <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
         <div>
           <h4 className="font-medium text-primary-900 dark:text-neutral-50">Daily runs</h4>
-          <p className="caption">End-of-day balances; pooled interest on the net. Benefit = pooled − standalone. Posted at month end. Click a date for its members.</p>
+          <p className="caption">Click a date to see its members.</p>
         </div>
         <div className="flex items-end gap-2">
           <Input id="pool-run-from" label="From" type="date" value={from} max={yesterday()} onChange={(e) => setFrom(e.target.value)} />
@@ -456,7 +435,7 @@ const DailyRuns: React.FC<{ pool: NotionalPool; onRuns: (runs: PoolRun[]) => voi
       <div className="flex flex-wrap items-end justify-between gap-3 mt-6 mb-3">
         <div>
           <h4 className="font-medium text-primary-900 dark:text-neutral-50">Postings</h4>
-          <p className="caption">One interest movement per member a month, on its statement; corrections post the difference.</p>
+          <p className="caption">One interest posting per member each month.</p>
         </div>
         <div className="flex items-end gap-2">
           <Input id="pool-post-month" label="Month" type="month" value={month} max={lastMonth()} onChange={(e) => setMonth(e.target.value)} />

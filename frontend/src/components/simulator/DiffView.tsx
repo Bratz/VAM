@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { Card, Button } from '../ui';
 import { cn } from '../../utils';
 import { DiffSummaryStrip } from './DiffSummaryStrip';
@@ -49,9 +49,6 @@ export const DiffView: React.FC<DiffViewProps> = ({
     );
   }
 
-  const changed =
-    result.counts.add + result.counts.modify + result.counts.retire;
-
   return (
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -59,8 +56,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
           Baseline frozen{' '}
           {result.snapshotTakenAt
             ? new Date(result.snapshotTakenAt).toLocaleString()
-            : '—'}{' '}
-          · {changed} change{changed === 1 ? '' : 's'}
+            : '—'}
         </p>
         {onRefreshSnapshot && (
           <Button
@@ -94,14 +90,6 @@ export const DiffView: React.FC<DiffViewProps> = ({
           </div>
         )}
       </Card>
-
-      <div className="flex items-start gap-2 px-4 py-3 rounded-lg border border-info-200 bg-info-50 dark:border-info-500/30 dark:bg-info-500/10">
-        <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-info-600 dark:text-info-300" />
-        <p className="body-sm text-info-800 dark:text-info-200">
-          Activation changes your live accounts and sweep rules, and is
-          recorded in the audit trail with a link back to this scenario.
-        </p>
-      </div>
     </div>
   );
 };

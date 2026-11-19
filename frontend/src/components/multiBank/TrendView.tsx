@@ -65,7 +65,7 @@ export const TrendView: React.FC<TrendViewProps> = ({ corporateId }) => {
   if (!loading && rows.length === 0) {
     return (
       <Card padding="md" className="text-center text-neutral-500 dark:text-neutral-400">
-        No trend history yet — snapshots accumulate as shadow balances are refreshed.
+        No trend history yet — snapshots accumulate as balances are refreshed.
       </Card>
     );
   }

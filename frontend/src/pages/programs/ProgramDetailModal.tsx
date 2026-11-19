@@ -1,6 +1,6 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
-import { Plus, Building2, CreditCard, Wallet, Shield, Banknote, CheckCircle, XCircle, Clock, Copy, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, FolderTree, Info, Settings, Pencil } from 'lucide-react';
+import { Plus, Building2, CreditCard, Wallet, Shield, Banknote, CheckCircle, XCircle, Clock, Copy, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, FolderTree, Info, Pencil } from 'lucide-react';
 import { Card, Badge, Button, StatusIconBadge } from '../../components/ui';
 import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
@@ -217,9 +217,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
               <div className="space-y-4">
                 <h3 className="body-strong font-semibold">Program Details</h3>
                 <Card padding="sm" className="space-y-3">
-                  <div className="flex justify-between"><span className="body-sm">Program Code</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.programCode}</span></div>
-                  <div className="flex justify-between"><span className="body-sm">Currency</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{program.currencyCode}</span></div>
-                  <div className="flex justify-between"><span className="body-sm">VA Prefix</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.vaPrefix || '-'}</span></div>
                   <div className="flex justify-between"><span className="body-sm">Created</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
                   {program.effectiveFrom && (
                     <div className="flex justify-between"><span className="body-sm">Effective From</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveFrom)}</span></div>
@@ -389,20 +386,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                       </Card>
                     )}
 
-                    {/* Info Box */}
-                    <div className="bg-info-50 border border-info-200 rounded-lg p-3 mt-4 dark:bg-info-500/10 dark:border-info-500/30">
-                      <div className="flex items-start gap-2">
-                        <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                        <div className="text-body-sm text-info-800 dark:text-info-300">
-                          <p className="font-medium">About Settlement VAs</p>
-                          <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
-                            <li>• Each hierarchy level can have Settlement VAs</li>
-                            <li>• Balances aggregate up the hierarchy tree</li>
-                            <li>• Exception VA catches unmatched transactions</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
@@ -418,42 +401,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 </div>
               ) : (
                 <>
-                  {/* VIBAN Generation Strategy */}
-                  <div>
-                    <h3 className="body-strong font-semibold mb-3 flex items-center gap-2">
-                      <Settings className="w-4 h-4" />Generation Strategy
-                    </h3>
-                    <div className="grid grid-cols-3 gap-3">
-                      {Object.entries(vibanStrategyConfig).map(([key, config]) => {
-                        const StrategyIcon = config.icon;
-                        const isActive = program.vibanGenerationStrategy === key;
-                        return (
-                          <Card 
-                            key={key} 
-                            padding="sm" 
-                            className={cn(
-                              // Read-only here (change it via "VIBAN settings"), so no pointer or hover.
-                              isActive && 'ring-2 ring-primary-500 border-primary-500 bg-primary-50 dark:bg-primary-800/40'
-                            )}
-                          >
-                            <div className="flex items-start gap-3">
-                              <StatusIconBadge tone={isActive ? 'primary' : 'neutral'} icon={StrategyIcon} solid={isActive} />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className={cn('font-medium', isActive ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-700 dark:text-neutral-200')}>
-                                    {config.label}
-                                  </span>
-                                  {isActive && <Badge variant="success" size="sm">Active</Badge>}
-                                </div>
-                                <p className="caption mt-1">{config.description}</p>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-
                   {/* VIBAN Configuration */}
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-4">
@@ -475,9 +422,11 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                         </div>
                         <div className="flex justify-between">
                           <span className="body-sm">Generation Strategy</span>
-                          <Badge variant="neutral">
-                            {vibanStrategyConfig[program.vibanGenerationStrategy || 'SEQUENTIAL']?.label}
-                          </Badge>
+                          <span title={vibanStrategyConfig[program.vibanGenerationStrategy || 'SEQUENTIAL']?.description}>
+                            <Badge variant="neutral">
+                              {vibanStrategyConfig[program.vibanGenerationStrategy || 'SEQUENTIAL']?.label}
+                            </Badge>
+                          </span>
                         </div>
                         {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' && (
                           <div className="pt-2 border-t">
@@ -499,11 +448,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' && 'L1L2-0001'}
                           {!program.vibanGenerationStrategy && '0000-0001'}
                         </div>
-                        <p className="caption text-center mt-2">
-                          {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' 
-                            ? 'Includes encoded hierarchy levels'
-                            : 'Standard VIBAN format'}
-                        </p>
                       </Card>
                     </div>
 
@@ -531,34 +475,11 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                               {vibanPool.status}
                             </Badge>
                           </div>
-                          <div className="pt-3 border-t">
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              <div>
-                                <p className="section-title">{vibanPool.poolSize}</p>
-                                <p className="caption">Total</p>
-                              </div>
-                              <div>
-                                <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{vibanPool.availableCount}</p>
-                                <p className="caption">Available</p>
-                              </div>
-                              <div>
-                                <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.assignedCount}</p>
-                                <p className="caption">Assigned</p>
-                              </div>
-                            </div>
-                            {/* Usage Progress Bar */}
-                            <div className="mt-3">
-                              <div className="flex justify-between caption mb-1">
-                                <span>Assigned</span>
-                                <span>{Math.round((vibanPool.assignedCount / vibanPool.poolSize) * 100)}%</span>
-                              </div>
-                              <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
-                                <div 
-                                  className="h-full bg-primary-500 rounded-full transition-all"
-                                  style={{ width: `${(vibanPool.assignedCount / vibanPool.poolSize) * 100}%` }}
-                                />
-                              </div>
-                            </div>
+                          <div className="pt-3 border-t flex items-center justify-between gap-3">
+                            <span className="body-sm">Available {vibanPool.availableCount} of {vibanPool.poolSize} · {vibanPool.assignedCount} assigned</span>
+                            <Button size="sm" variant="ghost" rightIcon={<ChevronRight className="w-4 h-4" />} onClick={() => { onClose(); navigate('viban'); }}>
+                              VIBAN Management
+                            </Button>
                           </div>
                         </Card>
                       ) : (
@@ -570,42 +491,14 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                         </Card>
                       )}
 
-                      {/* Quick Stats */}
-                      {vibanPool && (
-                        <div className="bg-accent-50 border border-accent-200 rounded-lg p-3 dark:bg-accent-500/10 dark:border-accent-500/30">
-                          <div className="flex items-start gap-2">
-                            <Info className="w-4 h-4 text-accent-600 mt-0.5 dark:text-accent-300" />
-                            <div className="text-body-sm text-accent-800 dark:text-accent-300">
-                              <p className="font-medium">Pool Capacity</p>
-                              <p className="text-accent-700 text-caption mt-1 dark:text-accent-300">
-                                {vibanPool.availableCount} VIBANs available for new virtual accounts
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {/* VIBAN Features Info */}
-                  <div className="bg-info-50 border border-info-200 rounded-lg p-4 dark:bg-info-500/10 dark:border-info-500/30">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-info-600 mt-0.5 dark:text-info-300" />
-                      <div>
-                        <p className="font-medium text-info-900">About VIBAN Generation</p>
-                        <ul className="mt-2 space-y-1 text-body-sm text-info-700 dark:text-info-300">
-                          <li>• <strong>Sequential:</strong> Best for predictable, ordered VIBAN allocation</li>
-                          <li>• <strong>Random:</strong> Enhanced security with unpredictable identifiers</li>
-                          <li>• <strong>Hierarchy Encoded:</strong> Enables automatic routing based on hierarchy structure</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
                 </>
               )}
             </div>
           )}
-          {/* Wallet Fees Tab - NEW */}{/* Wallet Fees Tab - NEW */}
+          {/* Wallet Fees Tab */}
           {!loading && activeTab === 'wallet' && (
             <div className="space-y-6">
               {walletChargesLoading ? (
@@ -793,48 +686,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     </div>
                   </div>
 
-                  {/* Fee Summary */}
-                  <div className="bg-surface-page rounded-lg p-4">
-                    <h4 className="label mb-3">Fee Status Summary</h4>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <p className="stat-value-sm">
-                          {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
-                            .filter(c => !c.isWaived && !c.hasOverride).length}
-                        </p>
-                        <p className="caption">Base Rates</p>
-                      </div>
-                      <div>
-                        <p className="stat-value-info">
-                          {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
-                            .filter(c => c.hasOverride && !c.isWaived).length}
-                        </p>
-                        <p className="caption">Overrides</p>
-                      </div>
-                      <div>
-                        <p className="stat-value-warning">
-                          {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
-                            .filter(c => c.isWaived).length}
-                        </p>
-                        <p className="caption">Waived</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Info Box */}
-                  <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
-                    <div className="flex items-start gap-2">
-                      <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                      <div className="text-body-sm text-info-800 dark:text-info-300">
-                        <p className="font-medium">About Wallet Fees</p>
-                        <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
-                          <li>• <strong>Base:</strong> The standard rate for all programs</li>
-                          <li>• <strong>Override:</strong> Program-specific customized rates</li>
-                          <li>• <strong>Waived:</strong> Fee is not charged for this program</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
                 </>
               ) : walletChargesError ? (
                 <Alert variant="error" title="Couldn't load wallet fees">
@@ -901,7 +752,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 <div className="grid grid-cols-2 gap-4">
                   <div><p className="caption mb-1">Prefix</p><p className="font-mono">{program.vaPrefix || 'None'}</p></div>
                   <div><p className="caption mb-1">Format</p><p className="font-mono">{program.vaFormat || 'Auto'}</p></div>
-                  <div><p className="caption mb-1">Max Accounts</p><p>{program.maxVirtualAccounts || 'Unlimited'}</p></div>
                 </div>
               </Card>
               {/* Wallet Limits - Only show if wallet is enabled */}

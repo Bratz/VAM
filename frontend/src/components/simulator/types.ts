@@ -20,6 +20,14 @@ export type ScenarioStatus =
   | 'ACTIVATED'
   | 'ARCHIVED';
 
+export const SCENARIO_STATUS_LABEL: Record<ScenarioStatus, string> = {
+  DRAFT: 'Draft',
+  READY: 'Ready',
+  PROPOSED: 'Proposed',
+  ACTIVATED: 'Activated',
+  ARCHIVED: 'Archived',
+};
+
 /**
  * Bank-relationship tiers. The live `physical_accounts.bank_relationship`
  * field currently emits only INTERNAL / EXTERNAL; GROUP is reserved so the

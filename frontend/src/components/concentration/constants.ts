@@ -17,6 +17,11 @@ export const FREQUENCIES = [
   { value: 'MONTHLY', label: 'Monthly' },
 ] as const;
 
+export const frequencyLabel = (f: string) => FREQUENCIES.find((x) => x.value === f)?.label ?? f;
+
+const RULE_STATUS: Record<string, string> = { ACTIVE: 'Active', PAUSED: 'Paused', DISABLED: 'Disabled' };
+export const ruleStatusLabel = (s: string) => RULE_STATUS[s] ?? s;
+
 /**
  * Every sweep execution status, one map for the list and the details. COMMITTED is an external-bank sweep instructed
  * at the other bank and awaiting its statement (SETTLED once confirmed, FAILED when rejected or expired).

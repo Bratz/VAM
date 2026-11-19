@@ -211,7 +211,7 @@ export const MandatesTab: React.FC<{ corporateId: string }> = ({ corporateId }) 
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-body-sm text-neutral-500 dark:text-neutral-400">
-          Authorities to collect from a customer's bank account by direct debit. Invoices from customers without a usable mandate are sent a Request to Pay.
+          Customers without a usable mandate are sent a Request to Pay.
         </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => { setUploadError(null); setUploadOpen(true); }} leftIcon={<Upload className="w-4 h-4" />}>Upload mandates</Button>
@@ -399,9 +399,7 @@ export const MandatesTab: React.FC<{ corporateId: string }> = ({ corporateId }) 
           </div>
           <Button size="sm" variant="secondary" onClick={template} leftIcon={<Download className="w-4 h-4" />}>Download template</Button>
           <p className="text-caption text-neutral-500 dark:text-neutral-400">
-            Required: mandateReference, customer (legal name or party code), creditorAccount (the account number paid into), schemeCode,
-            validFrom (YYYY-MM-DD). Optional: debtorIban and debtorBic (blank uses the customer's primary bank account), currency, type
-            (RECURRING or ONE_OFF), validTo, signedDate, maxPerCollection, frequency (e.g. 1/MONTH). The whole file is rejected if any row is wrong.
+            Fill in the template; a blank debtor IBAN uses the customer&apos;s primary bank account. The whole file is rejected if any row is wrong.
           </p>
           {uploadError && <p className="text-body-sm text-error-700 dark:text-error-300">{uploadError}</p>}
         </div>

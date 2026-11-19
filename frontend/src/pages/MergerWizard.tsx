@@ -667,7 +667,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         </li>
                         <li className="flex items-center gap-2">
                           <Check className="w-4 h-4" />
-                          Both source corporates become aggregations
+                          Both corporates become divisions of the new one
                         </li>
                         <li className="flex items-center gap-2">
                           <Check className="w-4 h-4" />
@@ -678,21 +678,6 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                           Currency mirrors created as needed
                         </li>
                       </ul>
-                    </div>
-
-                    <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
-                        <div>
-                          <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
-                          <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
-                            <li>• Create a new corporate entity</li>
-                            <li>• Convert both source ROOTs to AGGREGATION</li>
-                            <li>• Update all VA corporate_ids</li>
-                            <li>• Recalculate all balance aggregations</li>
-                          </ul>
-                        </div>
-                      </div>
                     </div>
 
                     <Checkbox size="sm" label="I confirm this merger has been approved by the boards of both corporates and all necessary due diligence and regulatory approvals have been obtained." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-surface-card border border-edge rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />

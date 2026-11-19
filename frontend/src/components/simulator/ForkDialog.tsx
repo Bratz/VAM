@@ -28,7 +28,6 @@ export const ForkDialog: React.FC<ForkDialogProps> = ({
     isOpen={open}
     onClose={onClose}
     title="Fork scenario"
-    subtitle="Create an independent A/B/C sibling for side-by-side comparison"
     size="md"
     footer={
       <div className="flex items-center justify-end gap-2">
@@ -48,17 +47,9 @@ export const ForkDialog: React.FC<ForkDialogProps> = ({
       </div>
     }
   >
-    <div className="space-y-3">
-      <p className="body-sm text-primary-900 dark:text-neutral-100">
-        Forking copies the current proposed structure of{' '}
-        <span className="code">{scenario.scenarioReference}</span> into a new
-        sibling scenario.
-      </p>
-      <ul className="space-y-1 body-sm text-neutral-500 dark:text-neutral-400">
-        <li>• The fork is edited independently — changes don’t affect the original.</li>
-        <li>• It’s auto-labelled (A / B / C…) within the comparison set.</li>
-        <li>• All siblings appear side-by-side in the Compare view.</li>
-      </ul>
-    </div>
+    <p className="body-sm text-primary-900 dark:text-neutral-100">
+      Copies <span className="code">{scenario.scenarioReference}</span> into a
+      new scenario you can edit on its own and compare side by side.
+    </p>
   </Modal>
 );

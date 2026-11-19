@@ -51,7 +51,7 @@ export const ProposeDrawer: React.FC<ProposeDrawerProps> = ({
       isOpen={open}
       onClose={onClose}
       title="Propose as live rules"
-      subtitle="Single-user activation — writes the proposed structure to the live tables"
+      subtitle="Applies the proposed structure to your live accounts"
       size="lg"
       footer={
         <div className="flex items-center justify-end gap-2">
@@ -74,10 +74,8 @@ export const ProposeDrawer: React.FC<ProposeDrawerProps> = ({
         <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-600 dark:text-warning-300" />
           <p className="body-sm text-warning-800 dark:text-warning-200">
-            This is the only path from the sandbox to live operations. It
-            creates live sweep rules between existing Shadow VAs and is fully
-            recorded to the audit trail. The action is atomic — any failure
-            rolls back with no partial writes.
+            Creates live sweep rules between your existing accounts and records
+            them in the audit trail. If any step fails, nothing is applied.
           </p>
         </div>
 

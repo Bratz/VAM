@@ -336,7 +336,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                   ? 'bg-info-50/80 dark:bg-info-500/10 border-info-200/60 dark:border-info-500/20'
                   : 'bg-white dark:bg-primary-900/40 border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30'
                 )}>
-                  <p className={cn('text-caption font-medium tracking-wide uppercase', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')}>External Ceiling</p>
+                  <p className={cn('text-caption font-medium tracking-wide uppercase', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')}>Bank limit</p>
                   <p className={cn('text-body-lg font-bold currency-value', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-400 dark:text-neutral-400')}>
                     {externalCeiling ? formatCurrency(externalCeiling, entity.functionalCurrency) : 'N/A'}
                   </p>

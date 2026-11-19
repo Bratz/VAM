@@ -138,7 +138,8 @@ export const StructureView: React.FC<StructureViewProps> = ({
           <div className="flex items-center gap-3">
             <p className="body-sm text-neutral-500 dark:text-neutral-400">
               {groups.length} bank{groups.length === 1 ? '' : 's'} ·{' '}
-              {distinctPhysical} Physical · {shadows.length} Shadow ·{' '}
+              {distinctPhysical} bank account{distinctPhysical === 1 ? '' : 's'} ·{' '}
+              {shadows.length} planned account{shadows.length === 1 ? '' : 's'} ·{' '}
               {rules.length} rule{rules.length === 1 ? '' : 's'} ·{' '}
               {pools.length} pool{pools.length === 1 ? '' : 's'}
             </p>
@@ -151,7 +152,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
                 disabled={shadows.length < 2}
                 title={
                   shadows.length < 2
-                    ? 'Add at least two shadows first'
+                    ? 'Add at least two planned accounts first'
                     : 'Add a sweep rule'
                 }
               >
@@ -167,7 +168,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
                 disabled={homeBankShadowCount < 2}
                 title={
                   homeBankShadowCount < 2
-                    ? 'Add at least two home-bank shadows first'
+                    ? 'Add at least two home-bank planned accounts first'
                     : 'Add a notional pool'
                 }
               >
@@ -181,7 +182,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
           <div className="flex flex-col items-center text-center gap-3 py-12">
             <FlaskConical className="w-6 h-6 text-neutral-400" aria-hidden />
             <p className="body-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
-              Add a Physical Account from the inventory to begin designing the
+              Add a bank account from the inventory to begin designing the
               structure.
             </p>
             {onInventoryDrawerOpenChange && (
@@ -240,8 +241,8 @@ export const StructureView: React.FC<StructureViewProps> = ({
       <Modal
         isOpen={inventoryDrawerOpen}
         onClose={() => onInventoryDrawerOpenChange?.(false)}
-        title="Available Physical Accounts"
-        subtitle="Add a Physical Account to the proposed structure"
+        title="Available bank accounts"
+        subtitle="Add a bank account to the proposed structure"
         size="lg"
       >
         <InventoryPanel

@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 // Features:
 // - Corporate & Program Selectors (session-only)
 // - Table view (the hierarchy lives on Balance Hierarchy)
-// - Account Detail Panel with tabs (Overview, Statements, Activity)
+// - Account Detail Panel with tabs (Overview, Statements)
 // - Owning Entity display for POBO/COBO
 // - Status management with transitions
 // - Export functionality
@@ -15,8 +15,8 @@ import type { LucideIcon } from 'lucide-react';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '../hooks/useNavigation';
-import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Landmark } from 'lucide-react';
-import { Card, Button, Badge, Input, EmptyState, Skeleton, Drawer, StatusIconBadge, DataTable } from '../components/ui';
+import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, AlertTriangle, FileText, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Landmark } from 'lucide-react';
+import { Card, Button, Badge, Input, EmptyState, Drawer, StatusIconBadge, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { VaVibanModal } from '../components/viban/VaVibanModal';
@@ -30,7 +30,6 @@ import { usePageHeaderActions } from '../context/usePageHeader';
 import toast from 'react-hot-toast';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 // ============================================================================
 // TYPES
@@ -41,7 +40,7 @@ type AccountCategory = 'TRANSACTION' | 'COLLECTION' | 'DISBURSEMENT' | 'SETTLEME
                        'EXCEPTION' | 'SUSPENSE' | 'ROOT' | 'AGGREGATION' | 
                        'PHYSICAL_MIRROR' | 'EXTERNAL_MIRROR' | 'CURRENCY_MIRROR' |
                        'INTERCOMPANY' | 'ESCROW' | 'NETTING';
-type DetailTab = 'overview' | 'statements' | 'activity';
+type DetailTab = 'overview' | 'statements';
 
 interface VirtualAccount {
   id: string;
@@ -346,86 +345,6 @@ const accountCategoryConfig: Record<AccountCategory, {
 // inline `SelectorBar` that lived here (Desktop + Mobile variants) is
 // removed; ScopeSelector handles responsive layout via flex-wrap and
 // renders identically across breakpoints.
-
-// ============================================================================
-// STATS CARDS COMPONENT
-// ============================================================================
-
-interface StatsCardsProps {
-  stats: VirtualAccountStats;
-  loading?: boolean;
-}
-
-const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
-  // Operational tiles only — the headline financial figures (Total Balance,
-  // Available) are now rendered above this strip by HeroMetricCard.
-  const cards = [
-    { label: 'Total Accounts', value: stats.totalAccounts, icon: Layers, color: 'primary', isBalance: false },
-    { label: 'Active', value: stats.activeAccounts, icon: CheckCircle, color: 'success', isBalance: false },
-    { label: 'Suspended', value: stats.suspendedAccounts, icon: PauseCircle, color: 'warning', isBalance: false },
-  ];
-
-  const colorMap: Record<string, { gradient: string }> = {
-    primary: { gradient: 'from-primary-50 to-white dark:from-primary-800/40 dark:to-primary-900', },
-    success: { gradient: 'from-success-50 to-white dark:from-success-500/15 dark:to-primary-900', },
-    warning: { gradient: 'from-warning-50 to-white dark:from-warning-500/15 dark:to-primary-900', },
-    info:    { gradient: 'from-info-50 to-white dark:from-info-500/15 dark:to-primary-900', },
-    accent:  { gradient: 'from-accent-50 to-white dark:from-accent-500/15 dark:to-primary-900', },
-  };
-
-  if (loading) {
-    return (
-      <StatStrip columns={3}>
-        {[...Array(3)].map((_, idx) => (
-          <Card key={idx} hover className="animate-fade-in" style={{ animationDelay: `${idx * 0.05}s` }}>
-            <div className="flex items-center gap-3">
-              <Skeleton className="w-10 h-10 rounded-lg" />
-              <div className="flex-1">
-                <Skeleton className="h-3 w-16 mb-2" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-            </div>
-          </Card>
-        ))}
-      </StatStrip>
-    );
-  }
-
-  return (
-    <StatStrip columns={3}>
-      {cards.map((card, idx) => {
-        const Icon = card.icon;
-        const colors = colorMap[card.color] || colorMap.primary;
-
-        return (
-          <Card
-            key={idx}
-            hover
-            className={cn(
-              "bg-gradient-to-br animate-fade-in",
-              colors.gradient,
-              "hover:shadow-card-hover transition-all duration-300"
-            )}
-            style={{ animationDelay: `${idx * 0.05}s` }}
-          >
-            <div className="flex items-center gap-3">
-              <StatusIconBadge tone={card.color as React.ComponentProps<typeof StatusIconBadge>['tone']} icon={Icon} className="shrink-0" />
-              <div className="min-w-0">
-                <p className="text-caption font-medium text-neutral-500 truncate dark:text-neutral-400">{card.label}</p>
-                <p className={cn(
-                  "font-bold text-primary-900 truncate dark:text-neutral-50",
-                  card.isBalance ? "text-body-lg" : "text-heading-md"
-                )}>
-                  {card.value}
-                </p>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
-    </StatStrip>
-  );
-};
 
 // ============================================================================
 // DESKTOP TABLE COLUMNS (DataTable)
@@ -856,7 +775,6 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         {[
           { id: 'overview' as DetailTab, label: 'Overview', icon: Eye },
           { id: 'statements' as DetailTab, label: 'Statements', icon: FileText },
-          { id: 'activity' as DetailTab, label: 'Activity', icon: Activity },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1156,54 +1074,6 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
               </div>
             )}
-          </div>
-        )}
-
-        {/* ACTIVITY TAB */}
-        {activeTab === 'activity' && (
-          <div className="space-y-4">
-            <Card>
-              <h3 className="body-strong font-semibold mb-3">Status History</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-body-sm">
-                  <StatusIconBadge tone="success" icon={CheckCircle} size="sm" rounded="full" />
-                  <div>
-                    <p className="font-medium text-primary-900 dark:text-neutral-50">Account Created</p>
-                    <p className="caption">{formatDate(account.createdAt)}</p>
-                  </div>
-                </div>
-                {account.status !== 'ACTIVE' && (
-                  <div className="flex items-center gap-3 text-body-sm">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      account.status === 'SUSPENDED' ? "bg-warning-100 dark:bg-warning-500/20" : "bg-error-100 dark:bg-error-500/20"
-                    )}>
-                      {account.status === 'SUSPENDED' 
-                        ? <PauseCircle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                        : <Ban className="w-4 h-4 text-error-600 dark:text-error-300" />
-                      }
-                    </div>
-                    <div>
-                      <p className="font-medium text-primary-900 dark:text-neutral-50">
-                        Account {account.status === 'SUSPENDED' ? 'Suspended' : 'Blocked'}
-                      </p>
-                      {(account.suspensionReason || account.blockReason) && (
-                        <p className="caption">
-                          {account.suspensionReason || account.blockReason}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            <Card>
-              <h3 className="body-strong font-semibold mb-3">Recent Activity</h3>
-              <p className="body-sm">
-                View the Statements tab for transaction history.
-              </p>
-            </Card>
           </div>
         )}
       </div>
@@ -1555,8 +1425,8 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         loading={loading}
       />
 
-      {/* Headline financial figures — Total Balance + Available side-by-side.
-          Treasurer's first read of the page. Operational tiles sit below.
+      {/* Headline financial figures — Total Balance + Available side-by-side,
+          with the account counts on the sub-line (no separate tile strip).
           Note: Available can legitimately exceed Total Balance when credit
           accounts are seeded (availableBalance = creditLimit on init). The
           sub-text on Available makes that explicit so the delta isn't read
@@ -1565,7 +1435,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         primary={{
           label: 'Total Balance',
           value: <TileAmount value={stats.totalBalance} />,
-          sub: 'Sum of current balances across programs and currencies',
+          sub: `${stats.totalAccounts} accounts · ${stats.activeAccounts} active · ${stats.suspendedAccounts} suspended`,
         }}
         secondary={{
           label: 'Available',
@@ -1574,9 +1444,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
         }}
         icon={<Banknote className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
-
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatsCards stats={stats} loading={loading} />
 
       {/* Main Content */}
       <Card padding="none">
@@ -1731,23 +1598,6 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 />
               </div>
             )}
-      </Card>
-
-      {/* Legend */}
-      <Card className="bg-surface-page">
-        <div className="flex flex-wrap items-center gap-4 text-caption">
-          <span className="font-medium text-neutral-600 dark:text-neutral-300">Account Types:</span>
-          {(['TRANSACTION', 'COLLECTION', 'DISBURSEMENT', 'CURRENCY_MIRROR', 'INTERCOMPANY'] as AccountCategory[]).map(cat => {
-            const config = accountCategoryConfig[cat];
-            const Icon = config.icon;
-            return (
-              <div key={cat} className="flex items-center gap-1.5">
-                <StatusIconBadge tone={config.tone} icon={Icon} size="xs" subtle />
-                <span className="text-neutral-600 dark:text-neutral-300">{config.label}</span>
-              </div>
-            );
-          })}
-        </div>
       </Card>
 
       {/* Account Detail Panel */}

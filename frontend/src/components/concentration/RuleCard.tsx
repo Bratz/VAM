@@ -4,7 +4,7 @@ import { Card, Button, Badge } from '../ui';
 import { formatRelativeTime } from '../../utils';
 import { TileAmount } from '../TileAmount';
 import { SweepRule } from '../../services/api';
-import { SWEEP_TYPES } from './constants';
+import { SWEEP_TYPES, frequencyLabel, ruleStatusLabel } from './constants';
 
 // ============================================================================
 // RULE CARD
@@ -28,7 +28,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-primary-900 dark:text-neutral-50">{rule.ruleName}</h3>
               <Badge variant={rule.status === 'ACTIVE' ? 'success' : 'warning'} size="sm">
-                {rule.status}
+                {ruleStatusLabel(rule.status)}
               </Badge>
             </div>
             <p className="body-sm">{rule.ruleReference}</p>
@@ -68,7 +68,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
           </div>
           <div>
             <p className="text-neutral-500 dark:text-neutral-400">Frequency</p>
-            <p className="font-medium">{rule.frequency}</p>
+            <p className="font-medium">{frequencyLabel(rule.frequency)}</p>
           </div>
           <div className="min-w-0">
             <p className="text-neutral-500 dark:text-neutral-400">Total Swept</p>

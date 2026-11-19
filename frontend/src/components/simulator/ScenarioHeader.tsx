@@ -4,7 +4,7 @@ import { Card, Button, Badge } from '../ui';
 import { cn } from '../../utils';
 import { SandboxBadge } from './SandboxBadge';
 import { ViewSwitcher, type SimulatorView } from './ViewSwitcher';
-import type { ScenarioStatus, SimulatorScenario } from './types';
+import { SCENARIO_STATUS_LABEL, type ScenarioStatus, type SimulatorScenario } from './types';
 
 // ============================================================================
 // ScenarioHeader — pure view. Scenario identity + lifecycle + save controls.
@@ -90,7 +90,7 @@ export const ScenarioHeader: React.FC<ScenarioHeaderProps> = ({
             />
             <SandboxBadge />
             <Badge variant={statusVariant} size="sm">
-              {scenario.status}
+              {SCENARIO_STATUS_LABEL[scenario.status] ?? scenario.status}
             </Badge>
           </div>
           <div className="mt-1 flex items-center gap-2 body-sm text-neutral-500 dark:text-neutral-400">
@@ -146,7 +146,7 @@ export const ScenarioHeader: React.FC<ScenarioHeaderProps> = ({
             title={
               proposeReady
                 ? 'Propose this structure as live rules'
-                : 'Mark the scenario READY and compute the score first'
+                : 'Mark the scenario ready and compute the score first'
             }
           >
             Propose as live rules

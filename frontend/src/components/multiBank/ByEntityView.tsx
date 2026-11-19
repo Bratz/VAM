@@ -120,7 +120,7 @@ export const ByEntityView: React.FC<ByEntityViewProps> = ({
 
       {entities.length === 0 && (
         <div className="bg-surface-card rounded-lg border border-edge p-12 text-center text-neutral-500 dark:text-neutral-400">
-          No shadows match the current filter.
+          No accounts match the current filter.
         </div>
       )}
 
@@ -136,7 +136,7 @@ export const ByEntityView: React.FC<ByEntityViewProps> = ({
                 <div>
                   <h2 className="section-title">{entity.entityName}</h2>
                   <p className="caption mt-0.5">
-                    {entity.shadowCount} shadow{entity.shadowCount === 1 ? '' : 's'} · {entity.currencies.length} currenc{entity.currencies.length === 1 ? 'y' : 'ies'}
+                    {entity.shadowCount} account{entity.shadowCount === 1 ? '' : 's'} · {entity.currencies.length} currenc{entity.currencies.length === 1 ? 'y' : 'ies'}
                   </p>
                 </div>
               </div>

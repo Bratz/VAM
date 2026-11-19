@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Link2, Mail, Calculator, DollarSign, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Mail, Calculator, DollarSign, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi, coboEnrolmentApi, type CoboEnrolment } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
 import { useIndicativeFx } from '../hooks/useIndicativeFx';
@@ -778,23 +778,6 @@ const TaxChargesTab: React.FC<{
   );
 };
 
-// Payment Link Tab
-// A real payment link + QR (backed by ReceivablesService.createInvoice()'s
-// paymentLink and PublicReceivablesController) only exist once the invoice is
-// actually saved -- see the post-creation confirmation Modal in handleSubmit.
-// This pre-submission tab just says so instead of faking a preview.
-const PaymentLinkTab: React.FC = () => (
-  <div className="flex items-center gap-3 p-4 bg-surface-page rounded-lg border border-edge">
-    <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
-      <Link2 className="w-5 h-5 text-info-600 dark:text-info-300" />
-    </div>
-    <div>
-      <p className="body-strong">Payment Link & QR Code</p>
-      <p className="caption">A real payment link and QR code are shown after you save.</p>
-    </div>
-  </div>
-);
-
 // Documents Tab
 const DocumentsTab: React.FC<{
   formData: ReceivableFormData;
@@ -1103,7 +1086,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const tabs = [
     { id: 'line-items', label: 'Line Items', icon: Package, badge: formData.useLineItems ? formData.lineItems.length : 0 },
     { id: 'tax-charges', label: 'Tax & Charges', icon: Calculator, badge: formData.charges.length },
-    { id: 'payment-link', label: 'Payment Link', icon: Link2, badge: 0 },
     { id: 'documents', label: 'References & Notes', icon: Paperclip, badge: formData.externalRefs.length },
     { id: 'email', label: 'Email', icon: Mail, badge: formData.sendInvoiceEmail ? 1 : 0 },
   ];
@@ -1324,30 +1306,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   title={isEditMode ? 'Edit Receivable' : 'Create Receivable'}
                   description={formData.invoiceNumber}
                 />
-              </div>
-              {/* Hidden below sm: this page also has an always-visible bottom
-                  action bar (Cancel/Save Draft/Create Invoice) with the same
-                  buttons -- on narrow screens there isn't room for both, and
-                  the bottom bar already covers it. */}
-              <div className="items-center gap-3 flex">
-                <button
-                  onClick={() => handleSubmit(true)}
-                  disabled={loading}
-                  className="px-4 py-2 field-label bg-surface-card border border-edge-strong rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
-                >
-                  Save Draft
-                </button>
-                <button
-                  onClick={() => handleSubmit(false)}
-                  disabled={loading || !canSubmit}
-                  className={cn(
-                    'px-4 py-2 text-body-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
-                    canSubmit ? 'bg-primary-600 hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'
-                  )}
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isEditMode ? 'Update' : 'Create Invoice'}
-                </button>
               </div>
             </div>
           </div>
@@ -1596,20 +1554,15 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <div className="flex items-start gap-3 p-4 rounded-lg border border-success-200 bg-success-50 dark:bg-success-500/10 dark:border-success-500/30">
                     <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
                     <div>
-                      <p className="body-strong">Collected by {cobo.collectorName ?? cobo.collectorCode} into {cobo.collectionVaName ?? cobo.collectionVaNumber}</p>
+                      <p className="body-strong">Collected by {cobo.collectorName ?? cobo.collectorCode} for {ownerName ?? cobo.subsidiaryName}</p>
                       {settleCurrency && settleCurrency !== formData.currency && (
                         <p className="body-sm">
-                          Collected by {cobo.collectorName ?? cobo.collectorCode} in {formData.currency}; credited to {ownerName ?? cobo.subsidiaryName}&apos;s {settleCurrency} account
+                          Paid in {formData.currency}; credited to {ownerName ?? cobo.subsidiaryName}&apos;s {settleCurrency} account
                           {indicative?.needsQuote ? ' — rate negotiated by treasury when it arrives'
                             : indicative?.settleAmount != null ? ` — indicative ${formatCurrency(indicative.settleAmount, settleCurrency)}`
                             : ' at the rate on the day it arrives'}
                         </p>
                       )}
-                      <p className="caption">
-                        {cobo.collectionVaNumber} · {ownerName ?? cobo.subsidiaryName} is enrolled for {cobo.currency}. The customer pays the
-                        treasury centre through a VIBAN named &ldquo;{cobo.collectorName} re: {cobo.subsidiaryName}&rdquo;; when the money
-                        arrives, {ownerName ?? cobo.subsidiaryName}&apos;s IHB current account is credited in full.
-                      </p>
                     </div>
                   </div>
                 )}
@@ -1678,12 +1631,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <span className="flex items-center gap-1 text-success-600 text-body-sm font-medium dark:text-success-300"><Check className="w-4 h-4" />Will generate on save</span>
                   )}
                 </div>
-                {formData.generateViban && (
-                  <div className="mt-4 p-4 bg-cat-1-soft rounded-lg border border-cat-1/10 dark:bg-cat-1/15 dark:border-cat-1/30">
-                    <p className="text-caption text-cat-1 dark:text-cat-1-fg font-medium">Virtual IBAN</p>
-                    <p className="text-body-sm text-cat-1 dark:text-cat-1-fg">A real VIBAN will be created and shown on the receivable once you save.</p>
-                  </div>
-                )}
               </div>}
             </div>
 
@@ -1721,13 +1668,11 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <div className="p-6">
                 {activeTab === 'line-items' && <LineItemsTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
                 {activeTab === 'tax-charges' && <TaxChargesTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
-                {activeTab === 'payment-link' && <PaymentLinkTab />}
                 {activeTab === 'documents' && <DocumentsTab formData={formData} setFormData={setFormData} />}
                 {activeTab === 'email' && <EmailTab formData={formData} setFormData={setFormData} email={selectedCustomer?.email} />}
                 {!activeTab && (
                   <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                     <p className="text-body-sm">Click a tab above to configure optional settings</p>
-                    <p className="text-caption mt-1">Line items, tax configuration, payment links, COBO, and more</p>
                   </div>
                 )}
               </div>
@@ -1763,7 +1708,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <p className="caption">Collection Account</p>
                     <p className="body-strong">{cobo ? `${cobo.collectionVaName ?? cobo.collectionVaNumber} (${cobo.collectorCode})` : selectedAccount?.accountName || '-'}</p>
                   </div>
-                  {(cobo || formData.generateViban) && (
+                  {/* a COBO invoice always gets a VIBAN; a direct one says so beside its Generate button */}
+                  {cobo && (
                     <div>
                       <p className="caption">VIBAN</p>
                       <p className="text-caption text-cat-1 dark:text-cat-1-fg">Will generate on save</p>

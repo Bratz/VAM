@@ -214,7 +214,7 @@ const MultiBankLiquidityPage: React.FC = () => {
       toast.loading(`Refreshing ${ok + fail} / ${targets.length}…`, { id: toastId });
     });
     if (fail === 0) {
-      toast.success(`Refreshed ${ok} shadow${ok === 1 ? '' : 's'}`, { id: toastId });
+      toast.success(`Refreshed ${ok} balance${ok === 1 ? '' : 's'}`, { id: toastId });
     } else {
       toast.error(`Refreshed ${ok} · ${fail} failed`, { id: toastId });
     }
@@ -243,7 +243,7 @@ const MultiBankLiquidityPage: React.FC = () => {
   const hasStaleWork = !!summary && (summary.staleCount + summary.neverRefreshedCount + failedCount) > 0;
 
   // Toolbar — Refresh stale is the primary action whenever there's stale
-  // work; Reload view is a secondary UI re-read.
+  // work; Reload is a secondary UI re-read.
   usePageHeaderActions(
     () => (
       <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ const MultiBankLiquidityPage: React.FC = () => {
           // navy reads the same in both themes. Spin icon-only during run;
           // the label stays put.
           className="px-3 py-1.5 text-body-sm bg-primary-900 hover:bg-primary-800 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={hasStaleWork ? 'Refetch all stale / failed / never-refreshed shadow balances' : 'Nothing to refresh'}
+          title={hasStaleWork ? 'Refresh every stale, failed or never-refreshed balance' : 'Nothing to refresh'}
         >
           <RefreshCw className={cn('w-4 h-4', bulkRefreshing && 'animate-spin')} />
           Refresh stale
@@ -268,7 +268,7 @@ const MultiBankLiquidityPage: React.FC = () => {
           className="px-3 py-1.5 text-body-sm bg-transparent border border-edge-strong text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
-          Reload view
+          Reload
         </button>
       </div>
     ),
@@ -336,8 +336,6 @@ const MultiBankLiquidityPage: React.FC = () => {
           setFilter={setFilter}
           setView={setView}
           failedCount={failedCount}
-          onBulkRefreshStale={bulkRefreshStale}
-          bulkRefreshing={bulkRefreshing}
           corporateId={selectedCorporateId || undefined}
           reportingCurrency={reportingCurrency}
           setReportingCurrency={setReportingCurrency}

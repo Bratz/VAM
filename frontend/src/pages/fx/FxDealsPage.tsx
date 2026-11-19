@@ -40,9 +40,8 @@ const CONFIRMATION_OPTIONS = [
 ];
 
 const FxDealsPage: React.FC = () => {
-  const { currentCorporateId, corporates } = useUser();
+  const { currentCorporateId } = useUser();
   const corporateId = currentCorporateId ?? '';
-  const corporateName = corporates.find((c) => c.id === corporateId)?.name;
 
   const [deals, setDeals] = useState<Deal[]>([]);
   const [limit, setLimit] = useState<CreditLimit | null>(null);
@@ -205,7 +204,7 @@ const FxDealsPage: React.FC = () => {
     <Page>
       <PageHeader
         title="FX Deals"
-        description="Your foreign-exchange deals with the bank. Use a row’s menu to confirm the bank’s confirmation, draw down a window, roll, close out early or change where it settles. On value date the sold currency is debited and the bought one credited to the deal’s accounts. The desk and rates are simulated."
+        description="Your FX deals with the bank. Open a row’s menu to confirm, roll, draw down or close out."
         actions={
           <>
             <Button variant="outline" onClick={() => { setRunResult(null); setRunError(null); setSettleOpen(true); }} leftIcon={<Play className="w-4 h-4" />}>Run settlement</Button>
@@ -216,13 +215,13 @@ const FxDealsPage: React.FC = () => {
 
       <StatStrip columns={4}>
         <StatTile tone="primary" icon={<Layers className="w-5 h-5" />} label="Open deals" value={String(open.length)}
-          sub={corporateName ?? 'selected corporate'} loading={loading && !deals.length} />
+          loading={loading && !deals.length} />
         <StatTile tone={net < 0 ? 'danger' : net > 0 ? 'success' : 'neutral'} icon={<Scale className="w-5 h-5" />} label="Worth today (net)"
           value={marked.length ? `${fmtSigned(net, 0)} ${marked[0].mtmHomeCurrency ?? ''}` : '-'}
-          sub={open.length > marked.length ? `${open.length - marked.length} deal(s) not marked` : marked.some((d) => d.mtmSource === 'SIMULATED') ? 'at simulated mid, home currency' : 'at mid, home currency'} />
-        <StatTile tone={limit && !limit.usable ? 'danger' : usedPct >= 95 ? 'danger' : usedPct >= 80 ? 'warning' : 'info'} icon={<CreditCard className="w-5 h-5" />} label={limit?.systemDefault ? 'FX line (default, not agreed terms)' : 'FX line'}
+          sub={open.length > marked.length ? `${open.length - marked.length} deal(s) not marked` : 'at mid, home currency'} />
+        <StatTile tone={limit && !limit.usable ? 'danger' : usedPct >= 95 ? 'danger' : usedPct >= 80 ? 'warning' : 'info'} icon={<CreditCard className="w-5 h-5" />} label="FX line"
           value={!limit ? '-' : limit.usable ? `${fmt(limit.used, 0)} of ${fmt(limit.limit, 0)}` : 'Not available'}
-          sub={!limit ? undefined : limit.usable ? `${fmt(limit.headroom, 0)} ${limit.currency} left; sub-limits per entity on Credit Limits` : limit.reason} />
+          sub={!limit ? undefined : limit.usable ? `${fmt(limit.headroom, 0)} ${limit.currency} left${limit.systemDefault ? '; default terms, not agreed' : ''}` : limit.reason} />
         <StatTile tone={attention.length ? 'warning' : 'success'} icon={<ShieldAlert className="w-5 h-5" />} label="Needs attention"
           value={String(attention.length)} sub={attention.length ? 'unconfirmed, disputed or failed' : 'nothing waiting'}
           onClick={attention.length || attentionOnly ? () => setAttentionOnly((v) => !v) : undefined} active={attentionOnly} />
@@ -233,7 +232,7 @@ const FxDealsPage: React.FC = () => {
       <Card>
         <CardHeader title="Deals" subtitle={`${shown.length} of ${deals.length}${attentionOnly ? ', needing attention' : ''}`}
           action={deals.some((d) => d.dealer === 'SIMULATED' || d.mtmSource === 'SIMULATED')
-            ? <Badge variant="warning">Simulated desk and rates</Badge> : undefined} />
+            ? <Badge variant="warning">Simulated</Badge> : undefined} />
         <DataTable<Deal>
           data={shown}
           columns={columns}
@@ -308,10 +307,7 @@ const FxDealsPage: React.FC = () => {
       >
         <div className="space-y-3">
           <p className="text-body-sm text-neutral-600 dark:text-neutral-300">
-            Settles every confirmed deal that is due, if the corporate holds the cash: the sold currency is debited and the bought one credited to the deal’s accounts. Pick a later date to move the demo clock forward.
-          </p>
-          <p className="text-caption text-warning-700 dark:text-warning-300">
-            Simulated settlement: there is no link to a settlement system, so a deal due by the date settles on the demo balances, including early when you pick a later date.
+            Settles every confirmed deal due by the date, if the corporate holds the cash, by debiting the sold currency and crediting the bought one to the deal’s accounts; a later date settles early, on the demo balances.
           </p>
           <Input label="Settle as of (optional)" type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
           {runError && <p className="text-body-sm text-error-700 dark:text-error-300">{runError}</p>}

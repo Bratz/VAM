@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
+import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, ArrowUpRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
 import { Button, Badge, Input, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -125,24 +125,6 @@ const CHARGE_CATEGORY_CONFIG: Record<ChargeCategory, { label: string; descriptio
   SLIDING_SCALE: { label: 'Sliding Scale', description: 'Progressive rates' },
 };
 
-const StatCard: React.FC<{ label: string; value: string | number; icon: LucideIcon; color: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; trend?: number; loading?: boolean }> = ({ label, value, icon: Icon, color, tone, trend, loading }) => (
-  <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <StatusIconBadge tone={tone} icon={Icon} subtle />
-        <div>
-          <p className="body-sm">{label}</p>
-          {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm
-              font-semibold`; the caller-supplied colour class (semantic or
-              cat-N categorical) overrides the utility's default ink. */}
-          {loading ? <div className="h-7 w-16 bg-neutral-200 animate-pulse rounded-md mt-1 dark:bg-primary-800" /> : <p className={cn('stat-value-xs', color)}>{value}</p>}
-        </div>
-      </div>
-      {trend !== undefined && <div className={cn('flex items-center gap-1 text-body-sm', trend >= 0 ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300')}>{trend >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}{Math.abs(trend)}%</div>}
-    </div>
-  </div>
-);
-
 const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: LucideIcon; label: string; count?: number }> = ({ active, onClick, icon: Icon, label, count }) => (
   <button onClick={onClick} className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all', active ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800')}>
     <Icon className="w-4 h-4" />{label}{count !== undefined && <Badge variant={active ? 'info' : 'neutral'} size="sm">{count}</Badge>}
@@ -194,16 +176,8 @@ const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxCon
     columns={[
       {
         key: 'taxName', header: 'Tax Code',
-        render: (_, c) => {
-          const typeConfig = TAX_TYPE_CONFIG[c.taxType] || TAX_TYPE_CONFIG.OTHER;
-          const TypeIcon = typeConfig.icon;
-          return (
-            <div className="flex items-center gap-2">
-              <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} size="sm" subtle />
-              <div><p className="body-strong">{c.taxName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.taxCode}</p></div>
-            </div>
-          );
-        },
+        // The Type column says the type; no icon for it here.
+        render: (_, c) => <div><p className="body-strong">{c.taxName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.taxCode}</p></div>,
       },
       { key: 'taxType', header: 'Type', render: (_, c) => <Badge variant="info" size="sm">{(TAX_TYPE_CONFIG[c.taxType] || TAX_TYPE_CONFIG.OTHER).label}</Badge> },
       { key: 'jurisdictionCode', header: 'Jurisdiction', render: (_, c) => <p className="body-sm">{c.jurisdictionCode}</p> },
@@ -229,7 +203,7 @@ const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxCon
         key: 'flags', header: 'Flags', align: 'center',
         render: (_, c) => (
           <div className="flex justify-center gap-1">
-            {c.isWithholding && <Badge variant="warning" size="sm">WHT</Badge>}
+            {c.isWithholding && c.taxType !== 'WHT' && <Badge variant="warning" size="sm">WHT</Badge>}
             {c.isRecoverable && <Badge variant="success" size="sm">Recoverable</Badge>}
           </div>
         ),
@@ -256,20 +230,13 @@ const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: 
     columns={[
       {
         key: 'chargeName', header: 'Charge Code',
-        render: (_, c) => {
-          const typeConfig = CHARGE_TYPE_CONFIG[c.chargeType] || CHARGE_TYPE_CONFIG.OTHER;
-          const TypeIcon = typeConfig.icon;
-          return (
-            <div className="flex items-center gap-2">
-              <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} size="sm" subtle />
-              <div>
-                <p className="body-strong">{c.chargeName}</p>
-                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p>
-                {c.systemDefault && <span title="Set up by the application at startup; not the bank's agreed tariff"><Badge variant="warning" size="sm">Default: not the bank&apos;s agreed terms</Badge></span>}
-              </div>
-            </div>
-          );
-        },
+        render: (_, c) => (
+          <div>
+            <p className="body-strong">{c.chargeName}</p>
+            <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p>
+            {c.systemDefault && <span title="Set up by the application at startup; not the bank's agreed tariff"><Badge variant="warning" size="sm">Default: not the bank&apos;s agreed terms</Badge></span>}
+          </div>
+        ),
       },
       { key: 'chargeType', header: 'Type', render: (_, c) => <Badge variant="info" size="sm">{(CHARGE_TYPE_CONFIG[c.chargeType] || CHARGE_TYPE_CONFIG.OTHER).label}</Badge> },
       { key: 'chargeCategory', header: 'Category', render: (_, c) => <Badge variant="neutral" size="sm">{(CHARGE_CATEGORY_CONFIG[c.chargeCategory] || CHARGE_CATEGORY_CONFIG.FIXED).label}</Badge> },
@@ -415,7 +382,6 @@ const TaxChargesSetupPage: React.FC = () => {
   const handleDeleteTax = async (taxCode: string) => { if (!confirm('Are you sure you want to delete this tax configuration?')) return; try { await taxChargesApi.deleteTaxConfig(taxCode); await fetchData(); toast.success('Tax configuration deleted'); } catch (error) { console.error('Failed to delete tax config:', error); toast.error('Failed to delete tax configuration'); } };
   const handleDeleteCharge = async (chargeCode: string) => { if (!confirm('Are you sure you want to delete this charge configuration?')) return; try { await taxChargesApi.deleteChargeConfig(chargeCode); await fetchData(); toast.success('Charge configuration deleted'); } catch (error) { console.error('Failed to delete charge config:', error); toast.error('Failed to delete charge configuration'); } };
 
-  const stats = { activeTaxConfigs: taxConfigs.filter(c => c.status === 'ACTIVE').length, activeChargeConfigs: chargeConfigs.filter(c => c.status === 'ACTIVE').length, jurisdictions: jurisdictions.filter(j => j.status === 'ACTIVE').length, withholdingTaxes: taxConfigs.filter(c => c.isWithholding && c.status === 'ACTIVE').length };
 
   return (
     <div className="space-y-6">
@@ -424,7 +390,6 @@ const TaxChargesSetupPage: React.FC = () => {
         description="Configure tax rates, jurisdictions, and fee schedules"
         actions={<><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button>{activeTab !== 'jurisdictions' && <Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : 'Add Charge'}</Button>}</>}
       />
-      <div className="grid gap-4 grid-cols-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" tone="info" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" tone="success" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2 dark:text-cat-2-fg" tone="cat-2" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" tone="warning" loading={loading} /></div>
       <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">
         <div className="flex items-center gap-2 p-4 border-b border-edge"><TabButton active={activeTab === 'taxes'} onClick={() => setActiveTab('taxes')} icon={Receipt} label="Tax Configurations" count={taxConfigs.length} /><TabButton active={activeTab === 'charges'} onClick={() => setActiveTab('charges')} icon={DollarSign} label="Charge Configurations" count={chargeConfigs.length} /><TabButton active={activeTab === 'jurisdictions'} onClick={() => setActiveTab('jurisdictions')} icon={Globe} label="Jurisdictions" count={jurisdictions.length} /></div>
         <div className="flex items-center gap-4 p-4 bg-surface-page border-b border-edge"><div className="flex-1 relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" /><Input className="pl-10" placeholder={`Search ${activeTab}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option value="ALL">All Status</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="PENDING">Pending</option></select>{activeTab === 'taxes' && <select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={filterJurisdiction} onChange={(e) => setFilterJurisdiction(e.target.value)}><option value="ALL">All Jurisdictions</option>{jurisdictions.map(j => (<option key={j.jurisdictionCode} value={j.jurisdictionCode}>{j.jurisdictionName}</option>))}</select>}</div>

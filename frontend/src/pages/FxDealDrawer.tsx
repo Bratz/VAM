@@ -189,7 +189,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                 <dd className="font-mono tabular-nums">{deal.forwardPoints > 0 ? '+' : ''}{deal.forwardPoints.toFixed(2)}</dd></div>
             </>)}
             {inForce && (
-              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Worth today ({deal.mtmSource === 'SIMULATED' ? 'simulated' : 'indicative'})</dt>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Worth today (indicative)</dt>
                 <dd className={cn('font-mono tabular-nums', toneFor(deal.mtmHome ?? deal.mtmQuote ?? 0))}>
                   {deal.mtmQuote === undefined ? 'Not available'
                     : deal.mtmHome !== undefined ? `${fmtSigned(deal.mtmHome, 0)} ${deal.mtmHomeCurrency}`
@@ -377,7 +377,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
             <EventTimeline entries={events} loading={!events.length} />
           </Section>
 
-          <p className="text-caption text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Simulated desk. No real trade or payment is made; settlement moves the demo account balances.</p>
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Simulated desk and rates: no real trade or payment is made; settlement moves the demo balances.</p>
         </div>
       )}
     </Drawer>

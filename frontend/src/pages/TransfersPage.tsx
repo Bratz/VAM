@@ -13,9 +13,9 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect } from 'react';
-import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building2, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Download, Plus, FileCode, ChevronRight, Globe, Trash2, Copy, TrendingUp, Wallet, CreditCard, Users, X, Briefcase, UserCheck, Search, Eye, BookOpen, FileText, Hash, Calendar, DollarSign, ArrowRightLeft } from 'lucide-react';
-import { Card, Button, Badge, Input, Select , StatusIconBadge, DataTable } from '../components/ui';
-import { Modal, Stepper } from '../components/ui/enhanced';
+import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building2, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Download, Plus, FileCode, ChevronRight, Globe, Trash2, Copy, Wallet, Users, X, Briefcase, UserCheck, Search, Eye, BookOpen, FileText, Calendar } from 'lucide-react';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable } from '../components/ui';
+import { Modal, Stepper, Tabs } from '../components/ui/enhanced';
 import { PaymentRouteOptions } from '../components/payments/PaymentRouteOptions';
 import { PaymentFxPanel, PaymentFx } from '../components/payments/PaymentFxPanel';
 import { useUser } from '../context/useUser';
@@ -118,103 +118,6 @@ interface BulkTransferItem {
 const LoadingSpinner: React.FC = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
-  </div>
-);
-
-// ============================================================================
-// STAT CARD COMPONENT
-// ============================================================================
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  subtitle?: string;
-  icon: React.ReactNode;
-  variant?: 'primary' | 'success' | 'warning' | 'info';
-  delay?: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, variant = 'primary', delay = '0s' }) => {
-  // Was missing dark: entirely, so every StatCard rendered as a washed-out
-  // white gradient tile in dark mode regardless of variant.
-  const variants = {
-    primary: 'from-primary-50/50 via-white to-primary-50/30 border-primary-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
-    success: 'from-success-50/50 via-white to-success-50/30 border-success-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
-    warning: 'from-warning-50/50 via-white to-warning-50/30 border-warning-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
-    info: 'from-info-50/50 via-white to-info-50/30 border-info-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
-  };
-
-  const iconBg = {
-    primary: 'bg-primary-100 dark:bg-primary-700',
-    success: 'bg-success-100 dark:bg-success-500/20',
-    warning: 'bg-warning-100 dark:bg-warning-500/20',
-    info: 'bg-info-100 dark:bg-info-500/20',
-  };
-
-  const iconColor = {
-    primary: 'text-primary-600 dark:text-primary-200',
-    success: 'text-success-600 dark:text-success-300',
-    warning: 'text-warning-600 dark:text-warning-300',
-    info: 'text-info-600 dark:text-info-300',
-  };
-
-  return (
-    <Card
-      className={cn('bg-gradient-to-br animate-fade-in', variants[variant])}
-      style={{ animationDelay: delay }}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="label mb-1">{title}</p>
-          <p className="stat-value-sm">{value}</p>
-          {subtitle && <p className="caption mt-1">{subtitle}</p>}
-        </div>
-        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', iconBg[variant])}>
-          <div className={iconColor[variant]}>{icon}</div>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// ============================================================================
-// TRANSFER TYPE CARD
-// ============================================================================
-
-interface TransferTypeCardProps {
-  id: TransferType;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-}
-
-const TransferTypeCard: React.FC<TransferTypeCardProps> = ({
-  label, description, icon, selected, onClick
-}) => (
-  <div
-    onClick={onClick}
-    className={cn(
-      'p-5 rounded-lg border-2 cursor-pointer transition-all duration-200',
-      selected
-        ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-white shadow-lg shadow-primary-100/50 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40'
-        : 'border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
-    )}
-  >
-    <div className={cn(
-      'w-12 h-12 rounded-lg flex items-center justify-center mb-4 transition-colors',
-      selected ? 'bg-primary-100 dark:bg-primary-700' : 'bg-surface-muted'
-    )}>
-      <div className={selected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}>{icon}</div>
-    </div>
-    <p className="font-semibold text-primary-900 dark:text-neutral-50">{label}</p>
-    <p className="body-sm mt-1">{description}</p>
-    {selected && (
-      <div className="mt-3">
-        <Badge variant="primary" size="sm" dot>Selected</Badge>
-      </div>
-    )}
   </div>
 );
 
@@ -378,13 +281,13 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   const getTypeInfo = () => {
     switch (transferType) {
       case 'internal':
-        return { label: 'Internal Transfer', icon: ArrowLeftRight, color: 'info', description: 'VA-to-VA transfer within hierarchy' };
+        return { label: 'Internal Transfer', icon: ArrowLeftRight, color: 'info' };
       case 'outward':
-        return { label: 'Outward Payment', icon: Globe, color: 'primary', description: 'ISO 20022 pain.001 payment' };
+        return { label: 'Outward Payment', icon: Globe, color: 'primary' };
       case 'inward':
-        return { label: 'Inward Collection', icon: ArrowDownLeft, color: 'success', description: 'ROBO collection via VIBAN' };
+        return { label: 'Inward Collection', icon: ArrowDownLeft, color: 'success' };
       case 'bulk':
-        return { label: 'Bulk Transfer', icon: Users, color: 'warning', description: `${bulkItems.length} recipient(s)` };
+        return { label: 'Bulk Transfer', icon: Users, color: 'warning' };
     }
   };
   const typeInfo = getTypeInfo();
@@ -397,41 +300,18 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                          bulkItems.length > 0;
   const hasAmount = amount > 0;
 
-  // Completion percentage
-  const completionSteps = [hasSource, hasDestination, hasAmount].filter(Boolean).length;
-  const completionPct = Math.round((completionSteps / 3) * 100);
-
   return (
     <div className="bg-surface-card rounded-lg border border-edge shadow-sm sticky top-24">
       {/* Header */}
       <div className="p-4 border-b border-edge-subtle bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center gap-3">
           <StatusIconBadge tone={typeInfo.color as 'info' | 'primary' | 'success' | 'warning'} icon={typeInfo.icon} />
-          <div>
-            <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{typeInfo.label}</h3>
-            <p className="caption">{typeInfo.description}</p>
-          </div>
+          <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{typeInfo.label}</h3>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-4 space-y-4">
-        {/* Progress Indicator */}
-        <div className="space-y-2">
-          <div className="flex justify-between caption">
-            <span>Completion</span>
-            <span>{completionPct}%</span>
-          </div>
-          <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
-            <div
-              className={cn(
-                'h-full transition-all duration-300 rounded-full',
-                completionPct === 100 ? 'bg-success-500' : 'bg-primary-500'
-              )}
-              style={{ width: `${completionPct}%` }}
-            />
-          </div>
-        </div>
 
         {/* From Section */}
         <div className="pb-4 border-b border-edge-subtle">
@@ -461,9 +341,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{sourceAccount.vaName}</p>
                 <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{sourceAccount.vaNumber}</p>
-                <p className="text-caption text-success-600 font-medium dark:text-success-300">
-                  Balance: {formatCurrency(sourceAccount.currentBalance, sourceAccount.currencyCode)}
-                </p>
               </div>
             </div>
           ) : (
@@ -691,10 +568,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
                 {/* Balance & Credit Limit Info */}
                 <div className="pt-2 border-t border-edge mt-2 space-y-1">
-                  <div className="flex justify-between text-caption">
-                    <span className="text-neutral-500 dark:text-neutral-400">Current Balance</span>
-                    <span className="text-neutral-700 dark:text-neutral-200">{formatCurrency(feePreview.fromBalance, feePreview.currency)}</span>
-                  </div>
                   {feePreview.creditLimitAvailable !== undefined && feePreview.creditLimitAvailable > 0 && (
                     <div className="flex justify-between text-caption">
                       <span className="text-neutral-500 dark:text-neutral-400">Credit Limit Available</span>
@@ -740,41 +613,16 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           </div>
         )}
 
-        {/* Balance Warning - Uses effective available balance (balance + credit limit) */}
-        {sourceAccount && amount > 0 && transferType !== 'inward' && (() => {
-          // Use preview's effective available balance if available, otherwise use account's current balance + credit limit
-          const effectiveBalance = feePreview?.effectiveAvailableBalance ??
-            (sourceAccount.currentBalance + (sourceAccount.creditLimitAvailable ?? 0));
-          const hasInsufficientFunds = amount > effectiveBalance;
-          const hasCreditLimit = (feePreview?.creditLimitAvailable ?? sourceAccount.creditLimitAvailable ?? 0) > 0;
-
-          return hasInsufficientFunds ? (
-            <div className="bg-error-50 border border-error-200 rounded-lg p-3 dark:bg-error-500/10 dark:border-error-500/30">
-              <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
-                <XCircle className="w-4 h-4" />
-                <span className="font-medium text-body-sm">Insufficient Funds</span>
-              </div>
-              <div className="caption-error mt-1 space-y-0.5">
-                <p>Balance: {formatCurrency(sourceAccount.currentBalance, sourceAccount.currencyCode)}</p>
-                {hasCreditLimit && (
-                  <p>Credit Available: +{formatCurrency(feePreview?.creditLimitAvailable ?? sourceAccount.creditLimitAvailable ?? 0, sourceAccount.currencyCode)}</p>
-                )}
-                <p className="font-medium">Effective Available: {formatCurrency(effectiveBalance, sourceAccount.currencyCode)}</p>
-              </div>
+        {/* Funds check before a fee quote exists (bulk never gets one); once quoted, the fee box says it */}
+        {!feePreview && sourceAccount && amount > 0 && transferType !== 'inward' && (() => {
+          const effectiveBalance = sourceAccount.currentBalance + (sourceAccount.creditLimitAvailable ?? 0);
+          return amount > effectiveBalance ? (
+            <div className="caption-error flex items-center gap-1">
+              <XCircle className="w-3 h-3" />
+              Insufficient funds: {formatCurrency(effectiveBalance, sourceAccount.currencyCode)} available
             </div>
           ) : null;
         })()}
-
-        {/* Status Indicator */}
-        <div className="flex items-center gap-2 py-2">
-          <div className={cn(
-            'w-2 h-2 rounded-full',
-            canSubmit ? 'bg-success-500' : 'bg-warning-400'
-          )} />
-          <span className="body-sm">
-            {canSubmit ? 'Ready to submit' : 'Complete all fields'}
-          </span>
-        </div>
 
         {/* Submit Button */}
         <Button
@@ -1182,13 +1030,6 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
-                      <Hash className="w-4 h-4 text-neutral-400" />
-                      <div>
-                        <p className="caption">Reference Number</p>
-                        <p className="body-strong">{transaction.referenceNumber}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                       <Calendar className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Transaction Date</p>
@@ -1201,22 +1042,6 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                             minute: '2-digit'
                           })}
                         </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
-                      <DollarSign className="w-4 h-4 text-neutral-400" />
-                      <div>
-                        <p className="caption">Amount</p>
-                        <p className="body-strong">
-                          {formatCurrency(transaction.amount, transaction.currencyCode)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
-                      <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
-                      <div>
-                        <p className="caption">Movement Type</p>
-                        <p className="body-strong">{transaction.movementType}</p>
                       </div>
                     </div>
                     {transaction.valueDate && (
@@ -2313,7 +2138,6 @@ export default function TransfersPage() {
   const todayTransfers = recentTransfers.filter(t =>
     t.status === 'COMPLETED' && new Date(t.transactionDate).toDateString() === new Date().toDateString()
   );
-  const todayVolume = todayTransfers.reduce((sum, t) => sum + t.amount, 0);
 
   // Steps for wizard
   const getSteps = () => {
@@ -2490,85 +2314,25 @@ export default function TransfersPage() {
             </Button>
           </div>
         </div>
-
-        {/* Mobile Layout */}
-        <div className="space-y-3 hidden">
-          <Select
-            value={selectedCorporateId}
-            onChange={(e) => {
-              setSelectedCorporateId(e.target.value);
-              setSelectedLegalEntityId('');
-              setSelectedProgramId('');
-            }}
-            options={[
-              { value: '', label: `All Corporates (${corporates.length})` },
-              ...corporates.map((c) => ({
-                value: c.id,
-                label: c.legalName || c.tradeName || 'Unnamed',
-              })),
-            ]}
-            disabled={loading}
-          />
-          <Select
-            value={selectedLegalEntityId}
-            onChange={(e) => setSelectedLegalEntityId(e.target.value)}
-            options={[
-              { value: '', label: `All Legal Entities (${legalEntities.length})` },
-              ...legalEntities.map((e) => ({
-                value: e.id,
-                label: `${e.entityName} (${e.entityType})`,
-              })),
-            ]}
-            disabled={loading || !selectedCorporateId}
-          />
-          <Select
-            value={selectedProgramId}
-            onChange={(e) => setSelectedProgramId(e.target.value)}
-            options={[
-              { value: '', label: `All Programs (${filteredPrograms.length})` },
-              ...filteredPrograms.map((p) => ({
-                value: p.id,
-                label: p.programName,
-              })),
-            ]}
-            disabled={loading}
-          />
-        </div>
       </Card>
 
-      {/* Stats */}
-      <div className="grid gap-4 grid-cols-4">
-        <StatCard
-          title="Today's Transfers"
-          value={todayTransfers.length.toString()}
-          subtitle="Completed"
+      {/* Stats — counts only: the accounts span currencies, so a summed balance or volume would mix them */}
+      <div className="grid gap-4 grid-cols-2">
+        <StatTile
+          layout="row"
+          tone="primary"
+          label="Completed today"
+          value={todayTransfers.length}
           icon={<Send className="w-5 h-5" />}
-          variant="primary"
           delay="0.1s"
         />
-        <StatCard
-          title="Volume Today"
-          value={formatCurrency(todayVolume)}
-          subtitle="Total transferred"
-          icon={<TrendingUp className="w-5 h-5" />}
-          variant="success"
-          delay="0.15s"
-        />
-        <StatCard
-          title="Transaction VAs"
-          value={accounts.length.toString()}
-          subtitle="Available for transfer"
+        <StatTile
+          layout="row"
+          tone="info"
+          label="Transaction accounts"
+          value={accounts.length}
           icon={<Wallet className="w-5 h-5" />}
-          variant="info"
-          delay="0.2s"
-        />
-        <StatCard
-          title="Total Balance"
-          value={formatCurrency(accounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
-          subtitle="Transaction VAs only"
-          icon={<CreditCard className="w-5 h-5" />}
-          variant="warning"
-          delay="0.25s"
+          delay="0.15s"
         />
       </div>
 
@@ -2600,43 +2364,17 @@ export default function TransfersPage() {
           {/* Main Form */}
           <div className="space-y-6 col-span-2">
             {/* Transfer Type Selection */}
-            <Card className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-              <h3 className="section-title mb-4">Select Transfer Type</h3>
-              <div className="grid grid-cols-4 gap-4">
-                <TransferTypeCard
-                  id="internal"
-                  label="Internal"
-                  description="VA-to-VA transfer"
-                  icon={<ArrowLeftRight className="w-6 h-6" />}
-                  selected={transferType === 'internal'}
-                  onClick={() => { setTransferType('internal'); setStep(1); resetForm(); }}
-                />
-                <TransferTypeCard
-                  id="outward"
-                  label="Outward"
-                  description="ISO 20022 pain.001"
-                  icon={<Globe className="w-6 h-6" />}
-                  selected={transferType === 'outward'}
-                  onClick={() => { setTransferType('outward'); setStep(1); resetForm(); }}
-                />
-                <TransferTypeCard
-                  id="inward"
-                  label="Inward"
-                  description="Collection / ROBO"
-                  icon={<ArrowDownLeft className="w-6 h-6" />}
-                  selected={transferType === 'inward'}
-                  onClick={() => { setTransferType('inward'); setStep(1); resetForm(); }}
-                />
-                <TransferTypeCard
-                  id="bulk"
-                  label="Bulk"
-                  description="Multiple recipients"
-                  icon={<Users className="w-6 h-6" />}
-                  selected={transferType === 'bulk'}
-                  onClick={() => { setTransferType('bulk'); setStep(1); resetForm(); }}
-                />
-              </div>
-            </Card>
+            <Tabs
+              fullWidth
+              tabs={[
+                { id: 'internal', label: 'Internal', icon: <ArrowLeftRight className="w-4 h-4" /> },
+                { id: 'outward', label: 'Outward', icon: <Globe className="w-4 h-4" /> },
+                { id: 'inward', label: 'Inward', icon: <ArrowDownLeft className="w-4 h-4" /> },
+                { id: 'bulk', label: 'Bulk', icon: <Users className="w-4 h-4" /> },
+              ]}
+              activeTab={transferType}
+              onChange={(id) => { setTransferType(id as TransferType); setStep(1); resetForm(); }}
+            />
 
             {/* Step Indicator */}
             <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
@@ -2668,7 +2406,6 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="success" icon={UserCheck} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Payer</p>
-                        <p className="caption">Choose from registered customers ({payers.length} available)</p>
                       </div>
                     </div>
 
@@ -2717,7 +2454,6 @@ export default function TransfersPage() {
                                 <p className="caption">BIC: {formData.debtorBic}</p>
                               )}
                             </div>
-                            <Badge variant="success" size="sm">Selected</Badge>
                           </div>
                         </div>
                       )}
@@ -2783,7 +2519,6 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="success" icon={ArrowDownLeft} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Credit Destination</p>
-                        <p className="caption">Enter VIBAN for auto-routing or select a VA directly</p>
                       </div>
                     </div>
 
@@ -2854,7 +2589,6 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="primary" icon={UserCheck} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Beneficiary</p>
-                        <p className="caption">Choose from registered parties ({beneficiaries.length} available)</p>
                       </div>
                     </div>
 
@@ -2916,7 +2650,6 @@ export default function TransfersPage() {
                                 <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{selectedBeneficiary.party.partyCode}</p>
                               </div>
                             </div>
-                            <Badge variant="success" size="sm" dot>Selected</Badge>
                           </div>
 
                           {/* Bank Account Selection */}
@@ -3252,12 +2985,6 @@ export default function TransfersPage() {
                   Continue
                 </Button>
               )}
-              {step === maxSteps && (
-                <p className="body-sm flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" />
-                  Review details in the sidebar and click Submit
-                </p>
-              )}
             </div>
           </div>
 
@@ -3290,7 +3017,6 @@ export default function TransfersPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="section-title">Recent Transfers</h3>
-              <p className="body-sm">Your transfer history</p>
             </div>
           </div>
 

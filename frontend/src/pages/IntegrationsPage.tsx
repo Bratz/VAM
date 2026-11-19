@@ -26,7 +26,7 @@ import {
 import { StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { Modal } from '../components/ui/enhanced';
+import { Alert, Modal } from '../components/ui/enhanced';
 import { formatRelativeTime, cn } from '../utils';
 import { getConnectorIcon } from '../components/connectorIconMap';
 import toast from 'react-hot-toast';
@@ -1129,21 +1129,12 @@ const IntegrationsPage: React.FC = () => {
             }
           />
 
-          {/* Stats */}
-          <div className="grid grid-cols-5 gap-6 mt-8">
-            {[
-              { label: 'Total', value: stats?.totalConnections ?? '—', sub: 'connections' },
-              { label: 'Active', value: stats?.activeConnections ?? '—', sub: 'connected' },
-              { label: 'Errors', value: stats?.errorConnections ?? '—', sub: 'need attention', alert: (stats?.errorConnections ?? 0) > 0 },
-              { label: 'Data Flows', value: stats?.totalDataFlows ?? '—', sub: 'configured' },
-              { label: 'Connectors', value: stats?.availableConnectors ?? '—', sub: 'available' },
-            ].map((stat, idx) => (
-              <div key={idx} className="text-center">
-                <p className={cn("text-heading-lg font-light", stat.alert ? 'text-error-600 dark:text-error-300' : 'text-neutral-900 dark:text-neutral-50')}>{stat.value}</p>
-                <p className="caption mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
+          {/* The tabs carry the counts; only connections in error get a line of their own. */}
+          {(stats?.errorConnections ?? 0) > 0 && (
+            <Alert variant="error" className="mt-6">
+              {stats?.errorConnections} {stats?.errorConnections === 1 ? 'connection needs' : 'connections need'} attention.
+            </Alert>
+          )}
         </div>
       </div>
 

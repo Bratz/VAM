@@ -821,25 +821,6 @@ const EnhancedReceivablesPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Search input — separated from the scope picker so each owns its
-          own role and visual recipe. The previous mixed row had the search
-          input flexing alongside three raw `<select>` boxes; with the scope
-          picker now living in its own ScopeSelector Card, search gets its
-          own narrow Card and reads cleaner. */}
-      <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-        <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <Input
-              placeholder="Search by invoice, customer, VIBAN or entity..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </Card>
-
       {/* Scope picker — Corporate + Entity. Entity goes in
           ScopeSelector's `rightSlot` so it gets the same medallion / label /
           Select recipe as the other two fields. */}
@@ -875,7 +856,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid gap-4 grid-cols-3 2xl:grid-cols-6">
+        <div className="grid gap-4 grid-cols-3">
           <StatsCard
             title="Total Receivables"
             value={formatCurrency(stats.totalReceivables, reportingCurrency)}
@@ -899,30 +880,6 @@ const EnhancedReceivablesPage: React.FC = () => {
             icon={<AlertTriangle className="w-5 h-5" />}
             color="rose"
             delay={0.25}
-          />
-          <StatsCard
-            title="COBO Outstanding"
-            value={formatCurrency(stats.coboPendingAmount || 0, reportingCurrency)}
-            subtitle={`${stats.coboPendingCount || 0} collected by treasury, unpaid`}
-            icon={<ArrowDownLeft className="w-5 h-5" />}
-            color="amber"
-            delay={0.3}
-          />
-          <StatsCard
-            title="Intercompany"
-            value={formatCurrency(stats.intercompanyAmount || 0, reportingCurrency)}
-            subtitle={`${stats.intercompanyCount || 0} IC invoices`}
-            icon={<Building2 className="w-5 h-5" />}
-            color="purple"
-            delay={0.35}
-          />
-          <StatsCard
-            title="In Netting"
-            value={formatCurrency(stats.nettingIncludedAmount || 0, reportingCurrency)}
-            subtitle={`${stats.nettingIncludedCount || 0} in cycle`}
-            icon={<GitMerge className="w-5 h-5" />}
-            color="emerald"
-            delay={0.4}
           />
         </div>
       )}
@@ -980,6 +937,18 @@ const EnhancedReceivablesPage: React.FC = () => {
 
         {/* Tab Content */}
         <div className="p-4">
+          {/* Table toolbar: filters the invoice lists (and their tab counts) */}
+          {['invoices', 'intercompany', 'pending-netting', 'cobo-history'].includes(activeTab) && (
+            <div className="relative mb-4 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Input
+                placeholder="Search by invoice, customer, VIBAN or entity..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-cat-1 dark:text-cat-1-fg" />
@@ -1086,7 +1055,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                             {invoice.nettingEligible && invoice.nettingStatus !== 'NOT_INCLUDED' && (
                               <Badge variant="info" size="sm" className="text-caption">
                                 <GitMerge className="w-3 h-3 mr-1" />
-                                {invoice.nettingStatus}
+                                {nettingStatusConfig[invoice.nettingStatus]?.label || invoice.nettingStatus}
                               </Badge>
                             )}
                           </div>
@@ -1532,7 +1501,7 @@ const EnhancedReceivablesPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Status</p>
-                <p className="font-medium">{viewInvoice.status}</p>
+                <div>{getStatusBadge(viewInvoice.status)}</div>
               </div>
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Invoice Date</p>
@@ -1567,13 +1536,13 @@ const EnhancedReceivablesPage: React.FC = () => {
               {viewInvoice.isCobo && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">COBO Status</p>
-                  <p className="font-medium">{viewInvoice.coboRequestStatus}</p>
+                  <div>{getCoboStatusBadge(viewInvoice.coboRequestStatus)}</div>
                 </div>
               )}
               {viewInvoice.nettingEligible && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">Netting Status</p>
-                  <p className="font-medium">{viewInvoice.nettingStatus}</p>
+                  <div>{getNettingStatusBadge(viewInvoice.nettingStatus)}</div>
                 </div>
               )}
             </div>

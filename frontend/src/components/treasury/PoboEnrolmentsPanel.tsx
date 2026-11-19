@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft, Plus, XCircle } from 'lucide-react';
-import { Badge, Button, DataTable, Select } from '../ui';
+import { Badge, Button, DataTable, RowActions, Select } from '../ui';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { Modal } from '../ui/enhanced';
 import { legalEntityApi, payablesApiPhase2, poboEnrolmentApi, type AwaitingFxPayable, type LegalEntity, type PoboCutoverItem, type PoboCutoverReport, type PoboEnrolment, type PoboPaymentAccount } from '../../services/api';
@@ -68,14 +68,16 @@ export const PoboEnrolmentsPanel: React.FC<{
           booked to the subsidiary's IHB current account, within its credit limit. No fee is charged.
         </p>
         <div className="flex gap-2 shrink-0">
-          {cutover && changes(cutover) > 0 && (
-            <Button size="sm" variant="outline" leftIcon={<ArrowRightLeft className="w-4 h-4" />} onClick={() => setCutoverOpen(true)}>
-              Move existing POBO payables and repair ({changes(cutover)})
-            </Button>
-          )}
           <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setAdding(true)}>
             Add enrolment
           </Button>
+          {/* One-off migration: in the overflow menu, shown only while there is something to move. */}
+          <RowActions label="More actions" actions={[{
+            label: `Move existing POBO payables and repair (${cutover ? changes(cutover) : 0})`,
+            icon: <ArrowRightLeft className="w-4 h-4" />,
+            onClick: () => setCutoverOpen(true),
+            hidden: !cutover || changes(cutover) === 0,
+          }]} />
         </div>
       </div>
       {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}

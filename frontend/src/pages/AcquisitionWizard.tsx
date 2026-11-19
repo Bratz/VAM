@@ -774,20 +774,6 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       </div>
                     )}
 
-                    <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
-                        <div>
-                          <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
-                          <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
-                            <li>• Change corporate_id for all target VAs</li>
-                            <li>• Recalculate all balance aggregations</li>
-                            <li>• Update hierarchy paths</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
                     <Checkbox size="sm" label="I confirm this acquisition has been approved by the board and all necessary due diligence has been completed." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-surface-card border border-edge rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (

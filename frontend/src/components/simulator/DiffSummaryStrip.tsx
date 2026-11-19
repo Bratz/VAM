@@ -18,7 +18,7 @@ const TILES: Array<{
   desc: string;
   tone: string;
 }> = [
-  { key: 'add', label: 'Add', desc: 'new shadows / rules', tone: 'text-success-700 dark:text-success-300' },
+  { key: 'add', label: 'Add', desc: 'new accounts / rules', tone: 'text-success-700 dark:text-success-300' },
   { key: 'modify', label: 'Modify', desc: 'changed in place', tone: 'text-warning-700 dark:text-warning-300' },
   { key: 'retire', label: 'Retire', desc: 'live, not proposed', tone: 'text-neutral-600 dark:text-neutral-300' },
   { key: 'unchanged', label: 'Unchanged', desc: 'identical', tone: 'text-neutral-500 dark:text-neutral-400' },

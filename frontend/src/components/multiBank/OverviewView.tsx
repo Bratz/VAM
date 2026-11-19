@@ -2,21 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   RefreshCw, AlertTriangle, Clock, Layers, Info, Banknote,
 } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { cn, formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
-  MultiBankBankBucket,
   multiBankLiquidityApi,
   TrendPoint,
 } from '../../services/api';
-import { Card, StatusIconBadge, Button, Badge } from '../ui';
+import { Card } from '../ui';
 import { HeroMetricCard } from '../ui/HeroMetricCard';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { StatStrip } from '../layout/StatStrip';
 import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
-import { BankSplitBar, BankShare } from './BankSplitBar';
+import type { BankShare } from './BankSplitBar';
 import { HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './bankSplitColours';
 import { ReportingRates } from '../../hooks/useReportingRates';
 import { FilterKey, ViewKey } from './types';
@@ -33,15 +31,15 @@ import { FilterKey, ViewKey } from './types';
 //
 // Composition (top to bottom, expanded mode):
 //   1. Hero — consolidated position (HeroMetricCard): total, available,
-//      1D/7D/30D delta + sparkline, currency picker, in-transit figure.
+//      1D/7D/30D delta, currency picker, in-transit figure.
 //   2. Liquidity distribution across banks — value-weighted, not count-based.
 //   3. Operational StatStrip — 4 filter tiles (total incl. home-bank/home
 //      bank name as its sub-line, stale, failed, never)
-//   4. Conditional freshness banner — refresh-all CTA when work exists
-//   5. Per-currency cards — bank split bar per currency (the page's one
-//      per-currency-totals section; a separate summary card used to repeat
-//      these same totals higher up and was removed)
-//   6. Filter chip row — selecting stale/failed/never bounces to By Bank
+// The sparkline (= Trend tab), freshness banner (= header "Refresh stale" +
+// tiles), per-currency cards (= By Currency tab) and filter chips (= tiles)
+// were removed in the density audit, round 2. With no filter UI left here,
+// the Overview always shows every bank (a home/external filter picked on
+// another tab no longer silently narrows the hero).
 //
 // `compact` mode (consumed by the cockpit's Multi-Bank Band) skips the hero,
 // the rate map, and the trend fetch entirely — it stays the lightweight
@@ -56,10 +54,6 @@ interface OverviewViewProps {
   /** Optional in `compact` mode (the band has no view-switching surface). */
   setView?: (v: ViewKey) => void;
   failedCount: number;
-  /** Optional in `compact` mode (freshness banner is suppressed). */
-  onBulkRefreshStale?: () => void;
-  /** Optional in `compact` mode. */
-  bulkRefreshing?: boolean;
   /** Scopes the hero's trend fetch. Optional in `compact` mode (no fetch runs there). */
   corporateId?: string;
   /**
@@ -90,23 +84,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   setFilter,
   setView,
   failedCount,
-  onBulkRefreshStale,
-  bulkRefreshing = false,
   corporateId,
   reportingCurrency = 'AED',
   setReportingCurrency = () => {},
   rateState = { rates: new Map(), excluded: [], loading: false },
   compact = false,
 }) => {
-  // Apply bank-level filter (home / external) to the slice we render per-
-  // currency cards from. Shadow-level filters (stale / failed / never) bounce
-  // the user to By Bank where the rows live; the Overview keeps showing the
-  // full picture in that case.
-  const visibleBanks: MultiBankBankBucket[] = useMemo(() => {
-    if (filter === 'home')     return summary.banks.filter(b => b.homeBank);
-    if (filter === 'external') return summary.banks.filter(b => !b.homeBank);
-    return summary.banks;
-  }, [summary, filter]);
+  // Always the full picture — the Overview has no filter UI of its own.
+  const visibleBanks = summary.banks;
 
   // Per-currency aggregation across visibleBanks. Within a single currency
   // we can sum amounts directly — FX-honest. Sorted by size descending to
@@ -174,7 +159,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   }, [currencies, rateState]);
 
   // ==========================================================================
-  // Historical trend (for the delta chip + sparkline) — fetched once per
+  // Historical trend (for the delta chip) — fetched once per
   // corporate scope, independent of the rate map so switching reporting
   // currency doesn't re-fetch history, only re-converts it.
   // ==========================================================================
@@ -238,12 +223,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- depending on convertDay itself would recompute this every render.
   }, [sortedDates, period, rateState, consolidated.total]);
 
-  const sparklineData = useMemo(
-    () => sortedDates.slice(-30).map((d) => ({ date: d, value: convertDay(d) ?? 0 })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- as above: convertDay is new each render, and only rateState changes what it returns.
-    [sortedDates, rateState],
-  );
-
   // Currency chip row — used in compact mode's inline strip and, in expanded
   // mode, as the slim body of the "Liquidity by currency" card below (the
   // By Currency tab is where the detailed bank-by-bank breakdown lives now).
@@ -296,13 +275,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     return { segments, topExternal };
   }, [summary.banks, rateState]);
 
-  const hasWork = summary.staleCount + summary.neverRefreshedCount + failedCount > 0;
-
-  // In compact mode the per-currency rail is capped at the top-4 by total
-  // effective so the band stays a glance-surface. The standalone page passes
-  // the full set (already sorted by size above).
-  const visibleCurrencies = compact ? currencies.slice(0, 4) : currencies;
-
   // Distribution panel — outer container differs in compact mode (no Card to
   // avoid a card-in-card visual).
   const DistributionWrap: React.FC<{ children: React.ReactNode }> = ({ children }) =>
@@ -325,7 +297,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-6 flex-wrap">
             <div>
-              <p className="label">Total shadows</p>
+              <p className="label">Accounts</p>
               <p className="stat-value-sm mt-0.5">{summary.totalShadows}</p>
             </div>
             <div>
@@ -405,29 +377,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                       ))}
                     </div>
                   </div>
-
-                  {sparklineData.length > 1 && (
-                    <div style={{ height: 40 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={sparklineData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
-                          <defs>
-                            <linearGradient id="mbl-sparkline-fill" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="rgb(var(--section-accent-warm))" stopOpacity={0.35} />
-                              <stop offset="100%" stopColor="rgb(var(--section-accent-warm))" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke="rgb(var(--section-accent-warm))"
-                            strokeWidth={1.5}
-                            fill="url(#mbl-sparkline-fill)"
-                            isAnimationActive={false}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
                 ),
               }}
@@ -461,7 +410,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               key={bank.bankBic}
               className={cn('h-full', colour)}
               style={{ width: `${pct}%` }}
-              title={`${bank.bankName ?? bank.bankBic} · ${bank.shadowCount} shadows · ${formatPct(pct)} of value`}
+              title={`${bank.bankName ?? bank.bankBic} · ${bank.shadowCount} accounts · ${formatPct(pct)} of value`}
             />
           ))}
         </div>
@@ -491,7 +440,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         <MetricCard
           icon={<Layers className="w-5 h-5" />}
           tone="primary"
-          label="Total Shadows"
+          label="Accounts"
           value={summary.totalShadows.toString()}
           sub={`${summary.homeBankShadows} at home bank${summary.homeBankName ? ` · ${summary.homeBankName}` : ''}`}
         />
@@ -523,133 +472,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           active={!compact && filter === 'never'}
         />
       </StatStrip>
-
-      {/* 4. Freshness banner — only when there's work. Suppressed in compact
-          mode because the cockpit's attention inbox already surfaces
-          stale balances as their own attention items. */}
-      {!compact && hasWork && (
-        <Card
-          padding="sm"
-          className="bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30"
-        >
-          <div className="flex items-center gap-3 flex-wrap">
-            <StatusIconBadge tone="warning" icon={RefreshCw} />
-            <p className="body-sm flex-1 min-w-0 text-neutral-700 dark:text-neutral-200">
-              {summary.staleCount + summary.neverRefreshedCount + failedCount} shadow balance{summary.staleCount + summary.neverRefreshedCount + failedCount === 1 ? '' : 's'} need attention. Effective totals exclude stale and never-refreshed positions.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onBulkRefreshStale}
-              disabled={bulkRefreshing}
-              leftIcon={<RefreshCw className={cn('w-4 h-4', bulkRefreshing && 'animate-spin')} />}
-            >
-              Refresh all
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {/* 5. Per-currency rail — bank split bar within each currency. In compact
-          mode the rail is capped to the top-4 currencies and uses lighter
-          chrome (bordered div instead of nested Card). */}
-      {visibleCurrencies.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-end justify-between">
-            <p className="label">By currency</p>
-            <p className="body-sm text-neutral-500 dark:text-neutral-400">
-              {compact && visibleCurrencies.length < currencies.length
-                ? `Top ${visibleCurrencies.length} of ${currencies.length} · effective balance · bank split`
-                : 'Effective balance · bank split'}
-            </p>
-          </div>
-          {visibleCurrencies.map((c) => {
-            const externalHeavy = c.bankShares.some((b) => b.homeBank) && c.homeBankShare < 0.5 && c.bankShares.length > 1;
-            const singleSourceExternal = c.bankShares.length === 1 && !c.bankShares[0].homeBank;
-            const inner = (
-              <>
-                <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {/* Currency code is a tabular identifier (mono) rendered
-                        at body-sm weight per multi-bank-redesign.md. The
-                        existing `.code` utility uses the same mono +
-                        primary text recipe but at xs size; we want sm here
-                        so the code line-aligns with the right-side stat. */}
-                    <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{c.currencyCode}</span>
-                    <span className="body-sm text-neutral-500 dark:text-neutral-400">
-                      {c.shadowCount} mirror{c.shadowCount === 1 ? '' : 's'} · {c.bankShares.length} bank{c.bankShares.length === 1 ? '' : 's'}
-                    </span>
-                    {externalHeavy && (
-                      <Badge variant="warning" size="xs">External-heavy</Badge>
-                    )}
-                    {singleSourceExternal && (
-                      <Badge variant="error" size="xs">Single source</Badge>
-                    )}
-                  </div>
-                  <p className="stat-value-xs">{formatCurrency(c.totalEffective, c.currencyCode)}</p>
-                </div>
-                <BankSplitBar bankShares={c.bankShares} total={c.totalEffective} />
-              </>
-            );
-            return compact ? (
-              <div
-                key={c.currencyCode}
-                className="rounded-lg border border-edge p-4"
-              >
-                {inner}
-              </div>
-            ) : (
-              <Card key={c.currencyCode} padding="sm">{inner}</Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* 6. Filter chips at the bottom — shadow-level filters bounce to By
-          Bank where the rows live; bank-level chips stay on Overview and
-          narrow the per-currency cards. Suppressed in compact mode (the
-          band is a glance-surface, not a filter UI). */}
-      {!compact && (
-      <div className="flex flex-wrap gap-2 pt-2">
-        {([
-          { key: 'all',      label: 'All' },
-          { key: 'home',     label: 'Home-bank' },
-          { key: 'external', label: 'External' },
-          { key: 'stale',    label: 'Stale',           count: summary.staleCount,         bounces: true },
-          { key: 'failed',   label: 'Failed',          count: failedCount,                bounces: true },
-          { key: 'never',    label: 'Never refreshed', count: summary.neverRefreshedCount, bounces: true },
-        ] as { key: FilterKey; label: string; count?: number; bounces?: boolean }[]).map(({ key, label, count, bounces }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => {
-              setFilter(key);
-              if (bounces) setView?.('by-bank');
-            }}
-            aria-current={filter === key ? 'true' : undefined}
-            className={cn(
-              'px-3 py-1 rounded-full text-caption font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
-              filter === key
-                ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-white dark:border-accent-500'
-                : 'bg-surface-card text-neutral-700 border-edge hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
-            )}
-          >
-            {label}{typeof count === 'number' ? ` · ${count}` : ''}
-          </button>
-        ))}
-      </div>
-      )}
-
-      {/* Helper context for the rare case where no banks match the filter. */}
-      {!compact && visibleBanks.length === 0 && (
-        <Card padding="md" className="text-center text-neutral-500 dark:text-neutral-400">
-          {filter === 'home'
-            ? 'No home-bank shadows.'
-            : filter === 'external'
-              ? 'No external-bank shadows.'
-              : 'No shadows match the current filter.'}
-        </Card>
-      )}
     </>
   );
 };

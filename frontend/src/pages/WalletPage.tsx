@@ -1154,17 +1154,12 @@ const WalletPage: React.FC = () => {
         <div className="flex gap-4 flex-row items-center">
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="primary" icon={Building2} size="sm" rounded="lg" />
-            <span className="font-medium text-primary-800 dark:text-neutral-100">Partner View</span>
+            <span className="font-medium text-primary-800 dark:text-neutral-100">Partner</span>
           </div>
           <select className="flex-1 max-w-xs border border-edge rounded-lg px-3 py-2 bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={selectedPartnerId} onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}>
             <option value="">All Partners</option>
             {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <div className="flex items-center gap-4 text-body-sm">
-            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{programs.length}</span> Programs</span>
-            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{stats?.activeWallets?.toLocaleString()}</span> Wallets</span>
-            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(stats?.totalBalance ?? 0)}</span> Float</span>
-          </div>
         </div>
       </Card>
 
@@ -1177,45 +1172,20 @@ const WalletPage: React.FC = () => {
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid gap-4 grid-cols-4">
-            <StatCard label="Total Float" value={formatCurrency(stats?.totalBalance ?? 0)} subValue={`Available: ${formatCurrency(stats?.totalAvailableBalance ?? stats?.totalBalance ?? 0)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
+            <StatCard label="Total balance" value={formatCurrency(stats?.totalBalance ?? 0)} subValue={`Available: ${formatCurrency(stats?.totalAvailableBalance ?? stats?.totalBalance ?? 0)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
             <StatCard label="Active Wallets" value={stats?.activeWallets?.toLocaleString() || '0'} subValue={`${stats?.suspendedWallets || 0} suspended`} icon={<CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />} iconBg="bg-success-50 dark:bg-success-500/10" loading={loading} delay="0.25s" />
             <StatCard label="Daily Volume" value={formatCurrency(stats?.dailyVolume || 0)} subValue={`${stats?.todayTransactions?.toLocaleString() || 0} transactions`} icon={<Activity className="w-5 h-5 text-info-600 dark:text-info-300" />} iconBg="bg-info-50 dark:bg-info-500/10" loading={loading} delay="0.3s" />
             <StatCard label="KYC Rate" value={`${Math.round(((stats?.kycVerifiedCount ?? 0) / ((stats?.kycVerifiedCount ?? 0) + (stats?.kycPendingCount ?? 0) || 1)) * 100)}%`} subValue={`${stats?.kycPendingCount ?? 0} pending verification`} icon={<Shield className="w-5 h-5 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-50 dark:bg-warning-500/10" loading={loading} delay="0.35s" />
           </div>
-          <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
-            <div className="grid gap-4 grid-cols-4">
-              <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
-                <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="group-hover:bg-primary-200 transition-colors" />
-                <span className="field-label">Issue Wallet</span>
-              </button>
-              <button onClick={() => setShowBulkLoadModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-success-300 hover:bg-success-50 dark:bg-success-500/10 transition-all group dark:hover:bg-success-500/10">
-                <StatusIconBadge tone="success" icon={Upload} rounded="lg" className="group-hover:bg-success-200 transition-colors" />
-                <span className="field-label">Bulk Load</span>
-              </button>
-              <button onClick={navigateToProgramsPage} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-info-300 hover:bg-info-50 dark:bg-info-500/10 transition-all group dark:hover:bg-info-500/10">
-                <StatusIconBadge tone="info" icon={Settings} rounded="lg" className="group-hover:bg-info-200 transition-colors" />
-                <span className="field-label">Programs</span>
-              </button>
-              <button onClick={() => setActiveTab('wallets')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 transition-all group dark:hover:bg-warning-500/10">
-                <StatusIconBadge tone="warning" icon={Search} rounded="lg" className="group-hover:bg-warning-200 transition-colors" />
-                <span className="field-label">Search</span>
-              </button>
-            </div>
-          </Card>
         </div>
       )}
 
       {/* Programs Tab */}
       {activeTab === 'programs' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-neutral-600 dark:text-neutral-300">Programs are managed in the Programs page.</p>
-            <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />} onClick={navigateToProgramsPage}>Go to Programs</Button>
-          </div>
           <div className="grid gap-6 grid-cols-2">
             {programs.map(p => <ProgramCard key={p.id} program={p} onClick={() => { setSelectedPartnerId(p.corporateId ?? ''); setCurrentPage(0); setActiveTab('wallets'); }} />)}
-            {!programs.length && <div className="col-span-2"><EmptyState icon={<Settings className="w-8 h-8" />} title="No programs" action={<Button onClick={navigateToProgramsPage}>Go to Programs</Button>} /></div>}
+            {!programs.length && <div className="col-span-2"><EmptyState icon={<Settings className="w-8 h-8" />} title="No programs" description="Set them up from Programs, above." /></div>}
           </div>
         </div>
       )}
@@ -1376,7 +1346,7 @@ const WalletPage: React.FC = () => {
       {/* ================================================================== */}
       {/* ISSUE WALLET MODAL - Enhanced with PartyPicker & Hierarchy */}
       {/* ================================================================== */}
-      <Modal isOpen={showIssueModal} onClose={() => { setShowIssueModal(false); resetIssueForm(); }} title="Issue New Wallet" subtitle="Create a wallet" size="lg"
+      <Modal isOpen={showIssueModal} onClose={() => { setShowIssueModal(false); resetIssueForm(); }} title="Issue New Wallet" size="lg"
         footer={<><Button variant="outline" onClick={() => { setShowIssueModal(false); resetIssueForm(); }}>Cancel</Button><Button onClick={handleIssueWallet} disabled={actionLoading}>{actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Issue Wallet</Button></>}>
         <div className="space-y-6">
           {/* Step 1: Program */}
@@ -1420,9 +1390,6 @@ const WalletPage: React.FC = () => {
               }}
               placeholder="Search or create customer..."
             />
-            {!selectedParty && (
-              <Alert variant="info" className="text-body-sm"><User className="w-4 h-4 inline mr-2" />Search existing or create new. Linking to Party enables KYC tracking.</Alert>
-            )}
           </div>
 
           {/* Step 3: Settings */}
@@ -1571,11 +1538,10 @@ const WalletPage: React.FC = () => {
                 <Badge variant={(kycStatusConfig[walletDetail.kycStatus] || kycStatusConfig.PENDING).color as any} size="sm">KYC: {walletDetail.kycStatus}</Badge>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {/* Phase 12 Task E: .stat-value-xs / .stat-value-* replace the raw `text-heading-sm font-semibold` hand-rolls. */}
               <Card padding="sm" className="bg-primary-50 dark:bg-primary-800/40"><p className="caption">Balance</p><p className="stat-value-xs">{formatCurrency(walletDetail.currentBalance)}</p></Card>
               <Card padding="sm" className="bg-success-50 dark:bg-success-500/10"><p className="caption">Available</p><p className="stat-value-xs text-success-600 dark:text-success-300">{formatCurrency(walletDetail.availableBalance)}</p></Card>
-              <Card padding="sm"><p className="caption">Monthly Spent</p><p className="stat-value-xs">{formatCurrency(walletDetail.monthlySpent || 0)}</p></Card>
             </div>
             <div>
               <h4 className="font-medium mb-3">Limits</h4>

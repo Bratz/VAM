@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, XCircle } from 'lucide-react';
+import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, CreditCard, Info, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
@@ -36,7 +36,7 @@ import type {
 import toast from 'react-hot-toast';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
+import { Tabs } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { usePageHeaderActions } from '../context/usePageHeader';
 
@@ -902,105 +902,6 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
     </div>
   );
 };
-
-// ============================================================================
-// HIERARCHY TREE VIEW COMPONENT
-// ============================================================================
-
-interface HierarchyTreeNodeProps {
-  node: VaHierarchyNode;
-  level?: number;
-  onSelect?: (node: VaHierarchyNode) => void;
-  selectedId?: string;
-}
-
-const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
-  node,
-  level = 0,
-  onSelect,
-  selectedId
-}) => {
-  const [expanded, setExpanded] = useState(level < 2);
-  const hasChildren = node.children && node.children.length > 0;
-  const isSelected = selectedId === node.id;
-
-  return (
-    <div className="select-none">
-      <div
-        className={cn(
-          "flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors",
-          isSelected ? "bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-neutral-50" : "hover:bg-neutral-50 dark:hover:bg-primary-800/50",
-          level > 0 && "ml-4"
-        )}
-        style={{ marginLeft: level * 16 }}
-        onClick={() => onSelect?.(node)}
-      >
-        {hasChildren ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(!expanded);
-            }}
-            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
-          >
-            {expanded ? (
-              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-            )}
-          </button>
-        ) : (
-          <div className="w-5" />
-        )}
-
-        <div className={cn(
-          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-          node.accountCategory === 'AGGREGATION' ? 'bg-info-100 dark:bg-info-500/20' :
-            node.accountCategory === 'ROOT' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-surface-muted'
-        )}>
-          {node.accountCategory === 'AGGREGATION' ? (
-            <Layers className="w-4 h-4 text-info-600 dark:text-info-300" />
-          ) : node.accountCategory === 'ROOT' ? (
-            <Network className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-          ) : (
-            <FileText className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* VA name reads as the row's primary identifier — body weight at
-              primary-900 tone. Code-style `.code` for the VA number. */}
-          <p className="body-sm text-primary-900 truncate dark:text-neutral-50">{node.vaName}</p>
-          <p className="code">{node.vaNumber}</p>
-        </div>
-
-        <div className="text-right shrink-0">
-          <p className="stat-value-xs">
-            {formatCurrency(node.currentBalance, node.currencyCode)}
-          </p>
-          {node.childCount > 0 && (
-            <Badge variant="neutral" size="sm">{node.childCount} children</Badge>
-          )}
-        </div>
-      </div>
-
-      {hasChildren && expanded && (
-        <div className="mt-1">
-          {node.children!.map((child) => (
-            <HierarchyTreeNode
-              key={child.id}
-              node={child}
-              level={level + 1}
-              onSelect={onSelect}
-              selectedId={selectedId}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ============================================================================
 // HISTORY CARD (Mobile)
 // ============================================================================
@@ -1165,7 +1066,7 @@ const StatementsPage: React.FC = () => {
 
   // New ISO20022 specific state
   const [statementMode, setStatementMode] = useState<StatementMode>('camt053');
-  const [hierarchy, setHierarchy] = useState<VaHierarchyNode | null>(null);
+  const [, setHierarchy] = useState<VaHierarchyNode | null>(null);
   const [aggregatedBalance, setAggregatedBalance] = useState<AggregatedBalance | null>(null);
   const [includeChildren, setIncludeChildren] = useState(true);
   const [showHierarchy, setShowHierarchy] = useState(false);
@@ -1355,16 +1256,16 @@ const StatementsPage: React.FC = () => {
     { value: '', label: 'Select account...' },
     ...accounts.map((acc) => ({
       value: acc.id,
-      label: `${acc.vaName} (${acc.vaNumber})${acc.accountCategory === 'AGGREGATION' ? ' [AGG]' : acc.accountCategory === 'ROOT' ? ' [ROOT]' : ''}`,
+      label: `${acc.vaName} (${acc.vaNumber})${acc.accountCategory === 'AGGREGATION' || acc.accountCategory === 'ROOT' ? ' · aggregation' : ''}`,
     })),
   ];
 
   // Statement mode options
   const modeOptions = [
-    { value: 'camt053', label: 'camt.053 - Account Statement' },
-    { value: 'camt054', label: 'camt.054 - Notifications' },
-    { value: 'aggregated', label: 'Aggregated Statement' },
-    { value: 'standard', label: 'Standard Statement' },
+    { id: 'camt053', label: 'Statement' },
+    { id: 'camt054', label: 'Notifications' },
+    { id: 'aggregated', label: 'Aggregated' },
+    { id: 'standard', label: 'Standard' },
   ];
 
   // Get currency code for statement
@@ -1454,27 +1355,21 @@ const StatementsPage: React.FC = () => {
     <Page>
       {/* In-body identity (Phase 10). Quick Actions are lifted into the
           Aperture Layout header via usePageHeaderActions above. The
-          contextual ISO20022 + Aggregation Account badges remain at the
-          page-body level because they describe the *currently selected
+          Aggregation account badge describes the *currently selected
           account*, not the page itself. */}
       <PageHeader
         title="Statements"
-        description="Generate ISO 20022 camt.053/054-compliant account statements, browse historical statements, and download in XML / PDF / CSV / MT940."
+        description="View, download and look up past account statements."
       />
 
-      {/* Contextual badges — render only when there's something to convey. */}
-      <div className="flex items-center gap-2">
-        <Badge variant="info" size="sm">
-          <FileCode className="w-3 h-3 mr-1" />
-          ISO 20022
-        </Badge>
-        {isAggregationAccount && (
+      {isAggregationAccount && (
+        <div className="flex items-center gap-2">
           <Badge variant="warning" size="sm">
             <Layers className="w-3 h-3 mr-1" />
-            Aggregation Account
+            Aggregation account
           </Badge>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Headline financial figure — only when a statement is loaded. The
           treasurer's first read should be the closing balance with net
@@ -1489,65 +1384,19 @@ const StatementsPage: React.FC = () => {
         return (
           <HeroMetricCard
             primary={{
-              label: 'Closing Balance',
+              label: 'Closing balance',
               value: formatCurrency(closingBalance, statementCurrency),
               sub: periodLabel,
             }}
             secondary={{
-              label: 'Net Movement',
+              label: 'Net movement',
               value: `${netMovement >= 0 ? '+' : ''}${formatCurrency(netMovement, statementCurrency)}`,
-              sub: `${statement.creditCount || 0} credits · ${statement.debitCount || 0} debits`,
+              sub: `${statement.creditCount || 0} credits +${formatCurrency(statement.totalCredits || 0, statementCurrency)} · ${statement.debitCount || 0} debits -${formatCurrency(statement.totalDebits || 0, statementCurrency)}`,
             }}
             icon={<Banknote className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
           />
         );
       })()}
-
-      {/* Operational metrics — Statement History totals + sync state.
-          Sits under the hero (or alone, on the empty state) so the page
-          always has a Phase 5 strip beneath the identity. */}
-      <StatStrip>
-        <Card hover className="bg-primary-50/40 dark:bg-primary-800/30">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="primary" icon={FileText} />
-            <div>
-              <p className="stat-value-sm">{history.length}</p>
-              <p className="label">Statements in History</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="bg-info-50/40 dark:bg-info-500/10">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="info" icon={Building2} />
-            <div>
-              <p className="stat-value-sm">{accounts.length}</p>
-              <p className="label">Accounts available</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="bg-success-50/40 dark:bg-success-500/10">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="success" icon={CheckCircle} />
-            <div>
-              <p className="stat-value-sm">
-                {history.filter((s: any) => s.format === 'CAMT053' || s.format === 'XML').length}
-              </p>
-              <p className="label">ISO 20022 ready</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="bg-accent-50/40 dark:bg-accent-500/10">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="accent" icon={Clock} />
-            <div>
-              <p className="stat-value-sm">
-                {history[0] ? formatDate(history[0].generatedAt) : '—'}
-              </p>
-              <p className="label">Latest generated</p>
-            </div>
-          </div>
-        </Card>
-      </StatStrip>
 
       {/* Enhanced Hierarchy View (for aggregation accounts) - Using new component */}
       {showHierarchy && selectedAccount && isAggregationAccount && (
@@ -1569,29 +1418,6 @@ const StatementsPage: React.FC = () => {
             }}
           />
         </div>
-      )}
-
-      {/* Legacy Hierarchy View (fallback when hierarchy data is available) */}
-      {showHierarchy && hierarchy && !selectedAccount && (
-        <Card className="animate-fade-in">
-          <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="info" icon={Network} />
-            <div>
-              <h3 className="section-title">Account Hierarchy</h3>
-              <p className="caption">
-                {aggregatedBalance?.childAccountCount || 0} child accounts |
-                Aggregated: {aggregatedBalance ? formatCurrency(aggregatedBalance.aggregatedBalance, aggregatedBalance.currencyCode) : '-'}
-              </p>
-            </div>
-          </div>
-          <div className="border rounded-lg p-2 max-h-64 overflow-y-auto">
-            <HierarchyTreeNode
-              node={hierarchy}
-              onSelect={(node) => setSelectedAccount(node.id)}
-              selectedId={selectedAccount}
-            />
-          </div>
-        </Card>
       )}
 
       {/* Enhanced Statement Download Panel (when account is selected) */}
@@ -1617,32 +1443,19 @@ const StatementsPage: React.FC = () => {
         <div className="bg-primary-50/40 border-b border-edge-subtle p-6 dark:bg-primary-800/30">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="primary" icon={FileText} />
-            <div>
-              <h3 className="section-title">ISO 20022 Statement Generator</h3>
-              <p className="caption">Generate camt.053 / 054-compliant statements</p>
-            </div>
+            <h3 className="section-title">Statement</h3>
           </div>
         </div>
 
         <div className="space-y-4 p-6">
-          {/* Statement Mode Selection */}
-          <div className="flex flex-wrap gap-2 pb-4 border-b border-edge-subtle">
-            {modeOptions.map((mode) => (
-              <Button
-                key={mode.value}
-                variant={statementMode === mode.value ? 'primary' : 'outline'}
-                size="sm"
-                onClick={() => setStatementMode(mode.value as StatementMode)}
-                leftIcon={
-                  mode.value === 'camt053' ? <FileText className="w-4 h-4" /> :
-                    mode.value === 'camt054' ? <Bell className="w-4 h-4" /> :
-                      mode.value === 'aggregated' ? <Layers className="w-4 h-4" /> :
-                        <FileText className="w-4 h-4" />
-                }
-              >
-                {mode.label}
-              </Button>
-            ))}
+          {/* Statement mode — one segmented control */}
+          <div className="pb-4 border-b border-edge-subtle">
+            <Tabs
+              tabs={modeOptions}
+              activeTab={statementMode}
+              onChange={(id) => setStatementMode(id as StatementMode)}
+              size="sm"
+            />
           </div>
 
           {/* Desktop Grid */}
@@ -1772,12 +1585,11 @@ const StatementsPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="section-title">
-                    {statementMode === 'camt053' ? 'camt.053 Statement' :
-                      statementMode === 'camt054' ? 'camt.054 Notifications' :
-                        statementMode === 'aggregated' ? 'Aggregated Statement' :
-                          'Account Statement'}
+                    {statementMode === 'camt053' ? 'Account statement' :
+                      statementMode === 'camt054' ? 'Notifications' :
+                        statementMode === 'aggregated' ? 'Aggregated statement' :
+                          'Account statement'}
                   </h3>
-                  <Badge variant="info" size="sm">ISO20022</Badge>
                   {statement.notificationInfo?.notificationType && (
                     <Badge
                       variant={statement.notificationInfo.notificationType === 'CREDIT' ? 'success' : 'error'}
@@ -1790,9 +1602,6 @@ const StatementsPage: React.FC = () => {
                 <p className="body-sm">
                   {statement.account?.name || statement.vaNumber || statement.vaName} |
                   {statement.account?.iban || statement.viban || ''}
-                </p>
-                <p className="caption mt-1">
-                  Period: {statement.fromDate || fromDate} to {statement.toDate || toDate}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1836,7 +1645,7 @@ const StatementsPage: React.FC = () => {
           {/* Group Header Section (camt.053/054) */}
           {statement.groupHeader && (
             <SectionCard
-              title="Group Header"
+              title="Message details"
               icon={<FileCode className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               collapsible
               defaultOpen={false}
@@ -1858,7 +1667,7 @@ const StatementsPage: React.FC = () => {
           {/* Statement Header Section */}
           {(statement.statementId || statement.electronicSeqNumber || statement.legalSeqNumber) && (
             <SectionCard
-              title="Statement Header"
+              title="Statement details"
               icon={<FileText className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               collapsible
               defaultOpen={false}
@@ -1869,8 +1678,6 @@ const StatementsPage: React.FC = () => {
                 <InfoRow label="Electronic Seq No" value={statement.electronicSeqNumber} />
                 <InfoRow label="Legal Seq No" value={statement.legalSeqNumber} />
                 <InfoRow label="Creation Date/Time" value={statement.creationDateTime ? formatDateTime(statement.creationDateTime) : undefined} icon={<Clock className="w-3 h-3" />} />
-                <InfoRow label="From Date" value={statement.fromDate} icon={<Calendar className="w-3 h-3" />} />
-                <InfoRow label="To Date" value={statement.toDate} icon={<Calendar className="w-3 h-3" />} />
                 {statement.copyDuplicateIndicator && (
                   <InfoRow label="Copy/Duplicate" value={statement.copyDuplicateIndicator} />
                 )}
@@ -1903,21 +1710,12 @@ const StatementsPage: React.FC = () => {
           {/* Notification Info (camt.054 specific) */}
           {statement.notificationInfo && (
             <SectionCard
-              title="Notification Info"
+              title="Notification"
               icon={<Bell className="w-4 h-4 text-warning-600 dark:text-warning-300" />}
               className="mt-4 mx-6"
-              badge={
-                <Badge
-                  variant={statement.notificationInfo.notificationType === 'CREDIT' ? 'success' : 'error'}
-                  size="sm"
-                >
-                  {statement.notificationInfo.notificationType}
-                </Badge>
-              }
             >
               <div className="grid gap-3 grid-cols-4">
                 <InfoRow label="Notification ID" value={statement.notificationInfo.notificationId} copyable />
-                <InfoRow label="Type" value={statement.notificationInfo.notificationType} />
                 <InfoRow label="Priority" value={statement.notificationInfo.priority} />
                 {statement.notificationInfo.realTimeTimestamp && (
                   <InfoRow label="Real-time Timestamp" value={formatDateTime(statement.notificationInfo.realTimeTimestamp)} />
@@ -1988,46 +1786,6 @@ const StatementsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Transaction Summary */}
-          {(statement.totalEntries || statement.creditCount || statement.debitCount) && (
-            <SectionCard
-              title="Transaction Summary"
-              icon={<Receipt className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
-              className="mt-4 mx-6"
-            >
-              {/* Transaction-summary tiles — `.stat-value-sm` carries the
-                  Phase 9 display tier (Fraunces serif + tabular-nums) for
-                  every figure. Tone overlays only set the colour. */}
-              <div className="grid gap-4 grid-cols-4">
-                <div className="text-center p-3 bg-surface-page rounded-lg">
-                  <p className="stat-value-sm">{statement.totalEntries || (statement.entries?.length || 0)}</p>
-                  <p className="caption">Total Entries</p>
-                </div>
-                <div className="text-center p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
-                  <p className="stat-value-sm text-success-600 dark:text-success-300">+{formatCurrency(statement.totalCredits || 0, statementCurrency)}</p>
-                  <p className="caption">{statement.creditCount || 0} Credits</p>
-                </div>
-                <div className="text-center p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
-                  <p className="stat-value-sm text-error-600 dark:text-error-300">-{formatCurrency(statement.totalDebits || 0, statementCurrency)}</p>
-                  <p className="caption">{statement.debitCount || 0} Debits</p>
-                </div>
-                <div className={cn(
-                  'text-center p-3 rounded-lg',
-                  (statement.totalCredits || 0) >= (statement.totalDebits || 0) ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10',
-                )}>
-                  <p className={cn(
-                    'stat-value-sm',
-                    (statement.totalCredits || 0) >= (statement.totalDebits || 0) ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300',
-                  )}>
-                    {(statement.totalCredits || 0) >= (statement.totalDebits || 0) ? '+' : ''}
-                    {formatCurrency((statement.totalCredits || 0) - (statement.totalDebits || 0), statementCurrency)}
-                  </p>
-                  <p className="caption">Net Amount</p>
-                </div>
-              </div>
-            </SectionCard>
-          )}
-
           {/* Aggregated Child Summary (for aggregated statements) */}
           {statementMode === 'aggregated' && statement.childStatements && statement.childStatements.length > 0 && (
             <div className="border-b border-edge p-6">
@@ -2060,9 +1818,6 @@ const StatementsPage: React.FC = () => {
                   {statement.entries?.length || statement.transactions?.length || 0} entries
                 </Badge>
               </h4>
-              <p className="caption block">
-                Click on any entry to expand details
-              </p>
             </div>
           </div>
 
@@ -2148,7 +1903,7 @@ const StatementsPage: React.FC = () => {
           <div className="flex justify-between gap-4 flex-row items-center">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="neutral" icon={Clock} size="sm" rounded="lg" />
-              <h3 className="section-title">Statement History</h3>
+              <h3 className="section-title">Statement history <span className="caption font-normal">· {history.length}</span></h3>
             </div>
             <div className="flex gap-2 flex-row">
               <Input

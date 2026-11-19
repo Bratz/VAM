@@ -141,8 +141,8 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Shadow VA' : 'Add Shadow VA'}
-      subtitle="A simulated mirror over a live Physical Account"
+      title={isEdit ? 'Edit planned account' : 'Add planned account'}
+      subtitle="A planned account over one of your live bank accounts"
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2">
@@ -155,7 +155,7 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
             onClick={handleCreate}
             disabled={!canCreate}
           >
-            {isEdit ? 'Save shadow' : 'Add shadow'}
+            {isEdit ? 'Save account' : 'Add account'}
           </Button>
         </div>
       }
@@ -222,7 +222,7 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          placeholder="Optional context for this shadow"
+          placeholder="Optional context for this account"
           textareaSize="sm"
         />
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Layers, Plus, TrendingUp, Users, DollarSign, RefreshCw, Building2, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, StatTile } from '../components/ui';
+import { Layers, Plus, DollarSign, RefreshCw, XCircle } from 'lucide-react';
+import { Card, Button, Skeleton } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
@@ -8,7 +8,6 @@ import { NotionalPool, corporatesApi, programsApi } from '../services/api';
 import { formatCurrency } from '../utils';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import toast from 'react-hot-toast';
 import { CreatePoolModal } from '../components/pooling/CreatePoolModal';
@@ -65,9 +64,6 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
     </div>
   </Card>
 );
-
-// Phase 12 Task E: local StatCard clone replaced by the shared <StatTile>
-// (components/ui/StatTile, layout="row") — see the metric strip below.
 
 // Picker now uses the shared `<ScopeSelector mode="corporate-program">`
 // primitive from components/layout/. The inline `SelectorBar` (Desktop +
@@ -185,12 +181,8 @@ const NotionalPoolingPage: React.FC = () => {
       (!selectedProgramId || p.programId === selectedProgramId));
   }, [pools, selectedCorporateId, selectedProgramId]);
 
-  // Recalculate stats for filtered pools
-  const filteredStats = useMemo(() => ({
-    totalPools: filteredPools.length,
-    activePools: filteredPools.filter(p => p.status === 'ACTIVE').length,
-    totalMembers: filteredPools.reduce((s, p) => s + (p.memberCount || 0), 0),
-  }), [filteredPools]);
+  // The grid shows every pool; the hero says how many of them are active.
+  const activePools = filteredPools.filter(p => p.status === 'ACTIVE').length;
 
   // Money figures per currency, from each pool's daily runs (R15): never added across currencies. Net = the last
   // run's net of the open pools; benefit (pooled − standalone) month and year to date of every pool.
@@ -275,22 +267,8 @@ const NotionalPoolingPage: React.FC = () => {
         disableChildUntilParent
       />
 
-      {/* Quick Actions migrated to Aperture Layout header — see
-          usePageHeaderActions registration. Selected-corporate badge stays as
-          contextual info on the page body. */}
-      {selectedCorporateId && (
-        <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <Badge variant="info" size="sm" className="px-3 py-1">
-            <Building2 className="w-3 h-3 mr-1.5" />
-            {corporates.find(c => c.id === selectedCorporateId)?.tradeName ||
-             corporates.find(c => c.id === selectedCorporateId)?.legalName ||
-             'Selected'}
-          </Badge>
-        </div>
-      )}
-
       {/* Headline figures from the daily runs, one line per currency (a pool has one currency; currencies are
-          never added). Counts demoted below. */}
+          never added). */}
       <HeroMetricCard
         primary={{
           label: 'Pooled net',
@@ -299,7 +277,7 @@ const NotionalPoolingPage: React.FC = () => {
               {byCurrency.map(t => <TileAmount key={t.currency} value={t.net} currency={t.currency} />)}
             </span>
           ) : 'No runs yet',
-          sub: "Each open pool's net at its last daily run, per currency",
+          sub: `${activePools} of ${filteredPools.length} pool${filteredPools.length === 1 ? '' : 's'} active · net at each open pool's last daily run`,
         }}
         secondary={{
           label: `Pooling benefit, ${monthLabel || 'month'} to date`,
@@ -309,43 +287,11 @@ const NotionalPoolingPage: React.FC = () => {
             </span>
           ) : '—',
           sub: byCurrency.length
-            ? `Year to date: ${byCurrency.map(t => formatCurrency(t.ytdBenefit, t.currency)).join(' · ')}. Benefit = pooled − standalone interest.`
+            ? `Year to date: ${byCurrency.map(t => formatCurrency(t.ytdBenefit, t.currency)).join(' · ')}`
             : 'Benefit = pooled − standalone interest, from the daily runs',
         }}
         icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
-
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        <StatTile
-          layout="row"
-          tone="primary"
-          label="Total Pools"
-          value={filteredStats.totalPools}
-          icon={<Layers className="w-5 h-5" />}
-          loading={loading}
-          delay="0.2s"
-        />
-        <StatTile
-          layout="row"
-          tone="success"
-          valueTone="neutral"
-          label="Active Pools"
-          value={filteredStats.activePools}
-          icon={<TrendingUp className="w-5 h-5" />}
-          loading={loading}
-          delay="0.25s"
-        />
-        <StatTile
-          layout="row"
-          tone="accent"
-          label="Total Members"
-          value={filteredStats.totalMembers}
-          icon={<Users className="w-5 h-5" />}
-          loading={loading}
-          delay="0.3s"
-        />
-      </StatStrip>
 
       {/* Pools Grid */}
       {filteredPools.length === 0 ? (

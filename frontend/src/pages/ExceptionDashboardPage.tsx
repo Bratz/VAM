@@ -492,9 +492,6 @@ const ExceptionDashboardPage: React.FC = () => {
                 <p className="body-sm">{totalElements} exception{totalElements !== 1 ? 's' : ''} found</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {filters.status && <Badge variant="info">{EXCEPTION_STATUS_CONFIG[filters.status].label}<button className="ml-1" onClick={() => handleStatusFilter(undefined)}><X className="w-3 h-3" /></button></Badge>}
-            </div>
           </div>
         </div>
 

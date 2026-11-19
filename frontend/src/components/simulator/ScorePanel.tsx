@@ -73,8 +73,8 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
       <Card padding="md" className={className}>
         <p className="label">Optimisation score</p>
         <p className="mt-3 body-sm text-neutral-500 dark:text-neutral-400">
-          Add shadows and a sweep rule — the score computes from the proposed
-          structure.
+          Add planned accounts and a sweep rule — the score is computed from
+          the proposed structure.
         </p>
       </Card>
     );
@@ -96,10 +96,6 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
         {signedCompact(score.netAnnualBenefit, score.baseCurrency)} net annual
         benefit vs live
       </p>
-      <p className="mt-1 body-sm text-neutral-500 dark:text-neutral-400">
-        Annualised · base {score.baseCurrency} · assumptions disclosed
-        {score.fxDisclosures.length > 0 ? ' · FX rates disclosed' : ''}
-      </p>
 
       <div className="mt-4 divide-y divide-neutral-100 dark:divide-primary-800/40">
         {score.lines.map((l) => (
@@ -110,13 +106,6 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
             baseCurrency={score.baseCurrency}
           />
         ))}
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800/60 flex items-center justify-between gap-3">
-        <span className="label">Net annual benefit</span>
-        <span className={cn('code', tone)}>
-          {signedCompact(score.netAnnualBenefit, score.baseCurrency)}
-        </span>
       </div>
 
       {score.consentWindows && score.consentWindows.length > 0 && (
@@ -170,25 +159,14 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
         </div>
       )}
 
-      {score.caveats.length > 0 && (
-        <ul className="mt-3 space-y-1">
-          {score.caveats.map((c, i) => (
-            <li
-              key={i}
-              className="body-sm text-warning-700 dark:text-warning-300"
-            >
-              {c}
-            </li>
-          ))}
-        </ul>
-      )}
-
       <button
         type="button"
         onClick={() => setAssumptionsOpen(true)}
         className="mt-4 inline-flex items-center gap-1 body-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
       >
         View assumptions
+        {score.caveats.length > 0 &&
+          ` · ${score.caveats.length} caveat${score.caveats.length === 1 ? '' : 's'}`}
         <ArrowRight className="w-4 h-4" aria-hidden />
       </button>
 

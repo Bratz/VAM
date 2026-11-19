@@ -126,12 +126,12 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
 
       {currencies.length === 0 && (
         <div className="bg-surface-card rounded-lg border border-edge p-12 text-center text-neutral-500 dark:text-neutral-400">
-          {filter === 'home'     ? 'No home-bank shadows.'
-            : filter === 'external' ? 'No external-bank shadows.'
-            : filter === 'stale'    ? 'No stale shadows — all balances are fresh.'
+          {filter === 'home'     ? 'No home-bank accounts.'
+            : filter === 'external' ? 'No external-bank accounts.'
+            : filter === 'stale'    ? 'No stale balances — all are fresh.'
             : filter === 'failed'   ? 'No failed refreshes.'
-            : filter === 'never'    ? 'All shadows have been refreshed at least once.'
-            : 'No shadows match the current filter.'}
+            : filter === 'never'    ? 'All balances have been refreshed at least once.'
+            : 'No accounts match the current filter.'}
         </div>
       )}
 
@@ -147,7 +147,7 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
                 <div>
                   <h2 className="section-title">{c.currencyCode}</h2>
                   <p className="caption mt-0.5">
-                    {c.rows.length} bank{c.rows.length === 1 ? '' : 's'} · {c.rows.reduce((a, r) => a + r.shadowCount, 0)} shadow{c.rows.reduce((a, r) => a + r.shadowCount, 0) === 1 ? '' : 's'}
+                    {c.rows.length} bank{c.rows.length === 1 ? '' : 's'} · {c.rows.reduce((a, r) => a + r.shadowCount, 0)} account{c.rows.reduce((a, r) => a + r.shadowCount, 0) === 1 ? '' : 's'}
                   </p>
                 </div>
               </div>

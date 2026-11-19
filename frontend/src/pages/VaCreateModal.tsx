@@ -240,12 +240,6 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
         <span>Select the program for this virtual account</span>
       </div>
 
-      <Alert variant="info" title="Program determines hierarchy structure">
-        <p className="text-body-sm">
-          Each program has configured hierarchy levels. The VA will be placed according to the dimension values you provide.
-        </p>
-      </Alert>
-
       <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
         {programs.map(program => (
           <button

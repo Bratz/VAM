@@ -254,7 +254,7 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
           <div className="rounded-lg border border-edge-strong divide-y divide-neutral-100 dark:divide-primary-800/40 max-h-40 overflow-auto">
             {shadows.length === 0 ? (
               <p className="px-3 py-3 body-sm text-neutral-500 dark:text-neutral-400">
-                Add at least two shadows before creating a rule.
+                Add at least two planned accounts before creating a rule.
               </p>
             ) : (
               shadows.map((s) => (
@@ -277,7 +277,7 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
           onChange={(e) => setTargetId(e.target.value)}
           selectSize="sm"
           options={[
-            { value: '', label: 'Select target shadow…' },
+            { value: '', label: 'Select target account…' },
             ...shadows.map((s) => ({
               value: s.localId,
               label: `${s.proposedVaName} (${s.snapshotCurrencyCode})`,

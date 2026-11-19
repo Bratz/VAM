@@ -12,8 +12,8 @@ import { Page } from '../components/layout/Page';
  * table stays in view. Stats are operational (freshness) not inventory.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, Plus, RefreshCw, Search, Loader2, ArrowRightLeft, Clock, XCircle, AlertTriangle, MinusCircle, Copy, Globe, Building2, ArrowUpDown, Database, Zap, X, Pencil, CheckCircle } from 'lucide-react';
-import { Card, Button, Input, StatusIconBadge, Drawer, StatTile, DataTable } from '../components/ui';
+import { TrendingUp, Plus, RefreshCw, Loader2, ArrowRightLeft, Clock, XCircle, AlertTriangle, MinusCircle, Copy, Globe, Building2, ArrowUpDown, Database, Zap, X, Pencil, CheckCircle } from 'lucide-react';
+import { Card, Button, Input, Select, StatusIconBadge, Drawer, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -117,14 +117,20 @@ const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean; isSpot: boole
 interface RatesTableProps {
   rates: EnrichedRate[];
   onRowClick: (r: FxRate) => void;
+  onSearch: (q: string) => void;
+  actions: React.ReactNode;
 }
 
-const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick }) => (
+const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onSearch, actions }) => (
   <Card>
     <DataTable
       data={rates}
       keyExtractor={(rate) => rate.id}
       onRowClick={onRowClick}
+      searchable
+      searchPlaceholder="Search pair (USD/AED), currency, or source…"
+      onSearch={onSearch}
+      actions={actions}
       emptyIcon={<TrendingUp className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
       emptyTitle="No FX rates match your filters"
       emptyDescription="Try clearing search and filters, or add a new rate."
@@ -141,40 +147,6 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick }) => (
           ),
         },
         { key: 'rate', header: 'Rate', align: 'right', render: (_, rate) => <span className="stat-value-xs">{formatFxRate(rate.rate, rate.fromCurrency, rate.toCurrency)}</span> },
-        {
-          key: 'inverseRate',
-          header: 'Inverse',
-          align: 'right',
-          render: (_, rate) => (
-            <span className="font-mono text-body-sm text-neutral-500 dark:text-neutral-400">
-              {formatFxRate(rate.inverseRate ?? 1 / rate.rate, rate.toCurrency, rate.fromCurrency)}
-            </span>
-          ),
-        },
-        {
-          key: 'bidRate',
-          header: 'Bid',
-          align: 'right',
-          render: (_, rate) => (
-            <span className="font-mono text-body-sm">
-              {rate.bidRate
-                ? <span className="text-success-700 dark:text-success-300">{formatFxRate(rate.bidRate, rate.fromCurrency, rate.toCurrency)}</span>
-                : <span className="text-neutral-400">—</span>}
-            </span>
-          ),
-        },
-        {
-          key: 'askRate',
-          header: 'Ask',
-          align: 'right',
-          render: (_, rate) => (
-            <span className="font-mono text-body-sm">
-              {rate.askRate
-                ? <span className="text-error-700 dark:text-error-300">{formatFxRate(rate.askRate, rate.fromCurrency, rate.toCurrency)}</span>
-                : <span className="text-neutral-400">—</span>}
-            </span>
-          ),
-        },
         {
           key: 'rateType',
           header: 'Type',
@@ -201,8 +173,12 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick }) => (
             );
           },
         },
-        { key: '_ageMs', header: 'Updated', render: (_, rate) => <span className="body-sm">{relativeTime(rate._ageMs)}</span> },
-        { key: 'isActive', header: 'Status', render: (_, rate) => <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} isSpot={rate.rateType === 'SPOT'} /> },
+        {
+          // One cell: Spot and inactive rates show their freshness badge (time on hover); other types just the time.
+          key: '_ageMs', header: 'Updated', render: (_, rate) => rate.isActive && rate.rateType !== 'SPOT'
+            ? <span className="body-sm">{relativeTime(rate._ageMs)}</span>
+            : <span title={`Updated ${relativeTime(rate._ageMs)}`}><FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} isSpot /></span>,
+        },
       ]}
     />
   </Card>
@@ -508,61 +484,19 @@ const FxRatesPage: React.FC = () => {
         <StatTile label="Pairs" value={stats.pairs} tone="primary" icon={<ArrowRightLeft className="w-5 h-5" />} />
       </StatStrip>
 
-      {/* Filter bar */}
-      <Card>
-        <div className="p-4 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[12.5rem]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search pair (USD/AED), currency, or source…"
-              className="pl-9"
-            />
-          </div>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
-          >
-            <option value="">All types</option>
-            {Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => (
-              <option key={key} value={key}>{val.label}</option>
-            ))}
-          </select>
-          <select
-            value={filterSource}
-            onChange={(e) => setFilterSource(e.target.value)}
-            className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
-          >
-            <option value="">All sources</option>
-            {Object.entries(SOURCE_CONFIG).map(([key, val]) => (
-              <option key={key} value={key}>{val.label}</option>
-            ))}
-          </select>
-        </div>
-      </Card>
-
-      {/* Active status-filter chip */}
-      {statusFilter !== 'all' && (
-        <div className="flex items-center gap-2">
-          <span className="body-sm">
-            Filtered to <span className="font-medium text-primary-900 dark:text-neutral-50">{statusFilter}</span> rates
-          </span>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className="inline-flex items-center gap-1 text-caption text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 rounded-md"
-          >
-            <X className="w-3 h-3" /> Clear filter
-          </button>
-        </div>
-      )}
-
-      {/* The rates table */}
+      {/* The rates table; the Stale tile toggles the status filter */}
       <RatesTable
         rates={filteredRates}
         onRowClick={(r) => { setSelectedRate(r); setShowDetailDrawer(true); }}
+        onSearch={setSearchTerm}
+        actions={
+          <>
+            <Select aria-label="Type" selectSize="sm" value={filterType} onChange={(e) => setFilterType(e.target.value)}
+              options={[{ value: '', label: 'All types' }, ...Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => ({ value: key, label: val.label }))]} />
+            <Select aria-label="Source" selectSize="sm" value={filterSource} onChange={(e) => setFilterSource(e.target.value)}
+              options={[{ value: '', label: 'All sources' }, ...Object.entries(SOURCE_CONFIG).map(([key, val]) => ({ value: key, label: val.label }))]} />
+          </>
+        }
       />
 
       {/* Create Modal — confirmation flow that takes focus, stays a <Modal> */}
@@ -616,10 +550,7 @@ const FxRatesPage: React.FC = () => {
             {/* Hero rate value */}
             <div className="text-center py-6 border-y border-edge">
               <p className="stat-value">{formatFxRate(selectedRate.rate, selectedRate.fromCurrency, selectedRate.toCurrency)}</p>
-              <p className="body-sm mt-2">
-                1 {selectedRate.fromCurrency} = {formatFxRate(selectedRate.rate, selectedRate.fromCurrency, selectedRate.toCurrency)} {selectedRate.toCurrency}
-              </p>
-              <p className="caption mt-1">
+              <p className="caption mt-2">
                 1 {selectedRate.toCurrency} = {formatFxRate(selectedRate.inverseRate ?? 1 / selectedRate.rate, selectedRate.toCurrency, selectedRate.fromCurrency)} {selectedRate.fromCurrency}
               </p>
             </div>
@@ -655,7 +586,6 @@ const FxRatesPage: React.FC = () => {
                   isSpot={selectedRate.rateType === 'SPOT'}
                 />
               } />
-              <DetailField label="Active" value={selectedRate.isActive ? 'Yes' : 'No'} />
             </div>
 
           </div>
@@ -667,7 +597,6 @@ const FxRatesPage: React.FC = () => {
         isOpen={showConverterDrawer}
         onClose={() => setShowConverterDrawer(false)}
         title="Currency Converter"
-        subtitle="Mid-rate. Bid/ask available in row details."
         size="md"
       >
         <div className="p-6">

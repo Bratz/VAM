@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, ArrowRight, Plus, AlertTriangle, ArrowLeftRight, Repeat, Sparkles, ChevronDown, ChevronRight, Download, Loader2, Landmark } from 'lucide-react';
+import { RefreshCw, ArrowRight, Plus, ChevronDown, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
 import { useNavigation } from '../hooks/useNavigation';
@@ -7,7 +7,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
-import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
+import type { BankShare } from '../components/multiBank/BankSplitBar';
 import { EntityHierarchyTreemap, FlatBreakdownTreemap } from '../components/dashboard/EntityHierarchyTreemap';
 import { sumBalance } from '../components/dashboard/treemapUtils';
 import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
@@ -43,7 +43,6 @@ import {
   forecastApi,
 } from '../services/api';
 import { cockpitApi } from '../services/cockpitApi';
-import { useCopilot } from '../ai/copilot/useCopilot';
 import type { AttentionItem, AttentionSeverity } from '../types/cockpit';
 
 // ============================================================================
@@ -66,7 +65,7 @@ import type { AttentionItem, AttentionSeverity } from '../types/cockpit';
 // per-currency rail is the FX-honest source of truth. The greyscale
 // wireframe styling is NOT copied — it's translated into the Aperture
 // design system (Page/PageHeader/Card, semantic tokens, dark mode, the
-// .stat-value / .label / typography tier, reused FreshnessPill/BankSplitBar).
+// .stat-value / .label / typography tier, reused FreshnessPill).
 // ============================================================================
 
 interface Treasury2030DashboardPageProps {
@@ -80,19 +79,8 @@ const TRIAGE: Record<AttentionSeverity, { label: string; cls: string }> = {
   medium:   { label: 'FYI',   cls: 'bg-primary-100 text-primary-700 dark:bg-primary-800/60 dark:text-primary-200' },
 };
 
-// v2's top-tab taxonomy. Per the scope decision these are NOT new global
-// chrome — they deep-link into the app's existing routes. "Cash Position" is
-// this page; "Reports" is the deferred Treasury-Performance workbook (not
-// built yet) so it renders disabled rather than dead-linking.
-const TABS: { label: string; page?: string; disabled?: boolean }[] = [
-  { label: 'Cash Position' },
-  { label: 'Payments', page: 'payables' },
-  { label: 'Receivables', page: 'receivables' },
-  { label: 'Liquidity', page: 'multi-bank-liquidity' },
-  { label: 'FX', page: 'fx-rates' },
-  { label: 'Reports', disabled: true },
-  { label: 'Admin', page: 'credit-limits' },
-];
+// Raw enum → sentence case for the sweep rows (ZERO_BALANCE → "Zero balance").
+const plain = (s?: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ') : '');
 
 // CR/DR classification for the statement-activity feed.
 const CREDIT_MOVES = new Set<string>([
@@ -236,7 +224,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const [positionView, setPositionView] = useState<'corporate' | 'program' | 'entity' | 'geo' | 'intercompany'>('entity');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { open: openCopilot } = useCopilot();
   const [campaign, dismissCampaign] = useEligibleCampaign();
 
   const nav = (page?: string) => { if (page) onNavigate?.(page); };
@@ -519,76 +506,20 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   return (
     <Page maxWidth="full">
       <PageHeader
-        title="Cash position"
+        title="Dashboard"
         description="Cash, payments and FX across your connected banks."
       />
 
-      {/* Tab strip + corporate scope merged into one 44px row (density pass) —
-          tabs deep-link into existing routes (not global chrome) on the left;
-          scope selector + summary on the right. min-h, not a fixed h: with
-          flex-wrap on, selecting a corporate adds an active-chip +
-          "Clear" button to the scope side, and at ~1280-1440px that pushes
-          the row's two children (tabs ~639px + scope ~640px) past the
-          available width, wrapping the scope selector onto a second line.
-          A fixed h-11 doesn't grow for that second line, so it rendered 42px
-          below the row's own box — squarely on top of the campaign banner
-          underneath. Reproduced live: picking a corporate on the dashboard
-          left the corporate <select> visually overlapping the banner's
-          "OFFER" tag. min-h-11 keeps the common single-line case at the
-          same 44px while letting a wrapped second line push the banner down
-          instead of overlapping it. */}
-      <div className="flex justify-between gap-3 border-b border-edge -mt-1 min-h-11 flex-row flex-wrap items-center py-0">
-        <div className="flex items-center gap-1">
-          {TABS.map((t, i) => {
-            const active = i === 0;
-            return (
-              <button
-                key={t.label}
-                type="button"
-                disabled={t.disabled || active}
-                onClick={() => nav(t.page)}
-                title={t.disabled ? 'Treasury Performance workbook — coming soon' : undefined}
-                className={cn(
-                  'px-3 py-2 text-body-sm border-b-2 -mb-px transition-colors',
-                  active
-                    ? 'border-accent-500 text-primary-900 dark:text-neutral-50 font-medium'
-                    : t.disabled
-                      ? 'border-transparent text-neutral-300 dark:text-neutral-400 cursor-not-allowed'
-                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-primary-800 dark:hover:text-neutral-100',
-                )}
-              >
-                {t.label}
-                {/* The title tooltip above is the only explanation for why
-                    this tab doesn't respond to a click, and title tooltips
-                    don't exist on touch — a phone/tablet user gets zero
-                    feedback. Same "Soon" pill already used for coming-soon
-                    sidebar nav items (Layout.tsx), reused here for a
-                    visible-on-any-input-method affordance and visual
-                    consistency with that existing pattern. */}
-                {t.disabled && (
-                  <span className="ml-1.5 align-middle text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
-                    Soon
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="min-w-[13.75rem]">
-            <ScopeSelector
-              mode="corporate-only"
-              bare
-              corporates={corporates}
-              selectedCorporateId={selectedCorporateId}
-              onCorporateChange={handleCorporateChange}
-            />
-          </div>
-          <span className="font-mono text-caption text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
-            {acctCount} acct · {bankCount} banks · {model?.currencies.length ?? 0} ccy
-          </span>
-        </div>
+      {/* Corporate scope. The old tab strip that shared this row repeated
+          the sidebar and was removed (density audit, round 2). */}
+      <div className="min-w-[13.75rem] w-fit">
+        <ScopeSelector
+          mode="corporate-only"
+          bare
+          corporates={corporates}
+          selectedCorporateId={selectedCorporateId}
+          onCorporateChange={handleCorporateChange}
+        />
       </div>
 
       <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px] xl:[html[data-sidebar=collapsed]_&]:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
@@ -637,10 +568,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   </>
                 ),
               },
-              { label: 'Held at home bank', value: summary?.homeBankShadows ?? 0, format: 'count', sublabel: 'accounts', tone: 'success' },
-              { label: 'External, sweepable', value: summary?.externalShadows ?? 0, format: 'count', sublabel: 'accounts' },
+              { label: 'Accounts', value: acctCount, format: 'count', sublabel: `${summary?.homeBankShadows ?? 0} at home bank · ${bankCount} banks` },
               { label: 'Stale balances', value: staleCount, format: 'count', sublabel: 'need refresh', tone: staleCount ? 'warning' : 'neutral' },
-              { label: 'Total accounts', value: acctCount, format: 'count', sublabel: `${model?.currencies.length ?? 0} currencies` },
             ]}
           />
 
@@ -707,7 +636,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="body-sm">No shadow balances available for this scope.</p>
+              <p className="body-sm">No bank balances for this scope.</p>
             )}
           </div>
 
@@ -785,12 +714,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     </div>
                   </div>
                 ))
-              )}
-              {(pending?.totalPending ?? 0) > 0 && (
-                <div className="px-4 py-2 bg-neutral-50 dark:bg-primary-800/40 caption flex items-center justify-between">
-                  <span className="tabular-nums">{pending?.totalPending} items pending approval (incl. {pending?.transactionsCount ?? 0} transactions)</span>
-                  <button type="button" onClick={() => nav('payables')} className="font-medium text-primary-600 dark:text-accent-400 hover:underline">View all →</button>
-                </div>
               )}
             </div>
           </Card>
@@ -921,8 +844,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               part of the module consolidation (12 -> 7 main sections)
               this pass makes per the "5-9 core elements" research finding.
               Geo intentionally scoped to the single dominant currency
-              (model.topCcy/bankShares, the same FX-honest scope the
-              Sweeps & pooling composition bar below already uses) — summing
+              (model.topCcy/bankShares) — summing
               bank balances across countries that hold different currencies
               would be exactly the synthetic cross-currency total this page
               elsewhere refuses to fabricate. */}
@@ -954,7 +876,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 )}
               </p>
               <div className="inline-flex rounded-sm border border-edge overflow-hidden">
-                {([['corporate', 'By corporate'], ['program', 'By program'], ['entity', 'By entity'], ['geo', 'By country'], ['intercompany', 'By intercompany']] as const).map(([v, label]) => (
+                {/* Program and intercompany views need a corporate, so they only appear once one is picked. */}
+                {([['corporate', 'By corporate'], ['program', 'By program'], ['entity', 'By entity'], ['geo', 'By country'], ['intercompany', 'By intercompany']] as const)
+                  .filter(([v]) => selectedCorporateId || (v !== 'program' && v !== 'intercompany'))
+                  .map(([v, label]) => (
                   <button
                     key={v}
                     type="button"
@@ -1039,7 +964,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 tooltipShadow={chartChrome.tooltipShadow}
               />
             ) : (
-              <p className="body-sm py-6 text-center">No shadow balances available for this scope.</p>
+              <p className="body-sm py-6 text-center">No bank balances for this scope.</p>
             )}
           </div>
 
@@ -1065,14 +990,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 Configure <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            <div className="p-4 space-y-3">
-              {model && model.bankShares.length > 0 && (
-                <div>
-                  <p className="label mb-1.5">Composition · {model.topCcy?.code} (largest balance)</p>
-                  <BankSplitBar bankShares={model.bankShares} />
-                </div>
-              )}
-              <div className="border-t border-edge-subtle pt-2">
+            <div className="px-4 py-2">
                 {sweepRows.length === 0 ? (
                   <p className="body-sm py-3 text-center">No sweep rules in scope.</p>
                 ) : (
@@ -1080,7 +998,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-edge-subtle last:border-0">
                       <div className="min-w-0">
                         <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
-                        <p className="caption">{r.sweepType} · {r.frequency}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
+                        <p className="caption">{plain(r.sweepType)} · {plain(r.frequency).toLowerCase()}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
                       </div>
                       <span className={cn(
                         'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
@@ -1088,12 +1006,11 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
                           : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300',
                       )}>
-                        {r.status}
+                        {plain(r.status)}
                       </span>
                     </div>
                   ))
                 )}
-              </div>
             </div>
           </Card>
 
@@ -1215,52 +1132,9 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               )}
             </div>
           </Card>
-
-          {/* Quick actions — nav + Copilot */}
-          <Card padding="none" className="overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-edge-subtle">
-              <span className="section-title">Quick actions</span>
-            </div>
-            <div className="grid grid-cols-2 gap-px bg-neutral-100 dark:bg-primary-800/60">
-              {[
-                { ic: <Plus className="w-4 h-4" />, label: 'New payment', sub: 'Wire · ACH · SEPA', act: () => nav('payables-create') },
-                { ic: <ArrowLeftRight className="w-4 h-4" />, label: 'FX deal', sub: 'Spot · forward', act: () => nav('fx-deals') },
-                { ic: <Download className="w-4 h-4" />, label: 'Statement', sub: 'CAMT · MT940', act: () => nav('statements') },
-                { ic: <Repeat className="w-4 h-4" />, label: 'Run sweep', sub: 'Cross-bank', act: () => nav('sweeping') },
-                { ic: <Landmark className="w-4 h-4" />, label: 'Open account', sub: 'Partner bank', act: () => nav('accounts') },
-                { ic: <Sparkles className="w-4 h-4" />, label: 'Ask Aperture', sub: 'NL assist', act: () => openCopilot() },
-              ].map((q) => (
-                <button
-                  key={q.label}
-                  type="button"
-                  onClick={q.act}
-                  className="bg-surface-card p-3 text-left hover:bg-neutral-50 dark:hover:bg-primary-800/40 transition-colors"
-                >
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-50 dark:bg-accent-500/15 text-accent-700 dark:text-accent-300">
-                    {q.ic}
-                  </span>
-                  <p className="body-strong mt-1.5">{q.label}</p>
-                  <p className="caption">{q.sub}</p>
-                </button>
-              ))}
-            </div>
-          </Card>
         </div>
       </div>
 
-      {/* Footer stamps — honest: real connectivity, no unverifiable certs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 caption pt-2 border-t border-edge-subtle">
-        <div className="flex flex-wrap gap-4">
-          <span className="inline-flex items-center gap-1.5">
-            <Landmark className="w-4 h-4" /> {bankCount} banks · {acctCount} accounts connected
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <AlertTriangle className={cn('w-4 h-4', staleCount ? 'text-warning-500 dark:text-warning-300' : 'text-neutral-400')} />
-            {staleCount} stale balance{staleCount === 1 ? '' : 's'}
-          </span>
-        </div>
-        <span>Aperture · Treasury Cockpit</span>
-      </div>
     </Page>
   );
 };

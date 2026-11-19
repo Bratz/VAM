@@ -327,7 +327,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               <>
                 {/* Summary Header */}
                 <div className="bg-gradient-to-r from-info-50 to-cat-1-soft rounded-lg p-4 border border-info-100 dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
                       <span className="text-body-sm font-medium text-info-900">
@@ -338,9 +338,6 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                       {groupedData.direction}
                     </Badge>
                   </div>
-                  <p className="text-caption text-info-700 dark:text-info-300">
-                    This transaction involved {groupedData.entryCount} fund {groupedData.entryCount === 1 ? 'movement' : 'movements'} across your account structure.
-                  </p>
                 </div>
 
                 {/* Fund Movements List */}
@@ -864,8 +861,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
           <div className="flex items-center gap-3 mb-4">
             <StatusIconBadge tone="info" icon={FileCode} />
             <div>
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">ISO 20022 Message Simulation</h3>
-              <p className="caption">Simulate incoming payment messages as if received from SWIFT/Clearing</p>
+              <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">Message type</h3>
+              <p className="caption">Credits the chosen account as if the message came in from the clearing system.</p>
             </div>
           </div>
 
@@ -882,11 +879,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             >
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={messageType === 'pacs008' ? 'info' : 'neutral'} size="sm">pacs.008</Badge>
-                <span className="caption">FIToFI Customer Credit Transfer</span>
+                <span className="caption">Incoming payment</span>
               </div>
-              <p className="caption">
-                Standard SWIFT payment message for incoming cross-border or domestic payments
-              </p>
             </button>
             <button
               type="button"
@@ -900,11 +894,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             >
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={messageType === 'camt054' ? 'info' : 'neutral'} size="sm">camt.054</Badge>
-                <span className="caption">Bank to Customer Debit/Credit Notification</span>
+                <span className="caption">Credit notification from the bank</span>
               </div>
-              <p className="caption">
-                Bank statement notification message for collection/credit advice
-              </p>
             </button>
           </div>
         </div>
@@ -915,14 +906,14 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             <div className="flex items-center gap-2">
               <Hash className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">
-                {messageType === 'pacs008' ? 'GrpHdr (Group Header)' : 'GrpHdr (Group Header)'}
+                Message
               </span>
             </div>
           </div>
           <div className="p-4 grid grid-cols-2 gap-4">
             <div>
               <Input
-                label="Message ID (MsgId)"
+                label="Message ID"
                 value={formData.msgId}
                 onChange={(e) => setFormData({ ...formData, msgId: e.target.value })}
                 placeholder="MSGID-..."
@@ -931,7 +922,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Creation Date Time (CreDtTm)"
+                label="Created at"
                 type="datetime-local"
                 value={formData.creationDateTime}
                 onChange={(e) => setFormData({ ...formData, creationDateTime: e.target.value })}
@@ -952,14 +943,14 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">
-                {messageType === 'pacs008' ? 'CdtTrfTxInf (Credit Transfer Info)' : 'Ntry (Entry)'}
+                Payment
               </span>
             </div>
           </div>
           <div className="p-4 grid grid-cols-2 gap-4">
             <div>
               <Input
-                label="End-to-End ID (EndToEndId)"
+                label="End-to-end ID"
                 value={formData.endToEndId}
                 onChange={(e) => setFormData({ ...formData, endToEndId: e.target.value })}
                 placeholder="E2E-..."
@@ -968,7 +959,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Instruction ID (InstrId)"
+                label="Instruction ID"
                 value={formData.instructionId}
                 onChange={(e) => setFormData({ ...formData, instructionId: e.target.value })}
                 placeholder="INSTR-..."
@@ -976,7 +967,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Amount (Amt)"
+                label="Amount"
                 type="number"
                 step="0.01"
                 value={formData.amount}
@@ -987,7 +978,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Select
-                label="Currency (Ccy)"
+                label="Currency"
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 options={[
@@ -1001,7 +992,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div className="col-span-2">
               <Input
-                label="Value Date (ValDt)"
+                label="Value date"
                 type="date"
                 value={formData.valueDate}
                 onChange={(e) => setFormData({ ...formData, valueDate: e.target.value })}
@@ -1016,13 +1007,13 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
           <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              <span className="field-label">Dbtr (Debtor / Remitter)</span>
+              <span className="field-label">Payer</span>
             </div>
           </div>
           <div className="p-4 grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Input
-                label="Debtor Name (Nm)"
+                label="Payer name"
                 value={formData.debtorName}
                 onChange={(e) => setFormData({ ...formData, debtorName: e.target.value })}
                 placeholder="e.g., Emirates Trading LLC"
@@ -1031,7 +1022,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Debtor IBAN (IBAN)"
+                label="Payer IBAN"
                 value={formData.debtorAccountIban}
                 onChange={(e) => setFormData({ ...formData, debtorAccountIban: e.target.value })}
                 placeholder="e.g., AE070331234567890123456"
@@ -1039,7 +1030,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Debtor Bank BIC (BIC)"
+                label="Payer bank BIC"
                 value={formData.debtorBic}
                 onChange={(e) => setFormData({ ...formData, debtorBic: e.target.value })}
                 placeholder="e.g., BOMLAEAD"
@@ -1047,7 +1038,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Input
-                label="Debtor Bank Name"
+                label="Payer bank name"
                 value={formData.debtorBankName}
                 onChange={(e) => setFormData({ ...formData, debtorBankName: e.target.value })}
                 placeholder="e.g., Bank of Middle East"
@@ -1055,7 +1046,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div>
               <Select
-                label="Debtor Country (Ctry)"
+                label="Payer country"
                 value={formData.debtorCountry}
                 onChange={(e) => setFormData({ ...formData, debtorCountry: e.target.value })}
                 options={[
@@ -1076,7 +1067,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Landmark className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                <span className="field-label">CdtrAcct (Creditor Account)</span>
+                <span className="field-label">Account credited</span>
               </div>
             </div>
           </div>
@@ -1116,7 +1107,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
               <div className="space-y-4">
                 <div>
                   <label className="field-label block mb-2">
-                    Creditor VIBAN (IBAN)
+                    vIBAN
                   </label>
                   <div className="flex gap-2">
                     <Input
@@ -1172,7 +1163,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                   </div>
                 ) : (
                   <Select
-                    label="Select Creditor Virtual Account"
+                    label="Virtual account"
                     value={formData.creditorVaId}
                     onChange={(e) => setFormData({ ...formData, creditorVaId: e.target.value })}
                     options={[
@@ -1193,7 +1184,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
                   <span className="text-body-sm font-medium text-success-800 dark:text-success-300">
-                    {creditorMode === 'viban' ? 'VIBAN Resolved to Account' : 'Selected Account'}
+                    {creditorMode === 'viban' ? 'vIBAN found' : 'Selected Account'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-caption">
@@ -1228,13 +1219,13 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
           <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              <span className="field-label">RmtInf (Remittance Information)</span>
+              <span className="field-label">Remittance</span>
             </div>
           </div>
           <div className="p-4 grid grid-cols-2 gap-4">
             <div>
               <Input
-                label="Invoice Reference (Ref)"
+                label="Invoice reference"
                 value={formData.invoiceReference}
                 onChange={(e) => setFormData({ ...formData, invoiceReference: e.target.value })}
                 placeholder="e.g., INV-2024-0001"
@@ -1242,25 +1233,12 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             </div>
             <div className="col-span-2">
               <Input
-                label="Unstructured Remittance Info (Ustrd)"
+                label="Remittance text"
                 value={formData.remittanceInfo}
                 onChange={(e) => setFormData({ ...formData, remittanceInfo: e.target.value })}
                 placeholder="e.g., Payment for Invoice INV-2024-0001 dated 15-Jan-2024"
               />
             </div>
-          </div>
-        </div>
-
-        {/* Info Banner */}
-        <div className="flex items-start gap-3 p-4 bg-warning-50 border border-warning-100 rounded-lg dark:bg-warning-500/10 dark:border-warning-500/30">
-          <Info className="w-5 h-5 text-warning-600 shrink-0 mt-0.5 dark:text-warning-300" />
-          <div className="text-body-sm text-warning-800 dark:text-warning-300">
-            <p className="font-medium mb-1">Simulation Mode</p>
-            <p className="text-caption text-warning-700 dark:text-warning-300">
-              This will create a credit transaction on the selected virtual account, simulating an incoming
-              {messageType === 'pacs008' ? ' pacs.008 SWIFT payment' : ' camt.054 bank notification'}.
-              In production, these messages would be received automatically from SWIFT or the clearing system.
-            </p>
           </div>
         </div>
 
@@ -1274,7 +1252,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             leftIcon={<ArrowDownLeft className="w-4 h-4" />}
             disabled={!formData.creditorVaId || !formData.amount || !formData.debtorName}
           >
-            Simulate {messageType === 'pacs008' ? 'pacs.008' : 'camt.054'} Collection
+            Simulate collection
           </Button>
         </div>
       </form>
@@ -1763,7 +1741,7 @@ const TransactionsPage: React.FC = () => {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <StatTile
           layout="row"
           tone="success"
@@ -1782,16 +1760,8 @@ const TransactionsPage: React.FC = () => {
         />
         <StatTile
           layout="row"
-          tone="warning"
-          label="Pending"
-          value={stats?.pendingCount || 0}
-          icon={<Clock className="w-5 h-5" />}
-          loading={loading}
-        />
-        <StatTile
-          layout="row"
           tone="neutral"
-          label="Today's Total"
+          label="Transactions today"
           value={stats?.todayCount || 0}
           icon={<ArrowLeftRight className="w-5 h-5" />}
           loading={loading}
@@ -1879,17 +1849,6 @@ const TransactionsPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* View Mode Info Banner */}
-        {viewMode === 'grouped' && (
-          <div className="mx-4 mt-4 flex items-start gap-2 p-3 bg-info-50 border border-info-100 rounded-lg dark:bg-info-500/10 dark:border-info-500/30">
-            <Info className="w-4 h-4 text-info-600 shrink-0 mt-0.5 dark:text-info-300" />
-            <div className="text-caption text-info-800 dark:text-info-300">
-              <span className="font-medium">Business View:</span> Related fund movements are grouped into a single business transaction.
-              Click a row to see the full breakdown.
-            </div>
-          </div>
-        )}
 
         {/* Table */}
         <div className="p-6">

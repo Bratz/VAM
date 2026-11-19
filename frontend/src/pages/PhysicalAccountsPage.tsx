@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Search, RefreshCw, Download, Eye, Landmark, CreditCard, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Wifi, Server, Banknote, ChevronRight, Zap, GitBranch, Unlink, AlertTriangle, Info, Loader2, Check, UserPlus, Database, User, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable, Input } from '../components/ui';
+import { Plus, Search, RefreshCw, Download, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Wifi, Server, Banknote, ChevronRight, GitBranch, Unlink, AlertTriangle, Loader2, Check, UserPlus, Database, User, XCircle } from 'lucide-react';
+import { Card, Button, Badge, StatusIconBadge, DataTable, Input } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -12,7 +12,6 @@ import { AccountStatementLines } from '../components/statements/Statements';
 import { ExternalAuthorityPanel } from '../components/treasury/ExternalAuthorityPanel';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import {
@@ -356,46 +355,6 @@ const SHADOW_DATA_SOURCE_LABELS: Record<string, string> = {
 };
 
 // ============================================================================
-// STATS CARD COMPONENT
-// ============================================================================
-
-const StatsCard: React.FC<{ title: string; value: string | number; subtitle?: string; icon: React.ReactNode; iconBg?: string; loading?: boolean; delay?: number }> =
-  ({ title, value, subtitle, icon, iconBg = 'bg-primary-100 dark:bg-primary-700', loading, delay = 0 }) => {
-  if (loading) {
-    return (
-      <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-lg" />
-          <div className="flex-1">
-            <Skeleton className="h-3 w-16 mb-2" />
-            <Skeleton className="h-6 w-20" />
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
-      <div className="flex items-center gap-3">
-        {/* The icon medallion preserves the caller-supplied `iconBg` because
-            tiles pass their own tone (`bg-info-100`, `bg-warning-100`, etc.).
-            Replacing this with `<StatusIconBadge>` would force a single tone
-            and lose that per-tile information density — so the wrapper stays
-            local. The icon itself is rendered through with `text-*` classes
-            set by the caller (kept). */}
-        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0", iconBg)}>{icon}</div>
-        <div className="min-w-0">
-          <p className="label truncate">{title}</p>
-          <p className="stat-value-sm truncate">{value}</p>
-          {subtitle && <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{subtitle}</p>}
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// ============================================================================
 // BANK CARD COMPONENT
 // ============================================================================
 
@@ -526,7 +485,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
       const response = await shadowAccountApi.create(payload);
       
       // Show success notification
-      const shadowVaNumber = response.shadowVa?.vaNumber || 'Shadow Account';
+      const shadowVaNumber = response.shadowVa?.vaNumber || 'hierarchy account';
       let successMessage = `✓ Created ${shadowVaNumber}`;
       
       if (response.currencyMirrorsCreated && response.currencyMirrorsCreated.length > 0) {
@@ -544,7 +503,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to create shadow account';
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to add to hierarchy';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -554,13 +513,12 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
 
   if (!account) return null;
 
-  const selectedNode = hierarchyNodes.find(n => n.id === selectedParentId);
 
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Link Physical Account to Hierarchy" 
+      title="Add to hierarchy" 
       size="lg"
     >
       <div className="space-y-5">
@@ -606,7 +564,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         {/* Hierarchy Node Selection */}
         <div>
           <label className="field-label block mb-2">
-            Select Parent Node (AGGREGATION) <span className="text-error-500 dark:text-error-300">*</span>
+            Parent node <span className="text-error-500 dark:text-error-300">*</span>
           </label>
           
           {loadingNodes ? (
@@ -621,8 +579,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
                 <div>
                   <p className="body-sm text-warning-800 dark:text-warning-300">No Hierarchy Found</p>
                   <p className="body-sm text-warning-700 mt-1 dark:text-warning-300">
-                    Please initialize the corporate hierarchy first before linking physical accounts.
-                    Go to Accounts &amp; Structure → Balance Hierarchy to initialize.
+                    Set up the corporate hierarchy first, in Accounts &amp; Structure → Balance Hierarchy.
                   </p>
                 </div>
               </div>
@@ -655,7 +612,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
                           variant={node.accountCategory === 'ROOT' ? 'neutral' : 'primary'} 
                           size="sm"
                         >
-                          {node.accountCategory}
+                          {node.accountCategory === 'ROOT' ? 'Top level' : 'Group'}
                         </Badge>
                       </div>
                       <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{node.vaNumber}</p>
@@ -678,33 +635,9 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
           )}
         </div>
 
-        {/* Info Banner */}
-        <div className="p-3 bg-info-50 border border-info-200 rounded-lg dark:bg-info-500/10 dark:border-info-500/30">
-          <div className="flex items-start gap-2">
-            <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-            <div className="text-body-sm text-info-700 dark:text-info-300">
-              <p className="font-medium">What happens when you link?</p>
-              <ul className="mt-1 space-y-0.5 text-info-600 dark:text-info-300">
-                <li>• A Shadow Account (PHYSICAL_MIRROR) is created under the selected node</li>
-                <li>• Currency Mirror(s) are auto-created if this introduces a new currency</li>
-                <li>• Exception VA is auto-created at ROOT if not exists for this currency</li>
-                <li>• Bank balance will be synced for liquidity visibility</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Node Preview */}
-        {selectedNode && (
-          <div className="p-3 bg-success-50 border border-success-200 rounded-lg dark:bg-success-500/10 dark:border-success-500/30">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
-              <span className="text-body-sm text-success-700 dark:text-success-300">
-                Shadow Account will be created under: <strong>{selectedNode.vaName}</strong>
-              </span>
-            </div>
-          </div>
-        )}
+        <p className="caption">
+          The balance rolls up into the selected node and is synced from the bank. A currency total and an exceptions account are added for a new currency.
+        </p>
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t">
@@ -716,7 +649,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
             disabled={loading || !selectedParentId || hierarchyNodes.length === 0}
             leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitBranch className="w-4 h-4" />}
           >
-            {loading ? 'Creating Shadow...' : 'Create Shadow Account'}
+            {loading ? 'Adding...' : 'Add to hierarchy'}
           </Button>
         </div>
       </div>
@@ -825,8 +758,6 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
     }
   };
 
-  const selectedEntity = entities.find(e => e.id === formData.legalEntityId);
-  const selectedRelationType = RELATIONSHIP_CONFIG[formData.relationshipType];
   const filteredEntities = entities.filter(e =>
     !searchTerm || e.entityName.toLowerCase().includes(searchTerm.toLowerCase()) || e.entityCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -835,7 +766,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
   if (!shadow) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Attach to Legal Entity" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Assign to legal entity" size="lg">
       <div className="space-y-5">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
@@ -955,19 +886,10 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
           </div>
         )}
 
-        {selectedEntity && (
-          <div className="p-3 bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
-              <span className="text-body-sm text-success-700 dark:text-success-300">Will attach as <strong>{selectedRelationType.label}</strong> to <strong>{selectedEntity.shortName || selectedEntity.entityName}</strong></span>
-            </div>
-          </div>
-        )}
-
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading || !formData.legalEntityId} leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}>
-            {loading ? 'Attaching...' : 'Attach to Entity'}
+            {loading ? 'Assigning...' : 'Assign to entity'}
           </Button>
         </div>
       </div>
@@ -1055,7 +977,7 @@ const CreateAccountModal: React.FC<{
   const selectedEntity = entities.find(e => e.id === formData.legalEntityId);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isExternal ? "Link External Bank Account" : "Add Home Bank Account"} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={isExternal ? "Add external bank account" : "Add home bank account"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300"><XCircle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">{error}</span></div>}
         {!corporateId && <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg flex items-start gap-2 text-warning-700 dark:bg-warning-500/10 dark:border-warning-500/30 dark:text-warning-300"><AlertTriangle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">Please select a Corporate first.</span></div>}
@@ -1113,7 +1035,7 @@ const CreateAccountModal: React.FC<{
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button type="submit" disabled={loading || !corporateId || eligibleEntities.length === 0} leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}>
-            {loading ? 'Creating...' : isExternal ? 'Link Account' : 'Create Account'}
+            {loading ? 'Creating...' : 'Add account'}
           </Button>
         </div>
       </form>
@@ -1300,7 +1222,7 @@ const PhysicalAccountsPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    const csv = ['Account,Number,Bank,Entity,Currency,Balance,Status,Shadow', ...accounts.map(a => `${a.accountName},${a.accountNumber},${a.bankName},${a.entityCode||''},${a.currency},${a.currentBalance},${a.status},${hasShadow(a) ? 'Yes' : 'No'}`)].join('\n');
+    const csv = ['Account,Number,Bank,Entity,Currency,Balance,Status,In hierarchy', ...accounts.map(a => `${a.accountName},${a.accountNumber},${a.bankName},${a.entityCode||''},${a.currency},${a.currentBalance},${a.status},${hasShadow(a) ? 'Yes' : 'No'}`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `accounts-${new Date().toISOString().split('T')[0]}.csv`; link.click();
     toast.success('Export downloaded');
@@ -1324,7 +1246,7 @@ const PhysicalAccountsPage: React.FC = () => {
           <span className="inline">{syncing ? 'Syncing...' : 'Sync All'}</span>
         </Button>
         <Button variant="outline" size="sm" leftIcon={<Link2 className="w-4 h-4" />} onClick={() => setShowExternalModal(true)}>
-          <span className="inline">Link External</span>
+          <span className="inline">Add external account</span>
         </Button>
         <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateModal(true)}>
           Add Account
@@ -1342,7 +1264,7 @@ const PhysicalAccountsPage: React.FC = () => {
           `usePageHeaderActions` above. */}
       <PageHeader
         title="Bank Accounts"
-        description="Physical bank accounts at home and external banks. Link to the hierarchy to create a shadow account, then sync balances and attach it to a legal entity — all from here."
+        description="Accounts at the home bank and at external banks. Add each to the hierarchy, sync its balance and assign it to a legal entity."
       />
 
       <ScopeSelector
@@ -1387,7 +1309,7 @@ const PhysicalAccountsPage: React.FC = () => {
               value: <TileAmount value={dominantTotal} currency={dominantCurrency} />,
               sub: (
                 <>
-                  Across{' '}
+                  {stats?.total || 0} accounts · {stats?.active || 0} active · {stats?.poolingEnabled || 0} in pools · {stats?.sweepEnabled || 0} sweeping · across{' '}
                   <span className="font-semibold text-primary-700 dark:text-neutral-200">
                     {currencies.length}
                   </span>{' '}
@@ -1412,37 +1334,6 @@ const PhysicalAccountsPage: React.FC = () => {
         );
       })()}
 
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        <StatsCard title="Total Accounts" value={stats?.total || 0} subtitle={`${stats?.active || 0} active`} icon={<CreditCard className="w-6 h-6 text-primary-700 dark:text-neutral-200" />} loading={loading} delay={0.1} />
-        {/* Home / External now derived authoritatively from the configured
-            `vam.home-bank.bic` — see PhysicalAccountController.getStats.
-            Subtitles align with the multi-bank cockpit vocabulary: home-bank
-            accounts are pool-eligible; external-bank accounts feed the pool
-            via sweeps. The home-bank BIC is surfaced in the title's `title`
-            attribute (browser tooltip) so the reader can see which bank
-            actually defines "home" in this deployment. */}
-        <StatsCard
-          title="Home Bank"
-          value={stats?.homeBankCount || 0}
-          subtitle={stats?.homeBankName ? `${stats.homeBankName} · Pool eligible` : 'Pool eligible'}
-          icon={<Landmark className="w-6 h-6 text-primary-700 dark:text-neutral-200" />}
-          loading={loading}
-          delay={0.15}
-        />
-        <StatsCard
-          title="External Banks"
-          value={stats?.externalBankCount || 0}
-          subtitle="Sweep sources"
-          icon={<Globe className="w-6 h-6 text-info-600 dark:text-info-300" />}
-          iconBg="bg-info-100 dark:bg-info-500/20"
-          loading={loading}
-          delay={0.2}
-        />
-        <StatsCard title="Pooling Enabled" value={stats?.poolingEnabled || 0} subtitle="In pools" icon={<Layers className="w-6 h-6 text-accent-600 dark:text-accent-300" />} iconBg="bg-accent-100 dark:bg-accent-500/20" loading={loading} delay={0.25} />
-        <StatsCard title="Sweep Enabled" value={stats?.sweepEnabled || 0} subtitle="Concentration" icon={<Zap className="w-6 h-6 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-100 dark:bg-warning-500/20" loading={loading} delay={0.3} />
-      </StatStrip>
-
       {/* Unlinked Accounts Alert — uses the canonical warning palette (was
           `bg-amber-*`; amber is still allowed by lint but the semantic
           warning tone is the system vocabulary). The medallion now uses the
@@ -1454,10 +1345,7 @@ const PhysicalAccountsPage: React.FC = () => {
             <div className="flex-1">
               <p className="body-sm text-warning-800 dark:text-warning-300">
                 {/* Counted from the loaded page; no server-side count exists, so say so when there are more pages. */}
-                {unlinkedCount} account{unlinkedCount > 1 ? 's' : ''}{totalPages > 1 ? ' on this page' : ''} not linked to hierarchy
-              </p>
-              <p className="body-sm text-warning-700 mt-0.5 dark:text-warning-300">
-                Link physical accounts to create Shadow Accounts for liquidity visibility
+                {unlinkedCount} account{unlinkedCount > 1 ? 's' : ''}{totalPages > 1 ? ' on this page' : ''} not in the hierarchy — their balances are left out of liquidity views
               </p>
             </div>
           </div>
@@ -1551,7 +1439,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   {hasShadow(account) && (
                     <div className="mt-2 flex items-center gap-1 caption-success">
                       <Layers className="w-3 h-3" />
-                      <span>Linked to hierarchy</span>
+                      <span>In hierarchy</span>
                     </div>
                   )}
                 </div>
@@ -1613,7 +1501,7 @@ const PhysicalAccountsPage: React.FC = () => {
             },
             {
               key: 'shadowVaId',
-              header: 'Shadow',
+              header: 'Hierarchy',
               align: 'center',
               render: (_, account) => hasShadow(account) ? (
                 shadowFor(account)?.programId ? (
@@ -1628,14 +1516,6 @@ const PhysicalAccountsPage: React.FC = () => {
                 <span className="text-neutral-400">—</span>
               ),
             },
-            {
-              key: 'entityLink',
-              header: 'Entity Link',
-              align: 'center',
-              render: (_, account) => (account.legalEntityId || account.entityId)
-                ? <Building2 className="w-4 h-4 text-info-600 mx-auto dark:text-info-300" />
-                : <span className="text-neutral-400">—</span>,
-            },
             { key: 'syncStatus', header: 'Sync', align: 'center', render: (_, account) => <Badge variant={account.syncStatus === 'SYNCED' ? 'success' : 'warning'} size="sm">{account.syncStatus}</Badge> },
             {
               key: 'actions',
@@ -1645,15 +1525,14 @@ const PhysicalAccountsPage: React.FC = () => {
               render: (_, account) => (
                 <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
                   {!hasShadow(account) ? (
-                    <Button variant="ghost" size="sm" onClick={() => handleLinkToHierarchy(account)} title="Link to Hierarchy" className="text-cat-1 dark:text-cat-1-fg hover:bg-cat-1-soft dark:hover:bg-cat-1/15">
+                    <Button variant="ghost" size="sm" onClick={() => handleLinkToHierarchy(account)} title="Add to hierarchy" className="text-cat-1 dark:text-cat-1-fg hover:bg-cat-1-soft dark:hover:bg-cat-1/15">
                       <GitBranch className="w-4 h-4" />
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="sm" onClick={() => handleAttachToEntity(account)} title="Attach to Entity" className="text-info-600 dark:text-info-300 hover:bg-info-50 dark:hover:bg-info-500/10">
+                    <Button variant="ghost" size="sm" onClick={() => handleAttachToEntity(account)} title="Assign to entity" className="text-info-600 dark:text-info-300 hover:bg-info-50 dark:hover:bg-info-500/10">
                       <UserPlus className="w-4 h-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedAccount(account)} title="View Details"><Eye className="w-4 h-4" /></Button>
                   <Button variant="ghost" size="sm" onClick={() => handleSyncAccount(account)} title="Sync Balance"><RefreshCw className="w-4 h-4" /></Button>
                 </div>
               ),
@@ -1676,7 +1555,7 @@ const PhysicalAccountsPage: React.FC = () => {
                 <div className="flex gap-2 mt-2">
                   <Badge variant={selectedAccount.status === 'ACTIVE' ? 'success' : 'neutral'}>{selectedAccount.status}</Badge>
                   <Badge variant={selectedAccount.isHomeBank ? 'primary' : 'info'}>{selectedAccount.isHomeBank ? 'Home Bank' : 'External'}</Badge>
-                  {hasShadow(selectedAccount) && <Badge variant="accent">Shadow Linked</Badge>}
+                  {hasShadow(selectedAccount) && <Badge variant="accent">In hierarchy</Badge>}
                   {selectedAccount.systemDefault && <span title={DEFAULT_ACCOUNT_HINT}><Badge variant="warning">Default opening balance</Badge></span>}
                 </div>
               </div>
@@ -1711,7 +1590,7 @@ const PhysicalAccountsPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                        <span className="body-sm text-warning-700 dark:text-warning-300">Not linked to hierarchy</span>
+                        <span className="body-sm text-warning-700 dark:text-warning-300">Not in the hierarchy</span>
                       </div>
                       <Button
                         size="sm"
@@ -1719,7 +1598,7 @@ const PhysicalAccountsPage: React.FC = () => {
                         onClick={() => { setSelectedAccount(null); handleLinkToHierarchy(selectedAccount); }}
                         leftIcon={<GitBranch className="w-4 h-4" />}
                       >
-                        Link Now
+                        Add to hierarchy
                       </Button>
                     </div>
                   </div>
@@ -1747,11 +1626,7 @@ const PhysicalAccountsPage: React.FC = () => {
                       {shadow.lastSyncStatus === 'FAILED' && <Badge variant="error" size="sm"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>}
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><p className="caption">Bank Balance</p><p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(shadow.bankBalance, shadow.currencyCode)}</p></div>
-                    <div><p className="caption">Available</p><p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(shadow.bankAvailableBalance, shadow.currencyCode)}</p></div>
-                    <div><p className="caption">On Hold</p><p className="font-semibold text-warning-600 dark:text-warning-300">{onHold > 0 ? formatCurrency(onHold, shadow.currencyCode) : '—'}</p></div>
-                  </div>
+                  {onHold > 0 && <p className="caption">On hold: {formatCurrency(onHold, shadow.currencyCode)}</p>}
                   {(shadow.bankBalanceCommitted ?? 0) > 0 && (
                     <p className="caption">Pending sweep: {formatCurrency(shadow.bankBalanceCommitted ?? 0, shadow.currencyCode)} (awaiting statement)</p>
                   )}
@@ -1782,7 +1657,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   leftIcon={<UserPlus className="w-4 h-4" />}
                   onClick={() => { setSelectedAccount(null); handleAttachToEntity(selectedAccount); }}
                 >
-                  Attach to Entity
+                  Assign to entity
                 </Button>
               ) : (
                 <Button
@@ -1790,7 +1665,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   leftIcon={<GitBranch className="w-4 h-4" />}
                   onClick={() => { setSelectedAccount(null); handleLinkToHierarchy(selectedAccount); }}
                 >
-                  Link to Hierarchy
+                  Add to hierarchy
                 </Button>
               )}
             </div>

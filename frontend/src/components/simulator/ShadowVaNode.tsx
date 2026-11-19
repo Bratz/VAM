@@ -59,7 +59,7 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
               {isChild ? 'Child' : 'Header'}
             </Badge>
             <span className="font-medium text-primary-900 dark:text-neutral-50 truncate">
-              {shadow.proposedVaName || 'Unnamed shadow'}
+              {shadow.proposedVaName || 'Unnamed account'}
             </span>
         {/* Same hover/focus-revealed pattern as the rule edge. */}
         {(onEdit || onDelete) && (
@@ -69,8 +69,8 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
                 variant="ghost"
                 size="xs"
                 onClick={() => onEdit(shadow)}
-                title={`Edit "${shadow.proposedVaName || 'shadow'}"`}
-                aria-label={`Edit shadow ${shadow.proposedVaName || 'shadow'}`}
+                title={`Edit "${shadow.proposedVaName || 'account'}"`}
+                aria-label={`Edit account ${shadow.proposedVaName || ''}`}
               >
                 <Pencil className="w-3.5 h-3.5" />
               </Button>
@@ -80,8 +80,8 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
                 variant="ghost"
                 size="xs"
                 onClick={() => onDelete(shadow)}
-                title={`Remove "${shadow.proposedVaName || 'shadow'}"`}
-                aria-label={`Remove shadow ${shadow.proposedVaName || 'shadow'}`}
+                title={`Remove "${shadow.proposedVaName || 'account'}"`}
+                aria-label={`Remove account ${shadow.proposedVaName || ''}`}
               >
                 <Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" />
               </Button>

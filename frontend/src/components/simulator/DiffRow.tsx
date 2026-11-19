@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Badge } from '../ui';
 import { cn } from '../../utils';
-import type { DiffEntry, DiffOp } from './types';
+import type { DiffEntity, DiffEntry, DiffOp } from './types';
 
 // ============================================================================
 // DiffRow — one diff entry. op pill (fixed width) + entity label/detail +
@@ -15,6 +15,9 @@ const OP_VARIANT: Record<DiffOp, 'success' | 'warning' | 'neutral'> = {
   RETIRE: 'neutral',
   UNCHANGED: 'neutral',
 };
+
+const OP_LABEL: Record<DiffOp, string> = { ADD: 'Add', MODIFY: 'Modify', RETIRE: 'Retire', UNCHANGED: 'Unchanged' };
+const ENTITY_LABEL: Record<DiffEntity, string> = { SHADOW: 'Account', RULE: 'Sweep rule', POOL: 'Pool' };
 
 export interface DiffRowProps {
   entry: DiffEntry;
@@ -36,7 +39,7 @@ export const DiffRow: React.FC<DiffRowProps> = ({ entry, className }) => {
       >
         <div className="w-20 shrink-0 pt-0.5">
           <Badge variant={OP_VARIANT[entry.op]} size="sm">
-            {entry.op}
+            {OP_LABEL[entry.op]}
           </Badge>
         </div>
 
@@ -45,7 +48,7 @@ export const DiffRow: React.FC<DiffRowProps> = ({ entry, className }) => {
             <span className="body-sm text-primary-900 dark:text-neutral-100 truncate">
               {entry.label}
             </span>
-            <span className="code text-neutral-400">{entry.entity}</span>
+            <span className="caption">{ENTITY_LABEL[entry.entity] ?? entry.entity}</span>
           </div>
           {expandable && open && (
             <ul className="mt-1.5 space-y-1">

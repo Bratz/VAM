@@ -1,10 +1,10 @@
 import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Search, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
-import { Card, Badge, Button, DataTable, StatusIconBadge, Checkbox, Toggle } from '../components/ui';
+import { Search, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
+import { Card, Badge, Button, DataTable, StatusIconBadge, Checkbox, Toggle, EmptyState } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
-import { Modal, ProgressBar } from '../components/ui/enhanced';
+import { Modal, ProgressBar, Tabs } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { formatCurrency, cn } from '../utils';
 
@@ -579,19 +579,15 @@ const PartyFormModal: React.FC<{
     { id: 'basic', label: 'Basic Info', icon: Building2 },
     { id: 'bank-accounts', label: 'Bank Accounts', icon: CreditCard, count: bankAccounts.length },
     { id: 'documents', label: 'Documents', icon: Shield, count: documents.length },
-    { id: 'compliance', label: 'Compliance', icon: Shield, editOnly: true }, // Only in edit mode
     { id: 'entity', label: 'Entity & POBO', icon: Wallet },
   ];
-
-  // Filter tabs based on mode
-  const visibleTabs = tabs.filter(tab => !tab.editOnly || isEditMode);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Party' : 'Add New Party'} size="xl">
       <div className="flex flex-col h-[70vh]">
         {/* Tab Navigation */}
         <div className="flex border-b border-edge px-2 bg-surface-page rounded-t-lg">
-          {visibleTabs.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -1162,78 +1158,6 @@ const PartyFormModal: React.FC<{
             </div>
           )}
 
-          {/* Compliance Tab (Edit Mode Only) */}
-          {activeTab === 'compliance' && isEditMode && party && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">KYC Status</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-surface-page rounded-lg">
-                    <label className="block label-cased mb-1">Current Status</label>
-                    <div className="flex items-center gap-2">
-                      {party.kycStatus && kycStatusConfig[party.kycStatus] && (
-                        <>
-                          {React.createElement(kycStatusConfig[party.kycStatus].icon, { className: 'w-4 h-4' })}
-                          <Badge variant={kycStatusConfig[party.kycStatus].variant as any}>
-                            {kycStatusConfig[party.kycStatus].label}
-                          </Badge>
-                        </>
-                      )}
-                    </div>
-                    {party.kycExpiresAt && (
-                      <p className="caption mt-2">
-                        Expires: {new Date(party.kycExpiresAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-4 bg-surface-page rounded-lg">
-                    <label className="block label-cased mb-1">Risk Rating</label>
-                    <div className="flex items-center gap-2">
-                      {party.riskRating && riskConfig[party.riskRating] && (
-                        <Badge variant={riskConfig[party.riskRating].variant as any}>
-                          {riskConfig[party.riskRating].label}
-                        </Badge>
-                      )}
-                      {party.riskScore && (
-                        <span className="body-sm">Score: {party.riskScore}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">Screening Status</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-surface-page rounded-lg">
-                    <label className="block label-cased mb-1">Sanctions</label>
-                    <Badge variant={!party.sanctionsStatus ? 'neutral' : party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'}>
-                      {party.sanctionsStatus || 'Not Checked'}
-                    </Badge>
-                  </div>
-                  <div className="p-4 bg-surface-page rounded-lg">
-                    <label className="block label-cased mb-1">PEP Status</label>
-                    <Badge variant={party.pepStatus ? 'warning' : 'success'}>
-                      {party.pepStatus ? 'PEP Identified' : 'Clear'}
-                    </Badge>
-                  </div>
-                  <div className="p-4 bg-surface-page rounded-lg">
-                    <label className="block label-cased mb-1">Adverse Media</label>
-                    <Badge variant={party.adverseMediaStatus ? 'warning' : 'success'}>
-                      {party.adverseMediaStatus ? 'Found' : 'Clear'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-edge">
-                <p className="caption">
-                  KYC and compliance settings can be managed from the View Details modal after saving the party.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Entity & POBO Tab */}
           {activeTab === 'entity' && (
             <div className="space-y-6">
@@ -1309,13 +1233,6 @@ const PartyFormModal: React.FC<{
                 </div>
               </div>
 
-              {isEditMode && (
-                <div className="pt-4 border-t border-edge">
-                  <p className="caption">
-                    Additional POBO and Intercompany configuration (linked entities, credit limits) can be managed from the View Details modal.
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1639,25 +1556,13 @@ const PartyDetailModal: React.FC<{
                   {party.taxId && <div><p className="caption">Tax ID / TRN</p><p className="text-body-sm text-primary-900 font-mono dark:text-neutral-50">{party.taxId}</p></div>}
                   {party.owningEntityCode && <div><p className="caption">Owning Entity</p><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.owningEntityCode}</p></div>}
                 </Card>
+              </div>
+              <div className="space-y-4">
                 <h3 className="body-strong font-semibold">Contact</h3>
                 <Card padding="sm" className="space-y-3">
                   {party.contactName && <div className="flex items-center gap-2"><User className="w-4 h-4 text-neutral-400" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.contactName}</p></div>}
                   {party.contactEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-neutral-400" /><a href={`mailto:${party.contactEmail}`} className="text-body-sm text-info-600 hover:underline dark:text-info-300">{party.contactEmail}</a></div>}
                   {party.city && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-neutral-400" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.city}, {party.country}</p></div>}
-                </Card>
-              </div>
-              <div className="space-y-4">
-                <h3 className="body-strong font-semibold">Compliance Status</h3>
-                <Card padding="sm" className="space-y-3">
-                  <div className="flex items-center justify-between"><span className="body-sm">KYC Status</span><Badge variant={kycConf.variant as any} size="sm"><KycIcon className="w-3 h-3 mr-1" />{kycConf.label}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="body-sm">Risk Rating</span><Badge variant={riskConfig[party.riskRating]?.variant as any} size="sm">{riskConfig[party.riskRating]?.label}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="body-sm">Sanctions</span><Badge variant={!party.sanctionsStatus ? 'neutral' : party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">{!party.sanctionsStatus ? 'Not screened' : party.sanctionsStatus === 'CLEAR' ? 'Clear' : 'Alert'}</Badge></div>
-                </Card>
-                <h3 className="body-strong font-semibold">Payment Factory</h3>
-                <Card padding="sm" className="space-y-3">
-                  <div className="flex items-center justify-between"><span className="body-sm">POBO Eligible</span><Badge variant={party.poboEligible ? 'success' : 'neutral'} size="sm">{party.poboEligible ? 'Yes' : 'No'}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="body-sm">Intercompany</span><Badge variant={party.isIntercompany ? 'info' : 'neutral'} size="sm">{party.isIntercompany ? party.linkedLegalEntityCode : 'No'}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="body-sm">Netting Eligible</span><Badge variant={party.canParticipateInNetting ? 'success' : 'neutral'} size="sm">{party.canParticipateInNetting ? 'Yes' : 'No'}</Badge></div>
                 </Card>
               </div>
             </div>
@@ -2026,27 +1931,8 @@ const PartyDetailModal: React.FC<{
               <div className="space-y-4">
                 <h3 className="body-strong font-semibold">POBO Configuration</h3>
                 <Card padding="md" className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-cat-1-soft rounded-lg dark:bg-cat-1/15">
-                    <div className="flex items-center gap-3">
-                      <Wallet className="w-6 h-6 text-cat-1 dark:text-cat-1-fg" />
-                      <div><p className="text-body-sm font-medium text-cat-1 dark:text-cat-1-fg">POBO Enabled</p><p className="text-caption text-cat-1 dark:text-cat-1-fg">Treasury can pay on behalf of subsidiaries</p></div>
-                    </div>
-                    <Badge variant="success" size="sm">Active</Badge>
-                  </div>
                   <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
                   <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
-                </Card>
-              </div>
-              <div className="space-y-4">
-                <h3 className="body-strong font-semibold">POBO Payment Flow</h3>
-                <Card padding="md">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center text-body-sm font-semibold text-info-700 dark:bg-info-500/20 dark:text-info-300">1</div><div><p className="text-body-sm font-medium">Subsidiary creates payable</p><p className="caption">{party.owningEntityCode}</p></div></div>
-                    <div className="ml-4 border-l-2 border-dashed border-edge h-6"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-body-sm font-semibold text-cat-1 dark:text-cat-1-fg dark:bg-cat-1/15">2</div><div><p className="text-body-sm font-medium">Treasury pays vendor</p><p className="caption">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
-                    <div className="ml-4 border-l-2 border-dashed border-edge h-6"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">3</div><div><p className="text-body-sm font-medium">IC Recharge created</p><p className="caption">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
-                  </div>
                 </Card>
               </div>
             </div>
@@ -2058,16 +1944,8 @@ const PartyDetailModal: React.FC<{
               <div className="space-y-4">
                 <h3 className="body-strong font-semibold">Intercompany Details</h3>
                 <Card padding="md" className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-cat-2-soft rounded-lg dark:bg-cat-2/15">
-                    <div className="flex items-center gap-3">
-                      <Link2 className="w-6 h-6 text-cat-2 dark:text-cat-2-fg" />
-                      <div><p className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg">Intercompany Party</p><p className="text-caption text-cat-2 dark:text-cat-2-fg">Represents a group entity</p></div>
-                    </div>
-                    <Badge variant="info" size="sm">IC</Badge>
-                  </div>
                   <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
                   <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
-                  <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="caption">Auto-enabled for IC parties</span></div>
                 </Card>
               </div>
               <div className="space-y-4">
@@ -2384,106 +2262,44 @@ const PartiesPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Show message if no corporate selected */}
       {!selectedCorporateId && !corporatesLoading && (
-        <Card className="bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />
-            <p className="text-body-sm text-warning-800 dark:text-warning-300">Please select a corporate to view parties.</p>
-          </div>
-        </Card>
+        <EmptyState icon={<Users className="w-12 h-12" />} title="Select a corporate" description="Parties are listed per corporate." />
       )}
 
       {/* Only show content if corporate is selected */}
       {selectedCorporateId && (
         <>
-          {/* Stats Grid — harmonised:
-              · All 7 cards share the same active ring (ring-primary-500 / dark:accent-400)
-                so "selected" reads the same across role-type filters and capability-flag filters.
-              · Neutral role tabs get a subtle dark-mode tint so they have visible card
-                presence next to the colour-tinted capability cards.
-              · Colour-tinted cards (POBO/IC/Netting) keep their semantic hue (icon + value text)
-                but the dark backgrounds are dialled back so they don't dominate the row.
-              · Grid is 6-up on lg (3 role tabs + 3 capability filters) — was 7-up
-                with an empty trailing slot that left the row looking misaligned. */}
-          <div className="grid gap-3 grid-cols-6">
-            {roleTabs.map((tab, idx) => {
-              const Icon = tab.icon;
-              const isActive = roleFilter === tab.id;
-              return (
-                <div key={tab.id} onClick={() => setRoleFilter(tab.id)} className="cursor-pointer">
-                  <Card
-                    padding="sm"
-                    hover
-                    className={cn(
-                      'transition-all animate-fade-in dark:bg-primary-900/40',
-                      isActive && 'ring-2 ring-primary-500 dark:ring-accent-400 bg-primary-50 dark:bg-primary-800/60'
-                    )}
-                    style={{ animationDelay: `${0.15 + idx * 0.03}s` }}
-                  >
-                    <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption">{tab.label}</span></div>
-                    {/* Phase 12 Task E: .stat-value-xs replaces the raw
-                        `text-heading-sm font-semibold` display-tier hand-roll. */}
-                    <p className="stat-value-xs mt-1">{tab.count}</p>
-                  </Card>
-                </div>
-              );
-            })}
-            <div onClick={() => setPoboFilter(!poboFilter)} className="cursor-pointer">
-              <Card
-                padding="sm"
-                hover
+          {/* Role filter (segmented) + capability toggles. Replaces six
+              gradient filter cards and an "Active filters" row that repeated
+              them (density audit, round 2). */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Tabs
+              tabs={roleTabs.map((t) => ({ id: t.id, label: t.label, badge: t.count }))}
+              activeTab={roleFilter}
+              onChange={(id) => setRoleFilter(id as typeof roleFilter)}
+              size="sm"
+            />
+            {([
+              ['POBO ready', poboFilter, setPoboFilter, displayStats.poboEligibleVendors],
+              ['Intercompany', icFilter, setIcFilter, displayStats.intercompanyParties],
+              ['Netting', nettingFilter, setNettingFilter, displayStats.nettingEligibleParties],
+            ] as const).map(([label, on, set, count]) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={on}
+                onClick={() => set(!on)}
                 className={cn(
-                  'transition-all animate-fade-in bg-gradient-to-br from-cat-1-soft to-info-50 dark:from-cat-1/10 dark:to-info-500/10',
-                  poboFilter && 'ring-2 ring-primary-500 dark:ring-accent-400'
+                  'px-3 py-1 rounded-full text-caption font-medium transition-colors border',
+                  on
+                    ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:border-accent-500'
+                    : 'bg-surface-card text-neutral-700 border-edge hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
                 )}
-                style={{ animationDelay: '0.24s' }}
               >
-                <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" /><span className="text-caption text-cat-1 dark:text-cat-1-fg">POBO Ready</span></div>
-                <p className="stat-value-xs text-cat-1 dark:text-cat-1-fg mt-1">{displayStats.poboEligibleVendors}</p>
-              </Card>
-            </div>
-            <div onClick={() => setIcFilter(!icFilter)} className="cursor-pointer">
-              <Card
-                padding="sm"
-                hover
-                className={cn(
-                  'transition-all animate-fade-in bg-gradient-to-br from-cat-2-soft to-cat-4-soft dark:from-cat-2/10 dark:to-cat-4/10',
-                  icFilter && 'ring-2 ring-primary-500 dark:ring-accent-400'
-                )}
-                style={{ animationDelay: '0.27s' }}
-              >
-                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" /><span className="text-caption text-cat-2 dark:text-cat-2-fg">Intercompany</span></div>
-                <p className="stat-value-xs text-cat-2 dark:text-cat-2-fg mt-1">{displayStats.intercompanyParties}</p>
-              </Card>
-            </div>
-            <div onClick={() => setNettingFilter(!nettingFilter)} className="cursor-pointer">
-              <Card
-                padding="sm"
-                hover
-                className={cn(
-                  'transition-all animate-fade-in bg-gradient-to-br from-cat-3-soft to-cat-5-soft dark:from-cat-3/10 dark:to-cat-5/10',
-                  nettingFilter && 'ring-2 ring-primary-500 dark:ring-accent-400'
-                )}
-                style={{ animationDelay: '0.3s' }}
-              >
-                <div className="flex items-center gap-2"><Repeat className="w-4 h-4 text-cat-3 dark:text-cat-3-fg" /><span className="text-caption text-cat-3 dark:text-cat-3-fg">Netting</span></div>
-                <p className="stat-value-xs text-cat-3 dark:text-cat-3-fg mt-1">{displayStats.nettingEligibleParties}</p>
-              </Card>
-            </div>
+                {label} · {count}
+              </button>
+            ))}
           </div>
-
-          {/* Active Filters */}
-          {(poboFilter || icFilter || nettingFilter || selectedEntityId) && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="body-sm">Active Filters:</span>
-              {selectedEntityId && <span className="cursor-pointer" onClick={() => setSelectedEntityId(undefined)}><Badge variant="info" size="sm">{entities.find(e => e.id === selectedEntityId)?.entityCode} <X className="w-3 h-3" /></Badge></span>}
-              {poboFilter && <span className="cursor-pointer" onClick={() => setPoboFilter(false)}><Badge variant="info" size="sm">POBO Eligible <X className="w-3 h-3" /></Badge></span>}
-              {icFilter && <span className="cursor-pointer" onClick={() => setIcFilter(false)}><Badge variant="info" size="sm">Intercompany <X className="w-3 h-3" /></Badge></span>}
-              {nettingFilter && <span className="cursor-pointer" onClick={() => setNettingFilter(false)}><Badge variant="info" size="sm">Netting Eligible <X className="w-3 h-3" /></Badge></span>}
-              <button onClick={() => { setSelectedEntityId(undefined); setPoboFilter(false); setIcFilter(false); setNettingFilter(false); }} className="caption-error hover:underline">Clear All</button>
-            </div>
-          )}
 
           {/* Search & KYC Filter. The inline Refresh button used to live at
               the end of this row — it now sits in the Layout header next to
@@ -2521,7 +2337,7 @@ const PartiesPage: React.FC = () => {
                     return (
                       <div className="flex items-center gap-3">
                         <StatusIconBadge
-                          tone={party.isIntercompany ? 'cat-2' : party.status === 'ACTIVE' ? 'primary' : 'error'}
+                          tone={party.isIntercompany ? 'cat-2' : 'primary'}
                           icon={TypeIcon}
                         />
                         <div><p className="body-strong font-semibold">{party.displayName || party.legalName}</p><p className="caption">{party.partyCode}</p></div>
@@ -2564,7 +2380,7 @@ const PartiesPage: React.FC = () => {
                     return <Badge variant={kycConf.variant as any} size="sm">{kycConf.label}</Badge>;
                   },
                 },
-                { key: 'status', header: 'Status', align: 'center', render: (_, party) => <Badge variant={party.status === 'ACTIVE' ? 'success' : 'error'} size="sm">{party.status}</Badge> },
+                { key: 'status', header: 'Status', align: 'center', render: (_, party) => party.status === 'ACTIVE' ? null : <Badge variant="error" size="sm">{party.status.charAt(0) + party.status.slice(1).toLowerCase()}</Badge> },
                 {
                   key: 'actions',
                   header: 'Actions',
@@ -2575,7 +2391,6 @@ const PartiesPage: React.FC = () => {
                   // group-hover trick the hand-rolled table used.
                   render: (_, party) => (
                     <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedParty(party)}><Eye className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Pencil className="w-4 h-4" /></Button>
                     </div>
                   ),

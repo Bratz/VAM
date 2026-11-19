@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pencil, RefreshCw, Landmark, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Pencil, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { StatStrip } from '../../components/layout/StatStrip';
@@ -17,10 +17,9 @@ import { useUser } from '../../context/useUser';
 import { fxDealApi, InstructionRow } from '../../services/fxDealApi';
 import { errorText, fmt } from './fxFormat';
 
-const source = (r: InstructionRow): { label: string; variant: 'success' | 'info' | 'warning' | 'error' } =>
-  r.resolved.account
-    ? r.resolved.fromInstruction ? { label: 'Instruction', variant: 'success' } : { label: 'Only account', variant: 'info' }
-    : r.eligible.length > 1 ? { label: 'Choose one', variant: 'warning' } : { label: 'No account', variant: 'error' };
+// Only for rows with an account: without one, the reason in "Deals settle through" already says why.
+const source = (r: InstructionRow): { label: string; variant: 'success' | 'info' } =>
+  r.resolved.fromInstruction ? { label: 'Instruction', variant: 'success' } : { label: 'Only account', variant: 'info' };
 
 const FxSettlementPage: React.FC = () => {
   const { currentCorporateId } = useUser();
@@ -95,7 +94,13 @@ const FxSettlementPage: React.FC = () => {
         ? <span className="font-mono tabular-nums">{fmt(r.resolved.account.balance)}</span>
         : <span className="text-neutral-500 dark:text-neutral-400">-</span>,
     },
-    { key: 'source', header: 'Set by', dropOrder: 1, render: (_, r) => { const s = source(r); return <Badge variant={s.variant} size="sm">{s.label}</Badge>; } },
+    {
+      key: 'source', header: 'Set by', dropOrder: 1, render: (_, r) => {
+        if (!r.resolved.account) return <span className="text-neutral-500 dark:text-neutral-400">-</span>;
+        const s = source(r);
+        return <Badge variant={s.variant} size="sm">{s.label}</Badge>;
+      },
+    },
     {
       key: 'actions', header: 'Actions', width: '4rem', minWidth: 64,
       render: (_, r) => (
@@ -110,12 +115,11 @@ const FxSettlementPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Settlement Instructions"
-        description="The account each entity’s FX deals settle through in each currency: the bought currency is credited to it and the sold currency debited. Only accounts at the bank you deal with can be used. Where an entity has one account in a currency it is used; where it has several, choose one, or deals in that currency are declined."
+        description="The account each entity’s FX deals settle through, per currency."
       />
 
-      <StatStrip columns={3}>
-        <StatTile tone="primary" icon={<Landmark className="w-5 h-5" />} label="Entity currencies" value={String(rows.length)} loading={loading && !rows.length} />
-        <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Ready to settle" value={String(ready)} sub="an account is set or is the only one" />
+      <StatStrip columns={2}>
+        <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Ready to settle" value={String(ready)} sub="an account is set or is the only one" loading={loading && !rows.length} />
         <StatTile tone={blocked ? 'warning' : 'success'} icon={<AlertTriangle className="w-5 h-5" />} label="Need an account" value={String(blocked)}
           sub={blocked ? 'deals in these are declined' : 'nothing to do'} />
       </StatStrip>

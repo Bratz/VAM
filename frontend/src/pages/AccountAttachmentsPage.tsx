@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Link2, Plus, Search, Loader2, Eye, Shield, Users, Building2, Layers, Clock, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, StatTile, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
+import { Link2, Plus, Search, Loader2, Shield, Users, Building2, Layers, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle } from 'lucide-react';
+import { Card, Button, Badge, Input, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
@@ -18,7 +18,6 @@ import {
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -55,7 +54,7 @@ interface CreateAttachmentForm {
 // ============================================================================
 
 // The one definition of the entity-to-account relationship types; the Bank Accounts
-// "Attach to Entity" modal imports it. Meanings follow AccountAttachment.RelationshipType.
+// "Assign to entity" modal imports it. Meanings follow AccountAttachment.RelationshipType.
 // eslint-disable-next-line react-refresh/only-export-components
 export const RELATIONSHIP_CONFIG: Record<RelationshipType, {
   label: string;
@@ -440,7 +439,7 @@ const AccountAttachmentsPage: React.FC = () => {
   };
 
   const handleTerminate = async (id: string) => {
-    if (!confirm('Are you sure you want to terminate this attachment?')) return;
+    if (!confirm('Are you sure you want to terminate this link?')) return;
     setSubmitting(true);
     try {
       await accountAttachmentApi.terminate(id);
@@ -529,7 +528,7 @@ const AccountAttachmentsPage: React.FC = () => {
           <RefreshCw className={cn("w-4 h-4 mr-1", loading && "animate-spin")} />Refresh
         </Button>
         <Button size="sm" onClick={() => { setCreateForm({ ...INITIAL_FORM, legalEntityId: selectedEntityId }); setShowCreateModal(true); }}>
-          <Plus className="w-4 h-4 mr-1" />New Attachment
+          <Plus className="w-4 h-4 mr-1" />New link
         </Button>
       </>
     ),
@@ -541,11 +540,11 @@ const AccountAttachmentsPage: React.FC = () => {
   return (
     <Page>
       {/* In-body identity (Phase 10) — aligns with the rest of Aperture's
-          conformed pages. Refresh / New Attachment CTAs live in the Aperture
+          conformed pages. Refresh / New link CTAs live in the Aperture
           Layout header via usePageHeaderActions below. */}
       <PageHeader
         title="Account Linking"
-        description="Manage VA-to-legal-entity attachments. Link physical and virtual accounts to entities with relationship roles (owner / authorized / collateral)."
+        description="Which legal entities own or can act on each virtual account."
       />
 
       {/* Entity-only picker — uses the shared ScopeSelector primitive
@@ -573,7 +572,7 @@ const AccountAttachmentsPage: React.FC = () => {
           competed as an equal-weight strip with no visual hierarchy. */}
       <HeroMetricCard
         primary={{
-          label: 'Total Attachments',
+          label: 'Total links',
           value: displayStats.totalAttachments,
         }}
         secondary={{
@@ -584,26 +583,6 @@ const AccountAttachmentsPage: React.FC = () => {
         icon={<Link2 className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        {[
-          { label: 'Pending', value: displayStats.pendingApproval, icon: Clock, tone: 'warning' as const },
-          { label: 'Owner', value: displayStats.ownerRelationships, icon: Key, tone: 'info' as const },
-          { label: 'Authorized', value: displayStats.authorizedRelationships, icon: UserCheck, tone: 'accent' as const },
-          { label: 'Collateral', value: displayStats.collateralRelationships, icon: Lock, tone: 'danger' as const },
-        ].map((stat, idx) => (
-          <StatTile
-            key={stat.label}
-            layout="row"
-            tone={stat.tone}
-            label={stat.label}
-            value={stat.value}
-            icon={<stat.icon className="w-5 h-5" />}
-            delay={`${0.15 + idx * 0.05}s`}
-          />
-        ))}
-      </StatStrip>
-
       {/* Filters */}
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <div className="flex flex-wrap items-center gap-4">
@@ -613,11 +592,11 @@ const AccountAttachmentsPage: React.FC = () => {
           </div>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-edge rounded-lg bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500">
             <option value="">All Types</option>
-            {Object.entries(RELATIONSHIP_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            {Object.entries(RELATIONSHIP_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label} ({attachments.filter(a => a.relationshipType === k).length})</option>)}
           </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as AttachmentStatus | '')} className="px-3 py-2 border border-edge rounded-lg bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500">
             <option value="">All Statuses</option>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label} ({attachments.filter(a => a.status === k).length})</option>)}
           </select>
           {(filterType || filterStatus) && <Button variant="ghost" size="sm" onClick={() => { setFilterType(''); setFilterStatus(''); }}><X className="w-4 h-4 mr-1" />Clear</Button>}
         </div>
@@ -631,8 +610,8 @@ const AccountAttachmentsPage: React.FC = () => {
           loading={loading}
           onRowClick={(att) => { setSelectedAttachment(att); setShowDetailModal(true); }}
           emptyIcon={<Link2 className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-          emptyTitle="No attachments found"
-          emptyDescription="Try adjusting your filters or create a new attachment."
+          emptyTitle="No links found"
+          emptyDescription="Try adjusting your filters or create a new link."
           columns={[
             {
               key: 'vaNumber',
@@ -687,7 +666,6 @@ const AccountAttachmentsPage: React.FC = () => {
               width: '7rem',
               render: (_, att) => (
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedAttachment(att); setShowDetailModal(true); }}><Eye className="w-4 h-4" /></Button>
                   {att.status === 'PENDING_APPROVAL' && <Button variant="ghost" size="sm" onClick={() => handleApprove(att.id)} className="text-success-600 dark:text-success-300" disabled={submitting}><CheckCircle className="w-4 h-4" /></Button>}
                   {att.status === 'ACTIVE' && <Button variant="ghost" size="sm" onClick={() => handleSuspend(att.id)} className="text-warning-600 dark:text-warning-300" disabled={submitting}><Ban className="w-4 h-4" /></Button>}
                 </div>
@@ -698,7 +676,7 @@ const AccountAttachmentsPage: React.FC = () => {
       </Card>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Attachment Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Link details" size="lg">
         {selectedAttachment && (
           <div className="p-4 space-y-6">
             <div className="flex items-start justify-between">
@@ -750,7 +728,7 @@ const AccountAttachmentsPage: React.FC = () => {
       </Modal>
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Account Attachment" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New link" size="lg">
         <div className="p-4 space-y-4">
           <AccountNodePicker selectedId={createForm.virtualAccountId} onSelect={(id) => setCreateForm(p => ({ ...p, virtualAccountId: id }))} label="Virtual Account / Aggregation Node *" />
           <LegalEntityPicker selectedId={createForm.legalEntityId} onSelect={(id) => setCreateForm(p => ({ ...p, legalEntityId: id }))} label="Legal Entity *" entities={entities} loading={entitiesLoading} />
@@ -800,7 +778,7 @@ const AccountAttachmentsPage: React.FC = () => {
           <div className="flex gap-3 pt-4 border-t">
             <Button variant="outline" className="flex-1" onClick={() => setShowCreateModal(false)}>Cancel</Button>
             <Button className="flex-1" onClick={handleCreate} disabled={!createForm.virtualAccountId || !createForm.legalEntityId || submitting}>
-              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}Create Attachment
+              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}Create link
             </Button>
           </div>
         </div>

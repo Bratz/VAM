@@ -1,6 +1,6 @@
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { Select, StatusIconBadge, StatTile } from '../components/ui';
+import { Select, StatusIconBadge } from '../components/ui';
 /**
  * EnhancedPayablesPage.tsx - Phase 2 Complete Implementation
  * 
@@ -176,44 +176,6 @@ const PayablesFilterBar: React.FC<FilterBarProps> = ({
         </div>
       )}
     />
-  );
-};
-
-// ============================================================================
-// STATS SECTION
-// ============================================================================
-
-interface StatsProps {
-  stats: PayableStatsPhase2 | null;
-  loading: boolean;
-}
-
-const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
-  const statItems = [
-    { label: 'Total Payables', value: stats?.totalCount || 0, tone: 'primary' as const, icon: FileText },
-    { label: 'Pending', value: stats?.pendingCount || 0, tone: 'warning' as const, icon: Clock },
-    { label: 'Overdue', value: stats?.overdueCount || 0, tone: 'danger' as const, icon: AlertTriangle },
-    { label: 'POBO', value: stats?.poboRequestedCount || 0, tone: 'info' as const, icon: Landmark },
-    { label: 'Intercompany', value: stats?.intercompanyCount || 0, tone: 'accent' as const, icon: Building2 },
-  ];
-
-  return (
-    <div className="grid gap-4 grid-cols-3 2xl:grid-cols-5">
-      {statItems.map((item, idx) => {
-        const Icon = item.icon;
-        return (
-          <StatTile
-            key={idx}
-            tone={item.tone}
-            icon={<Icon className="w-5 h-5" />}
-            label={item.label}
-            value={item.value}
-            loading={loading}
-            delay={`${0.1 + idx * 0.05}s`}
-          />
-        );
-      })}
-    </div>
   );
 };
 
@@ -468,14 +430,15 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
             <Landmark className="w-5 h-5 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
             <div className="text-body-sm">
               <p className="body-strong">
-                Paid by {route.payerEntityName ?? route.payerEntityCode} from {route.paymentVaNumber} on behalf of {payable.owningEntityName ?? payable.owningEntityCode}
+                Paid by {route.payerEntityName ?? route.payerEntityCode} on behalf of {payable.owningEntityName ?? payable.owningEntityCode}
               </p>
-              <p className="caption">
-                Booked to IHB current account {route.ihbCurrentVaNumber}
+              <details className="caption mt-1">
+                <summary className="cursor-pointer">Details</summary>
+                Paid from {route.paymentVaNumber}; charged to {payable.owningEntityName ?? payable.owningEntityCode}&apos;s account {route.ihbCurrentVaNumber}
                 {route.settleCurrency && route.settleCurrency !== route.currencyCode && route.settleAmount != null &&
                   <> for {formatCurrency(route.settleAmount, route.settleCurrency)} (indicative, fixed at payment)</>}
-                {route.headroom != null && <>; headroom {formatCurrency(route.headroom, route.settleCurrency ?? route.currencyCode)}</>}. No fee.
-              </p>
+                {route.headroom != null && <>; credit left {formatCurrency(route.headroom, route.settleCurrency ?? route.currencyCode)}</>}. No fee.
+              </details>
             </div>
           </div>
         )}
@@ -485,9 +448,8 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
         {pobo && route?.fxNeedsQuote && (
           <p className="flex items-start gap-2 text-body-sm text-warning-700 dark:text-warning-300">
             <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            {payable.fxStatus === 'AWAITING_FX' ? 'Awaiting FX (treasury). ' : ''}Above the live-price limit, so the rate is
-            negotiated: executing hands it to {route.payerEntityName ?? route.payerEntityCode} to agree the rate, and it is paid
-            when they accept a price.
+            {payable.fxStatus === 'AWAITING_FX' ? 'Awaiting FX (treasury). ' : ''}Above the live-price limit: {route.payerEntityName ?? route.payerEntityCode} agrees
+            the rate, and it is paid when they accept a price.
           </p>
         )}
         {(route?.refusal || routeError) && (
@@ -984,8 +946,14 @@ const EnhancedPayablesPage: React.FC = () => {
 
   return (
     <Page>
-      {/* Quick Actions */}
+      {/* Quick Actions — the overdue count is the one figure the tab badges don't carry */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        {!statsLoading && !!stats?.overdueCount && (
+          <span className="mr-auto flex items-center gap-1.5 text-body-sm font-medium text-error-700 dark:text-error-300">
+            <AlertTriangle className="w-4 h-4" />
+            {stats.overdueCount} overdue
+          </span>
+        )}
         <Button variant="outline" onClick={() => { loadPayables(); loadStats(); }} leftIcon={<RefreshCw className="w-4 h-4" />}>
           Refresh
         </Button>
@@ -1017,9 +985,6 @@ const EnhancedPayablesPage: React.FC = () => {
         onEntityChange={handleEntityChange}
         loading={corporatesLoading}
       />
-
-      {/* Stats */}
-      <PayablesStatsSection stats={stats} loading={statsLoading} />
 
       {/* Main Content Card */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
@@ -1089,7 +1054,7 @@ const EnhancedPayablesPage: React.FC = () => {
               render: (_, payable) => (
                 <div>
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{payable.invoiceNumber || payable.payableNumber}</p>
-                  <p className="caption">{payable.payableNumber}</p>
+                  {payable.invoiceNumber && <p className="caption">{payable.payableNumber}</p>}
                 </div>
               ),
             },
@@ -1132,14 +1097,19 @@ const EnhancedPayablesPage: React.FC = () => {
               key: 'status',
               header: 'Status', minWidth: 150,
               render: (_, payable) => (
+                getStatusBadge(payable.status)
+              ),
+            },
+            {
+              key: 'paymentRoute', header: 'Route', minWidth: 150, // carries the POBO and FX status, so it is never dropped
+              render: (_, payable) => (
                 <div className="flex flex-col gap-1">
-                  {getStatusBadge(payable.status)}
+                  {getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus)}
                   {getPoboStatusBadge(payable.poboRequestStatus)}
                   {payable.fxStatus === 'AWAITING_FX' && <Badge variant="warning" size="sm">Awaiting FX (treasury)</Badge>}
                 </div>
               ),
             },
-            { key: 'paymentRoute', header: 'Route', minWidth: 100, dropOrder: 2, render: (_, payable) => getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus) },
             {
               key: 'actions',
               header: 'Actions', minWidth: 110,
@@ -1247,7 +1217,7 @@ const EnhancedPayablesPage: React.FC = () => {
               {viewPayable.poboRequestStatus && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">POBO Status</p>
-                  <p className="font-medium">{viewPayable.poboRequestStatus}</p>
+                  <div>{getPoboStatusBadge(viewPayable.poboRequestStatus) ?? <p className="font-medium">{viewPayable.poboRequestStatus}</p>}</div>
                 </div>
               )}
               <PoboSettlement payable={viewPayable} />

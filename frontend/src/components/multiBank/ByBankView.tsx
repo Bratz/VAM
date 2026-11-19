@@ -94,38 +94,18 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
       .filter(b => b.currencies.length > 0);
   }, [summary, filter]);
 
-  // Per-currency effective totals derived from filteredBanks so the footer
-  // scope tracks the active filter. With "External" selected, USD shows only
-  // external-bank USD effective — not portfolio-wide. (For shadow-level
-  // filters, filteredBanks has already recomputed totalEffective from the
-  // narrowed shadows.)
-  const currencyTotals = useMemo(() => {
-    const m = new Map<string, { bank: number; effective: number }>();
-    for (const b of filteredBanks) {
-      for (const c of b.currencies) {
-        const cur = m.get(c.currencyCode) ?? { bank: 0, effective: 0 };
-        cur.bank += c.totalBankBalance || 0;
-        cur.effective += c.totalEffective || 0;
-        m.set(c.currencyCode, cur);
-      }
-    }
-    return Array.from(m.entries())
-      .map(([code, t]) => ({ code, ...t }))
-      .sort((a, b) => a.code.localeCompare(b.code));
-  }, [filteredBanks]);
-
   // Empty-state copy. After a bulk refresh we auto-reset shadow-level
   // filters, but a user can also land here via a deep link (?filter=stale)
   // with zero matching shadows — so every branch has explicit copy.
   const noShadowsAtAll = summary.banks.length === 0;
   const emptyCopy = noShadowsAtAll
-    ? 'No shadow accounts found. Create shadows from the Shadow Accounts page first.'
-    : filter === 'home'     ? 'No home-bank shadows.'
-    : filter === 'external' ? 'No external-bank shadows.'
-    : filter === 'stale'    ? 'No stale shadows — all balances are fresh.'
+    ? 'No bank accounts found. Add them on the Bank Accounts page first.'
+    : filter === 'home'     ? 'No home-bank accounts.'
+    : filter === 'external' ? 'No external-bank accounts.'
+    : filter === 'stale'    ? 'No stale balances — all are fresh.'
     : filter === 'failed'   ? 'No failed refreshes.'
-    : filter === 'never'    ? 'All shadows have been refreshed at least once.'
-    : 'No shadows match the current filter.';
+    : filter === 'never'    ? 'All balances have been refreshed at least once.'
+    : 'No accounts match the current filter.';
 
   return (
     <>
@@ -150,8 +130,8 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
         )}
         {filteredBanks.map((bank) => {
           const shadowCountLabel = bank.shadowCount === bank.unfilteredShadowCount
-            ? `${bank.shadowCount} shadow${bank.shadowCount !== 1 ? 's' : ''}`
-            : `${bank.shadowCount} of ${bank.unfilteredShadowCount} shadows`;
+            ? `${bank.shadowCount} account${bank.shadowCount !== 1 ? 's' : ''}`
+            : `${bank.shadowCount} of ${bank.unfilteredShadowCount} accounts`;
           return (
           <div
             key={bank.bankBic}
@@ -195,10 +175,10 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                           heading, which is what .section-title's Fraunces
                           treatment is reserved for elsewhere on this tab) —
                           font-mono matches how the same code renders in
-                          Overview's "By currency" rail and the By Entity/By
+                          the By Entity/By
                           Country tables, instead of a plain sans weight. */}
                       <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{ccy.currencyCode}</span>
-                      <span className="caption">({ccy.shadowCount} mirror{ccy.shadowCount !== 1 ? 's' : ''})</span>
+                      <span className="caption">({ccy.shadowCount} account{ccy.shadowCount !== 1 ? 's' : ''})</span>
                     </div>
                     <div className="text-right">
                       {/* Disambiguate from the table's per-row Effective column.
@@ -220,7 +200,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                     data={ccy.shadows}
                     keyExtractor={(s) => s.vaId}
                     columns={[
-                      { key: 'shadow', header: 'Shadow', minWidth: 130, mobileLabel: true, render: (_v, s) => (
+                      { key: 'shadow', header: 'Account', minWidth: 130, mobileLabel: true, render: (_v, s) => (
                         <span className="font-mono text-caption text-primary-900 dark:text-neutral-50">{s.vaNumber}</span>
                       ) },
                       { key: 'freshness', header: 'Freshness', minWidth: 130, dropOrder: 3, render: (_v, s) => <FreshnessPill shadow={s} /> },
@@ -259,24 +239,6 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
           </div>
         );})}
       </div>
-
-      {/* Per-currency effective totals — section, not stray pill row. */}
-      {currencyTotals.length > 0 && (
-        <div className="border-t border-edge pt-4">
-          <p className="label mb-2">Effective by currency</p>
-          <div className="flex flex-wrap gap-2">
-            {currencyTotals.map(({ code, effective }) => (
-              <span
-                key={code}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-primary-800/60 text-caption"
-              >
-                <span className="font-semibold text-neutral-700 dark:text-neutral-200">{code}</span>
-                <span className="amount text-neutral-900 dark:text-neutral-50">{formatCurrency(effective, code)}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   );
 };

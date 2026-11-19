@@ -549,7 +549,6 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               description={isEditMode ? `Editing ${payableNumber || payableId}` : 'Record a vendor invoice for payment'}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-3">{actionButtons()}</div>
         </div>
       </div>
 
@@ -669,9 +668,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                       </p>
                     )}
                     <p className="caption">
-                      {ownerName} is enrolled for {pobo.currency}. Once approved, the treasury centre pays the vendor and the amount is
-                      booked to {ownerName}&apos;s IHB current account {pobo.ihbCurrentVaNumber ?? ''}
-                      {pobo.headroom != null && <> (headroom {formatCurrency(pobo.headroom, settleCurrency!)})</>}. No fee.
+                      {pobo.headroom != null && <>Credit headroom {formatCurrency(pobo.headroom, settleCurrency!)}. </>}No fee.
                     </p>
                     {indicative?.refusal && (
                       <p className="mt-1 flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
@@ -682,7 +679,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                       <p className="mt-1 flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                         Would be refused at payment: {crossCurrency ? `indicatively ${formatCurrency(settleAmount ?? 0, settleCurrency!)}, ` : ''}over
-                        {' '}{ownerName}&apos;s IHB credit headroom of {formatCurrency(pobo.headroom ?? 0, settleCurrency!)}.
+                        {' '}{ownerName}&apos;s credit headroom of {formatCurrency(pobo.headroom ?? 0, settleCurrency!)}.
                       </p>
                     )}
                   </div>
@@ -838,7 +835,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
 
             {activeTab === 'tax' && (
               <div className="p-6 space-y-4">
-                <Toggle layout="split" label="Invoice includes VAT" description="The amount above already includes it; the VAT share is recorded with the payable" checked={formData.applyVat} onChange={(v) => updateField('applyVat', v)} />
+                <Toggle layout="split" label="Invoice includes VAT" description="VAT share recorded with the payable" checked={formData.applyVat} onChange={(v) => updateField('applyVat', v)} />
                 {formData.applyVat && (
                   <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
                     <Input label="VAT rate (%) *" type="number" min="0" step="0.01" value={formData.vatRate} onChange={(e) => updateField('vatRate', e.target.value)} />
@@ -893,11 +890,9 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">{pobo.payerName ?? pobo.payerCode} pays on behalf of {ownerName}</p>
                 </div>
               )}
-              <div className="pt-3 border-t border-edge-subtle space-y-1 text-body-sm">
-                {isEditMode && currentStatus && <p className="body-sm">Now: <span className="font-medium text-neutral-900 dark:text-neutral-50">{currentStatus.replace(/_/g, ' ')}</span></p>}
-                <p className="body-sm"><span className="font-medium text-neutral-900 dark:text-neutral-50">Save Draft</span> stores it as Draft (may be incomplete).</p>
-                <p className="body-sm"><span className="font-medium text-neutral-900 dark:text-neutral-50">Submit for Approval</span> stores it as Pending Approval; it is approved from the Payables list.</p>
-              </div>
+              {isEditMode && currentStatus && (
+                <p className="body-sm pt-3 border-t border-edge-subtle">Now: <span className="font-medium text-neutral-900 dark:text-neutral-50">{currentStatus.replace(/_/g, ' ')}</span></p>
+              )}
               {canSubmit ? (
                 <p className="flex items-center gap-2 text-body-sm text-success-700 dark:text-success-300"><CheckCircle className="w-4 h-4" />Ready to submit</p>
               ) : (

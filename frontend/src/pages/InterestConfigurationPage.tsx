@@ -5,6 +5,7 @@ import { Modal } from '../components/ui/enhanced';
 import { cn, formatDate } from '../utils';
 import { interestConfigurationApi, programsApi, InterestConfiguration } from '../services/api';
 import { useUser } from '../context/useUser';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import toast from 'react-hot-toast';
 import { Page } from '../components/layout/Page';
 
@@ -217,78 +218,6 @@ const ConfigCard: React.FC<{
     </div>
   </Card>
 );
-
-// ============================================================================
-// CORPORATE PROGRAM FILTER BAR (Same as TreasuryHierarchyPage)
-// ============================================================================
-
-interface CorporateProgramFilterBarProps {
-  programs: ProgramOption[];
-  selectedCorporateId: string;
-  selectedProgramId: string;
-  onProgramChange: (id: string) => void;
-  loading?: boolean;
-}
-
-const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
-  programs,
-  selectedCorporateId,
-  selectedProgramId,
-  onProgramChange,
-  loading,
-}) => {
-  const selectedProgram = programs.find(p => p.id === selectedProgramId);
-  const filteredPrograms = programs.filter(p => 
-    !selectedCorporateId || p.corporateId === selectedCorporateId
-  );
-  const activePrograms = filteredPrograms.filter(p => p.status === 'ACTIVE');
-
-  return (
-    <Card padding="sm" className="bg-gradient-to-r from-primary-50 to-info-50 border-primary-200 dark:border-primary-700 dark:from-primary-500/15 dark:to-info-500/15">
-      <div className="flex items-center gap-4 flex-wrap">
-        {/* Program Selector */}
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
-            <Layers className="w-5 h-5 text-info-700 dark:text-info-300" />
-          </div>
-          <div className="min-w-[15.625rem]">
-            <label className="text-caption font-medium text-info-700 uppercase tracking-wide dark:text-info-300">Program</label>
-            <select
-              value={selectedProgramId}
-              onChange={(e) => onProgramChange(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 bg-surface-card border border-info-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-info-500 dark:border-info-500/30"
-              disabled={loading || activePrograms.length === 0}
-            >
-              <option value="">Select Program...</option>
-              {activePrograms.map(program => (
-                <option key={program.id} value={program.id}>
-                  {program.programName} ({program.programCode}) - {program.currencyCode}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="h-10 w-px bg-neutral-300" />
-
-        {/* Selected Badges */}
-        <div className="flex-1 flex items-center gap-3">
-          {selectedProgram && (
-            <Badge variant="info" size="sm">
-              <Layers className="w-3 h-3 mr-1" />
-              {selectedProgram.programCode} ({selectedProgram.currencyCode})
-            </Badge>
-          )}
-          {!selectedCorporateId && !selectedProgramId && (
-            <span className="text-body-sm text-neutral-500 italic dark:text-neutral-400">Select a corporate in the header</span>
-          )}
-        </div>
-
-        {loading && <Loader2 className="w-5 h-5 text-primary-600 animate-spin dark:text-primary-200" />}
-      </div>
-    </Card>
-  );
-};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -569,31 +498,43 @@ const InterestConfigurationPage: React.FC = () => {
     }
   };
 
+  const activePrograms = programs.filter(p => p.status === 'ACTIVE');
+
+  // The page's actions sit in the app header, like the other admin pages.
+  usePageHeaderActions(
+    () => (
+      <>
+        <Button variant="outline" size="sm" onClick={() => loadData()} leftIcon={<RefreshCw className="w-4 h-4" />}>Refresh</Button>
+        <Button size="sm" onClick={handleCreate} disabled={!selectedCorporateId} leftIcon={<Plus className="w-4 h-4" />}>New Config</Button>
+      </>
+    ),
+    [loadData, selectedCorporateId, selectedProgramId, programs]
+  );
+
   // Render
   return (
     <Page>
-      {/* Quick Actions */}
-      <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <Button variant="outline" size="sm" onClick={() => loadData()}>
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <Button size="sm" onClick={handleCreate} disabled={!selectedCorporateId}>
-            <Plus className="w-4 h-4 mr-2" /> New Config
-          </Button>
-      </div>
-
-      {/* Corporate/Program Filter Bar */}
-      <CorporateProgramFilterBar
-        programs={programs}
-        selectedCorporateId={selectedCorporateId}
-        selectedProgramId={selectedProgramId}
-        onProgramChange={setSelectedProgramId}
-        loading={loadingPrograms}
-      />
-
-      {/* Filters */}
-      <Card className="p-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+      {/* One toolbar: program, search, type and status. */}
+      <Card className="p-4 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <div className="flex flex-wrap items-center gap-4">
+          <select
+            aria-label="Program"
+            value={selectedProgramId}
+            onChange={(e) => setSelectedProgramId(e.target.value)}
+            className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-medium bg-surface-card min-w-[15.625rem]"
+            disabled={loadingPrograms || activePrograms.length === 0}
+          >
+            <option value="">All programs</option>
+            {activePrograms.map(program => (
+              <option key={program.id} value={program.id}>
+                {program.programName} ({program.programCode}) - {program.currencyCode}
+              </option>
+            ))}
+          </select>
+          {loadingPrograms && <Loader2 className="w-5 h-5 text-primary-600 animate-spin dark:text-primary-200" />}
+          {!selectedCorporateId && (
+            <span className="text-body-sm text-neutral-500 dark:text-neutral-400">Select a corporate in the header</span>
+          )}
           <div className="flex-1 min-w-[12.5rem]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -859,18 +800,21 @@ const InterestConfigurationPage: React.FC = () => {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="field-label block mb-1">Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value as ConfigStatus }))}
-                className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm bg-surface-card"
-              >
-                {CONFIG_STATUSES.map(s => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+            {/* A new configuration starts as Draft and is switched on with Activate. */}
+            {isEditing && (
+              <div>
+                <label className="field-label block mb-1">Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value as ConfigStatus }))}
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm bg-surface-card"
+                >
+                  {CONFIG_STATUSES.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Credit Interest */}

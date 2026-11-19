@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, Pencil } from 'lucide-react';
+import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
 import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -8,7 +8,6 @@ import type { BulkVibanAssignItem, BulkVibanAssignResponse } from '../services/a
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { formatCurrency } from '../utils';
 
@@ -971,37 +970,6 @@ const OverviewTab: React.FC<{
         icon={<Hash className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
-      {/* Operational strip — neutral by default; only Reserved goes amber when
-          there's actually something reserved (was always-amber before, which
-          read as a warning even when the value was 0). */}
-      <StatStrip>
-        <StatTile
-          layout="row"
-          tone="info"
-          label="Available"
-          value={formatNumber(stats.available)}
-          icon={<Database className="w-5 h-5" />}
-          delay="0.15s"
-        />
-        <StatTile
-          layout="row"
-          tone={stats.reserved > 0 ? 'warning' : 'neutral'}
-          valueTone={stats.reserved > 0 ? 'warning' : 'neutral'}
-          label="Reserved"
-          value={formatNumber(stats.reserved)}
-          icon={<Timer className="w-5 h-5" />}
-          delay="0.2s"
-        />
-        <StatTile
-          layout="row"
-          tone="accent"
-          label="Total Pools"
-          value={stats.totalPools}
-          icon={<Layers className="w-5 h-5" />}
-          delay="0.25s"
-        />
-      </StatStrip>
-
       {/* Payment Stats */}
       <div className="grid grid-cols-2 gap-4">
         <StatTile layout="row" tone="primary" label="Payments Routed" value={formatNumber(stats.totalPaymentsRouted)}
@@ -1351,11 +1319,7 @@ const GenerateForm: React.FC<{ pool?: VibanPool; onSubmit: (count: number) => vo
     <div className="space-y-4">
       {pool && <div className="bg-surface-page rounded-lg p-4">
         <div className="flex items-center gap-3 mb-2"><Database className="w-5 h-5 text-primary-600 dark:text-primary-200" /><div><p className="font-medium">{pool.poolName}</p><p className="body-sm">{pool.poolCode}</p></div></div>
-        <div className="grid grid-cols-3 gap-3 mt-3">
-          <div className="text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p><p className="caption">Available</p></div>
-          <div className="text-center"><p className="text-body-lg font-bold">{pool.poolSize}</p><p className="caption">Pool Size</p></div>
-          <div className="text-center"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{((pool.availableCount / pool.poolSize) * 100).toFixed(0)}%</p><p className="caption">Available</p></div>
-        </div>
+        <p className="body-sm">Available {pool.availableCount} of {pool.poolSize}</p>
       </div>}
       <div><label className="field-label block mb-1">VIBANs to Generate *</label><Input type="number" value={count} onChange={e => setCount(e.target.value)} min={1} max={10000} /><p className="caption mt-1">Max 10,000 per batch</p></div>
       {pool && <div className="bg-info-50 rounded-lg p-3 dark:bg-info-500/10"><p className="text-body-sm text-info-700 dark:text-info-300">New pool size: <strong>{pool.poolSize + parseInt(count || '0')}</strong></p></div>}
@@ -1408,7 +1372,6 @@ const AssignForm: React.FC<{
     p && p.status === 'ACTIVE' &&
     (!selectedVA?.corporateId || p.corporateId === selectedVA.corporateId)
   );
-  const selectedParty = activeParties.find(p => p.id === partyId);
 
   // Reset party when VA changes (if party doesn't belong to new VA's corporate)
   useEffect(() => {
@@ -1463,14 +1426,6 @@ const AssignForm: React.FC<{
             <option value="">Select a pool...</option>
             {activePools.map(p => <option key={p.id} value={p.id}>{p.poolName} ({p.availableCount} available)</option>)}
           </select>
-          {selectedPool && (
-            <div className="mt-2 p-2 bg-primary-50 rounded-lg text-caption dark:bg-primary-800/40">
-              <div className="flex justify-between">
-                <span className="text-primary-700 dark:text-neutral-200">Available: {selectedPool.availableCount}</span>
-                <span className="text-success-700 dark:text-success-300">Assigned: {selectedPool.assignedCount}</span>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1490,17 +1445,6 @@ const AssignForm: React.FC<{
             </option>
           ))}
         </select>
-        {selectedVA && (
-          <div className="mt-2 p-2 bg-info-50 rounded-lg text-body-sm dark:bg-info-500/10">
-            <div className="flex items-center justify-between">
-              <span className="text-info-700 dark:text-info-300">{selectedVA.vaName}</span>
-              <span className="font-mono text-caption">{selectedVA.vaNumber}</span>
-            </div>
-            {selectedVA.corporateName && (
-              <p className="caption-info mt-1">{selectedVA.corporateName}</p>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Party Selection (Customer/Payer from Party Master - filtered by VA's corporate) */}
@@ -1531,19 +1475,6 @@ const AssignForm: React.FC<{
         )}
         {vaId && activeParties.length === 0 && (
           <p className="caption-warning mt-1">No parties found for this corporate</p>
-        )}
-        {selectedParty && (
-          <div className="mt-2 p-2 bg-accent-50 rounded-lg text-body-sm dark:bg-accent-500/10">
-            <div className="flex items-center justify-between">
-              <span className="text-accent-700 font-medium dark:text-accent-300">{selectedParty.displayName || selectedParty.legalName}</span>
-              <Badge size="sm" variant="info">{selectedParty.partyType}</Badge>
-            </div>
-            {selectedParty.roles && (
-              <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">
-                Roles: {Array.isArray(selectedParty.roles) ? selectedParty.roles.join(', ') : selectedParty.roles}
-              </p>
-            )}
-          </div>
         )}
       </div>
 
@@ -1760,17 +1691,6 @@ const BulkAssignForm: React.FC<{
             </option>
           ))}
         </select>
-        {selectedVADetails && (
-          <div className="mt-2 p-2 bg-info-50 rounded-lg text-body-sm dark:bg-info-500/10">
-            <div className="flex items-center justify-between">
-              <span className="text-info-700 font-medium dark:text-info-300">{selectedVADetails.vaName}</span>
-              <span className="font-mono text-caption">{selectedVADetails.vaNumber}</span>
-            </div>
-            {selectedVADetails.corporateName && (
-              <p className="caption-info mt-1">{selectedVADetails.corporateName}</p>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Number of VIBANs */}
@@ -1919,12 +1839,9 @@ const PoolDetailView: React.FC<{
       </div>
       {pool.description && <p className="text-neutral-600 dark:text-neutral-300">{pool.description}</p>}
 
-      <div className="grid grid-cols-4 gap-4">
-        <Card><div className="p-4 text-center"><p className="stat-value-sm">{formatNumber(pool.poolSize)}</p><p className="body-sm">Pool Size</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-info">{formatNumber(pool.availableCount)}</p><p className="body-sm">Available</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-success">{formatNumber(pool.assignedCount)}</p><p className="body-sm">Assigned</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-warning">{formatNumber(pool.reservedCount)}</p><p className="body-sm">Reserved</p></div></Card>
-      </div>
+      <p className="body-sm">
+        Available {formatNumber(pool.availableCount)} of {formatNumber(pool.poolSize)} · {formatNumber(pool.assignedCount)} assigned · {formatNumber(pool.reservedCount)} reserved
+      </p>
 
       <Card>
         <div className="p-4 border-b"><h4 className="font-medium">Configuration</h4></div>
@@ -1947,12 +1864,11 @@ const PoolDetailView: React.FC<{
       </Card>
 
       {activeVibans.length > 0 && <Card>
-        <div className="p-4 border-b flex items-center justify-between">
+        <div className="p-4 border-b">
           <h4 className="font-medium flex items-center gap-2">
             <Link className="w-4 h-4 text-success-600 dark:text-success-300" />
             Active VIBANs ({activeVibans.length})
           </h4>
-          <Badge variant="success">{activeVibans.length} Assigned</Badge>
         </div>
         <DataTable
           hairline

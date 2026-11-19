@@ -159,7 +159,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
 
       {countries.length === 0 && (
         <div className="bg-surface-card rounded-lg border border-edge p-12 text-center text-neutral-500 dark:text-neutral-400">
-          No shadows match the current filter.
+          No accounts match the current filter.
         </div>
       )}
 
@@ -175,7 +175,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
                 <div>
                   <h2 className="section-title">{group.country}</h2>
                   <p className="caption mt-0.5">
-                    {group.shadowCount} shadow{group.shadowCount === 1 ? '' : 's'} · {group.currencies.length} currenc{group.currencies.length === 1 ? 'y' : 'ies'}
+                    {group.shadowCount} account{group.shadowCount === 1 ? '' : 's'} · {group.currencies.length} currenc{group.currencies.length === 1 ? 'y' : 'ies'}
                   </p>
                 </div>
               </div>

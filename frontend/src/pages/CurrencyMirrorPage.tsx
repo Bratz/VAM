@@ -9,16 +9,15 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  * - fxRateApi from api.ts → FxRateController.java at /api/v1/treasury/fx-rates/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Loader2, Eye, Calculator, X, XCircle, CheckCircle } from 'lucide-react';
+import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Loader2, Calculator, X, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
 import { usePageHeaderActions } from '../context/usePageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { 
   currencyMirrorApi, 
   fxRateApi, 
@@ -140,12 +139,11 @@ const isStaleRate = (fxRateAt: string | null | undefined): boolean => {
 interface CurrencyCardProps {
   breakdown: CurrencyBreakdown;
   baseCurrency: string;
-  onView: () => void;
   onRecalculate: () => void;
   recalculating: boolean;
 }
 
-const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, onView, onRecalculate, recalculating }) => {
+const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, onRecalculate, recalculating }) => {
   const style = getCurrencyStyle(breakdown.currency);
   const rateAge = breakdown.fxRateAt
     ? Math.floor((Date.now() - new Date(breakdown.fxRateAt).getTime()) / (1000 * 60))
@@ -164,7 +162,6 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
             <StatusIconBadge tone={style.tone} icon={getCurrencyIcon(breakdown.currency)} size="lg" />
             <div>
               <h3 className="section-title">{breakdown.currency}</h3>
-              <p className="label">Currency Mirror</p>
             </div>
           </div>
           <Badge variant="info" size="sm">{breakdown.percentOfTotal?.toFixed(1)}%</Badge>
@@ -216,10 +213,6 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
           )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onView}>
-            <Eye className="w-3 h-3 mr-1" />
-            Details
-          </Button>
           <Button variant="outline" size="sm" className="flex-1" onClick={onRecalculate} disabled={recalculating}>
             {recalculating ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
             Recalc
@@ -282,7 +275,6 @@ const CurrencyMirrorPage: React.FC = () => {
   const [baseCurrency, setBaseCurrency] = useState('AED');
   const [recalculating, setRecalculating] = useState(false);
   const [recalculatingMirror, setRecalculatingMirror] = useState<string | null>(null);
-  const [selectedMirror, setSelectedMirror] = useState<CurrencyBreakdown | null>(null);
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
   const [loadingCorporates, setLoadingCorporates] = useState(true);
@@ -291,7 +283,6 @@ const CurrencyMirrorPage: React.FC = () => {
   const [loadingPrograms, setLoadingPrograms] = useState(false);
 
   // Modals
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFxRateModal, setShowFxRateModal] = useState(false);
   const [showConverterModal, setShowConverterModal] = useState(false);
 
@@ -624,46 +615,12 @@ const CurrencyMirrorPage: React.FC = () => {
         primary={{
           label: 'Total Consolidated Position',
           value: <TileAmount value={stats.totalInBase} currency={baseCurrency} />,
-          sub: `Across ${stats.currencyCount} ${stats.currencyCount === 1 ? 'currency' : 'currencies'} · last recalculated ${stats.lastRecalculated ? new Date(stats.lastRecalculated).toLocaleTimeString() : 'never'}`,
+          sub: `Across ${stats.currencyCount} ${stats.currencyCount === 1 ? 'currency' : 'currencies'}`
+            + (staleCount > 0 ? ` · ${staleCount} stale ${staleCount === 1 ? 'rate' : 'rates'}` : '')
+            + ` · last recalculated ${stats.lastRecalculated ? new Date(stats.lastRecalculated).toLocaleTimeString() : 'never'}`,
         }}
         icon={<Globe className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
-
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        <StatTile
-          layout="row"
-          tone="info"
-          label="Currencies"
-          value={stats.currencyCount}
-          icon={<Globe className="w-5 h-5" />}
-          delay="0.15s"
-        />
-        <StatTile
-          layout="row"
-          tone={staleCount > 0 ? 'warning' : 'success'}
-          valueTone={staleCount > 0 ? 'warning' : 'success'}
-          label="Stale Rates"
-          value={staleCount}
-          icon={staleCount > 0 ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-          delay="0.2s"
-        />
-      </StatStrip>
-
-      {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 dark:from-info-500/10 dark:via-primary-900 dark:to-primary-800/40 border-info-200/60 dark:border-info-500/30 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-start gap-3 p-4">
-          <StatusIconBadge tone="info" icon={Globe} className="flex-shrink-0" />
-          <div>
-            <p className="text-body-sm font-semibold text-info-800 dark:text-info-300">Currency Mirror Architecture</p>
-            <p className="text-body-sm text-info-700 dark:text-info-300 mt-1">
-              Currency mirrors (<strong>CURRENCY_MIRROR</strong> VAs) aggregate all VAs of the same currency
-              and convert to base currency using live FX rates. They enable multi-currency liquidity visibility
-              without physical FX conversion.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Currency Cards Grid */}
       {breakdowns.length > 0 ? (
@@ -673,7 +630,6 @@ const CurrencyMirrorPage: React.FC = () => {
               <CurrencyCard
                 breakdown={breakdown}
                 baseCurrency={baseCurrency}
-                onView={() => { setSelectedMirror(breakdown); setShowDetailModal(true); }}
                 onRecalculate={() => handleRecalculateMirror(breakdown.mirrorVaId)}
                 recalculating={recalculatingMirror === breakdown.mirrorVaId}
               />
@@ -687,73 +643,6 @@ const CurrencyMirrorPage: React.FC = () => {
           <p className="text-body-sm text-neutral-400 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
         </Card>
       )}
-
-      {/* Detail Modal */}
-      <Modal
-        isOpen={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-        title="Currency Mirror Details"
-        size="lg"
-      >
-        {selectedMirror && (
-          <div className="p-4 space-y-6">
-            <div className="flex items-center gap-4">
-              <StatusIconBadge tone={getCurrencyStyle(selectedMirror.currency).tone} icon={getCurrencyIcon(selectedMirror.currency)} size="xl" subtle />
-              <div>
-                {/* Currency code is the hero metric of this panel — use
-                    stat-value-sm typography on the heading for visual weight;
-                    heading semantics remain for screen readers. Phase 9.1
-                    Task D: documented role-vs-style mismatch. */}
-                <h3 className="stat-value-sm">{selectedMirror.currency}</h3>
-                <p className="text-neutral-500 dark:text-neutral-400 font-mono">{selectedMirror.mirrorVaNumber}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-surface-page rounded-lg">
-                <p className="body-sm">Original Balance</p>
-                <p className="stat-value-sm">
-                  {formatCurrency(selectedMirror.originalBalance, selectedMirror.currency)}
-                </p>
-              </div>
-              <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg">
-                <p className="body-sm">Converted ({baseCurrency})</p>
-                <p className="stat-value-sm text-success-600 dark:text-success-300">
-                  {formatCurrency(selectedMirror.convertedBalance, baseCurrency)}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-3">FX Rate Information</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">Exchange Rate</span>
-                  <span className="font-mono font-medium">
-                    1 {selectedMirror.currency} = {selectedMirror.fxRate?.toFixed(4) || 'N/A'} {baseCurrency}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">Last Updated</span>
-                  <span>{selectedMirror.fxRateAt ? new Date(selectedMirror.fxRateAt).toLocaleString() : 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">% of Total</span>
-                  <span className="font-medium">{selectedMirror.percentOfTotal?.toFixed(2)}%</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowDetailModal(false)}>Close</Button>
-              <Button variant="outline" onClick={() => handleRecalculateMirror(selectedMirror.mirrorVaId)}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Recalculate
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* FX Rates Modal */}
       <Modal

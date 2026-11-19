@@ -51,6 +51,7 @@ import { Card, Button, Skeleton, Badge, Drawer, StatTile, StatusIconBadge } from
 import { StatStrip } from '../components/layout/StatStrip';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
+import { usePageHeaderActions, usePageHeaderTitle } from '../context/usePageHeader';
 import { useUser } from '../context/useUser';
 import { useTheme } from '../design-system/useTheme';
 import {
@@ -75,10 +76,10 @@ const HORIZON_OPTIONS: { value: Horizon; label: string }[] = [
 
 /** Tagging chips for line source — colour matches the category-of-origin hue. */
 const SOURCE_LABELS: Record<ForecastSource, { label: string; tone: string }> = {
-  PATTERN:  { label: 'Pattern', tone: 'bg-info-50 text-info-700 dark:bg-info-500/15 dark:text-info-300' },
-  AGING:    { label: 'AR aging', tone: 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300' },
-  ML:       { label: 'ML',      tone: 'bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300' },
-  DRIVER:   { label: 'Driver',  tone: 'bg-primary-50 text-primary-700 dark:bg-primary-700/40 dark:text-primary-200' },
+  PATTERN:  { label: 'Recurring', tone: 'bg-info-50 text-info-700 dark:bg-info-500/15 dark:text-info-300' },
+  AGING:    { label: 'Open invoices', tone: 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300' },
+  ML:       { label: 'Model',   tone: 'bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300' },
+  DRIVER:   { label: 'Business driver', tone: 'bg-primary-50 text-primary-700 dark:bg-primary-700/40 dark:text-primary-200' },
   MANUAL:   { label: 'Manual',  tone: 'bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300' },
 };
 
@@ -293,70 +294,68 @@ const ForecastingPage: React.FC = () => {
   const colors = useChartColors();
   const ccyForFormat = summary?.currency || currency || 'USD';
 
+  usePageHeaderTitle(
+    'Cash Forecast',
+    summary
+      ? `Run generated ${new Date(summary.runAt).toLocaleString('en-GB')} · horizon to ${FULL_DATE_FMT(summary.horizonEnd)}`
+      : 'Forecast lines projected from open invoices, recurring payables and your adjustments.',
+    [summary?.runAt, summary?.horizonEnd]
+  );
+
+  // Horizon, currency and Run sit in the Layout header. Run is hidden in the empty
+  // state, whose own button is the one call to action there.
+  usePageHeaderActions(
+    () => (
+      <>
+        <div role="tablist" aria-label="Forecast horizon" className="inline-flex rounded-lg border border-neutral-200 dark:border-primary-800/60 overflow-hidden">
+          {HORIZON_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              role="tab"
+              aria-selected={horizon === opt.value}
+              onClick={() => setHorizon(opt.value)}
+              className={cn(
+                'px-3 py-1.5 text-body-sm font-medium transition-colors',
+                horizon === opt.value
+                  ? 'bg-primary-900 text-white dark:bg-primary-700'
+                  : 'bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-primary-900/40 dark:text-neutral-300 dark:hover:bg-primary-800/60'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {/* One currency at a time; until picked, the server reports the market default
+            currency (else the first one the forecast has). */}
+        <CurrencyPicker
+          value={currency || summary?.currency || ''}
+          onChange={setCurrency}
+          className="h-9 text-body-sm rounded-lg border-neutral-200 dark:border-primary-800/60"
+        />
+        {!emptyState && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleRunForecast}
+            loading={running}
+            disabled={!currentCorporateId}
+            className="inline-flex items-center gap-2"
+          >
+            <RefreshCw className={cn('w-4 h-4', running && 'animate-spin')} />
+            Run forecast now
+          </Button>
+        )}
+      </>
+    ),
+    [horizon, currency, summary?.currency, emptyState, running, currentCorporateId]
+  );
+
   // ------------------------------------------------------------------------
   // Render
   // ------------------------------------------------------------------------
 
   return (
     <Page>
-      {/* ============ Header strip ============ */}
-      <Card padding="md">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              <Sparkles className="w-4 h-4 text-accent-500 dark:text-accent-300" />
-              Cash Forecast
-            </div>
-            <p className="body-sm text-neutral-600 dark:text-neutral-300 max-w-xl">
-              {summary
-                ? `Run generated ${new Date(summary.runAt).toLocaleString('en-GB')} · horizon to ${FULL_DATE_FMT(summary.horizonEnd)}`
-                : 'Forecast lines projected from open AR, recurring payables, and carry-forward treasurer adjustments.'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Horizon toggle */}
-            <div role="tablist" aria-label="Forecast horizon" className="inline-flex rounded-lg border border-neutral-200 dark:border-primary-800/60 overflow-hidden">
-              {HORIZON_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  role="tab"
-                  aria-selected={horizon === opt.value}
-                  onClick={() => setHorizon(opt.value)}
-                  className={cn(
-                    'px-3 py-1.5 text-body-sm font-medium transition-colors',
-                    horizon === opt.value
-                      ? 'bg-primary-900 text-white dark:bg-primary-700'
-                      : 'bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-primary-900/40 dark:text-neutral-300 dark:hover:bg-primary-800/60'
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Currency filter — one currency at a time; until picked, the server reports
-                the market default currency (else the first one the forecast has). */}
-            <CurrencyPicker
-              value={currency || summary?.currency || ''}
-              onChange={setCurrency}
-              className="h-9 text-body-sm rounded-lg border-neutral-200 dark:border-primary-800/60"
-            />
-
-            <Button
-              variant="primary"
-              onClick={handleRunForecast}
-              loading={running}
-              disabled={!currentCorporateId}
-              className="inline-flex items-center gap-2"
-            >
-              <RefreshCw className={cn('w-4 h-4', running && 'animate-spin')} />
-              Run forecast now
-            </Button>
-          </div>
-        </div>
-      </Card>
-
       {/* ============ Body switch ============ */}
       {!currentCorporateId ? (
         <Card padding="lg">
@@ -444,7 +443,6 @@ const MetricStrip: React.FC<{ summary: ForecastSummary; currency: string; horizo
         icon={<Wallet className="w-5 h-5" />}
         label="Opening balance"
         value={summary.openingBalance == null ? '—' : <TileAmount value={Number(summary.openingBalance)} currency={currency} />}
-        sub="Starting point for this projection"
         delay="0.05s"
       />
 
@@ -809,7 +807,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                       {line.confidence != null && (
                         <div className="mt-1">
                           <Badge variant="neutral">
-                            {Math.round(Number(line.confidence) * 100)}% conf
+                            {Math.round(Number(line.confidence) * 100)}% confidence
                           </Badge>
                         </div>
                       )}
@@ -836,7 +834,7 @@ const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, 
         No forecast yet
       </h2>
       <p className="body text-neutral-500 dark:text-neutral-400 mt-3 max-w-md mx-auto">
-        Run your first forecast to see a 13-week cash position projected from open AR, recurring payables, and treasurer adjustments.
+        Run your first forecast to see your cash position projected from open invoices, recurring payables and your adjustments.
       </p>
       <Button
         variant="primary"

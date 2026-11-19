@@ -390,6 +390,13 @@ UI:
       - /ecommerce/collections and /ecommerce/settlements return 500 locally.
       - "Consolidated position" means different things on Dashboard (entity hierarchy) and Multi-Bank Liquidity
         (account balances x rates): needs a decision (rename one or share a source).
+      Round 2 (stat strips, repeated text, jargon) done 18 Nov. Found, not fixed:
+      - Seller Collections "Total Amount" / "Settled Amount" add amounts across currencies.
+      - The sticky page header overlaps its title with header actions below ~900px wide (shared layout).
+      - Multi-Bank Liquidity "Effective" = available minus committed (pending sweeps), stale accounts included;
+        a clearer name is still open ("Balance after holds" would be wrong).
+      - Forecast 12-month category breakdown (one column per week) and the chart's two unlabelled axes.
+      - In-House Bank 8 hand-rolled tabs (shared Tabs would wrap); Transactions eye buttons stay (rows not keyboard-reachable).
 - [ ] In-House Bank: Movements calls a sweep reversal and "Deposit to IHB current account" "Other"; Position lists every
       funding currency even with no IHB accounts in it; the stat strip says "1 lenders".
 - [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,

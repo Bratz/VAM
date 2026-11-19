@@ -86,7 +86,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
       })
       .catch((err) => {
         console.error('Inventory load failed:', err);
-        if (!cancelled) setError('Failed to load Physical Accounts.');
+        if (!cancelled) setError('Failed to load bank accounts.');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -123,8 +123,8 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
 
   return (
     <Card padding="sm" className={className}>
+      {/* The heading is the modal's title; only the count stays here. */}
       <div className="flex items-center justify-between gap-2">
-        <h3 className="section-title">Available Physical Accounts</h3>
         <Badge variant="neutral" size="sm">
           {filtered.length}
           {filtered.length !== total ? ` / ${total}` : ''}
@@ -163,7 +163,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
           </div>
         ) : groups.length === 0 ? (
           <p className="py-10 text-center body-sm text-neutral-500 dark:text-neutral-400">
-            No Physical Accounts match this filter.
+            No bank accounts match this filter.
           </p>
         ) : (
           <div className="space-y-4">

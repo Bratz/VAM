@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { ChevronRight, Building2, Wallet, TrendingUp, TrendingDown, Globe, DollarSign, Layers, Loader2, Eye, GitBranch, Crown, PiggyBank, Coins, Scale, AlertTriangle, Banknote, ArrowLeftRight, Search, Maximize2, Minimize2, LayoutGrid, Network, TreeDeciduous, Users, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, Select, StatusIconBadge } from '../components/ui';
+import { ChevronRight, Building2, Wallet, Globe, DollarSign, Layers, Loader2, Eye, GitBranch, Crown, PiggyBank, Coins, Scale, AlertTriangle, Banknote, ArrowLeftRight, Search, Maximize2, Minimize2, LayoutGrid, Network, TreeDeciduous, Users, XCircle } from 'lucide-react';
+import { Card, Button, Badge, Skeleton, StatusIconBadge } from '../components/ui';
+import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import {
@@ -118,16 +119,14 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
   color: string;
   bgColor: string;
   borderColor: string;
-  description: string;
   isLeaf: boolean; // Whether to include in balance totals
 }> = {
   shadow: {
-    label: 'Shadow Accounts',
+    label: 'Bank accounts',
     icon: Layers,
     color: 'text-warning-600 dark:text-warning-300',
     bgColor: 'bg-warning-50 dark:bg-warning-500/10',
     borderColor: 'border-warning-200 dark:border-warning-500/30',
-    description: 'Physical bank account mirrors (CBS)',
     isLeaf: true,
   },
   currencyMirrors: {
@@ -136,7 +135,6 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-info-600 dark:text-info-300',
     bgColor: 'bg-info-50 dark:bg-info-500/10',
     borderColor: 'border-info-200 dark:border-info-500/30',
-    description: 'Currency-wise balance aggregation',
     isLeaf: false, // Aggregation - don't double count
   },
   ihbAccounts: {
@@ -145,7 +143,6 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-primary-600 dark:text-primary-200',
     bgColor: 'bg-primary-50 dark:bg-primary-800/40',
     borderColor: 'border-primary-200',
-    description: 'In-House Banking current accounts',
     isLeaf: true,
   },
   settlementVas: {
@@ -154,7 +151,6 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-cat-2 dark:text-cat-2-fg',
     bgColor: 'bg-cat-2-soft dark:bg-cat-2/15',
     borderColor: 'border-cat-2/20 dark:border-cat-2/30',
-    description: 'Fee collection and settlement',
     isLeaf: true,
   },
   exceptionVas: {
@@ -163,16 +159,14 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-error-600 dark:text-error-300',
     bgColor: 'bg-error-50 dark:bg-error-500/10',
     borderColor: 'border-error-200 dark:border-error-500/30',
-    description: 'Suspense for unmatched transactions',
     isLeaf: true,
   },
   aggregations: {
-    label: 'Aggregation Nodes',
+    label: 'Group nodes',
     icon: GitBranch,
     color: 'text-neutral-600 dark:text-neutral-300',
     bgColor: 'bg-surface-muted',
     borderColor: 'border-edge',
-    description: 'Hierarchy grouping nodes',
     isLeaf: false, // Aggregation - don't double count
   },
   transactionVas: {
@@ -181,7 +175,6 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-success-600 dark:text-success-300',
     bgColor: 'bg-success-50 dark:bg-success-500/10',
     borderColor: 'border-success-200 dark:border-success-500/30',
-    description: 'Operational virtual accounts',
     isLeaf: true,
   },
   intercompanyVas: {
@@ -190,7 +183,6 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     color: 'text-cat-4 dark:text-cat-4-fg',
     bgColor: 'bg-cat-4-soft dark:bg-cat-4/15',
     borderColor: 'border-cat-4/20 dark:border-cat-4/30',
-    description: 'IC Receivable/Payable tracking',
     isLeaf: true,
   },
 };
@@ -215,14 +207,6 @@ interface SelectorBarProps {
   onRefresh?: () => void;
   refreshing?: boolean;
 }
-
-const CURRENCY_OPTIONS = [
-  { value: 'AED', label: 'AED - UAE Dirham' },
-  { value: 'USD', label: 'USD - US Dollar' },
-  { value: 'EUR', label: 'EUR - Euro' },
-  { value: 'GBP', label: 'GBP - British Pound' },
-  { value: 'SAR', label: 'SAR - Saudi Riyal' },
-];
 
 const SelectorBar: React.FC<SelectorBarProps> = ({
   corporates,
@@ -253,14 +237,14 @@ const SelectorBar: React.FC<SelectorBarProps> = ({
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="success" icon={DollarSign} size="sm" />
         <div className="min-w-[10rem]">
-          <label className="label">Currency</label>
-          <Select
+          <label htmlFor="ebt-reporting-ccy" className="label">Reporting currency</label>
+          <CurrencyPicker
+            id="ebt-reporting-ccy"
             value={reportingCurrency}
-            onChange={(e) => onCurrencyChange(e.target.value)}
-            options={CURRENCY_OPTIONS}
+            onChange={onCurrencyChange}
+            extra={[reportingCurrency]}
+            withName
             disabled={loading}
-            selectSize="sm"
-            aria-label="Reporting currency"
           />
         </div>
       </div>
@@ -408,13 +392,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
               <Badge variant="neutral" size="sm" className="font-bold">
                 {accounts.length}
               </Badge>
-              {!config.isLeaf && (
-                <Badge variant="neutral" size="sm" className="caption">
-                  Rolled-up
-                </Badge>
-              )}
             </div>
-            <p className="caption mt-0.5">{config.description}</p>
           </div>
         </button>
 
@@ -510,11 +488,6 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
         <div className="text-right">
           <div className="flex items-center justify-end gap-2">
-            {entity.totalBalance >= 0 ? (
-              <TrendingUp className="w-5 h-5 text-success-500 dark:text-success-300" />
-            ) : (
-              <TrendingDown className="w-5 h-5 text-error-500 dark:text-error-300" />
-            )}
             {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the
                 raw `text-heading-sm font-bold` hand-roll (same 20px scale; this is an
                 in-row balance figure, not a stat tile). */}
@@ -931,7 +904,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
               {entity.isTreasuryCenter && (
                 <Badge variant="warning" size="sm" className="flex items-center gap-1">
                   <Crown className="w-3 h-3" />
-                  TC
+                  Treasury Center
                 </Badge>
               )}
               {entity.entityType && (
@@ -967,11 +940,6 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
           {/* Balances */}
           <div className="text-right shrink-0">
             <div className="flex items-center justify-end gap-2">
-              {entity.rolledUpBalance >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
-              ) : (
-                <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
-              )}
               <p className={cn(
                 'font-bold',
                 depth === 0 ? 'text-body-lg' : 'text-body-sm',
@@ -1607,7 +1575,6 @@ const EntityBalanceTreePage: React.FC = () => {
         <StatCard
           title="Total Balance"
           value={formatCurrency(totals.balance, reportingCurrency)}
-          subtitle={`In ${reportingCurrency}`}
           icon={<DollarSign className="w-6 h-6 text-primary-600 dark:text-primary-200" />}
           iconBg="bg-primary-100 dark:bg-primary-700"
           loading={loading}
@@ -1616,7 +1583,6 @@ const EntityBalanceTreePage: React.FC = () => {
         <StatCard
           title="Entities"
           value={totals.entities}
-          subtitle="Legal entities"
           icon={<Building2 className="w-6 h-6 text-success-600 dark:text-success-300" />}
           iconBg="bg-success-100 dark:bg-success-500/20"
           loading={loading}
@@ -1625,7 +1591,6 @@ const EntityBalanceTreePage: React.FC = () => {
         <StatCard
           title="Accounts"
           value={totals.accounts}
-          subtitle="Virtual accounts"
           icon={<Wallet className="w-6 h-6 text-info-600 dark:text-info-300" />}
           iconBg="bg-info-100 dark:bg-info-500/20"
           loading={loading}
@@ -1634,7 +1599,6 @@ const EntityBalanceTreePage: React.FC = () => {
         <StatCard
           title="Treasury Centers"
           value={totals.treasuryCenters}
-          subtitle="IHB enabled"
           icon={<Crown className="w-6 h-6 text-warning-600 dark:text-warning-300" />}
           iconBg="bg-warning-100 dark:bg-warning-500/20"
           loading={loading}

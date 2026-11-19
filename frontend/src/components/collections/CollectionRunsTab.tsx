@@ -134,11 +134,8 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
           <Button size="sm" onClick={settle} loading={busy} leftIcon={<CalendarCheck className="w-4 h-4" />}>Settle</Button>
         </div>
       </div>
-      <p className="text-caption text-neutral-500 dark:text-neutral-400">
-        Direct debits settle on their collection date (this also runs every evening), are held for the return window, then become available.
-      </p>
       <p className="text-caption text-warning-700 dark:text-warning-300">
-        Settle simulates the bank&apos;s clearing: there is no clearing link, so a debit due by the date is treated as paid. Lines settled this way say so.
+        Settle is simulated: there is no clearing link, so a debit due by the date is treated as paid. It also runs every evening.
       </p>
       {notice && <p className="text-body-sm text-success-700 dark:text-success-300">{notice}</p>}
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
@@ -343,9 +340,9 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
             options={Object.entries(reasons).map(([code, text]) => ({ value: code, label: `${code} · ${text}` }))} />
           <p className="text-caption text-neutral-500 dark:text-neutral-400">
             {returning?.status === 'SENT'
-              ? 'No money has moved yet. The customer is sent a Request to Pay instead.'
-              : 'The money goes back to the customer (the collection fee is not refunded), the invoice reopens and the customer is sent a Request to Pay.'}
-            {' '}Reasons that mean the mandate is unusable (for example AC04, MD01) suspend it.
+              ? 'No money has moved; a Request to Pay is sent.'
+              : 'Money goes back (the fee is not refunded), the invoice reopens, a Request to Pay is sent.'}
+            {' '}AC04, MD01 and similar reasons suspend the mandate.
           </p>
         </div>
       </Modal>

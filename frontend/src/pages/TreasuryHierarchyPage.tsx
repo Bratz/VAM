@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle, MoreHorizontal } from 'lucide-react';
-import { Card, Button, Badge, Input , StatTile, StatusIconBadge, Toggle, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, Toggle, Checkbox } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -17,7 +17,6 @@ import {
   BalancePhysicalAccount,
   BalanceNodeDetail,
   currencyMirrorApi,
-  CurrencyMirror,
   CurrencyBreakdown,
   hierarchyVaApi,
   HierarchyStatusResponse,
@@ -41,7 +40,8 @@ import { HierarchyLevelConfigModal } from '../components/HierarchyLevelConfigMod
 import type { HierarchyLevelConfig } from '../components/HierarchyLevelConfigModal';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
+import { HeaderHelpPopover } from '../components/layout/HeaderHelpPopover';
+import { useNavigation } from '../hooks/useNavigation';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -1526,19 +1526,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                         <PiggyBank className="w-3 h-3" />IHB
                       </Badge>
                     )});
-                if (node.ihb.sweepEnabled) {
-                  const freq = node.ihb.sweepFrequency === 'REAL_TIME' ? 'RT' : 'Daily';
-                  badges.push({ key: 'sweep-freq', label: `Sweep ${freq}`, el: (
-                    <Badge key="sweep-freq" variant="neutral" size="sm" className="flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3" />{freq}
-                    </Badge>
-                  )});
-                }
               }
               if (isCurrencyMirror) {
-                badges.push({ key: 'mirror', label: 'M-Node', el: (
+                badges.push({ key: 'mirror', label: 'Mirror', el: (
                   <Badge key="mirror" variant="info" size="sm" className="bg-cyan-100 text-cyan-700 border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300">
-                    <Coins className="w-3 h-3 mr-1" />M-Node
+                    <Coins className="w-3 h-3 mr-1" />Mirror
                   </Badge>
                 )});
               }
@@ -1549,13 +1541,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   </Badge>
                 )});
               }
-              if (node.participatesInSweep) {
-                badges.push({ key: 'sweep', label: 'Sweep', el: <Badge key="sweep" variant="warning" size="sm">Sweep</Badge> });
+              // One sweep badge: the IHB sweep and sweep participation were two pills for one fact.
+              if (node.participatesInSweep || node.ihb?.sweepEnabled) {
+                const freq = node.ihb?.sweepEnabled ? (node.ihb.sweepFrequency === 'REAL_TIME' ? ' · Real-time' : ' · Daily') : '';
+                badges.push({ key: 'sweep', label: `Sweep${freq}`, el: <Badge key="sweep" variant="warning" size="sm">Sweep{freq}</Badge> });
               }
               if (node.participatesInPooling && node.type !== 'VIRTUAL_ACCOUNT') {
                 badges.push({ key: 'pool', label: 'Pool', el: <Badge key="pool" variant="info" size="sm">Pool</Badge> });
               }
-              const MAX = 3;
+              // Entity + one role badge; the rest roll into "+N" (named in its tooltip).
+              const MAX = 2;
               const hidden = badges.slice(MAX);
               return (
                 <>
@@ -1835,7 +1830,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <SpecialIcon className="w-3 h-3 mr-1" />{specialConfig.label}
             </Badge>
           )}
-          <Badge variant={displayData.type === 'SHADOW_ACCOUNT' ? 'warning' : 'info'}>{displayData.type.replace('_', ' ')}</Badge>
+          <Badge variant={displayData.type === 'SHADOW_ACCOUNT' ? 'warning' : 'info'}>{({ SHADOW_ACCOUNT: 'Bank account', VIRTUAL_ACCOUNT: 'Virtual account', ENTITY: 'Entity', REGION: 'Region', GROUP: 'Group' } as Record<string, string>)[displayData.type] ?? displayData.type.replace('_', ' ')}</Badge>
         </div>
       </div>
 
@@ -1843,7 +1838,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         <div className="flex items-start gap-3 p-3 rounded-lg border bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30">
           <Coins className="w-5 h-5 text-cyan-600 mt-0.5 dark:text-cyan-300" />
           <div className="flex-1">
-            <p className="text-body-sm font-medium text-cyan-800 dark:text-cyan-300">Currency Mirror (M-Node)</p>
+            <p className="text-body-sm font-medium text-cyan-800 dark:text-cyan-300">Currency mirror</p>
             <p className="text-caption text-cyan-600 mt-0.5 dark:text-cyan-300">Aggregates all {node.currencyCode} balances without FX conversion.</p>
             {node.fxRate && node.fxRate !== 1 && (
               <div className="mt-2 flex items-center gap-4 text-caption">
@@ -2018,15 +2013,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <div className="p-3 bg-surface-page rounded-lg">
               <p className="body-sm">IHB not enabled for this entity</p>
               <p className="caption mt-1">Enable to hold an IHB current account, with intercompany receivable/payable positions and sweeps</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={() => node.owningEntity && onConfigureIhb?.(node.owningEntity.id)}
-              >
-                <Power className="w-3 h-3 mr-1" />
-                Join IHB Scheme
-              </Button>
             </div>
           )}
         </div>
@@ -2904,8 +2890,8 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   const [summary, setSummary] = useState<BalanceSummary | null>(null);
   const [physicalAccount, setPhysicalAccount] = useState<BalancePhysicalAccount | null>(null);
   const [shadowAccounts, setShadowAccounts] = useState<ShadowAccount[]>([]);
+  const { navigate } = useNavigation();
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<BalanceNodeDetail | null>(null);
-  const [currencyMirrors, setCurrencyMirrors] = useState<CurrencyMirror[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -3103,7 +3089,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     setSummary(null);
     setPhysicalAccount(null);
     setShadowAccounts([]);
-    setCurrencyMirrors([]);
   };
 
   const handleCorporateChange = (corpId: string) => {
@@ -3262,22 +3247,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       if (summaryRes.success) setSummary(summaryRes.data);
       if (physicalRes.success) setPhysicalAccount(physicalRes.data);
       
-      // Load currency mirrors - prefer program-based API when programId is available
-      try {
-        let mirrorsRes;
-        if (selectedProgramId) {
-          mirrorsRes = await currencyMirrorApi.getByProgram(selectedProgramId);
-        } else if (selectedCorporateId) {
-          mirrorsRes = await currencyMirrorApi.getByCorporate(selectedCorporateId);
-        }
-        if (stale()) return undefined;
-        if (mirrorsRes?.success && mirrorsRes.data) {
-          setCurrencyMirrors(mirrorsRes.data);
-        }
-      } catch (err) {
-        console.error('Failed to load currency mirrors:', err);
-      }
-
       // Load shadow accounts - prefer program-based API when programId is available
       try {
         let shadowRes;
@@ -3405,21 +3374,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     } catch (err) {
       console.error('Failed to recalculate mirror:', err);
       toast.error('Failed to recalculate mirror');
-    }
-  };
-
-  const handleRecalculateAllMirrors = async () => {
-    if (!corporateId) return;
-    try {
-      setRefreshing(true);
-      await currencyMirrorApi.recalculateAll(corporateId);
-      toast.success('All currency mirrors recalculated');
-      await loadData();
-    } catch (err) {
-      console.error('Failed to recalculate all mirrors:', err);
-      toast.error('Failed to recalculate mirrors');
-    } finally {
-      setRefreshing(false);
     }
   };
 
@@ -3580,11 +3534,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   usePageHeaderActions(
     () => isMainHierarchyView ? (
       <>
-        {currencyMirrors.length > 0 && (
-          <Button variant="outline" size="sm" onClick={handleRecalculateAllMirrors} disabled={refreshing}>
-            <Coins className="w-4 h-4 mr-1" />Recalc Mirrors
-          </Button>
-        )}
         <Button variant="outline" size="sm" onClick={() => setShowLevelConfig(true)}>
           <Settings className="w-4 h-4 mr-1" />Configure
         </Button>
@@ -3596,7 +3545,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         </Button>
       </>
     ) : null,
-    [isMainHierarchyView, currencyMirrors.length, refreshing]
+    [isMainHierarchyView, refreshing]
   );
 
   // Loading state
@@ -3873,7 +3822,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           value: <TileAmount value={displaySummary.consolidatedBalance} currency={reportingCurrency} />,
           sub: (
             <>
-              Aggregate balance across the VA tree
               {!!summary?.unassignedBankBalance && (
                 <span className="block mt-0.5">
                   Not included: {formatCurrency(summary.unassignedBankBalance, reportingCurrency)} in bank accounts not yet in any program
@@ -3888,126 +3836,38 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           ),
         }}
         secondary={{
-          // The total already contains intercompany positions (IC payables subtracted); this is the
-          // position without them.
-          label: 'Excluding intercompany',
-          value: <TileAmount value={Number(displaySummary.consolidatedBalance || 0) - icNetTotal} currency={reportingCurrency} />,
+          // The total already contains intercompany positions (IC payables subtracted).
+          label: 'Intercompany net',
+          value: <TileAmount value={icNetTotal} currency={reportingCurrency} />,
         }}
         icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        <StatTile
-          layout="row"
-          tone="info"
-          label="IC Net"
-          value={<TileAmount value={icNetTotal} currency={reportingCurrency} />}
-          icon={<ArrowLeftRight className="w-5 h-5" />}
-          delay="0.2s"
-        />
-        <StatTile
-          layout="row"
-          tone="accent"
-          label="Pool Rate"
-          value={displaySummary.poolRate != null ? `${Number(displaySummary.poolRate).toFixed(2)}%` : 'Not pooled'}
-          icon={<Percent className="w-5 h-5" />}
-          delay="0.25s"
-        />
-        <StatTile
-          layout="row"
-          tone="warning"
-          label="Pool interest (month to date)"
-          value={<TileAmount value={displaySummary.monthlyInterestAllocation || 0} currency={reportingCurrency} />}
-          icon={<Banknote className="w-5 h-5" />}
-          delay="0.3s"
-        />
-      </StatStrip>
-
-      {/* Physical Account Banner. Note: the gradient stays navy in BOTH light
-          and dark modes (intentional — this strip wants the heavy banking-vault
-          tone). That means the balance figure needs `!text-white` to override
-          `.stat-value-sm`'s default `text-primary-900` — otherwise it renders
-          navy-on-navy and disappears in light mode. Same fix we applied to
-          the Currency Mirrors hero value. */}
-      <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.45s' }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <StatusIconBadge tone="neutral" icon={Banknote} size="lg" inverse />
-            <div>
-              <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">Real Bank Account (Physical)</p>
-              <p className="text-body-lg font-semibold mt-1">{displayPhysical.accountName}</p>
-              <p className="text-body-sm text-primary-300 font-mono mt-0.5">{displayPhysical.accountNumber}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            {hasPhysical ? (
-              <>
-                <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">{displayPhysical.bankName}</p>
-                {/* Inverse variant — replaces the `stat-value-sm !text-white`
-                    override. See .stat-value-inverse in index.css. */}
-                <p className="stat-value-inverse mt-1">{formatCurrency(displayPhysical.balance, displayPhysical.currency)}</p>
-                {physicalAccount?.heldByProgramName ? (
-                  <p className="text-caption text-warning-300 mt-0.5">
-                    Belongs to {physicalAccount.heldByProgramName}{physicalAccount.heldByProgramCode ? ` (${physicalAccount.heldByProgramCode})` : ''} —
-                    this program's payments are refused until it has its own {displayPhysical.currency} bank account
-                  </p>
-                ) : (
-                  <p className="text-caption text-primary-300 mt-0.5">Held at bank — outside VA consolidation; mirrored via shadow accounts</p>
-                )}
-              </>
-            ) : (
-              <p className="text-caption text-primary-300">Add one in the program's setup (Programs → Edit → Bank accounts)</p>
+      {/* The bank account behind this program — one neutral line. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 body-sm">
+        <Banknote className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+        {hasPhysical ? (
+          <>
+            <span>
+              Bank account: <span className="body-strong">{displayPhysical.accountName}</span>{' '}
+              <span className="font-mono">{displayPhysical.accountNumber}</span> · {displayPhysical.bankName} · {formatCurrency(displayPhysical.balance, displayPhysical.currency)}
+            </span>
+            {shadowAccounts.length > 0 && (
+              <button type="button" className="text-primary-600 hover:underline dark:text-primary-200" onClick={() => navigate('physical-accounts')}>
+                · {shadowAccounts.length} bank account{shadowAccounts.length > 1 ? 's' : ''} in the hierarchy →
+              </button>
             )}
-          </div>
-        </div>
+            {physicalAccount?.heldByProgramName && (
+              <span className="caption-warning basis-full">
+                Belongs to {physicalAccount.heldByProgramName}{physicalAccount.heldByProgramCode ? ` (${physicalAccount.heldByProgramCode})` : ''} —
+                this program's payments are refused until it has its own {displayPhysical.currency} bank account
+              </span>
+            )}
+          </>
+        ) : (
+          <span>No bank account yet. Add one in the program's setup (Programs → Edit → Bank accounts).</span>
+        )}
       </div>
-
-      {/* Shadow Accounts Banner */}
-      {shadowAccounts.length > 0 && (
-        <div className="bg-gradient-to-r from-warning-700 via-warning-600 to-warning-700 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <StatusIconBadge tone="neutral" icon={Layers} inverse />
-              <div>
-                <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Shadow Accounts (PHYSICAL_MIRROR)</p>
-                <p className="text-body-sm text-warning-100 mt-0.5">{shadowAccounts.length} account{shadowAccounts.length > 1 ? 's' : ''} mirroring bank balances</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Total Mirrored Balance</p>
-              {/* One figure per currency: these are bank balances in their own currencies. */}
-              {Object.entries(shadowAccounts.reduce<Record<string, number>>((acc, sa) => {
-                const c = sa.currencyCode || reportingCurrency;
-                acc[c] = (acc[c] || 0) + (sa.bankBalance || 0);
-                return acc;
-              }, {})).map(([ccy, total]) => (
-                <p key={ccy} className="stat-value-sm mt-1">{formatCurrency(total, ccy)}</p>
-              ))}
-            </div>
-          </div>
-          {/* Shadow Account Details Grid */}
-          <div className="grid gap-3 mt-3 grid-cols-3">
-            {shadowAccounts.map((shadow) => (
-              <div key={shadow.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-caption text-warning-200 font-mono">{shadow.vaNumber}</p>
-                    <p className="text-body-sm font-medium text-white mt-0.5">{shadow.vaName}</p>
-                    {shadow.physicalAccountNumber && (
-                      <p className="text-caption text-warning-300 mt-1">↔ {shadow.physicalAccountNumber}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-body-lg font-bold text-white">{formatCurrency(shadow.bankBalance || 0, shadow.currencyCode)}</p>
-                    <p className="text-caption text-warning-200">{shadow.currencyCode}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Main Content Grid */}
       <div className="grid gap-6 grid-cols-3">
@@ -4015,7 +3875,22 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         <div className="col-span-2">
           <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">
             <div className="flex items-center justify-between p-4 border-b border-edge">
-              <h2 className="section-title">Virtual Account Hierarchy</h2>
+              <div className="flex items-center gap-1">
+                <h2 className="section-title">Virtual Account Hierarchy</h2>
+                {/* Icon legend on demand (was a permanent card under the tree). */}
+                <HeaderHelpPopover description={
+                  <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div><span className="caption">Entity</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div><span className="caption">Settlement VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
+                  </div>
+                } />
+              </div>
               <div className="flex items-center gap-2">
                 <Checkbox size="sm" label="System VAs" checked={showSystemVas} onChange={setShowSystemVas} className="body-sm" />
                 {/* Discoverable creation entry: works off the selected node
@@ -4067,7 +3942,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         {/* Detail Panel */}
         <div>
           <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle p-4">
-            <h3 className="section-title mb-4">Entity Details</h3>
+            <h3 className="section-title mb-4">{selectedNode?.name ?? 'Details'}</h3>
             <DetailPanel
               node={selectedNode}
               detail={selectedNodeDetail}
@@ -4082,21 +3957,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
               treasuryRates={treasuryRates}
             />
           </div>
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle">
-        <div className="flex flex-wrap items-center gap-6">
-          <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div><span className="caption">Entity</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div><span className="caption">Settlement VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
         </div>
       </div>
 

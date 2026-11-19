@@ -22,7 +22,6 @@ import {
 } from '../services/api';
 import { simulatorApi } from '../services/simulatorApi';
 import { auditLog } from '../utils/auditLog';
-import { SandboxBadge } from '../components/simulator/SandboxBadge';
 import { ScenarioHeader } from '../components/simulator/ScenarioHeader';
 import { StructureView } from '../components/simulator/StructureView';
 import { DiffView } from '../components/simulator/DiffView';
@@ -1016,15 +1015,7 @@ const SimulatorPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Simulator"
-        description={
-          <div className="flex items-center gap-2 flex-wrap">
-            <SandboxBadge />
-            <span>
-              Sandbox over your three-layer model — design, score, and propose
-              cash-concentration structures with no live writes.
-            </span>
-          </div>
-        }
+        description="Try out sweep and pool structures without changing live accounts."
       />
 
       {error && (

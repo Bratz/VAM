@@ -839,9 +839,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               <h4 className="label">Every program can use these. Tick to configure them now; otherwise set them up later.</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: 'configureHierarchy', label: 'Configure Hierarchy now', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
-                  { key: 'configureViban', label: 'Configure VIBAN now', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
-                  { key: 'configureWallet', label: 'Configure Wallets now', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
+                  { key: 'configureHierarchy', label: 'Customise the hierarchy now', icon: GitBranch, desc: 'Every program gets the standard hierarchy; tick to pick the template and depth', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
+                  { key: 'configureViban', label: 'Configure VIBANs now', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
+                  { key: 'configureWallet', label: 'Configure wallets now', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
                 ].map(f => {
                   const Icon = f.icon;
                   const isChecked = formData[f.key as keyof typeof formData] as boolean;
@@ -866,24 +866,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               </div>
             </div>
 
-            {/* Info messages for enabled features */}
-            {formData.configureViban && (
-              <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex items-start gap-2 dark:bg-info-500/10 dark:border-info-500/30">
-                <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                <p className="text-body-sm text-info-700 dark:text-info-300">
-                  VIBAN is enabled. You'll configure the VIBAN pool settings in the next step.
-                </p>
-              </div>
-            )}
-
-            {formData.configureHierarchy && (
-              <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 flex items-start gap-2 dark:bg-cat-2/15 dark:border-cat-2/30">
-                <GitBranch className="w-4 h-4 text-cat-2 dark:text-cat-2-fg mt-0.5" />
-                <p className="text-body-sm text-cat-2 dark:text-cat-2-fg">
-                  Hierarchy is enabled. You'll configure the hierarchy template and depth in the next step.
-                </p>
-              </div>
-            )}
           </div>
         )}
 

@@ -8,12 +8,11 @@
 // ============================================================================
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Radio, AlertTriangle, Activity, ListChecks, Send, LineChart, Copy, BellRing, X } from 'lucide-react';
+import { Radio, AlertTriangle, Send, LineChart, Copy, BellRing, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
-import { StatStrip } from '../../components/layout/StatStrip';
-import { Card, CardHeader, Badge, Button, DataTable, Input, RowActions, StatTile } from '../../components/ui';
+import { Card, CardHeader, Badge, Button, DataTable, Input, RowActions } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
 import { fxDealApi, RateAlert, Side } from '../../services/fxDealApi';
 import type { Column } from '../../components/ui/DataTable';
@@ -142,7 +141,6 @@ const FxMarketPage: React.FC = () => {
 
   const row = rows.find((r) => r.pair === selected);
   const asOf = rows[0] ? new Date(rows[0].asOf).toLocaleTimeString() : '';
-  const mover = rows.reduce<BoardRow | null>((m, r) => (!m || Math.abs(r.changeBps) > Math.abs(m.changeBps) ? r : m), null);
   const base = (pair: string) => pair.slice(0, 3);
 
   const openTicket = (pair: string, side: Side, forward?: { valueDate: string }) =>
@@ -321,27 +319,19 @@ const FxMarketPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Market Rates"
-        description="Your indicative buy and sell prices for each pair, at the amount you choose: the rate you buy the first currency at, and the rate you sell it at. Click a price to request a deal on that side. The rates are simulated."
+        description="Your buy and sell prices at the amount you choose. Click a price to deal."
       />
-
-      <StatStrip>
-        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(rows.length)} sub="on the rate board" />
-        <StatTile tone={mover && mover.changeBps < 0 ? 'danger' : 'success'} icon={<Activity className="w-5 h-5" />} label="Biggest mover"
-          value={mover ? mover.pair : '-'} sub={mover ? `${fmtSigned(mover.changeBps, 1)} bps vs open` : 'waiting for rates'} />
-        <StatTile tone={feedError ? 'danger' : 'info'} icon={<Radio className="w-5 h-5" />} label="Feed"
-          value={feedError ? 'Unavailable' : rows.length ? 'Running' : 'Connecting'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'waiting for the first rates')} />
-      </StatStrip>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader
             title="Rate board"
-            subtitle={`Spot, for ${fmt(amount, 0)} of the first currency of each pair. The spread depends on the amount.`}
+            subtitle={feedError ?? (asOf ? `Spot, as of ${asOf}` : 'Connecting')}
             action={feedError
               ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
               : (
                 <span className="inline-flex gap-1.5">
-                  {rows[0]?.source === 'SIMULATED' && <Badge variant="warning">Simulated</Badge>}
+                  {(rows[0]?.source === 'SIMULATED' || curve[0]?.source === 'SIMULATED') && <Badge variant="warning">Simulated</Badge>}
                   <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Indicative</Badge>
                 </span>
               )}
@@ -368,8 +358,7 @@ const FxMarketPage: React.FC = () => {
         <Card className="lg:col-span-2">
           <CardHeader
             title={`${selected} forward curve`}
-            subtitle={row ? `Spot ${fmtRate(row.sell)} / ${fmtRate(row.buy)} for value ${row.valueDate}; outright rates below` : 'Waiting for the rate board'}
-            action={curve[0]?.source === 'SIMULATED' ? <Badge variant="warning">Simulated</Badge> : undefined}
+            subtitle={row ? `Spot value ${row.valueDate}` : 'Waiting for the rate board'}
           />
           {curveError && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{curveError}</p>}
           <DataTable<CurveRow>
@@ -403,14 +392,14 @@ const FxMarketPage: React.FC = () => {
                 </div>
               </dl>
             )}
-            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">Points take your spot price to the outright rate for that date. They are simulated: worked out from configured demo interest rates, not the money markets.</p>
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">Points take your spot price to the outright rate for that date.</p>
           </div>
         </Card>
       </div>
 
       {currentCorporateId && (
         <Card>
-          <CardHeader title="Rate alerts" subtitle="Each fires once, in the notification bell, when your buy or sell price reaches it. Set one from a pair's actions." />
+          <CardHeader title="Rate alerts" subtitle="Fires once, in the bell." />
           <DataTable<RateAlert>
             data={alerts}
             columns={alertColumns}

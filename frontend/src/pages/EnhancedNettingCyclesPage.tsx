@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, Building2, Filter, Download, BarChart3, Layers, Send, XCircle, AlertTriangle } from 'lucide-react';
+import { GitMerge, Plus, Calculator, CheckCircle, Loader2, RefreshCw, DollarSign, TrendingUp, Users, ArrowRight, Building2, Download, BarChart3, Layers, Send, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
 import { nettingApi, NettingCycle, corporatesApi, Corporate, type NettingSettlementLeg, type NettingSettlementPreview } from '../services/api';
@@ -13,7 +13,6 @@ import { usePageHeaderActions } from '../context/usePageHeader';
 import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -197,10 +196,17 @@ const LEG_KIND: Record<NettingSettlementLeg['kind'], { label: string; variant: '
   REFUSED: { label: 'Refused', variant: 'error' },
 };
 
+/** DRAFT → Draft, PENDING_APPROVAL → Pending approval: the enums cycles and entries carry, as words. */
+const humanise = (s?: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ') : '');
+
 const SettlementLegs: React.FC<{ legs: NettingSettlementLeg[] }> = ({ legs }) => {
   if (legs.length === 0) return <p className="body-sm">No money moves: every participant nets to zero.</p>;
   return (
     <div className="space-y-3">
+      {/* Said once for every ledger leg, not on each. */}
+      {legs.some(l => l.kind === 'LEDGER') && (
+        <p className="caption">Ledger transfer: both accounts sit on the same bank account or are in-house bank accounts, so the balances move in the ledger.</p>
+      )}
       {legs.map((leg, i) => (
         <Card key={`${leg.payerEntityId}-${leg.receiverEntityId}-${i}`}>
           <div className="p-4 space-y-2">
@@ -221,9 +227,6 @@ const SettlementLegs: React.FC<{ legs: NettingSettlementLeg[] }> = ({ legs }) =>
                 <Badge variant={LEG_KIND[leg.kind].variant}>{LEG_KIND[leg.kind].label}</Badge>
               </div>
             </div>
-            {leg.kind === 'LEDGER' && (
-              <p className="caption">Both accounts sit on the same bank account or are in-house bank accounts: the balances move in the ledger.</p>
-            )}
             {leg.kind === 'PAYMENT' && (
               <p className="caption">
                 Outward payment to {leg.beneficiaryAccount}{leg.beneficiaryBic ? ` (${leg.beneficiaryBic})` : ''}; {leg.receiverEntityCode} is credited when it arrives.
@@ -468,7 +471,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
               </div>
             </div>
             <Badge variant={cycle.status === 'SETTLED' ? 'success' : 'warning'}>
-              {cycle.status?.replace('_', ' ')}
+              {humanise(cycle.status)}
             </Badge>
           </div>
 
@@ -569,7 +572,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 { key: 'entryReference', header: 'Reference', minWidth: 150, mobileLabel: true, render: (_v, entry) => <span className="body-strong">{entry.entryReference}</span> },
                 { key: 'flowDirection', header: 'Direction', minWidth: 110, dropOrder: 3, render: (_v, entry) => (
                   <Badge variant={entry.flowDirection === 'PAYABLE' ? 'error' : 'success'} size="sm">
-                    {entry.flowDirection}
+                    {humanise(entry.flowDirection)}
                   </Badge>
                 ) },
                 { key: 'payerEntityCode', header: 'Payer', minWidth: 110, render: (_v, entry) => <span className="body-sm">{entry.payerEntityCode}</span> },
@@ -578,11 +581,11 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                   <span className="body-strong font-semibold">{formatCurrency(entry.grossAmount, entry.currencyCode)}</span>
                 ) },
                 { key: 'sourceType', header: 'Source', minWidth: 130, dropOrder: 2, render: (_v, entry) => (
-                  <span className="body-sm">{entry.sourceType.replace('_', ' ')}</span>
+                  <span className="body-sm">{humanise(entry.sourceType)}</span>
                 ) },
                 { key: 'status', header: 'Status', minWidth: 110, dropOrder: 1, render: (_v, entry) => (
                   <Badge variant={entry.status === 'INCLUDED' ? 'success' : 'warning'} size="sm">
-                    {entry.status}
+                    {humanise(entry.status)}
                   </Badge>
                 ) },
               ]}
@@ -709,17 +712,11 @@ const CycleCard: React.FC<CycleCardProps> = ({
                 'px-2 py-0.5 text-caption font-medium rounded-full',
                 statusColors[cycle.status] || statusColors.DRAFT
               )}>
-                {cycle.status?.replace('_', ' ')}
+                {humanise(cycle.status)}
               </span>
             </div>
             <p className="body-sm">{cycle.cycleReference}</p>
           </div>
-          <button
-            onClick={onViewDetails}
-            className="p-2 hover:bg-neutral-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-primary-800"
-          >
-            <Eye className="w-5 h-5 text-neutral-400" />
-          </button>
         </div>
 
         {/* Key Metrics */}
@@ -764,7 +761,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
           </div>
           <div className="p-2 bg-neutral-50/50 dark:bg-primary-950/50 rounded-lg">
             <p className="label">Period</p>
-            <p className="font-semibold text-primary-900 mt-0.5 text-caption dark:text-neutral-50">{cycle.periodStart?.slice(0, 10)}</p>
+            <p className="font-semibold text-primary-900 mt-0.5 text-caption dark:text-neutral-50">{cycle.periodStart?.slice(0, 10)} – {cycle.periodEnd?.slice(0, 10)}</p>
           </div>
         </div>
 
@@ -932,12 +929,14 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     ? cycles 
     : cycles.filter(c => c.status === filterStatus);
 
-  // Stats
+  // One status filter carries the counts (it replaced a stat strip, a select and a count).
+  const statusFilters = [
+    { id: 'all', label: 'All', badge: cycles.length },
+    ...(['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'SETTLED'] as const).map(s => ({
+      id: s, label: humanise(s), badge: cycles.filter(c => c.status === s).length,
+    })),
+  ];
   const stats = {
-    total: cycles.length,
-    draft: cycles.filter(c => c.status === 'DRAFT').length,
-    pending: cycles.filter(c => c.status === 'PENDING_APPROVAL').length,
-    settled: cycles.filter(c => c.status === 'SETTLED').length,
     // Settled savings per base currency: cycles in different currencies are never added up
     savings: Object.entries(cycles
       .filter(c => c.status === 'SETTLED')
@@ -1001,34 +1000,15 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       {header}
       {scope}
 
-      {/* Stats Cards */}
-      <StatStrip>
-        <StatTile tone="primary" icon={<GitMerge className="w-5 h-5" />} label="Total" value={stats.total} delay="0.15s" />
-        <StatTile tone="info" icon={<Layers className="w-5 h-5" />} label="Draft" value={stats.draft} delay="0.2s" />
-        <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pending} delay="0.25s" />
-        <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Settled" value={stats.settled} delay="0.3s" />
-        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={stats.savings.length === 0
-          ? <TileAmount value={0} showCurrency={false} />
-          : <span className="flex flex-wrap gap-x-4">{stats.savings.map(([c, v]) => <TileAmount key={c} value={v} currency={c} />)}</span>} delay="0.35s" />
-      </StatStrip>
-
-      {/* Filter */}
-      <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <Filter className="w-4 h-4 text-neutral-400" />
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-body-sm border border-edge rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300"
-        >
-          <option value="all">All Cycles</option>
-          <option value="DRAFT">Draft</option>
-          <option value="PENDING_APPROVAL">Pending Approval</option>
-          <option value="APPROVED">Approved</option>
-          <option value="SETTLED">Settled</option>
-        </select>
-        <span className="body-sm ml-2">
-          {filteredCycles.length} cycle{filteredCycles.length !== 1 ? 's' : ''}
-        </span>
+      {/* Status filter with counts; settled savings per base currency beside it. */}
+      <div className="flex items-center justify-between gap-4 flex-wrap animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <Tabs variant="pills" size="sm" tabs={statusFilters} activeTab={filterStatus} onChange={setFilterStatus} />
+        {stats.savings.length > 0 && (
+          <span className="body-sm flex flex-wrap items-center gap-x-3">
+            Settled savings
+            {stats.savings.map(([c, v]) => <TileAmount key={c} value={v} currency={c} />)}
+          </span>
+        )}
       </div>
 
       {/* Cycles Grid */}

@@ -64,9 +64,7 @@ export const IhbPositionPanel: React.FC<{ corporateId: string }> = ({ corporateI
   return (
     <div className="space-y-6">
       <p className="body-sm">
-        Each entity&apos;s current account at the in-house bank, per currency: its balance (positive: the in-house bank owes it),
-        credit limit, how much of it is used and what is left, and interest accrued but not yet posted. The credit limit applies
-        in the entity&apos;s in-house bank currency only. Beside it, treasury&apos;s bank accounts that fund the in-house bank.
+        Positive balance: the in-house bank owes the entity. A credit limit applies in the entity&apos;s in-house bank currency only.
       </p>
       {currencies.map((c) => (
         <div key={c.currency} className="grid grid-cols-3 gap-4">
@@ -401,10 +399,6 @@ export const IhbChangesPanel: React.FC<{ corporateId: string }> = ({ corporateId
 
   return (
     <div className="space-y-4">
-      <p className="body-sm">
-        Changes to an entity&apos;s credit limit or spreads and to the rates a current account is charged: who, from what to what,
-        and when. A rate with &quot;not set&quot; is charged at the built-in default.
-      </p>
       {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}
       <DataTable
         data={changes}

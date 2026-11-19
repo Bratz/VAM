@@ -11,7 +11,7 @@ import { Page } from '../components/layout/Page';
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Building2, Plus, RefreshCw, Search, Loader2, AlertTriangle, Lock, Unlock, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Layers, CreditCard, Pencil } from 'lucide-react';
-import { StatusIconBadge, RadioGroup } from '../components/ui';
+import { StatusIconBadge, RadioGroup, RowActions } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import {
   EntityAllocationModal,
@@ -402,10 +402,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
           <div className="p-3 bg-primary-100 rounded-lg dark:bg-primary-700">
             <Layers className="w-8 h-8 text-primary-700 dark:text-neutral-200" />
           </div>
-          <div>
-            <p className="text-caption text-primary-600 uppercase font-semibold tracking-wide dark:text-primary-200">Group Internal Limits</p>
-            <p className="body-sm mt-0.5">{groupLimits.length} {groupLimits.length === 1 ? 'currency' : 'currencies'} configured</p>
-          </div>
+          <p className="text-caption text-primary-600 uppercase font-semibold tracking-wide dark:text-primary-200">Group Internal Limits</p>
         </div>
         <button type="button" onClick={onAddCurrency} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-body-sm font-medium hover:bg-primary-200 dark:hover:bg-primary-700 flex items-center gap-1 dark:bg-primary-700 dark:text-neutral-200">
           <Plus className="w-4 h-4" /> Add Currency
@@ -467,15 +464,8 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
-            <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="caption">Allocated</p>
-              <p className="text-body-sm font-bold text-primary-700 truncate dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /></p>
-            </div>
-            <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="caption">Unallocated</p>
-              <p className="text-body-sm font-bold text-success-700 truncate dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /></p>
-            </div>
+          {/* Allocated / unallocated are on the bar above; these are the two figures it does not show. */}
+          <div className="grid grid-cols-2 gap-2">
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
               <p className="caption">Utilized</p>
               <p className="text-body-sm font-bold text-warning-700 truncate dark:text-warning-300"><Amount value={utilized} currency={selectedCurrency!} /></p>
@@ -556,7 +546,7 @@ const EntityTreeNode: React.FC<{
           </div>
 
           <div className="w-[6.25rem] text-right">
-            <p className="text-caption text-neutral-400 uppercase dark:text-neutral-400">External</p>
+            <p className="text-caption text-neutral-400 uppercase dark:text-neutral-400">Bank limit</p>
             {entity.isBankCustomer && externalCeiling ? (
               <p className="text-body-sm font-medium text-info-700 dark:text-info-300">{formatCurrency(externalCeiling, entity.functionalCurrency)}</p>
             ) : <p className="text-body-sm text-neutral-400">—</p>}
@@ -598,11 +588,11 @@ const EntityTreeNode: React.FC<{
                     </div>
                     <p className="caption mt-0.5">{utilizationPct.toFixed(0)}% utilized</p>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800" title="Edit limit"><Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /></button>
-                    <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded-md dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-4 h-4 text-primary-500" /></button>
-                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" /></button>
-                  </div>
+                  <RowActions label={`${currency} limit actions`} actions={[
+                    { label: 'Edit limit', icon: <Pencil className="w-4 h-4" />, onClick: () => onEdit(entity, currency) },
+                    { label: 'Manage VA limits', icon: <CreditCard className="w-4 h-4" />, onClick: () => onManageVaLimits(entity, currency) },
+                    { label: 'Delete limit', icon: <Trash2 className="w-4 h-4" />, onClick: () => onDelete(entity.id, currency), danger: true, divider: true },
+                  ]} />
                 </div>
               );
             })}
@@ -1156,7 +1146,7 @@ const CreditLimitsPage: React.FC = () => {
               <div className="px-4 py-2 bg-surface-page border-b border-edge-subtle flex items-center gap-3 label">
                 <div style={{ width: '1.75rem' }} /><div style={{ width: '2rem' }} />
                 <div className="flex-1 min-w-[11.25rem]">Entity</div>
-                <div className="w-[6.25rem] text-right">External</div>
+                <div className="w-[6.25rem] text-right">Bank limit</div>
                 <div className="w-[6.25rem]">Actions</div>
               </div>
 

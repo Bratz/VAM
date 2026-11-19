@@ -8,7 +8,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Check,
   AlertTriangle,
-  Info,
   Loader2,
   Building2,
   Globe,
@@ -189,7 +188,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
           <span>Divest Aggregation</span>
         </div>
       }
-      subtitle="Spin off an aggregation to become a new corporate"
+      subtitle="Spin off a division as a new corporate"
     >
       <div className="-mx-6 -my-6 flex flex-col">
         {/* Content */}
@@ -198,16 +197,6 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
               <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-warning-600 dark:text-warning-300" /></div>
             ) : (
               <>
-                <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
-                  <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
-                    <div>
-                      <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">About Divestiture</p>
-                      <p className="text-body-sm text-warning-600 dark:text-warning-300 mt-1">The selected aggregation will become the ROOT of a new corporate entity. All child VAs will be migrated.</p>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="p-4 bg-surface-page rounded-lg border border-edge">
                   <p className="field-label mb-2">Source Corporate</p>
                   <div className="flex items-center gap-3">
@@ -217,11 +206,11 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                 </div>
 
                 <div>
-                  <label className="field-label block mb-2">Select Aggregation to Divest *</label>
+                  <label className="field-label block mb-2">Division to spin off *</label>
                   {aggregations.length === 0 ? (
                     <div className="text-center py-8 bg-surface-page rounded-lg">
                       <Folder className="w-12 h-12 text-neutral-300 dark:text-neutral-400 mx-auto mb-3" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No aggregations available for divestiture</p>
+                      <p className="text-neutral-500 dark:text-neutral-400">No divisions to spin off</p>
                     </div>
                   ) : (
                     <div className="border border-edge rounded-lg p-3 max-h-48 overflow-y-auto">
@@ -253,7 +242,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
 
                     {/* Preview */}
                     <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
-                      <p className="text-body-sm font-medium text-warning-700 dark:text-warning-300 mb-3">Post-Divestiture Structure:</p>
+                      <p className="text-body-sm font-medium text-warning-700 dark:text-warning-300 mb-3">Before and after</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 bg-surface-card rounded-lg">
                           <p className="label-cased mb-2">Before</p>
@@ -268,29 +257,6 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                             <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-warning-700 dark:text-warning-300" /><span className="text-warning-700 dark:text-warning-300 font-medium">{newCorporateName || '[New Corp]'}</span><Badge variant="success">New</Badge></div>
                             <div className="ml-4 text-neutral-500 dark:text-neutral-400">└─ {countVas(selectedAggregation)} VAs</div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
-                      <h4 className="font-medium text-success-800 dark:text-success-300 mb-2">Changes to be made:</h4>
-                      <ul className="space-y-1 text-body-sm text-success-700 dark:text-success-300">
-                        <li className="flex items-center gap-2"><Check className="w-4 h-4" />New corporate entity created</li>
-                        <li className="flex items-center gap-2"><Check className="w-4 h-4" />Aggregation becomes ROOT of new corporate</li>
-                        <li className="flex items-center gap-2"><Check className="w-4 h-4" />{countVas(selectedAggregation)} VAs migrated</li>
-                      </ul>
-                    </div>
-
-                    <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
-                        <div>
-                          <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
-                          <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
-                            <li>• Remove aggregation from current hierarchy</li>
-                            <li>• Create new corporate with own hierarchy</li>
-                            <li>• Move all its virtual accounts to the new corporate</li>
-                          </ul>
                         </div>
                       </div>
                     </div>

@@ -7,13 +7,13 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Download, AlertTriangle, CheckCircle, Coins, ShieldAlert, ListChecks, Send, Filter, X, TrendingUp } from 'lucide-react';
+import { Upload, Download, Coins, ShieldAlert, Send, Filter, X, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { StatStrip } from '../../components/layout/StatStrip';
 import { Badge, Button, Card, CardHeader, DataTable, RowActions, StatTile } from '../../components/ui';
-import { Modal } from '../../components/ui/enhanced';
+import { Alert, Modal } from '../../components/ui/enhanced';
 import { Checkbox } from '../../components/ui/Checkbox';
 import type { Column } from '../../components/ui/DataTable';
 import { useUser } from '../../context/useUser';
@@ -176,12 +176,16 @@ const FxExposurePage: React.FC = () => {
       render: (_, b) => <span className="font-mono tabular-nums">{b.forecast ? fmtSigned(b.forecast) : '-'}</span>,
     },
     { key: 'hedged', header: 'Hedged', align: 'right', dropOrder: 3, render: (_, b) => <span className="font-mono tabular-nums">{b.hedged ? fmtSigned(b.hedged) : '-'}</span> },
-    { key: 'hedgeRatio', header: 'Hedge ratio vs policy', dropOrder: 2, render: (_, b) => <RatioBar ratio={b.hedgeRatio} min={b.minRatio} max={b.maxRatio} status={b.status} /> },
     {
-      key: 'status', header: 'Status',
+      key: 'status', header: 'Hedge ratio vs policy',
       render: (_, b) => {
         const s = STATUS_BADGE[b.status];
-        return s ? <Badge variant={s.variant} size="sm">{s.label}</Badge> : null;
+        return (
+          <span className="inline-flex items-center gap-2">
+            <RatioBar ratio={b.hedgeRatio} min={b.minRatio} max={b.maxRatio} status={b.status} />
+            {s && <Badge variant={s.variant} size="sm">{s.label}</Badge>}
+          </span>
+        );
       },
     },
     {
@@ -225,23 +229,26 @@ const FxExposurePage: React.FC = () => {
     <Page>
       <PageHeader
         title="Exposure & Hedging"
-        description="Foreign-currency exposure by currency and time bucket against the hedge policy: open invoices, cash held, the Cash Forecast’s recurring and manual flows (payroll, rent, tax), and declared entries. Amounts stay in each currency and are never summed across currencies. Declared exposures and hedges cover what payables, receivables and balances do not: ERP forecasts and forwards held with other banks."
+        description="Currency exposure by time bucket against your hedge policy. Amounts stay in their own currency."
         actions={<Button onClick={() => { setUploadError(null); setUploadOpen(true); }} leftIcon={<Upload className="w-4 h-4" />}>Upload exposures</Button>}
       />
 
-      <StatStrip columns={4}>
+      <StatStrip columns={3}>
         <StatTile tone="primary" icon={<Coins className="w-5 h-5" />} label="Foreign currencies" value={ladder ? String(ladder.currencies.length) : '-'}
           sub={ladder ? `home currency ${ladder.baseCurrency}` : corporateName} loading={loading && !ladder} />
         <StatTile tone={policyBreaches ? 'danger' : 'success'} icon={<ShieldAlert className="w-5 h-5" />} label="Outside policy"
           value={ladder ? String(policyBreaches) : '-'}
-          sub={`${policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'}${ladder?.policyDefault ? '; default policy, not one you agreed' : ''}`} />
-        <StatTile tone="info" icon={<ListChecks className="w-5 h-5" />} label="Declared entries" value={String(entries.length)} sub="exposures and hedges uploaded" />
+          sub={policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'} />
         <StatTile tone={!ladder?.forecastRunAt ? 'neutral' : ladder.forecastStale ? 'warning' : 'success'} icon={<TrendingUp className="w-5 h-5" />}
           label="Cash Forecast" value={ladder?.forecastRunAt ? new Date(ladder.forecastRunAt).toLocaleDateString() : 'No run'}
           sub={!ladder?.forecastRunAt ? 'invoices and cash only' : ladder.forecastStale ? 'out of date: run it again in Cash Forecast' : 'recurring flows counted in full'} />
       </StatStrip>
 
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
+
+      {ladder?.policyDefault && (
+        <Alert variant="warning">Default hedge policy: these bands are the application&apos;s defaults, not a policy you agreed.</Alert>
+      )}
 
       {ladder && ladder.currencies.length === 0 && !loading && (
         <Card>
@@ -257,16 +264,8 @@ const FxExposurePage: React.FC = () => {
           <CardHeader
             title={`${row.currency} exposure`}
             subtitle={row.rateToBase
-              ? `Stored platform rate: 1 ${row.currency} = ${row.rateToBase} ${ladder.baseCurrency}. Amounts are in ${row.currency}.`
-              : `No platform rate from ${row.currency} to ${ladder.baseCurrency}, so no ${ladder.baseCurrency} equivalent is shown.`}
-            action={
-              <span className="inline-flex gap-1.5">
-                {ladder.policyDefault && <span title="The application's default hedge bands, not a policy the corporate set"><Badge variant="warning">Default policy</Badge></span>}
-                {row.buckets.some((b) => b.status === 'UNDER_HEDGED' || b.status === 'OVER_HEDGED')
-                  ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Outside policy</Badge>
-                  : <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Within policy</Badge>}
-              </span>
-            }
+              ? `1 ${row.currency} = ${row.rateToBase} ${ladder.baseCurrency}`
+              : `No ${row.currency} to ${ladder.baseCurrency} rate`}
           />
           <DataTable<ExposureBucket>
             data={row.buckets.filter((b) => b.exposure !== 0 || b.hedged !== 0)}
@@ -317,9 +316,8 @@ const FxExposurePage: React.FC = () => {
           <Checkbox checked={replace} onChange={setReplace} label="Replace earlier uploads" />
           <Button size="sm" variant="secondary" onClick={downloadTemplate} leftIcon={<Download className="w-4 h-4" />}>Download template</Button>
           <p className="text-caption text-neutral-500 dark:text-neutral-400">
-            Columns: kind (EXPOSURE or HEDGE), currency, amount, valueDate (YYYY-MM-DD), optional reference and description.
-            Exposure: positive = you will receive the currency, negative = you will pay it. Hedge: the deal’s own position,
-            so a forward sale of EUR is negative. The whole file is rejected if any row is wrong.
+            For what payables, receivables, balances and the Cash Forecast do not cover: ERP forecasts and forwards held
+            with other banks. Use the template&apos;s format; the whole file is rejected if any row is wrong.
           </p>
           {uploadError && <p className="text-body-sm text-error-700 dark:text-error-300">{uploadError}</p>}
         </div>

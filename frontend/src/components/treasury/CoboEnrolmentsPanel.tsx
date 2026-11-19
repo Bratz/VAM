@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRightLeft, Plus, Undo2, XCircle } from 'lucide-react';
-import { Badge, Button, DataTable, Select, TextArea } from '../ui';
+import { Badge, Button, DataTable, RowActions, Select, TextArea } from '../ui';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { Modal } from '../ui/enhanced';
 import { coboEnrolmentApi, legalEntityApi, type CoboCollectionAccount, type CoboCutoverItem, type CoboCutoverReport, type CoboEnrolment, type HeldFxCredit, type LegalEntity } from '../../services/api';
@@ -69,14 +69,16 @@ export const CoboEnrolmentsPanel: React.FC<{
           subsidiary's IHB current account when paid.
         </p>
         <div className="flex gap-2 shrink-0">
-          {cutover && cutover.toDirect.length + cutover.toNewFlow.length > 0 && (
-            <Button size="sm" variant="outline" leftIcon={<ArrowRightLeft className="w-4 h-4" />} onClick={() => setCutoverOpen(true)}>
-              Move existing COBO invoices ({cutover.toDirect.length + cutover.toNewFlow.length})
-            </Button>
-          )}
           <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setAdding(true)}>
             Add enrolment
           </Button>
+          {/* One-off migration: in the overflow menu, shown only while there is something to move. */}
+          <RowActions label="More actions" actions={[{
+            label: `Move existing COBO invoices (${cutover ? cutover.toDirect.length + cutover.toNewFlow.length : 0})`,
+            icon: <ArrowRightLeft className="w-4 h-4" />,
+            onClick: () => setCutoverOpen(true),
+            hidden: !cutover || cutover.toDirect.length + cutover.toNewFlow.length === 0,
+          }]} />
         </div>
       </div>
       {error && <p className="text-body-sm text-error-600 dark:text-error-300">{error}</p>}

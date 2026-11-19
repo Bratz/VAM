@@ -177,28 +177,7 @@ interface QuickAction {
   title: string;
   description: string;
   onClick: () => void;
-  color?: string;
 }
-
-const QuickActionCard: React.FC<{ action: QuickAction }> = ({ action }) => {
-  const Icon = action.icon;
-  const colorClasses = action.color || 'bg-primary-50 group-hover:bg-primary-100 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200';
-  
-  return (
-    <button
-      onClick={action.onClick}
-      className="flex flex-col items-center gap-3 p-6 bg-surface-card rounded-lg border border-edge hover:border-primary-300 hover:shadow-md transition-all group"
-    >
-      <div className={cn('p-3 rounded-lg transition-colors', colorClasses)}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div className="text-center">
-        <p className="font-semibold text-primary-900 group-hover:text-primary-700 dark:text-neutral-50">{action.title}</p>
-        <p className="caption mt-1">{action.description}</p>
-      </div>
-    </button>
-  );
-};
 
 // ============================================================================
 // TREE NODE COMPONENT
@@ -297,6 +276,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
 // OPERATION HISTORY ITEM
 // ============================================================================
 
+const OPERATION_LABELS: Record<string, string> = {
+  MOVE_TRANSACTION_VA: 'Account relocated',
+  MOVE_AGGREGATION: 'Division moved',
+  ACQUISITION: 'Acquisition',
+  MERGER: 'Merger',
+  DIVESTITURE: 'Divestiture',
+};
+
 const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewDetails: (id: string) => void }> = ({ operation, onViewDetails }) => {
   const getOperationIcon = () => {
     switch (operation.operationType) {
@@ -323,7 +310,7 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
       <div className="p-2 bg-surface-muted rounded-lg">{getOperationIcon()}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-primary-900 dark:text-neutral-50">{operation.operationType.replace(/_/g, ' ')}</span>
+          <span className="font-medium text-primary-900 dark:text-neutral-50">{OPERATION_LABELS[operation.operationType] ?? operation.operationType.replace(/_/g, ' ').toLowerCase()}</span>
           {getStatusBadge()}
         </div>
         <p className="body-sm mt-1">{operation.summary}</p>
@@ -690,49 +677,41 @@ const HierarchyOperationsPage: React.FC = () => {
 
   const selectedCorporate = corporates.find((c) => c.id === selectedCorporateId);
 
-  // Quick-action tiles. Dark-mode icon backgrounds bumped from /10 to /20 so
-  // the hue actually reads on the dark navy card — at /10 the swatches were
-  // too dim and the row felt monochrome. Hover bumps to /30 for press affordance.
   const quickActions: QuickAction[] = [
     {
       id: 'move-va',
       icon: Package,
-      title: 'Relocate Account',
+      title: 'Relocate account',
       description: 'Move account to new division',
-      onClick: () => { setMoveType('TRANSACTION_VA'); setPreSelectedVaId(undefined); setShowMoveModal(true); },
-      color: 'bg-info-50 group-hover:bg-info-100 text-info-600 dark:bg-info-500/20 dark:group-hover:bg-info-500/30 dark:text-info-300'
+      onClick: () => { setMoveType('TRANSACTION_VA'); setPreSelectedVaId(undefined); setShowMoveModal(true); }
     },
     {
       id: 'move-aggregation',
       icon: Folder,
-      title: 'Move Division',
+      title: 'Move division',
       description: 'Relocate entire business unit',
-      onClick: () => { setMoveType('AGGREGATION'); setPreSelectedVaId(undefined); setShowMoveModal(true); },
-      color: 'bg-cat-1-soft group-hover:bg-cat-1/10 text-cat-1 dark:text-cat-1-fg dark:bg-cat-1/15 dark:group-hover:bg-cat-1/25'
+      onClick: () => { setMoveType('AGGREGATION'); setPreSelectedVaId(undefined); setShowMoveModal(true); }
     },
     {
       id: 'acquire',
       icon: Building2,
       title: 'Acquisition',
       description: 'Acquire another corporate',
-      onClick: () => setShowAcquisitionWizard(true),
-      color: 'bg-success-50 group-hover:bg-success-100 text-success-600 dark:bg-success-500/20 dark:group-hover:bg-success-500/30 dark:text-success-300'
+      onClick: () => setShowAcquisitionWizard(true)
     },
     {
       id: 'merge',
       icon: GitMerge,
       title: 'Merger',
       description: 'Combine two corporates',
-      onClick: () => setShowMergerWizard(true),
-      color: 'bg-cat-2-soft group-hover:bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15 dark:group-hover:bg-cat-2/25'
+      onClick: () => setShowMergerWizard(true)
     },
     {
       id: 'divest',
       icon: GitBranch,
       title: 'Divestiture',
       description: 'Spin-off to new corporate',
-      onClick: () => setShowDivestitureModal(true),
-      color: 'bg-warning-50 group-hover:bg-warning-100 text-warning-600 dark:bg-warning-500/20 dark:group-hover:bg-warning-500/30 dark:text-warning-300'
+      onClick: () => setShowDivestitureModal(true)
     },
   ];
 
@@ -780,8 +759,8 @@ const HierarchyOperationsPage: React.FC = () => {
           conformed pages. View Rules / History live in the Aperture Layout
           header via usePageHeaderActions above. */}
       <PageHeader
-        title="Corporate Reorganization"
-        description="Run M&A, divestiture, and corporate restructuring workflows. Move VAs across hierarchy nodes; merge or split entity trees with full audit trail."
+        title="Reorganization"
+        description="Move accounts and divisions, or run an acquisition, merger or divestiture. Every change is recorded in Operation History."
       />
 
       {/* Corporate/Program Filter Bar — uses the shared `<ScopeSelector>`. */}
@@ -818,13 +797,14 @@ const HierarchyOperationsPage: React.FC = () => {
       {/* Main Content */}
       {selectedCorporateId && selectedProgramId && (
         <>
-          {/* Quick Actions */}
-          <Card padding="lg">
-            <h2 className="section-title mb-4">Quick Actions</h2>
-            <div className="grid gap-4 grid-cols-5">
-              {quickActions.map((action) => (<QuickActionCard key={action.id} action={action} />))}
-            </div>
-          </Card>
+          {/* Reorganize actions — one row of buttons (was five large tiles). */}
+          <div className="flex flex-wrap gap-2">
+            {quickActions.map(({ id, icon: Icon, title, description, onClick }) => (
+              <SharedButton key={id} variant="outline" size="sm" leftIcon={<Icon className="w-4 h-4" />} onClick={onClick} title={description}>
+                {title}
+              </SharedButton>
+            ))}
+          </div>
 
           {/* Main Content Grid */}
           <div className="grid gap-6 grid-cols-3">
@@ -859,11 +839,11 @@ const HierarchyOperationsPage: React.FC = () => {
                   <div className="px-4 py-3 border-t border-edge-subtle bg-surface-page">
                     <div className="flex flex-wrap items-center gap-4 caption">
                       <span className="font-medium">Legend:</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-primary-900" />ROOT</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-info-100 dark:bg-info-500/20" />AGGREGATION</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-success-50 dark:bg-success-500/10" />TRANSACTION</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-cyan-50 border border-dashed border-cyan-300 dark:bg-cyan-500/10" />MIRROR</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-warning-50 border border-warning-300 dark:bg-warning-500/10" />EXCEPTION</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-primary-900" />Top level</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-info-100 dark:bg-info-500/20" />Division</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-success-50 dark:bg-success-500/10" />Account</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-cyan-50 border border-dashed border-cyan-300 dark:bg-cyan-500/10" />Currency mirror</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-warning-50 border border-warning-300 dark:bg-warning-500/10" />Exceptions</span>
                     </div>
                   </div>
                 )}

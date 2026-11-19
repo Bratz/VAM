@@ -112,8 +112,8 @@ const FxReportsPage: React.FC = () => {
       {!corporateId && <p className="text-body-sm text-neutral-600 dark:text-neutral-300">Choose a corporate in the header to see its reports.</p>}
 
       <Card>
-        <CardHeader title={table?.title ?? report.label} subtitle={table?.subtitle ?? report.hint} />
-        <p className="text-caption text-neutral-500 dark:text-neutral-400 mb-3">{report.hint}</p>
+        {/* The tab names the report; the header says the period and what is in it. */}
+        <CardHeader title={table?.subtitle ?? report.label} subtitle={report.hint} />
         <DataTable<string[]>
           data={table?.rows ?? []}
           columns={columns}

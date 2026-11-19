@@ -3,7 +3,7 @@ import { ArrowRight, Star } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
 import { cn, formatCompactCurrency } from '../../utils';
 import { groupShadowsByBank } from '../../utils/simulator/inventoryGrouping';
-import type { ScoreResult, SimulatorScenario } from './types';
+import { SCENARIO_STATUS_LABEL, type ScoreResult, type SimulatorScenario } from './types';
 
 // ============================================================================
 // ScenarioColumn — one scenario in CompareView. Pure: name + fork label,
@@ -67,7 +67,7 @@ export const ScenarioColumn: React.FC<ScenarioColumnProps> = ({
           </div>
           <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
             <span className="code">{scenario.scenarioReference}</span> ·{' '}
-            {scenario.status}
+            {SCENARIO_STATUS_LABEL[scenario.status] ?? scenario.status}
           </p>
         </div>
         {isBest && (
@@ -78,7 +78,7 @@ export const ScenarioColumn: React.FC<ScenarioColumnProps> = ({
       </div>
 
       <p className="body-sm text-neutral-500 dark:text-neutral-400">
-        {bankCount} bank{bankCount === 1 ? '' : 's'} · {shadows.length} shadow
+        {bankCount} bank{bankCount === 1 ? '' : 's'} · {shadows.length} planned account
         {shadows.length === 1 ? '' : 's'} · {rules.length} rule
         {rules.length === 1 ? '' : 's'}
       </p>

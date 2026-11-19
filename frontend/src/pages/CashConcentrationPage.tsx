@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Loader2, Plus, RefreshCw, Layers, TrendingUp, Building2, Filter, History, XCircle } from 'lucide-react';
-import { Card, Button, Select, StatusIconBadge, StatTile } from '../components/ui';
+import { Play, Loader2, Plus, RefreshCw, Layers, TrendingUp, Filter, History, XCircle } from 'lucide-react';
+import { Card, Button, Select, StatusIconBadge } from '../components/ui';
+import { Tabs } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
@@ -8,7 +9,6 @@ import { useSweeping } from '../hooks';
 import { SweepRule, SweepExecution, corporatesApi, programsApi, Corporate, Program } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { CreateRuleModal } from '../components/concentration/CreateRuleModal';
 import { EditRuleModal } from '../components/concentration/EditRuleModal';
@@ -248,8 +248,6 @@ const CashConcentrationPage: React.FC = () => {
     : scopedExecutions.filter(exec => exec.ruleId === historyRuleFilter);
 
   const activeRules = filteredRules.filter(r => r.status === 'ACTIVE').length;
-  // An account feeding two rules is one account
-  const linkedAccounts = new Set(filteredRules.flatMap(r => (r.sourceAccounts ?? []).map(a => a.accountId))).size;
 
   // Today's swept, per currency: settled, legacy SUCCESS and instructed-at-another-bank (COMMITTED) executions.
   // ponytail: from the history page loaded (latest 20 runs, labelled so); a backend daily total if that falls short.
@@ -263,8 +261,8 @@ const CashConcentrationPage: React.FC = () => {
   const totalSwept = sumByCurrency(filteredRules.map(r => [r.currencyCode, (r as any).totalSwept || 0]));
 
   const tabs = [
-    { id: 'rules', label: 'Sweep Rules', icon: Layers, count: filteredRules.length },
-    { id: 'history', label: 'Execution History', icon: History, count: filteredExecutions.length },
+    { id: 'rules', label: 'Sweep rules', icon: <Layers className="w-4 h-4" />, badge: filteredRules.length },
+    { id: 'history', label: 'Execution history', icon: <History className="w-4 h-4" />, badge: filteredExecutions.length },
   ];
 
   // Loading state: first load only. A refetch (e.g. after Mark rejected) keeps the page, so an open execution's
@@ -305,16 +303,13 @@ const CashConcentrationPage: React.FC = () => {
         loading={loadingCorporates || loadingPrograms}
       />
 
-      {/* Headline figures — Total Swept (cumulative concentration impact)
-          alongside Today's Swept (the day's run). Treasurer's first read.
-          Tier 6 Design System Unification (2026-05-13): replaces a 4-up
-          equal-weight stat strip that gave no visual hierarchy. Active
-          Rules + Linked Accounts demoted to the operational strip below. */}
+      {/* Headline figures — Total Swept (cumulative) alongside Today's Swept. The rule count
+          is the tab badge; how many of them are active sits in the sub line. */}
       <HeroMetricCard
         primary={{
           label: 'Total Swept',
           value: <CurrencyTotals totals={totalSwept} />,
-          sub: 'Cumulative funds concentrated by the rules shown',
+          sub: `Cumulative, by the rules shown · ${activeRules} active`,
         }}
         secondary={{
           label: "Today's Swept",
@@ -324,35 +319,15 @@ const CashConcentrationPage: React.FC = () => {
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip className="animate-fade-in [animation-delay:0.18s]">
-        <StatTile layout="row" tone="primary" icon={<Layers className="w-5 h-5" />} label="Active Rules" value={activeRules} />
-        <StatTile layout="row" tone="success" icon={<Building2 className="w-5 h-5" />} label="Linked Accounts" value={linkedAccounts} />
-      </StatStrip>
-
-      {/* Tabs with Filter — icon + pill-count style matches Intercompany Dashboard's tab row. */}
-      <div className="flex items-center justify-between border-b border-edge animate-fade-in" style={{ animationDelay: '0.25s' }}>
-        <div className="flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'rules' | 'history')}
-              className={cn(
-                'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
-                activeTab === tab.id
-                  ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
-                  : 'border-transparent text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
-              )}
-            >
-              <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-primary-600 dark:text-primary-200' : '')} />
-              {tab.label}
-              <span className={cn(
-                'px-1.5 py-0.5 text-caption rounded-full font-medium',
-                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
-              )}>{tab.count}</span>
-            </button>
-          ))}
-        </div>
+      {/* Tabs with the history rule filter on the right. */}
+      <div className="flex items-end justify-between animate-fade-in" style={{ animationDelay: '0.25s' }}>
+        <Tabs
+          variant="underline"
+          size="sm"
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as 'rules' | 'history')}
+        />
 
         {/* History Rule Filter */}
         {activeTab === 'history' && filteredRules.length > 0 && (

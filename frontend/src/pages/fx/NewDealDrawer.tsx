@@ -303,7 +303,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
       isOpen={isOpen}
       onClose={close}
       size="lg"
-      title="New deal"
+      title={<span className="inline-flex items-center gap-2">New deal <Badge variant="warning" size="sm">Simulated</Badge></span>}
       subtitle={corporateName ? `Request a price from the desk for ${corporateName}` : 'Request a price from the desk'}
     >
       <div className="p-6 space-y-6">
@@ -354,7 +354,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="body-strong">Live price</span>
-                <span className="text-caption text-neutral-500 dark:text-neutral-400">Click a side to deal. Simulated desk.</span>
+                <span className="text-caption text-neutral-500 dark:text-neutral-400">Click a side to deal.</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {(['SELL', 'BUY'] as Side[]).map((s) => {
@@ -398,7 +398,6 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50">Price</h3>
               <span className="inline-flex gap-1.5">
-                {quote.dealer === 'SIMULATED' && <Badge variant="warning">Simulated</Badge>}
                 <Badge variant={QUOTE_BADGE[quote.status].variant}>{QUOTE_BADGE[quote.status].label}</Badge>
               </span>
             </div>
@@ -434,8 +433,6 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
                   <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">FX credit limit used</dt>
                     <dd className="font-mono tabular-nums">{fmt(quote.limitCharge ?? 0, 0)} {quote.limitCurrency}</dd></div>
                 </dl>
-                <p className="text-caption text-neutral-500 dark:text-neutral-400">Simulated desk and rates.</p>
-
                 {quote.maxRounds > 0 && (
                   <div className="rounded-lg border border-edge-subtle bg-surface-muted p-3 space-y-3">
                     <div className="flex items-center justify-between gap-2">

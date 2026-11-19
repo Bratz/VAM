@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Archive, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, MoreHorizontal, CheckCircle, Copy, Archive, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -389,9 +389,13 @@ const ProgramsPage: React.FC = () => {
         primary={{
           label: 'Total Balance',
           value: ratesLoading ? '…' : <TileAmount value={consolidatedBalance} currency={reportingCurrency} />,
-          sub: `${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active · ${displayStats.totalVirtualAccounts} virtual accounts`
-            + (currencyCodes.length > 1 ? ` · converted to ${reportingCurrency} at live rates` : '')
-            + (excludedCurrencies.length ? ` · excludes ${excludedCurrencies.join(', ')} (no rate)` : ''),
+          // ponytail: the FX conversion note is a tooltip; the exclusion stays visible because it changes the figure.
+          sub: (
+            <span title={currencyCodes.length > 1 ? `Converted to ${reportingCurrency} at live rates` : undefined}>
+              {`${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active`}
+              {excludedCurrencies.length ? ` · excludes ${excludedCurrencies.join(', ')} (no rate)` : ''}
+            </span>
+          ),
         }}
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
@@ -422,6 +426,7 @@ const ProgramsPage: React.FC = () => {
           sortDirection={sort?.direction}
           onSort={(key, direction) => setSort({ key, direction })}
           keyExtractor={(program) => program.id}
+          onRowClick={(program) => setSelectedProgram(program)}
           columns={[
             { key: 'programName', header: 'Program', minWidth: 240, sortable: true, mobileLabel: true, render: (_v, program) => {
               return (
@@ -449,10 +454,7 @@ const ProgramsPage: React.FC = () => {
               return <Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge>;
             } },
             { key: 'actions', header: 'Actions', align: 'right', minWidth: 130, render: (_v, program) => (
-              <div className="flex justify-end gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details" aria-label={`View ${program.programName}`}><Eye className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => setEditProgram(program)} title={program.status === 'CLOSED' ? 'Closed programs cannot be edited' : 'Edit Program'} aria-label={`Edit ${program.programName}`}><Pencil className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); }} title="VIBAN settings" aria-label="VIBAN settings"><Hash className="w-4 h-4" /></Button>
+              <div className="flex justify-end gap-1" onClick={e => e.stopPropagation()}>
                 {/* Action Menu Dropdown */}
                 <div className="relative">
                   <Button
@@ -474,6 +476,22 @@ const ProgramsPage: React.FC = () => {
                       <div role="menu" aria-label={`Actions for ${program.programName}`} onKeyDown={onMenuKeyDown} style={menuStyle} className="fixed w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
                         {/* Configure: settings that are optional at create time */}
                         {program.status !== 'CLOSED' && (<>
+                        <button
+                          role="menuitem"
+                          tabIndex={-1}
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
+                          onClick={() => { setEditProgram(program); closeMenu(); }}
+                        >
+                          <Pencil className="w-4 h-4" />Edit program
+                        </button>
+                        <button
+                          role="menuitem"
+                          tabIndex={-1}
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
+                          onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); closeMenu(); }}
+                        >
+                          <Hash className="w-4 h-4" />VIBAN settings
+                        </button>
                         <button
                           role="menuitem"
                           tabIndex={-1}
