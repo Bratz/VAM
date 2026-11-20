@@ -197,7 +197,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   // Program-scoped tree for the Position breakdown's "By entity" drill-down
   // only — deliberately separate from `hierarchyRoot` above. They used to
   // share one fetch/state, which meant drilling into a program in the
-  // breakdown widget silently shrank the "Consolidated position" hero
+  // breakdown widget silently shrank the "Position in programs" hero
   // figure to that one program's balance, with nothing on the hero card
   // indicating it was no longer showing the full corporate/firm total.
   const [programHierarchyRoot, setProgramHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
@@ -236,7 +236,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       fxRateApi.getAllActiveRates(),
       dashboardApi.getPendingApprovals(s),
       // Firm/corporate-wide only — deliberately NOT narrowed by
-      // selectedProgramId. This feeds the "Consolidated position" hero
+      // selectedProgramId. This feeds the "Position in programs" hero
       // figure, which must keep meaning the full scope regardless of
       // whatever the Position breakdown widget is currently drilled into.
       // See programHierarchyRoot below for the program-scoped tree used by
@@ -520,7 +520,9 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           <PositionStrip
             cells={[
               {
-                label: 'Consolidated position',
+                // Not "Consolidated position": that name is Multi-Bank Liquidity's (every account x rates). This sums the
+                // programs' hierarchy, so it is named for what it covers (decided 20 Nov).
+                label: 'Position in programs',
                 // All corporates: the firm-wide per-corporate totals (there is no firm-wide tree).
                 value: hierarchyRoot ? sumBalance(hierarchyRoot)
                   : selectedCorporateId ? 0 : corporateBreakdown.reduce((t, c) => t + c.balance, 0),

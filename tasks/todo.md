@@ -380,7 +380,8 @@ UI:
       controls first, then stat strips / repeated explanations / jargon, then page merges (one hierarchy tree,
       Multi-Bank grouped table, Statements single path, Collections pages, IHB set-up table, Netting tabs).
       Decided 20 Nov: Intercompany shows one IHB row per pair (its net), linking to In-House Bank › Position (spec
-      acceptance 3 amended). Still open: "Consolidated position" on Dashboard vs Multi-Bank Liquidity.
+      acceptance 3 amended). Decided 20 Nov: the Dashboard's figure is "Position in programs"; "Consolidated
+      position" stays Multi-Bank Liquidity's.
       Round 1 (wrong figures, dead controls) done 18 Nov. Found on the way, not fixed:
       - Exceptions drawer timeline calls /treasury/exceptions/{id}/timeline, which has no endpoint.
       - PayablesService.getStats never sets nettingIncludedCount, poboPendingApprovalCount, poboExecutedCount,
@@ -389,8 +390,7 @@ UI:
       - Transactions stats have no per-direction counts: Credits/Debits tabs show none.
       - Bank Accounts "not linked" count is per page (no server total).
       - /ecommerce/collections and /ecommerce/settlements return 500 locally.
-      - "Consolidated position" means different things on Dashboard (entity hierarchy) and Multi-Bank Liquidity
-        (account balances x rates): needs a decision (rename one or share a source).
+      - [x] "Consolidated position" on Dashboard vs Multi-Bank Liquidity: Dashboard's renamed "Position in programs" (20 Nov).
       Round 2 (stat strips, repeated text, jargon) done 18 Nov. Found, not fixed:
       - Seller Collections "Total Amount" / "Settled Amount" add amounts across currencies.
       - The sticky page header overlaps its title with header actions below ~900px wide (shared layout).
