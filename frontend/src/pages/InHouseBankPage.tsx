@@ -7,6 +7,7 @@ import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, formatDate } from '../utils';
 import { corporatesApi } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
+import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { CoboEnrolmentsPanel } from '../components/treasury/CoboEnrolmentsPanel';
@@ -227,6 +228,8 @@ const setupRows = (entities: IhbEntity[], accounts: IhbCurrentAccount[]): SetupR
 
 const InHouseBankPage: React.FC = () => {
   // State
+  // Opened from Intercompany's in-house bank row: that corporate, on Position (the default tab).
+  const { params: navParams } = useNavigation();
   const [activeTab, setActiveTab] = useState<string>('position');
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
@@ -257,6 +260,13 @@ const InHouseBankPage: React.FC = () => {
   useEffect(() => {
     loadCorporates();
   }, []);
+
+  // Opened with a corporate (Intercompany's in-house bank row): show that one once it is in the list.
+  useEffect(() => {
+    if (navParams.corporateId && corporates.some(c => c.id === navParams.corporateId)) {
+      setSelectedCorporateId(navParams.corporateId);
+    }
+  }, [navParams.corporateId, corporates]);
 
   const loadData = useCallback(async () => {
     if (!selectedCorporateId) return;
@@ -299,7 +309,7 @@ const InHouseBankPage: React.FC = () => {
       const corporateList = Array.isArray(corporateData) ? corporateData : [];
       setCorporates(corporateList);
 
-      // Auto-select first corporate
+      // Auto-select first corporate (a corporate named by the link wins, below)
       if (corporateList.length > 0) {
         setSelectedCorporateId(corporateList[0].id);
       }

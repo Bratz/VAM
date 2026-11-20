@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { AlertTriangle, ArrowLeftRight, Building2, CheckCircle, Clock, GitMerge, Info, Landmark, Loader2, Receipt, RefreshCw, Scale, XCircle, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, ArrowRight, Building2, CheckCircle, Clock, GitMerge, Info, Landmark, Loader2, Receipt, RefreshCw, Scale, XCircle, Zap } from 'lucide-react';
 import { Card, Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -95,10 +95,28 @@ const LineSection: React.FC<{
   </div>
 );
 
+/**
+ * The pair's in-house bank position as one row: what it nets to, and a link to In-House Bank > Position, which
+ * owns the balances behind it (each entity's IHB current account). Decided 20 Nov: Intercompany shows one IHB row
+ * per pair, linking to Position, rather than the account lines themselves. No row when the pair has no IHB lines.
+ */
+const IhbRow: React.FC<{ group: IcLineGroup; currency: string; onOpen: () => void }> = ({ group, currency, onOpen }) =>
+  group.lines.length === 0 ? null : (
+    <div className="p-3 bg-surface-page rounded-lg flex items-center justify-between gap-3 body-sm">
+      <span className="flex items-center gap-2 label shrink-0"><Landmark className="w-4 h-4" />In-house bank</span>
+      <span className="flex-1 min-w-0">
+        {group.net.amount === 0
+          ? `Nets to ${formatCurrency(0, currency)}`
+          : <Owes debtor={group.net.debtor} creditor={group.net.creditor} amount={group.net.amount} currency={currency} />}
+      </span>
+      <Button size="sm" variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={onOpen}>Position</Button>
+    </div>
+  );
+
 const PairCard: React.FC<{
-  pair: IcPairPosition; currency: string; onNetting: () => void;
+  pair: IcPairPosition; currency: string; onNetting: () => void; onOpenPosition: () => void;
   onApprove: (line: IcLine) => void; onReject: (line: IcLine) => void; busy: string | null;
-}> = ({ pair, currency, onNetting, onApprove, onReject, busy }) => {
+}> = ({ pair, currency, onNetting, onOpenPosition, onApprove, onReject, busy }) => {
   const nettable = pair.openInvoices.lines.length + pair.recharges.lines.length > 0;
   return (
     <Card hover>
@@ -125,7 +143,7 @@ const PairCard: React.FC<{
             </TreasuryOnly>
           )}
         </div>
-        <LineSection title="In-house bank" icon={Landmark} group={pair.ihbPositions} currency={currency} />
+        <IhbRow group={pair.ihbPositions} currency={currency} onOpen={onOpenPosition} />
         <LineSection title="Open intercompany invoices" icon={Receipt} group={pair.openInvoices} currency={currency} />
         <LineSection title="Recharges awaiting netting" icon={Zap} group={pair.recharges} currency={currency} />
         {pair.rechargesAwaitingApproval.lines.length > 0 && (
@@ -291,6 +309,7 @@ const NettingModal: React.FC<{ corporateId: string; pair: IcPairPosition | null;
 const IntercompanyDashboardPage: React.FC = () => {
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  const { navigate } = useNavigation();
   const [position, setPosition] = useState<IcGroupPosition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -441,6 +460,7 @@ const IntercompanyDashboardPage: React.FC = () => {
             <div className="grid gap-4 grid-cols-1 xl:grid-cols-2">
               {c.pairs.map(p => (
                 <PairCard key={`${p.entityA.id}-${p.entityB.id}`} pair={p} currency={c.currency} onNetting={() => setNettingPair(p)}
+                  onOpenPosition={() => navigate('ihb', { corporateId: selectedCorporateId })}
                   onApprove={l => decide(l, true)} onReject={l => { setReason(''); setRejecting(l); }} busy={busy} />
               ))}
             </div>

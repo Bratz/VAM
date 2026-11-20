@@ -95,7 +95,9 @@ Legacy table    intercompany_transactions retired: no reads, no writes, endpoint
    control nets to zero, open IC invoices and recharges as separate lines, and a reporting-currency total with its rate
    date; never "all settled" while anything is open.
 2. Another corporate never sees TestMNC's data.
-3. No tab or figure appears on both pages; old links land on the replacement.
+3. No tab or figure appears on both pages; old links land on the replacement. Exception (decided 2026-11-20): R3's
+   in-house bank position appears on Intercompany as one row per pair (its net), linking to In-House Bank › Position,
+   which owns the per-account balances.
 4. There is no settle action outside Netting Cycles; `/settle-bilateral` is gone.
 5. A netting cycle with a pair on different bank accounts produces outward payments for the net; a pair on the same bank
    account (or IHB accounts) is a ledger transfer; the preview shows which.

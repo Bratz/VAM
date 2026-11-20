@@ -379,7 +379,8 @@ UI:
 - [ ] UI density audit (docs/reviews/ui-density-audit.md, 18 Nov): 48 pages; wrong/made-up figures and ~30 dead
       controls first, then stat strips / repeated explanations / jargon, then page merges (one hierarchy tree,
       Multi-Bank grouped table, Statements single path, Collections pages, IHB set-up table, Netting tabs).
-      Decision open: IHB vs Intercompany shared figures (spec R3 vs acceptance 3).
+      Decided 20 Nov: Intercompany shows one IHB row per pair (its net), linking to In-House Bank › Position (spec
+      acceptance 3 amended). Still open: "Consolidated position" on Dashboard vs Multi-Bank Liquidity.
       Round 1 (wrong figures, dead controls) done 18 Nov. Found on the way, not fixed:
       - Exceptions drawer timeline calls /treasury/exceptions/{id}/timeline, which has no endpoint.
       - PayablesService.getStats never sets nettingIncludedCount, poboPendingApprovalCount, poboExecutedCount,
