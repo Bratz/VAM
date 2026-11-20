@@ -1,6 +1,6 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
-import { Plus, Building2, CreditCard, Wallet, Shield, Banknote, CheckCircle, XCircle, Clock, Copy, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, FolderTree, Info, Pencil } from 'lucide-react';
+import { Plus, Building2, CreditCard, Wallet, Banknote, CheckCircle, XCircle, Clock, Copy, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, FolderTree, Info, Pencil } from 'lucide-react';
 import { Card, Badge, Button, StatusIconBadge } from '../../components/ui';
 import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
@@ -40,7 +40,7 @@ const YesNo: React.FC<{ value?: boolean | null; fallback: boolean }> = ({ value,
 };
 
 export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onClone, onConfigure, onStatusChange }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'hierarchy' | 'viban' | 'wallet' | 'accounts' | 'config' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'hierarchy' | 'viban' | 'wallet' | 'accounts' | 'history'>('overview');
   const [detail, setDetail] = useState<ProgramDetail | null>(null);
   const [loading, setLoading] = useState(false);
   // NEW: State for hierarchy tab
@@ -140,7 +140,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
     { id: 'viban' as const, label: 'VIBAN Pool' },
     { id: 'wallet' as const, label: 'Wallet Fees' },
     { id: 'accounts' as const, label: 'Virtual Accounts', count: program.virtualAccountCount },
-    { id: 'config' as const, label: 'Configuration' },
     { id: 'history' as const, label: 'Activity' },
   ];
 
@@ -215,16 +214,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
           {!loading && activeTab === 'overview' && (
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="body-strong font-semibold">Program Details</h3>
-                <Card padding="sm" className="space-y-3">
-                  <div className="flex justify-between"><span className="body-sm">Created</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
-                  {program.effectiveFrom && (
-                    <div className="flex justify-between"><span className="body-sm">Effective From</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveFrom)}</span></div>
-                  )}
-                  {program.effectiveTo && (
-                    <div className="flex justify-between"><span className="body-sm">Effective To</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveTo)}</span></div>
-                  )}
-                </Card>
                 {/* Description */}
                 {program.description && (
                   <>
@@ -275,6 +264,28 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                   {program.status === 'PENDING_APPROVAL' && <Button size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<CheckCircle className="w-4 h-4" />}>Approve</Button>}
                   <Button variant="outline" size="sm" onClick={() => onClone(program)} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
                 </div>
+                {/* One settings list (the former Configuration tab folded in). */}
+                <h3 className="body-strong font-semibold">Settings</h3>
+                <Card padding="sm" className="space-y-3">
+                  {([
+                    ['Created', formatDate(program.createdAt)],
+                    ...(program.effectiveFrom ? [['Effective From', formatDate(program.effectiveFrom)]] : []),
+                    ...(program.effectiveTo ? [['Effective To', formatDate(program.effectiveTo)]] : []),
+                    ['VA prefix', <span className="font-mono">{program.vaPrefix || 'None'}</span>],
+                    ['VA format', <span className="font-mono">{program.vaFormat || 'Auto'}</span>],
+                    ['Per-transaction limit', (program.defaultPerTransactionLimit ? formatCurrency(program.defaultPerTransactionLimit, program.currencyCode) : 'Unlimited')],
+                    ['Daily limit', (program.defaultDailyLimit ? formatCurrency(program.defaultDailyLimit, program.currencyCode) : 'Unlimited')],
+                    ['Monthly limit', (program.defaultMonthlyLimit ? formatCurrency(program.defaultMonthlyLimit, program.currencyCode) : 'Unlimited')],
+                    ['Max balance', (program.defaultMaxBalance ? formatCurrency(program.defaultMaxBalance, program.currencyCode) : 'Unlimited')],
+                    ['KYC required', <YesNo value={program.kycRequired} fallback={false} />],
+                    ['Minimum KYC level', program.minKycLevel !== undefined ? `Level ${program.minKycLevel}` : 'Not set'],
+                    ['Allow top-up', <YesNo value={program.allowTopup} fallback={true} />],
+                    ['Allow withdrawal', <YesNo value={program.allowWithdrawal} fallback={true} />],
+                    ['Allow transfer', <YesNo value={program.allowTransfer} fallback={true} />],
+                  ] as Array<[string, React.ReactNode]>).map(([label, value]) => (
+                    <div key={label} className="flex justify-between gap-3"><span className="body-sm">{label}</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{value}</span></div>
+                  ))}
+                </Card>
               </div>
             </div>
           )}
@@ -740,81 +751,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     </Card>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Config Tab */}
-          {!loading && activeTab === 'config' && (
-            <div className="space-y-6">
-              <Card padding="md">
-                <h4 className="font-medium text-primary-900 mb-4 dark:text-neutral-50">VA Configuration</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><p className="caption mb-1">Prefix</p><p className="font-mono">{program.vaPrefix || 'None'}</p></div>
-                  <div><p className="caption mb-1">Format</p><p className="font-mono">{program.vaFormat || 'Auto'}</p></div>
-                </div>
-              </Card>
-              {/* Wallet Limits - Only show if wallet is enabled */}
-              {(
-                <Card padding="md">
-                  <h4 className="font-medium text-primary-900 mb-4 flex items-center gap-2 dark:text-neutral-50">
-                    <Wallet className="w-4 h-4" />Wallet Limits
-                  </h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="caption mb-1">Per Transaction</p>
-                      <p className="font-medium">{program.defaultPerTransactionLimit ? formatCurrency(program.defaultPerTransactionLimit, program.currencyCode) : 'Unlimited'}</p>
-                    </div>
-                    <div>
-                      <p className="caption mb-1">Daily Limit</p>
-                      <p className="font-medium">{program.defaultDailyLimit ? formatCurrency(program.defaultDailyLimit, program.currencyCode) : 'Unlimited'}</p>
-                    </div>
-                    <div>
-                      <p className="caption mb-1">Monthly Limit</p>
-                      <p className="font-medium">{program.defaultMonthlyLimit ? formatCurrency(program.defaultMonthlyLimit, program.currencyCode) : 'Unlimited'}</p>
-                    </div>
-                    <div>
-                      <p className="caption mb-1">Max Balance</p>
-                      <p className="font-medium">{program.defaultMaxBalance ? formatCurrency(program.defaultMaxBalance, program.currencyCode) : 'Unlimited'}</p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-              {/* KYC Settings - Only show if wallet is enabled */}
-              {(
-                <Card padding="md">
-                  <h4 className="font-medium text-primary-900 mb-4 flex items-center gap-2 dark:text-neutral-50">
-                    <Shield className="w-4 h-4" />KYC Settings
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center justify-between">
-                      <span className="body-sm">KYC Required</span>
-                      <YesNo value={program.kycRequired} fallback={false} />
-                    </div>
-                    <div>
-                      <p className="caption mb-1">Minimum KYC Level</p>
-                      <p className="font-medium">{program.minKycLevel !== undefined ? `Level ${program.minKycLevel}` : 'Not set'}</p>
-                    </div>
-                  </div>
-                </Card>
-              )}
-              {/* Wallet Capabilities - Only show if wallet is enabled */}
-              {(
-                <Card padding="md">
-                  <h4 className="font-medium text-primary-900 mb-4 dark:text-neutral-50">Wallet Capabilities</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { label: 'Allow Topup', value: program.allowTopup },
-                      { label: 'Allow Withdrawal', value: program.allowWithdrawal },
-                      { label: 'Allow Transfer', value: program.allowTransfer },
-                    ].map(cap => (
-                      <div key={cap.label} className="flex items-center justify-between">
-                        <span className="body-sm">{cap.label}</span>
-                        <YesNo value={cap.value} fallback={true} />
-                      </div>
-                    ))}
-                  </div>
-                </Card>
               )}
             </div>
           )}

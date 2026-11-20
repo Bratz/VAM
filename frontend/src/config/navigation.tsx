@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical, Scale, ScrollText, Activity } from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Wallet, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical, Scale, ScrollText, Activity } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -100,8 +100,7 @@ export const navSections: NavSection[] = [
       { icon: <QrCode className="w-5 h-5" />, label: 'VIBAN Management', href: 'viban' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Account Linking', href: 'account-attachments' },
       { icon: <FolderKanban className="w-5 h-5" />, label: 'Programs', href: 'programs' },
-      { icon: <GitBranch className="w-5 h-5" />, label: 'Balance Hierarchy', href: 'hierarchy' },
-      { icon: <Layers className="w-5 h-5" />, label: 'Entity Balance Tree', href: 'entity-balance-tree' },
+      { icon: <GitBranch className="w-5 h-5" />, label: 'Balance Hierarchy', href: 'hierarchy', covers: ['entity-balance-tree'], keywords: ['entity balance tree', 'legal entity', 'group by entity'] },
       { icon: <Globe className="w-5 h-5" />, label: 'Currency Mirrors', href: 'currency-mirrors' },
       { icon: <Combine className="w-5 h-5" />, label: 'Reorganization', href: 'hierarchy-operations' },
     ]
@@ -184,8 +183,7 @@ export const navSections: NavSection[] = [
     items: [
       { icon: <Shield className="w-5 h-5" />, label: 'Escrow', href: 'escrow' },
       { icon: <Wallet className="w-5 h-5" />, label: 'Wallets', href: 'wallet' },
-      { icon: <ShoppingCart className="w-5 h-5" />, label: 'E-Commerce Collections', href: 'ecommerce-collections' },
-      { icon: <Store className="w-5 h-5" />, label: 'Seller Collections', href: 'seller-collections' },
+      { icon: <Store className="w-5 h-5" />, label: 'Collections', href: 'seller-collections', covers: ['ecommerce-collections'], keywords: ['e-commerce', 'seller', 'card', 'settlements', 'marketplace'] },
     ]
   },
   // Administration — the rates, limits and terms the rest of the app runs on,
@@ -236,9 +234,9 @@ export const pageTitles: Record<string, string> = {
   'account-attachments': 'Account Linking',
   'programs': 'Programs',
   'hierarchy': 'Balance Hierarchy',
-  'entity-balance-tree': 'Entity Balance Tree',
+  'entity-balance-tree': 'Balance Hierarchy',
   'currency-mirrors': 'Currency Mirrors',
-  'hierarchy-operations': 'Corporate Reorganization',
+  'hierarchy-operations': 'Reorganization',
   // Parties & Entities
   'legal-entities': 'Legal Entities',
   'parties': 'Parties & Counterparties',
@@ -280,8 +278,8 @@ export const pageTitles: Record<string, string> = {
   // Specialty Programs
   'escrow': 'Escrow',
   'wallet': 'Wallets',
-  'ecommerce-collections': 'E-Commerce Collections',
-  'seller-collections': 'Seller Collections',
+  'ecommerce-collections': 'Collections',
+  'seller-collections': 'Collections',
   // Administration
   'tax-charges': 'Tax & Charges',
   'integrations': 'Integrations',

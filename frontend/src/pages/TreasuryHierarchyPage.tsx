@@ -6,7 +6,8 @@ import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs } from '../components/ui/enhanced';
+import { LegalEntityBalanceTree } from '../components/hierarchy/LegalEntityBalanceTree';
 import { useMarket } from '../context/useMarket';
 import { VaVibanModal } from '../components/viban/VaVibanModal';
 import { formatCurrency, cn } from '../utils';
@@ -2875,7 +2876,14 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+type GroupBy = 'program' | 'entity';
+
+const TreasuryHierarchyPage: React.FC<{
+  onNavigate?: (page: string) => void;
+  /** 'entity' opens in the legal-entity grouping (the old Entity Balance Tree route). */
+  initialGroupBy?: GroupBy;
+}> = ({ onNavigate, initialGroupBy = 'program' }) => {
+  const [groupBy, setGroupBy] = useState<GroupBy>(initialGroupBy);
   // Corporate & Program selection state
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
@@ -3524,6 +3532,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   // Aperture header. Renders only when the main hierarchy view is showing —
   // empty/loading/error branches don't have meaningful toolbar actions.
   const isMainHierarchyView =
+    groupBy === 'program' &&
     !!selectedCorporateId &&
     !!selectedProgramId &&
     !checkingStatus &&
@@ -3546,6 +3555,26 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       </>
     ) : null,
     [isMainHierarchyView, refreshing]
+  );
+
+  // Group-by switch + reporting currency: shared by both groupings.
+  const viewControls = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <Tabs
+        size="sm"
+        tabs={[{ id: 'program', label: 'Program hierarchy' }, { id: 'entity', label: 'Legal entity' }]}
+        activeTab={groupBy}
+        onChange={(id) => setGroupBy(id as GroupBy)}
+      />
+      <div className="flex items-center gap-2">
+        <label htmlFor="hierarchy-reporting-ccy" className="caption">Reporting currency</label>
+        <div className="w-28">
+          <CurrencyPicker id="hierarchy-reporting-ccy" value={reportingCurrency}
+            extra={[reportingCurrency, ...(summary?.currencies ?? [])]}
+            onChange={(c) => { reportingCurrencyPicked.current = true; setReportingCurrency(c); }} />
+        </div>
+      </div>
+    </div>
   );
 
   // Loading state
@@ -3590,6 +3619,29 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     );
   }
 
+  // Legal-entity grouping: accounts under their owning entities, for one program or all of them.
+  if (groupBy === 'entity') {
+    return (
+      <Page>
+        <PageHeader
+          title="Balance Hierarchy"
+          description="Balances grouped by the legal entity that owns each account, entities nested parent to child, FX-converted in your reporting currency. Pick All Programs to see the whole corporate."
+        />
+        <CorporateProgramFilterBar
+          corporates={corporates}
+          programs={programs}
+          selectedCorporateId={selectedCorporateId}
+          selectedProgramId={selectedProgramId}
+          onCorporateChange={handleCorporateChange}
+          onProgramChange={handleProgramChange}
+          loading={loadingPrograms}
+        />
+        {viewControls}
+        <LegalEntityBalanceTree corporateId={selectedCorporateId} programId={selectedProgramId} reportingCurrency={reportingCurrency} />
+      </Page>
+    );
+  }
+
   // No program selected state
   if (!selectedProgramId) {
     return (
@@ -3607,6 +3659,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           onProgramChange={handleProgramChange}
           loading={loadingPrograms}
         />
+        {viewControls}
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <StatusIconBadge tone="neutral" icon={Layers} size="xl" rounded="full" className="mb-4" />
@@ -3803,14 +3856,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         loading={loadingPrograms}
       />
 
-      <div className="flex items-center justify-end gap-2">
-        <label htmlFor="hierarchy-reporting-ccy" className="caption">Reporting currency</label>
-        <div className="w-28">
-          <CurrencyPicker id="hierarchy-reporting-ccy" value={reportingCurrency}
-            extra={[reportingCurrency, ...(summary?.currencies ?? [])]}
-            onChange={(c) => { reportingCurrencyPicked.current = true; setReportingCurrency(c); }} />
-        </div>
-      </div>
+      {viewControls}
 
       {/* Headline figures— Consolidated + Net Position. Matches the
           hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN

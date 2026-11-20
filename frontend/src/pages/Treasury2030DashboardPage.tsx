@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, ArrowRight, Plus, ChevronDown, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { RefreshCw, ArrowRight, Plus, Download, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
 import { useNavigation } from '../hooks/useNavigation';
@@ -161,21 +161,12 @@ async function fetchForecastWeekly(corporateId: string): Promise<ForecastWeeklyR
   return { currency: summary.currency, weeks };
 }
 
-type AcctView = 'currency' | 'bank';
-
 interface CcyBucket {
   code: string;
   effective: number;
   home: number;
   external: number;
-  shadows: ShadowSummary[];
   banks: Map<string, { bic: string; name?: string; home: boolean; amount: number }>;
-}
-interface BankBucket {
-  bic: string;
-  name?: string;
-  home: boolean;
-  shadows: ShadowSummary[];
 }
 
 const fmtTime = (iso?: string) => {
@@ -199,11 +190,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   // used by the entity-hierarchy fetch and this section, unlike
   // selectedCorporateId which drives the whole page.
   const [selectedProgramId, setSelectedProgramId] = useState('');
-  const [view, setView] = useState<AcctView>('currency');
-  // Accounts table groups collapse to just their header/subtotal by default
-  // (see the Accounts table render below) — this tracks which group keys
-  // have been expanded to show their individual account rows.
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hierarchyRoot, setHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
   // Held in home-bank accounts no program has picked yet -- reported beside the consolidated
   // position, not in it (bank balances are outside the VA totals).
@@ -404,36 +390,28 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const model = useMemo(() => {
     if (!summary) return null;
     const byCcy = new Map<string, CcyBucket>();
-    const byBank = new Map<string, BankBucket>();
     for (const bank of summary.banks) {
       for (const c of bank.currencies) {
         const cc: CcyBucket = byCcy.get(c.currencyCode) ?? {
           code: c.currencyCode, effective: 0, home: 0, external: 0,
-          shadows: [], banks: new Map(),
-        };
-        const bb: BankBucket = byBank.get(bank.bankBic) ?? {
-          bic: bank.bankBic, name: bank.bankName, home: bank.homeBank, shadows: [],
+          banks: new Map(),
         };
         for (const s of c.shadows) {
           const eff = s.bankBalanceEffective || 0;
           cc.effective += eff;
           if (bank.homeBank) cc.home += eff; else cc.external += eff;
-          cc.shadows.push(s);
           const b = cc.banks.get(bank.bankBic) ?? {
             bic: bank.bankBic, name: bank.bankName, home: bank.homeBank, amount: 0,
           };
           b.amount += eff;
           cc.banks.set(bank.bankBic, b);
-          bb.shadows.push(s);
         }
         byCcy.set(c.currencyCode, cc);
-        byBank.set(bank.bankBic, bb);
       }
     }
     const currencies = [...byCcy.values()]
       .filter((x) => x.effective !== 0)
       .sort((a, b) => b.effective - a.effective);
-    const banks = [...byBank.values()].sort((a, b) => b.shadows.length - a.shadows.length);
     const topCcy = currencies[0];
     const bankShares: BankShare[] = topCcy
       ? [...topCcy.banks.values()].map((b) => ({
@@ -441,7 +419,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           amount: b.amount, currencyCode: topCcy.code,
         }))
       : [];
-    return { currencies, banks, topCcy, bankShares };
+    return { currencies, topCcy, bankShares };
   }, [summary]);
 
   // ─── REAL: sweep rules, scope-filtered (group-level API, client filter) ──
@@ -465,30 +443,20 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     return [...latest.values()].slice(0, 7);
   }, [fxRates]);
 
-  // Accounts table groups — currency view carries an FX-honest single-currency
-  // subtotal; bank view spans currencies so it shows a count, never a sum.
-  const groups = useMemo(() => {
-    if (!model) return [];
-    if (view === 'bank') {
-      return model.banks.map((b) => ({
-        key: b.bic,
-        label: b.name ?? b.bic,
-        meta: `${b.bic}${b.home ? ' · home bank' : ''}`,
-        subtitle: `${b.shadows.length} account${b.shadows.length === 1 ? '' : 's'}`,
-        rows: b.shadows,
-      }));
-    }
-    return model.currencies.map((c) => ({
-      key: c.code,
-      label: c.code,
-      meta: `${c.shadows.length} account${c.shadows.length === 1 ? '' : 's'}`,
-      // Sum of bankBalanceEffective (net of holds/commitments) — neither the
-      // Current nor the Available column, so it says "effective", the term
-      // Multi-Bank Liquidity uses for the same figure.
-      subtitle: `${formatCurrency(c.effective, c.code)} effective`,
-      rows: c.shadows,
-    }));
-  }, [model, view]);
+  // Needs attention — the accounts whose balance needs a refresh (stale,
+  // failed or never fetched), failed first. The full accounts table lives on
+  // Multi-Bank Liquidity (density audit, round 3); this keeps only the
+  // actionable few.
+  const needsRefresh = useMemo(() => {
+    const rank = (x: ShadowSummary) =>
+      x.lastBalanceRefreshStatus === 'FAILED' ? 0 : x.lastBalanceRefreshStatus === 'NEVER' ? 1 : 2;
+    const list: ShadowSummary[] = [];
+    for (const b of summary?.banks ?? [])
+      for (const c of b.currencies)
+        for (const s of c.shadows)
+          if (s.stale || s.lastBalanceRefreshStatus !== 'SUCCESS') list.push(s);
+    return list.sort((x, y) => rank(x) - rank(y));
+  }, [summary]);
 
   if (loading) {
     return (
@@ -672,7 +640,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* Payments — real payables the user can act on now (awaiting
               approval, or approved and payable via Pay Now); each row deep-links
-              into the Payables page with that action open. Moved ahead of the Accounts table (was after it) —
+              into the Payables page with that action open. Moved ahead of the accounts list (was after it) —
               this is the treasury team's own actionable work queue
               ("money in motion"), which real dashboard research
               consistently places right after the headline number, not
@@ -718,28 +686,15 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             </div>
           </Card>
 
-          {/* Accounts table — hairline: no card, no zebra, two hairline
-              weights (heavier under the header, lighter between rows). */}
+          {/* Needs attention — at most five accounts whose balance needs a
+              refresh. The full grouped accounts table is Multi-Bank
+              Liquidity's Accounts tab (density audit, round 3). */}
           <div>
             <div className="flex items-center justify-between gap-3 pb-2">
-              <p className="section-title">Accounts <span className="label font-normal">· all banks</span></p>
-              <div className="inline-flex rounded-sm border border-edge overflow-hidden ml-auto">
-                {(['currency', 'bank'] as AcctView[]).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setView(v)}
-                    className={cn(
-                      'px-3 py-1 text-caption transition-colors capitalize',
-                      view === v
-                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
-                        : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
-                    )}
-                  >
-                    By {v}
-                  </button>
-                ))}
-              </div>
+              <p className="section-title">
+                Needs attention
+                {needsRefresh.length > 5 && <span className="label font-normal"> · 5 of {needsRefresh.length}</span>}
+              </p>
               <button
                 type="button"
                 onClick={() => nav('multi-bank-liquidity')}
@@ -748,99 +703,33 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 Full liquidity view <ArrowRight className="w-3 h-3" />
               </button>
             </div>
-            {groups.length === 0 ? (
-              <p className="body-sm py-6 text-center">No accounts in scope.</p>
+            {needsRefresh.length === 0 ? (
+              <p className="body-sm py-4 text-center">Every balance is up to date.</p>
             ) : (
-              <div className="overflow-x-auto">
-                {/* eslint-disable-next-line no-restricted-syntax -- dashboard group table with section rows (colSpan) */}
-                <table className="w-full border-collapse text-body-sm">
-                  <thead>
-                    <tr className="text-left">
-                      {['Account', 'Entity', 'Bank', 'Current', 'Available', 'Freshness', ''].map((h, i) => (
-                        <th
-                          key={h || i}
-                          className={cn(
-                            'label px-3 py-[9px] border-b border-edge-strong',
-                            (i === 3 || i === 4) && 'text-right',
-                            i === 5 && 'text-center',
-                          )}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-primary-800/60">
-                    {groups.map((g) => {
-                      const isExpanded = expandedGroups.has(g.key);
-                      return (
-                      <React.Fragment key={g.key}>
-                        <tr
-                          className="cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-primary-800/30"
-                          onClick={() => setExpandedGroups((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(g.key)) next.delete(g.key); else next.add(g.key);
-                            return next;
-                          })}
-                        >
-                          <td colSpan={7} className="px-3 py-[9px]">
-                            <span className="inline-flex items-center gap-1.5">
-                              {isExpanded
-                                ? <ChevronDown className="w-4 h-4 text-neutral-400" />
-                                : <ChevronRight className="w-4 h-4 text-neutral-400" />}
-                              <span className="label">{g.label}</span>
-                            </span>
-                            <span className="caption ml-2">{g.meta}</span>
-                            <span className="float-right stat-value-xs text-primary-900 dark:text-neutral-50">{g.subtitle}</span>
-                          </td>
-                        </tr>
-                        {isExpanded && g.rows.map((s) => (
-                          <tr key={s.vaId} className="hover:bg-neutral-50/50 dark:hover:bg-primary-800/30">
-                            <td className="px-3 py-[9px]">
-                              <div className="text-primary-900 dark:text-neutral-50">{s.vaName}</div>
-                              <div className="font-mono text-caption text-neutral-500 dark:text-neutral-400">{s.vaNumber}</div>
-                            </td>
-                            <td className="px-3 py-[9px] text-neutral-600 dark:text-neutral-300">
-                              {s.owningEntityCode || '—'}
-                            </td>
-                            <td className="px-3 py-[9px]">
-                              <div className="text-neutral-600 dark:text-neutral-300">{s.bankName || s.bankBic}</div>
-                              <div className="font-mono text-caption text-neutral-400">{s.bankBic}</div>
-                            </td>
-                            <td className="px-3 py-[9px] text-right text-primary-900 dark:text-neutral-50">
-                              <Amount value={s.bankBalance} currency={s.currencyCode} showCurrency={false} />
-                            </td>
-                            <td className="px-3 py-[9px] text-right text-neutral-600 dark:text-neutral-300">
-                              {s.bankAvailableBalance != null ? <Amount value={s.bankAvailableBalance} currency={s.currencyCode} showCurrency={false} /> : '—'}
-                            </td>
-                            <td className="px-3 py-[9px] text-center">
-                              <FreshnessPill shadow={s} />
-                            </td>
-                            <td className="px-3 py-[9px] text-right whitespace-nowrap">
-                              {(s.stale || s.lastBalanceRefreshStatus !== 'SUCCESS') && (
-                                <button
-                                  type="button"
-                                  onClick={() => multiBankLiquidityApi.refreshIfStale(s.vaId).then(() => load(selectedCorporateId))}
-                                  className="text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
-                                >
-                                  Refresh
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="divide-y divide-neutral-200 dark:divide-primary-800/60 border-t border-edge-strong">
+                {needsRefresh.slice(0, 5).map((s) => (
+                  <div key={s.vaId} className="flex items-center gap-3 px-3 py-[9px] text-body-sm">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-primary-900 dark:text-neutral-50 truncate">{s.vaName}</div>
+                      <div className="font-mono text-caption text-neutral-500 dark:text-neutral-400">{s.vaNumber}</div>
+                    </div>
+                    <div className="min-w-0 flex-1 text-neutral-600 dark:text-neutral-300 truncate">{s.bankName || s.bankBic}</div>
+                    <FreshnessPill shadow={s} />
+                    <button
+                      type="button"
+                      onClick={() => multiBankLiquidityApi.refreshIfStale(s.vaId).then(() => load(selectedCorporateId))}
+                      className="text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
           {/* Position breakdown — entity treemap and geo map merged into
-              ONE card via a toggle (same pattern as Currency breakdown's
-              "By Currency / By Bank" above), not two separate sections —
+              ONE card via a toggle, not two separate sections —
               part of the module consolidation (12 -> 7 main sections)
               this pass makes per the "5-9 core elements" research finding.
               Geo intentionally scoped to the single dominant currency

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
+import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, Building2, CreditCard, FileText, ShoppingCart, Pencil } from 'lucide-react';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, Checkbox, RadioGroup, DataTable } from '../components/ui';
 import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
@@ -393,7 +393,7 @@ const VibanManagementPage: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
   // Data state
-  const [activeTab, setActiveTab] = useState<'overview' | 'pools' | 'vibans'>('overview');
+  const [activeTab, setActiveTab] = useState<'pools' | 'vibans'>('pools');
   const [pools, setPools] = useState<VibanPool[]>([]);
   const [vibans, setVibans] = useState<Viban[]>([]);
   const [stats, setStats] = useState<VibanStats | null>(null);
@@ -857,14 +857,13 @@ const VibanManagementPage: React.FC = () => {
         activeTab={activeTab}
         onChange={(id) => { setActiveTab(id as typeof activeTab); setStatusFilter('ALL'); setSearchQuery(''); }}
         tabs={[
-          { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
           { id: 'pools', label: 'Pools', icon: <Database className="w-4 h-4" />, badge: pools.length },
           { id: 'vibans', label: 'VIBANs', icon: <Hash className="w-4 h-4" />, badge: vibans.length },
         ]}
       />
 
       {/* Tab Content */}
-      {activeTab === 'overview' && <OverviewTab stats={stats} pools={pools} formatNumber={formatNumber} formatCurrency={formatCurrency} getStatusBadge={getStatusBadge} />}
+      {activeTab === 'pools' && <PoolsHero stats={stats} formatNumber={formatNumber} formatCurrency={formatCurrency} />}
       {activeTab === 'pools' && (
         <PoolsTab pools={filteredPools} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           statusFilter={statusFilter} setStatusFilter={setStatusFilter}
@@ -928,109 +927,43 @@ const VibanManagementPage: React.FC = () => {
 };
 
 // ============================================================================
-// OVERVIEW TAB
+// POOLS HERO — inventory, utilisation and routed payments (was the Overview tab;
+// its Pool Summary and low-availability alert duplicated the pool cards below).
 // ============================================================================
 
-const OverviewTab: React.FC<{
-  stats: VibanStats | null; pools: VibanPool[]; formatNumber: (n: number) => string; formatCurrency: (n: number) => string;
-  getStatusBadge: (status: string) => React.ReactNode;
-}> = ({ stats, pools, formatNumber, formatCurrency, getStatusBadge }) => {
-  if (!stats) return <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">No statistics available</div>;
+const PoolsHero: React.FC<{
+  stats: VibanStats | null; formatNumber: (n: number) => string; formatCurrency: (n: number) => string;
+}> = ({ stats, formatNumber, formatCurrency }) => {
+  if (!stats) return null;
 
-  const lowThresholdPools = pools.filter(p => p.status === 'ACTIVE' && (p.availableCount / p.poolSize) * 100 <= p.lowThresholdPercent);
-
-  // VIBAN page tells an inventory + utilisation story. Hero leads with both;
-  // the operational counts (available/reserved/pools) demote to the strip below.
   const utilPct = stats.total > 0 ? (stats.assigned / stats.total) * 100 : 0;
   // Threshold-driven trend tone (replaces always-green / always-amber decorations)
   const utilTone: 'success' | 'error' | 'neutral' =
     utilPct >= 95 ? 'error' : utilPct >= 50 ? 'success' : 'neutral';
   return (
-    <div className="space-y-6">
-      {/* Hero — Inventory + Utilisation. Tone of the utilisation pill reflects
-          actual state (neutral when under-used, success when healthy, error when
-          saturated). Replaces five equal-weight tiles competing for the eye. */}
-      <HeroMetricCard
-        primary={{
-          label: 'VIBAN Inventory',
-          value: formatNumber(stats.total),
-          sub: `Allocated across ${stats.totalPools} ${stats.totalPools === 1 ? 'pool' : 'pools'}`,
-        }}
-        secondary={{
-          label: 'Assigned',
-          value: `${utilPct.toFixed(1)}%`,
-          trend: `${formatNumber(stats.assigned)} assigned`,
-          trendTone: utilTone,
-          sub: (
-            <>
-              {formatNumber(stats.available)} available · {formatNumber(stats.reserved)} reserved
-            </>
-          ),
-        }}
-        icon={<Hash className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
-      />
-
-      {/* Payment Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <StatTile layout="row" tone="primary" label="Payments Routed" value={formatNumber(stats.totalPaymentsRouted)}
-          icon={<Activity className="w-5 h-5" />} delay="0.45s" />
-        <StatTile layout="row" tone="success" label="Amount Routed" value={formatCurrency(stats.totalAmountRouted)}
-          icon={<CreditCard className="w-5 h-5" />} delay="0.5s" />
-      </div>
-
-      {/* Low Threshold Alert */}
-      {lowThresholdPools.length > 0 && (
-        <Card className="border-warning-200 bg-warning-50 animate-fade-in dark:border-warning-500/30 dark:bg-warning-500/10" style={{ animationDelay: '0.55s' }}>
-          <div className="flex items-center gap-3 mb-3">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} />
-            <h3 className="font-medium text-warning-800 dark:text-warning-300">Low Availability Alert</h3>
-          </div>
-          <p className="text-body-sm text-warning-700 mb-3 dark:text-warning-300">{lowThresholdPools.length} pool(s) running low:</p>
-          <div className="space-y-2">
-            {lowThresholdPools.map(pool => (
-              <div key={pool.id} className="flex items-center justify-between bg-surface-card rounded-lg px-3 py-2 hover:bg-warning-50 transition-colors dark:hover:bg-warning-500/10">
-                <div className="flex items-center gap-2"><Database className="w-4 h-4 text-warning-600 dark:text-warning-300" /><span className="font-medium">{pool.poolName}</span></div>
-                <span className="text-body-sm"><span className="text-warning-600 font-medium dark:text-warning-300">{pool.availableCount}</span> / {pool.poolSize}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Pool Summary */}
-      <Card className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
-        <div className="p-4 border-b flex items-center gap-3">
-          <StatusIconBadge tone="primary" icon={Database} />
-          <h3 className="font-medium">Pool Summary</h3>
-        </div>
-        <div className="divide-y">
-          {pools.map(pool => {
-            const util = pool.poolSize > 0 ? (pool.assignedCount / pool.poolSize) * 100 : 0;
-            return (
-              <div key={pool.id} className="p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${pool.status === 'EXHAUSTED' ? 'bg-error-100 dark:bg-error-500/20' : 'bg-primary-100 dark:bg-primary-700'}`}>
-                    <Database className={`w-5 h-5 ${pool.status === 'EXHAUSTED' ? 'text-error-600 dark:text-error-300' : 'text-primary-600 dark:text-primary-200'}`} />
-                  </div>
-                  <div><p className="font-medium">{pool.poolName}</p><p className="body-sm">{pool.poolCode}</p></div>
-                </div>
-                <div className="flex items-center gap-8">
-                  <div className="text-right"><p className="text-body-sm font-medium">{formatNumber(pool.availableCount)} available</p><p className="caption">of {formatNumber(pool.poolSize)}</p></div>
-                  <div className="w-32">
-                    <div className="flex justify-between text-caption mb-1"><span>Assigned</span><span>{util.toFixed(1)}%</span></div>
-                    <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
-                      <div className={`h-full ${util > 90 ? 'bg-error-500' : util > 70 ? 'bg-warning-500' : 'bg-success-500'}`} style={{ width: `${util}%` }} />
-                    </div>
-                  </div>
-                  {getStatusBadge(pool.status)}
-                </div>
-              </div>
-            );
-          })}
-          {pools.length === 0 && <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">No pools created yet</div>}
-        </div>
-      </Card>
-    </div>
+    <HeroMetricCard
+      primary={{
+        label: 'VIBAN Inventory',
+        value: formatNumber(stats.total),
+        sub: (
+          <>
+            {stats.totalPools} {stats.totalPools === 1 ? 'pool' : 'pools'} · {formatNumber(stats.totalPaymentsRouted)} payments routed · {formatCurrency(stats.totalAmountRouted)}
+          </>
+        ),
+      }}
+      secondary={{
+        label: 'Assigned',
+        value: `${utilPct.toFixed(1)}%`,
+        trend: `${formatNumber(stats.assigned)} assigned`,
+        trendTone: utilTone,
+        sub: (
+          <>
+            {formatNumber(stats.available)} available · {formatNumber(stats.reserved)} reserved
+          </>
+        ),
+      }}
+      icon={<Hash className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
+    />
   );
 };
 
@@ -1047,6 +980,9 @@ const PoolsTab: React.FC<{
   formatTtl: (minutes: number) => string; formatNumber: (n: number) => string; processing: boolean;
 }> = ({ pools, searchQuery, setSearchQuery, statusFilter, setStatusFilter,
        onEdit, onDelete, onGenerate, onViewDetails, onAssignToVA, onBulkAssign, getStatusBadge, formatTtl, formatNumber, processing }) => {
+  // Active pools at or below their low-availability threshold first (stable sort keeps the rest in API order).
+  const isLowPool = (p: VibanPool) => p.status === 'ACTIVE' && p.poolSize > 0 && (p.availableCount / p.poolSize) * 100 <= p.lowThresholdPercent;
+  const sortedPools = [...pools].sort((a, b) => Number(isLowPool(b)) - Number(isLowPool(a)));
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -1062,11 +998,10 @@ const PoolsTab: React.FC<{
 
       {/* Pools Grid */}
       <div className="grid grid-cols-2 gap-4">
-        {pools.map(pool => {
-          const availPct = (pool.availableCount / pool.poolSize) * 100;
-          const isLow = availPct <= pool.lowThresholdPercent;
+        {sortedPools.map(pool => {
+          const isLow = isLowPool(pool);
           return (
-            <Card key={pool.id} className={`hover:shadow-md transition-shadow ${isLow && pool.status === 'ACTIVE' ? 'border-warning-300' : ''}`}>
+            <Card key={pool.id} className={`hover:shadow-md transition-shadow ${isLow ? 'border-warning-300' : ''}`}>
               <div className="p-4">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -1079,7 +1014,7 @@ const PoolsTab: React.FC<{
                 </div>
                 <div className="flex items-center gap-2 body-sm mb-4"><Building2 className="w-4 h-4" /><span>{pool.programName || 'Unknown'}</span></div>
                 <div className="grid grid-cols-4 gap-3 mb-4">
-                  <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available</p></div>
+                  <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available of {formatNumber(pool.poolSize)}</p></div>
                   <div className="bg-surface-page rounded-lg p-2 text-center" title="Returned to the pool and resting before they can be reissued"><p className="text-body-lg font-bold text-neutral-600 dark:text-neutral-300">{formatNumber(pool.coolingCount || 0)}</p><p className="caption">Cooling off</p></div>
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="caption">Assigned</p></div>
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
@@ -1095,7 +1030,7 @@ const PoolsTab: React.FC<{
                   <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300"><Clock className="w-3 h-3" /><span>TTL: {formatTtl(pool.assignmentTtlMinutes)}</span></div>
                   <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300"><Hash className="w-3 h-3" /><span>Prefix: {pool.prefix}</span></div>
                 </div>
-                {isLow && pool.status === 'ACTIVE' && (
+                {isLow && (
                   <div className="flex items-center gap-2 caption-warning bg-warning-50 rounded-lg px-3 py-2 mb-4 dark:bg-warning-500/10">
                     <AlertTriangle className="w-3 h-3" /><span>Below {pool.lowThresholdPercent}% threshold</span>
                   </div>

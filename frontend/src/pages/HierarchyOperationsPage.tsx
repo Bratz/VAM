@@ -6,19 +6,17 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, CheckCircle, XCircle, ArrowUpDown, Settings, MoreHorizontal } from 'lucide-react';
+import { Package, Folder, Building2, GitMerge, GitBranch, Check, Clock, Loader2, RefreshCw, Eye, History, BookOpen, X, CheckCircle, XCircle, Settings } from 'lucide-react';
 import { Button as SharedButton, StatusIconBadge } from '../components/ui';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { useNavigation } from '../hooks/useNavigation';
 import { cn } from '../utils';
 import {
   hierarchyOperationsApi,
-  HierarchyNode,
   OperationHistoryEntry,
   OperationRules,
   MoveOperationResult,
 } from '../services/hierarchyOperationsApi';
-import { programsApi as programsApiService } from '../services/api';
 import axios from 'axios';
 
 // ============================================================================
@@ -46,25 +44,6 @@ interface Corporate {
   status: string;
 }
 
-interface LegalEntity {
-  id: string;
-  entityCode: string;
-  entityName: string;
-  shortName?: string;
-  countryCode?: string;
-  functionalCurrency: string;
-  status: string;
-}
-
-interface ProgramOption {
-  id: string;
-  programName: string;
-  programCode: string;
-  currencyCode: string;
-  status: string;
-  corporateId?: string;
-}
-
 // ============================================================================
 // API CLIENT & FUNCTIONS
 // ============================================================================
@@ -80,17 +59,6 @@ const corporatesApi = {
   getAll: async (): Promise<Corporate[]> => {
     try {
       const response = await apiClient.get('/corporates');
-      return response.data.data || [];
-    } catch { 
-      return []; 
-    }
-  },
-};
-
-const legalEntityApi = {
-  getByCorporate: async (corporateId: string): Promise<LegalEntity[]> => {
-    try {
-      const response = await apiClient.get(`/legal-entities/corporate/${corporateId}`);
       return response.data.data || [];
     } catch { 
       return []; 
@@ -178,99 +146,6 @@ interface QuickAction {
   description: string;
   onClick: () => void;
 }
-
-// ============================================================================
-// TREE NODE COMPONENT
-// ============================================================================
-
-interface TreeNodeProps {
-  node: HierarchyNode;
-  expandedIds: Set<string>;
-  onToggle: (id: string) => void;
-  onAction: (node: HierarchyNode, action: string) => void;
-  level?: number;
-}
-
-const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onAction, level = 0 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const isExpanded = expandedIds.has(node.id);
-  const hasChildren = node.children && node.children.length > 0;
-
-  const getNodeIcon = () => {
-    switch (node.accountCategory) {
-      case 'ROOT': return <Globe className="w-4 h-4 text-white" />;
-      case 'AGGREGATION': return <Folder className="w-4 h-4 text-info-600 dark:text-info-300" />;
-      case 'CURRENCY_MIRROR': return <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />;
-      case 'SETTLEMENT': return <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
-      case 'EXCEPTION': return <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
-      default: return <Wallet className="w-4 h-4 text-success-600 dark:text-success-300" />;
-    }
-  };
-
-  const getNodeStyle = () => {
-    switch (node.accountCategory) {
-      case 'ROOT': return 'bg-primary-900';
-      case 'AGGREGATION': return 'bg-info-100 dark:bg-info-500/20';
-      case 'CURRENCY_MIRROR': return 'bg-cyan-50 border-2 border-dashed border-cyan-300 dark:bg-cyan-500/10';
-      case 'SETTLEMENT': return 'bg-cat-2-soft border-2 border-cat-2/30 dark:bg-cat-2/15';
-      case 'EXCEPTION': return 'bg-warning-50 border-2 border-warning-300 dark:bg-warning-500/10';
-      default: return 'bg-success-50 dark:bg-success-500/10';
-    }
-  };
-
-  const canMove = !['ROOT', 'CURRENCY_MIRROR', 'EXCEPTION'].includes(node.accountCategory);
-
-  return (
-    <div className="group">
-      <div
-        className="flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50"
-        style={{ marginLeft: `${level * 24}px` }}
-      >
-        {hasChildren ? (
-          <button onClick={() => onToggle(node.id)} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
-            {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
-          </button>
-        ) : <span className="w-5" />}
-
-        <div className={cn('p-1.5 rounded-lg', getNodeStyle())}>{getNodeIcon()}</div>
-        <span className="flex-1 text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</span>
-        <Badge variant="info">{node.currencyCode}</Badge>
-
-        {canMove && (
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreHorizontal className="w-4 h-4 text-neutral-400" />
-            </button>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 w-40 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20">
-                  <button onClick={() => { onAction(node, 'move'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
-                    <ArrowUpDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />Move
-                  </button>
-                  <button onClick={() => { onAction(node, 'view'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
-                    <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />View Details
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div>
-          {node.children!.map((child) => (
-            <TreeNode key={child.id} node={child} expandedIds={expandedIds} onToggle={onToggle} onAction={onAction} level={level + 1} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 // ============================================================================
 // OPERATION HISTORY ITEM
@@ -418,23 +293,18 @@ const HierarchyOperationsPage: React.FC = () => {
   // History, View All and operation details all open the full Operation History page.
   const { navigate } = useNavigation();
   const openHistory = () => navigate('operation-history');
-  // ====== CORPORATE/PROGRAM SELECTION STATE ======
+  // ====== CORPORATE SELECTION STATE ======
+  // Every operation here is corporate-scoped (the APIs and the Move picker take only a corporate).
   const [corporates, setCorporates] = useState<Corporate[]>([]);
-  const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
-  const [selectedProgramId, setSelectedProgramId] = useState('');
-  const [, setLegalEntities] = useState<LegalEntity[]>([]);
   const [loadingCorporates, setLoadingCorporates] = useState(true);
-  const [loadingPrograms, setLoadingPrograms] = useState(false);
 
-  // ====== HIERARCHY STATE ======
-  const [hierarchy, setHierarchy] = useState<HierarchyNode | null>(null);
+  // ====== OPERATIONS STATE ======
   const [history, setHistory] = useState<OperationHistoryEntry[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<OperationHistoryEntry[]>([]);
   const [rules, setRules] = useState<OperationRules | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [hierarchyLoading, setHierarchyLoading] = useState(false);
+  const [opsLoading, setOpsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // ====== MODAL STATES - ALL M&A MODALS ======
@@ -444,7 +314,6 @@ const HierarchyOperationsPage: React.FC = () => {
   const [showMergerWizard, setShowMergerWizard] = useState(false);
   const [showDivestitureModal, setShowDivestitureModal] = useState(false);
   const [moveType, setMoveType] = useState<MoveType>('TRANSACTION_VA');
-  const [preSelectedVaId, setPreSelectedVaId] = useState<string | undefined>(undefined);
 
   // ====== LOAD CORPORATES ON MOUNT ======
   useEffect(() => {
@@ -465,74 +334,6 @@ const HierarchyOperationsPage: React.FC = () => {
     loadCorporates();
   }, []);
 
-  // ====== LOAD LEGAL ENTITIES WHEN CORPORATE CHANGES ======
-  useEffect(() => {
-    const loadEntities = async () => {
-      if (!selectedCorporateId) { 
-        setLegalEntities([]); 
-        return; 
-      }
-      try {
-        const entities = await legalEntityApi.getByCorporate(selectedCorporateId);
-        setLegalEntities(entities);
-      } catch (err) { 
-        console.error('Failed to load legal entities:', err); 
-        setLegalEntities([]); 
-      }
-    };
-    loadEntities();
-  }, [selectedCorporateId]);
-
-  // ====== LOAD PROGRAMS WHEN CORPORATE CHANGES ======
-  useEffect(() => {
-    const loadPrograms = async () => {
-      if (!selectedCorporateId) {
-        setPrograms([]);
-        setSelectedProgramId('');
-        return;
-      }
-
-      try {
-        setLoadingPrograms(true);
-        const response = await programsApiService.getAll({ corporateId: selectedCorporateId });
-        
-        let programsData: any[] = [];
-        if (response?.success && response?.data) {
-          if (response.data.programs && Array.isArray(response.data.programs)) {
-            programsData = response.data.programs;
-          } else if (response.data.content && Array.isArray(response.data.content)) {
-            programsData = response.data.content;
-          } else if (Array.isArray(response.data)) {
-            programsData = response.data;
-          }
-        }
-
-        const programList: ProgramOption[] = programsData.map((p: any) => ({
-          id: p.id,
-          programName: p.programName,
-          programCode: p.programCode,
-          currencyCode: p.currencyCode || 'AED',
-          status: p.status,
-          corporateId: p.corporateId,
-        }));
-        setPrograms(programList);
-
-        const activePrograms = programList.filter(p => p.status === 'ACTIVE');
-        if (activePrograms.length > 0) {
-          setSelectedProgramId(activePrograms[0].id);
-        } else {
-          setSelectedProgramId('');
-        }
-      } catch (err) {
-        console.error('Failed to load programs:', err);
-        setPrograms([]);
-      } finally {
-        setLoadingPrograms(false);
-      }
-    };
-    loadPrograms();
-  }, [selectedCorporateId]);
-
   // ====== LOAD HIERARCHY RULES ON MOUNT ======
   useEffect(() => {
     const loadRules = async () => {
@@ -550,37 +351,23 @@ const HierarchyOperationsPage: React.FC = () => {
     loadRules();
   }, []);
 
-  // ====== LOAD CORPORATE DATA WHEN PROGRAM CHANGES ======
+  // ====== LOAD CORPORATE DATA WHEN CORPORATE CHANGES ======
   const loadCorporateData = useCallback(async () => {
     if (!selectedCorporateId) return;
     
-    setHierarchyLoading(true);
+    setOpsLoading(true);
     try {
-      const [hierarchyRes, historyRes, pendingRes] = await Promise.all([
-        hierarchyOperationsApi.getHierarchy(selectedCorporateId),
+      const [historyRes, pendingRes] = await Promise.all([
         hierarchyOperationsApi.getOperationHistory(selectedCorporateId),
         hierarchyOperationsApi.getPendingApprovals(selectedCorporateId),
       ]);
-      
-      if (hierarchyRes.success && hierarchyRes.data) {
-        setHierarchy(hierarchyRes.data);
-        const ids = new Set<string>();
-        ids.add(hierarchyRes.data.id);
-        hierarchyRes.data.children?.forEach((child) => { 
-          ids.add(child.id); 
-          child.children?.forEach((gc) => ids.add(gc.id)); 
-        });
-        setExpandedIds(ids);
-      } else {
-        setHierarchy(null);
-      }
       
       if (historyRes.success && historyRes.data) setHistory(historyRes.data.content);
       if (pendingRes.success && pendingRes.data) setPendingApprovals(pendingRes.data);
     } catch (err) { 
       console.error('Failed to load corporate data:', err); 
     } finally { 
-      setHierarchyLoading(false); 
+      setOpsLoading(false); 
     }
   }, [selectedCorporateId]);
 
@@ -589,50 +376,10 @@ const HierarchyOperationsPage: React.FC = () => {
   }, [loadCorporateData]);
 
   // ====== HANDLERS ======
-  const handleCorporateChange = (corpId: string) => {
-    setSelectedCorporateId(corpId);
-    setSelectedProgramId('');
-    setHierarchy(null);
-  };
-
-  const handleProgramChange = (programId: string) => {
-    setSelectedProgramId(programId);
-    setHierarchy(null);
-  };
-
   const handleRefresh = async () => { 
     setRefreshing(true); 
     await loadCorporateData(); 
     setRefreshing(false); 
-  };
-  
-  const handleToggle = (id: string) => { 
-    const n = new Set(expandedIds); 
-    if (n.has(id)) n.delete(id); 
-    else n.add(id); 
-    setExpandedIds(n); 
-  };
-  
-  const handleExpandAll = () => { 
-    if (!hierarchy) return; 
-    const collectIds = (node: HierarchyNode): string[] => { 
-      const ids = [node.id]; 
-      node.children?.forEach((c) => ids.push(...collectIds(c))); 
-      return ids; 
-    }; 
-    setExpandedIds(new Set(collectIds(hierarchy))); 
-  };
-  
-  const handleCollapseAll = () => { 
-    setExpandedIds(new Set([hierarchy?.id || ''])); 
-  };
-  
-  const handleNodeAction = (node: HierarchyNode, action: string) => { 
-    if (action === 'move') { 
-      setMoveType(node.accountCategory === 'AGGREGATION' ? 'AGGREGATION' : 'TRANSACTION_VA'); 
-      setPreSelectedVaId(node.id);
-      setShowMoveModal(true); 
-    } 
   };
   
   const handleApprove = async (operationId: string) => { 
@@ -657,7 +404,6 @@ const HierarchyOperationsPage: React.FC = () => {
   const handleMoveSuccess = (_result: MoveOperationResult) => {
     loadCorporateData();
     setShowMoveModal(false);
-    setPreSelectedVaId(undefined);
   };
 
   const handleAcquisitionSuccess = (_result: any) => {
@@ -683,14 +429,14 @@ const HierarchyOperationsPage: React.FC = () => {
       icon: Package,
       title: 'Relocate account',
       description: 'Move account to new division',
-      onClick: () => { setMoveType('TRANSACTION_VA'); setPreSelectedVaId(undefined); setShowMoveModal(true); }
+      onClick: () => { setMoveType('TRANSACTION_VA'); setShowMoveModal(true); }
     },
     {
       id: 'move-aggregation',
       icon: Folder,
       title: 'Move division',
       description: 'Relocate entire business unit',
-      onClick: () => { setMoveType('AGGREGATION'); setPreSelectedVaId(undefined); setShowMoveModal(true); }
+      onClick: () => { setMoveType('AGGREGATION'); setShowMoveModal(true); }
     },
     {
       id: 'acquire',
@@ -763,133 +509,86 @@ const HierarchyOperationsPage: React.FC = () => {
         description="Move accounts and divisions, or run an acquisition, merger or divestiture. Every change is recorded in Operation History."
       />
 
-      {/* Corporate/Program Filter Bar — uses the shared `<ScopeSelector>`. */}
       <ScopeSelector
-        mode="corporate-program"
+        mode="corporate-only"
         corporates={corporates}
-        programs={programs}
         selectedCorporateId={selectedCorporateId}
-        selectedProgramId={selectedProgramId}
-        onCorporateChange={handleCorporateChange}
-        onProgramChange={handleProgramChange}
-        loading={loadingPrograms}
-        disableChildUntilParent
+        onCorporateChange={setSelectedCorporateId}
+        requireSelection
       />
 
       {/* No Selection State */}
-      {(!selectedCorporateId || !selectedProgramId) && (
+      {!selectedCorporateId && (
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <StatusIconBadge tone="neutral" icon={Building2} size="xl" rounded="full" className="mb-4" />
-            <h2 className="section-title mb-2">
-              {!selectedCorporateId ? 'Select a Corporate' : 'Select a Program'}
-            </h2>
+            <h2 className="section-title mb-2">Select a Corporate</h2>
             <p className="text-neutral-500 max-w-md dark:text-neutral-400">
-              {!selectedCorporateId 
-                ? 'Choose a corporate from the dropdown above to view its programs and hierarchy operations.'
-                : 'Choose a program to view its hierarchy structure and available operations.'
-              }
+              Choose a corporate from the dropdown above to view its hierarchy operations.
             </p>
           </div>
         </Card>
       )}
 
       {/* Main Content */}
-      {selectedCorporateId && selectedProgramId && (
+      {selectedCorporateId && (
         <>
-          {/* Reorganize actions — one row of buttons (was five large tiles). */}
-          <div className="flex flex-wrap gap-2">
+          {/* Reorganize actions — one row of buttons (was five large tiles). The Move flows pick
+              the account or division inside the modal (search + target tree), so the page draws
+              no tree of its own; browse the hierarchy on Balance Hierarchy. */}
+          <div className="flex flex-wrap items-center gap-2">
             {quickActions.map(({ id, icon: Icon, title, description, onClick }) => (
               <SharedButton key={id} variant="outline" size="sm" leftIcon={<Icon className="w-4 h-4" />} onClick={onClick} title={description}>
                 {title}
               </SharedButton>
             ))}
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />Refresh
+            </Button>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid gap-6 grid-cols-3">
-            {/* Hierarchy Tree */}
-            <div className="col-span-2">
-              <Card padding="none">
-                <div className="flex items-center justify-between p-4 border-b border-edge">
-                  <h2 className="font-semibold text-primary-900 dark:text-neutral-50">Current Hierarchy</h2>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={handleExpandAll}>Expand All</Button>
-                    <Button variant="ghost" size="sm" onClick={handleCollapseAll}>Collapse</Button>
-                    <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing}>
-                      <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
-                    </Button>
-                  </div>
-                </div>
-                <div className="p-4 max-h-[500px] overflow-y-auto">
-                  {hierarchyLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
-                    </div>
-                  ) : hierarchy ? (
-                    <TreeNode node={hierarchy} expandedIds={expandedIds} onToggle={handleToggle} onAction={handleNodeAction} />
-                  ) : (
-                    <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                      <Globe className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
-                      <p>No hierarchy available for this program</p>
-                    </div>
-                  )}
-                </div>
-                {hierarchy && (
-                  <div className="px-4 py-3 border-t border-edge-subtle bg-surface-page">
-                    <div className="flex flex-wrap items-center gap-4 caption">
-                      <span className="font-medium">Legend:</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-primary-900" />Top level</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-info-100 dark:bg-info-500/20" />Division</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-success-50 dark:bg-success-500/10" />Account</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-cyan-50 border border-dashed border-cyan-300 dark:bg-cyan-500/10" />Currency mirror</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-warning-50 border border-warning-300 dark:bg-warning-500/10" />Exceptions</span>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {pendingApprovals.length > 0 && (
-                <Card padding="none">
-                  <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
-                    <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Pending Approvals</h3>
-                    <Badge variant="warning">{pendingApprovals.length}</Badge>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    {pendingApprovals.slice(0, 3).map((op) => (
-                      <PendingApprovalCard key={op.id} operation={op} onApprove={handleApprove} onReject={handleReject} />
-                    ))}
-                    {pendingApprovals.length > 3 && <Button variant="ghost" className="w-full" onClick={openHistory}>View All Pending</Button>}
-                  </div>
-                </Card>
-              )}
-
+          <div className="space-y-6">
+            {pendingApprovals.length > 0 && (
               <Card padding="none">
                 <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
-                  <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Operations</h3>
-                  <Button variant="ghost" size="sm" onClick={openHistory}>View All</Button>
+                  <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Pending Approvals</h3>
+                  <Badge variant="warning">{pendingApprovals.length}</Badge>
                 </div>
-                <div className="divide-y divide-edge-subtle">
-                  {history.length === 0 ? (
-                    <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
-                      <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
-                      <p className="text-body-sm">No operations yet</p>
-                    </div>
-                  ) : (
-                    history.slice(0, 5).map((op) => (
-                      <OperationHistoryItem
-                        key={op.id}
-                        operation={op}
-                        onViewDetails={openHistory}
-                      />
-                    ))
-                  )}
+                <div className="p-4 space-y-3">
+                  {pendingApprovals.slice(0, 3).map((op) => (
+                    <PendingApprovalCard key={op.id} operation={op} onApprove={handleApprove} onReject={handleReject} />
+                  ))}
+                  {pendingApprovals.length > 3 && <Button variant="ghost" className="w-full" onClick={openHistory}>View All Pending</Button>}
                 </div>
               </Card>
-            </div>
+            )}
+
+            <Card padding="none">
+              <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
+                <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Operations</h3>
+                <Button variant="ghost" size="sm" onClick={openHistory}>View All</Button>
+              </div>
+              <div className="divide-y divide-edge-subtle">
+                {opsLoading && history.length === 0 ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
+                    <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
+                    <p className="text-body-sm">No operations yet</p>
+                  </div>
+                ) : (
+                  history.slice(0, 5).map((op) => (
+                    <OperationHistoryItem
+                      key={op.id}
+                      operation={op}
+                      onViewDetails={openHistory}
+                    />
+                  ))
+                )}
+              </div>
+            </Card>
           </div>
         </>
       )}
@@ -901,11 +600,10 @@ const HierarchyOperationsPage: React.FC = () => {
         <>
           <MoveVaModal
             isOpen={showMoveModal}
-            onClose={() => { setShowMoveModal(false); setPreSelectedVaId(undefined); }}
+            onClose={() => setShowMoveModal(false)}
             onSuccess={handleMoveSuccess}
             moveType={moveType}
             corporateId={selectedCorporateId}
-            preSelectedVaId={preSelectedVaId}
           />
 
           <AcquisitionWizard

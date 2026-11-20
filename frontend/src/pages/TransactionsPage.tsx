@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import { Search, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Copy, Download, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable, Toggle } from '../components/ui';
 import type { Column } from '../components/ui';
 import { Modal, Alert } from '../components/ui/enhanced';
@@ -79,6 +79,64 @@ const OperationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
   );
 };
 
+// ISO 20022 message for an outward / POBO payment (moved from the Transfers page's history modal, round 3)
+const IsoMessagePanel: React.FC<{ transactionId: string; referenceNumber: string }> = ({ transactionId, referenceNumber }) => {
+  const [isoMessage, setIsoMessage] = useState<{ messageType: string; xml: string; messageId: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    transactionsApi.getIsoMessage(transactionId)
+      .then((res) => setIsoMessage(res.data ?? null))
+      .catch(() => setIsoMessage(null))
+      .finally(() => setLoading(false));
+  }, [transactionId]);
+
+  if (loading) {
+    return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /></div>;
+  }
+  if (!isoMessage) {
+    return (
+      <div className="text-center py-12">
+        <StatusIconBadge tone="neutral" icon={FileCode} size="xl" className="mx-auto mb-4" />
+        <p className="text-neutral-500 dark:text-neutral-400">No ISO 20022 message available</p>
+      </div>
+    );
+  }
+
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([isoMessage.xml], { type: 'application/xml' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${isoMessage.messageType}_${referenceNumber || 'message'}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('XML downloaded');
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
+        <div>
+          <p className="font-semibold text-primary-900 dark:text-neutral-50">{isoMessage.messageType}</p>
+          <p className="caption">Message ID: {isoMessage.messageId}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" leftIcon={<Copy className="w-4 h-4" />} onClick={() => { navigator.clipboard.writeText(isoMessage.xml); toast.success('XML copied to clipboard'); }}>
+            Copy
+          </Button>
+          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={download}>
+            Download
+          </Button>
+        </div>
+      </div>
+      <pre className="bg-neutral-900 text-success-400 p-6 rounded-lg text-caption overflow-auto max-h-[400px] font-mono">
+        {isoMessage.xml}
+      </pre>
+    </div>
+  );
+};
+
 // Transaction Details Modal
 interface TransactionDetailsProps {
   transaction: Transaction | null;
@@ -87,7 +145,9 @@ interface TransactionDetailsProps {
 }
 
 const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, onClose, onReverse }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'accounting'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'accounting' | 'iso'>('details');
+  // The modal stays mounted between transactions; reopen each one on Details.
+  useEffect(() => { setActiveTab('details'); }, [transaction?.id]);
   const [groupedData, setGroupedData] = useState<GroupedTransaction | null>(null);
   const [loadingEntries, setLoadingEntries] = useState(false);
   // Off by default: bank-internal Shadow VA / Settlement VA legs are noise for
@@ -130,6 +190,8 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
   const isCreditTxn = isCredit(transaction.movementType);
   const hasAccountingEntries = !!transaction.correlationId;
+  // Outward and POBO payments carry a pain.001 message.
+  const hasIsoMessage = transaction.movementType === 'DEBIT' || transaction.movementType === 'POBO_DEBIT';
 
   // Helper to get account type badge color
   const getAccountTypeBadgeClass = (accountType: string) => {
@@ -191,8 +253,8 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
           </p>
         </div>
 
-        {/* Tab Navigation - only show if fund movement detail is available */}
-        {hasAccountingEntries && (
+        {/* Tab Navigation - only show if fund movement detail or an ISO message is available */}
+        {(hasAccountingEntries || hasIsoMessage) && (
           <div className="flex gap-1 p-1 bg-surface-muted rounded-lg">
             <button
               onClick={() => setActiveTab('details')}
@@ -206,6 +268,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               <FileText className="w-4 h-4 inline mr-2" />
               Details
             </button>
+            {hasAccountingEntries && (
             <button
               onClick={() => setActiveTab('accounting')}
               className={cn(
@@ -223,7 +286,26 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 </span>
               )}
             </button>
+            )}
+            {hasIsoMessage && (
+              <button
+                onClick={() => setActiveTab('iso')}
+                className={cn(
+                  'flex-1 px-4 py-2 rounded-md text-body-sm font-medium transition-all',
+                  activeTab === 'iso'
+                    ? 'bg-surface-card text-neutral-900 shadow-sm dark:text-neutral-50'
+                    : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
+                )}
+              >
+                <FileCode className="w-4 h-4 inline mr-2" />
+                ISO 20022
+              </button>
+            )}
           </div>
+        )}
+
+        {activeTab === 'iso' && hasIsoMessage && (
+          <IsoMessagePanel transactionId={transaction.id} referenceNumber={transaction.referenceNumber} />
         )}
 
         {/* Details Tab Content */}

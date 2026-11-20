@@ -7,16 +7,15 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  * 
  * PHASE 3 COMPLETE VERSION:
  * - COBO is set up by enrolment (In-House Bank) and decided when an invoice is created; no per-invoice request
- * - Intercompany Tab with visual badges
- * - Pending Netting Tab
- * - COBO History Tab: COBO invoices by subsidiary and currency (read-only), with "apply a bank credit" for money
- *   that reached the treasury outside the invoice's VIBAN
+ * - Invoices tab with filter chips: All / Intercompany / In netting / COBO (round 3: these were three separate
+ *   tabs filtering the same list). COBO sorts by subsidiary and currency and offers "apply a bank credit" for
+ *   money that reached the treasury outside the invoice's VIBAN.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Download, RefreshCw, Clock, ArrowDownLeft, FileText, Eye, X, AlertTriangle, Copy, Plus, QrCode, Loader2, Building2, GitMerge, Play, XCircle } from 'lucide-react';
+import { Search, Download, RefreshCw, Clock, ArrowRight, FileText, Eye, X, AlertTriangle, Copy, Plus, QrCode, Loader2, Building2, GitMerge, Play, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile, Checkbox } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { MandatesTab } from '../components/collections/MandatesTab';
 import { CollectionRunsTab } from '../components/collections/CollectionRunsTab';
@@ -204,6 +203,20 @@ const getNettingStatusBadge = (status: string) => {
   return <Badge variant={config?.variant || 'neutral'} size="sm">{config?.label || status}</Badge>;
 };
 
+/** COBO progress as the COBO History tab showed it: collected / part collected / outstanding, else the request status. */
+const getCoboProgressBadge = (invoice: { coboRequestStatus: string; isCobo: boolean; outstandingAmount: number; paidAmount: number }) =>
+  invoice.coboRequestStatus === 'COLLECTED' || (invoice.isCobo && invoice.outstandingAmount <= 0)
+    ? <Badge variant="success" size="sm">Collected</Badge>
+    : invoice.coboRequestStatus === 'APPROVED'
+      ? <Badge variant="info" size="sm">{invoice.paidAmount > 0 ? 'Part collected' : 'Outstanding'}</Badge>
+      : getCoboStatusBadge(invoice.coboRequestStatus);
+
+/** An invoice collected (or to be collected) by treasury on a subsidiary's behalf. */
+const isCoboInvoice = (inv: { isCobo: boolean; coboRequestStatus: string }) =>
+  inv.isCobo || (!!inv.coboRequestStatus && inv.coboRequestStatus !== 'NOT_REQUESTED');
+
+type InvoiceFilter = 'all' | 'intercompany' | 'netting' | 'cobo';
+
 // Stats Card Component
 const STAT_TONE_BY_COLOR: Record<'emerald' | 'amber' | 'rose' | 'blue' | 'purple' | 'indigo', 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'primary'> = {
   emerald: 'success',
@@ -355,7 +368,8 @@ const EnhancedReceivablesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history' | 'mandates' | 'collection-runs' | 'outbox'>('invoices');
+  const [activeTab, setActiveTab] = useState<'invoices' | 'mandates' | 'collection-runs' | 'outbox'>('invoices');
+  const [invoiceFilter, setInvoiceFilter] = useState<InvoiceFilter>('all');
   const [planIds, setPlanIds] = useState<string[] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, setProcessing] = useState(false);
@@ -625,24 +639,17 @@ const EnhancedReceivablesPage: React.FC = () => {
     );
   }, [invoices, searchQuery]);
 
-  // Tab-specific filters
-  const intercompanyInvoices = useMemo(() => 
-    filteredInvoices.filter(inv => inv.isIntercompany), 
-    [filteredInvoices]
-  );
-
-  const pendingNettingInvoices = useMemo(() => 
-    filteredInvoices.filter(inv => inv.nettingStatus === 'PENDING' || inv.nettingStatus === 'INCLUDED'), 
-    [filteredInvoices]
-  );
-
-  // COBO invoices by subsidiary and currency (R19)
-  const coboHistoryInvoices = useMemo(() =>
-    filteredInvoices.filter(inv => inv.isCobo || (inv.coboRequestStatus && inv.coboRequestStatus !== 'NOT_REQUESTED'))
+  // Filter chips over the one invoice table (were the Intercompany / Pending Netting / COBO History tabs)
+  const chipInvoices = useMemo<Record<InvoiceFilter, InvoicePhase3[]>>(() => ({
+    all: filteredInvoices,
+    intercompany: filteredInvoices.filter(inv => inv.isIntercompany),
+    netting: filteredInvoices.filter(inv => inv.nettingStatus === 'PENDING' || inv.nettingStatus === 'INCLUDED'),
+    // COBO invoices by subsidiary and currency (R19)
+    cobo: filteredInvoices.filter(isCoboInvoice)
       .sort((a, b) => (a.owningEntityCode ?? '').localeCompare(b.owningEntityCode ?? '')
         || a.currencyCode.localeCompare(b.currencyCode) || (b.invoiceDate ?? '').localeCompare(a.invoiceDate ?? '')),
-    [filteredInvoices]
-  );
+  }), [filteredInvoices]);
+  const visibleInvoices = chipInvoices[invoiceFilter];
 
   // Handlers
   const handleSelectInvoice = (id: string) => {
@@ -658,7 +665,7 @@ const EnhancedReceivablesPage: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    const selectableIds = filteredInvoices
+    const selectableIds = visibleInvoices
       .filter(inv => COLLECTABLE.includes(inv.status))
       .map(inv => inv.id);
     
@@ -784,11 +791,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
   // Tabs configuration
   const tabs = [
-    { id: 'invoices' as const, label: 'All Invoices', count: filteredInvoices.length },
-    { id: 'intercompany' as const, label: 'Intercompany', count: intercompanyInvoices.length },
-    { id: 'pending-netting' as const, label: 'Pending Netting', count: pendingNettingInvoices.length },
-    { id: 'vibans' as const, label: 'VIBANs', count: vibans.length },
-    { id: 'cobo-history' as const, label: 'COBO History', count: coboHistoryInvoices.length },
+    { id: 'invoices' as const, label: 'Invoices', count: filteredInvoices.length },
     { id: 'collection-runs' as const, label: 'Collection runs', count: undefined },
     { id: 'mandates' as const, label: 'Mandates', count: undefined },
     { id: 'outbox' as const, label: 'Outbox', count: undefined },
@@ -800,7 +803,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         {activeTab === 'invoices' && (
           <Button variant="outline" size="sm" onClick={handleSelectAll}>
-            {selectedIds.size > 0 && selectedIds.size === filteredInvoices.filter(inv => COLLECTABLE.includes(inv.status)).length
+            {selectedIds.size > 0 && selectedIds.size === visibleInvoices.filter(inv => COLLECTABLE.includes(inv.status)).length
               ? 'Clear selection'
               : 'Select all eligible'}
           </Button>
@@ -932,20 +935,38 @@ const EnhancedReceivablesPage: React.FC = () => {
                 )}
               </button>
             ))}
+            {/* Payment VIBANs are managed on VIBAN Management (this page's VIBANs tab duplicated it) */}
+            <Button variant="ghost" size="sm" className="ml-auto self-center" rightIcon={<ArrowRight className="w-4 h-4" />} onClick={() => navigate('viban')}>
+              VIBAN Management
+            </Button>
           </div>
         </div>
 
         {/* Tab Content */}
         <div className="p-4">
-          {/* Table toolbar: filters the invoice lists (and their tab counts) */}
-          {['invoices', 'intercompany', 'pending-netting', 'cobo-history'].includes(activeTab) && (
-            <div className="relative mb-4 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <Input
-                placeholder="Search by invoice, customer, VIBAN or entity..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+          {/* Table toolbar: search + filter chips over the one invoice table */}
+          {activeTab === 'invoices' && (
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <Input
+                  placeholder="Search by invoice, customer, VIBAN or entity..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Tabs
+                variant="pills"
+                size="sm"
+                activeTab={invoiceFilter}
+                onChange={(id) => setInvoiceFilter(id as InvoiceFilter)}
+                tabs={[
+                  { id: 'all', label: 'All', badge: chipInvoices.all.length },
+                  { id: 'intercompany', label: 'Intercompany', badge: chipInvoices.intercompany.length },
+                  { id: 'netting', label: 'In netting', badge: chipInvoices.netting.length },
+                  { id: 'cobo', label: 'COBO', badge: chipInvoices.cobo.length },
+                ]}
               />
             </div>
           )}
@@ -956,13 +977,16 @@ const EnhancedReceivablesPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* All Invoices Tab */}
+              {/* Invoices Tab */}
               {activeTab === 'invoices' && (
                 <DataTable
-                  data={filteredInvoices}
+                  data={visibleInvoices}
                   keyExtractor={(invoice) => invoice.id}
                   emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No invoices found"
+                  emptyDescription={invoiceFilter === 'cobo'
+                    ? 'Enrol a subsidiary under In-House Bank, Collections on behalf; its new invoices are collected by treasury'
+                    : undefined}
                   columns={[
                     {
                       key: 'select',
@@ -1056,7 +1080,11 @@ const EnhancedReceivablesPage: React.FC = () => {
                               <Badge variant="info" size="sm" className="text-caption">
                                 <GitMerge className="w-3 h-3 mr-1" />
                                 {nettingStatusConfig[invoice.nettingStatus]?.label || invoice.nettingStatus}
+                                {invoice.nettingCycleRef && ` · ${invoice.nettingCycleRef}`}
                               </Badge>
+                            )}
+                            {isCoboInvoice(invoice) && (
+                              <span className="inline-flex items-center gap-1 text-caption">COBO {getCoboProgressBadge(invoice)}</span>
                             )}
                           </div>
                         </div>
@@ -1115,233 +1143,30 @@ const EnhancedReceivablesPage: React.FC = () => {
                                 <GitMerge className="w-4 h-4" />
                               </Button>
                             )}
+                            {(invoice.nettingStatus === 'PENDING' || invoice.nettingStatus === 'INCLUDED') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveFromNetting(invoice)}
+                                title="Remove from Netting"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {invoice.coboRequestStatus === 'APPROVED' && invoice.outstandingAmount > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCreditInvoice(invoice)}
+                                leftIcon={<Play className="w-4 h-4" />}
+                                title="Money arrived outside the invoice's VIBAN: apply that bank credit"
+                              >
+                                Apply credit
+                              </Button>
+                            )}
                           </div>
                         );
                       },
-                    },
-                  ]}
-                />
-              )}
-
-              {/* Intercompany Tab */}
-              {activeTab === 'intercompany' && (
-                <DataTable
-                  data={intercompanyInvoices}
-                  keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-                  emptyTitle="No intercompany invoices found"
-                  columns={[
-                    {
-                      key: 'invoiceNumber',
-                      header: 'Invoice',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                          <span className="caption">{formatDate(invoice.invoiceDate)}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'owningEntityCode',
-                      header: 'From Entity',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <Badge variant="info" size="sm">{invoice.owningEntityCode || 'Unknown'}</Badge>
-                          <span className="caption mt-1">{invoice.owningEntityName || ''}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'intercompanyEntityCode',
-                      header: 'To Entity (IC)',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <Badge variant="info" size="sm">
-                            <Building2 className="w-3 h-3 mr-1" />
-                            {invoice.intercompanyEntityCode || 'Unknown'}
-                          </Badge>
-                          <span className="caption mt-1">{invoice.intercompanyEntityName || ''}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'outstandingAmount',
-                      header: 'Amount',
-                      align: 'right',
-                      render: (_, invoice) => (
-                        <span className="body-strong font-semibold">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
-                      ),
-                    },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      align: 'center',
-                      render: (_, invoice) => getStatusBadge(invoice.status),
-                    },
-                    {
-                      key: 'nettingStatus',
-                      header: 'Netting',
-                      align: 'center',
-                      render: (_, invoice) => getNettingStatusBadge(invoice.nettingStatus),
-                    },
-                    {
-                      key: 'actions',
-                      header: 'Actions',
-                      render: (_, invoice) => (
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
-                            <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)} title="Add to Netting Cycle">
-                              <GitMerge className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              )}
-
-              {/* Pending Netting Tab */}
-              {activeTab === 'pending-netting' && (
-                <DataTable
-                  data={pendingNettingInvoices}
-                  keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<GitMerge className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-                  emptyTitle="No receivables pending netting"
-                  columns={[
-                    {
-                      key: 'invoiceNumber',
-                      header: 'Invoice',
-                      render: (_, invoice) => (
-                        <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                      ),
-                    },
-                    {
-                      key: 'customerName',
-                      header: 'Customer',
-                      render: (_, invoice) => (
-                        <span className="body-strong">{invoice.customerName}</span>
-                      ),
-                    },
-                    {
-                      key: 'outstandingAmount',
-                      header: 'Amount',
-                      align: 'right',
-                      render: (_, invoice) => (
-                        <span className="body-strong font-semibold">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
-                      ),
-                    },
-                    {
-                      key: 'nettingStatus',
-                      header: 'Netting Status',
-                      align: 'center',
-                      render: (_, invoice) => getNettingStatusBadge(invoice.nettingStatus),
-                    },
-                    {
-                      key: 'nettingCycleRef',
-                      header: 'Cycle',
-                      render: (_, invoice) => (
-                        <span className="text-body-sm font-mono">{invoice.nettingCycleRef || '-'}</span>
-                      ),
-                    },
-                    {
-                      key: 'actions',
-                      header: 'Actions',
-                      render: (_, invoice) => (
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveFromNetting(invoice)}
-                            title="Remove from Netting"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              )}
-
-              {/* VIBANs Tab */}
-              {activeTab === 'vibans' && (
-                <DataTable
-                  data={vibans}
-                  keyExtractor={(viban) => viban.id}
-                  emptyIcon={<QrCode className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-                  emptyTitle="No VIBANs generated"
-                  columns={[
-                    {
-                      key: 'virtualIban',
-                      header: 'VIBAN',
-                      render: (_, viban) => (
-                        <div className="flex items-center gap-2">
-                          <span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
-                          <button
-                            onClick={() => navigator.clipboard.writeText(viban.virtualIban)}
-                            className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-400 dark:hover:text-neutral-300"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'reference',
-                      header: 'Reference',
-                      render: (_, viban) => <span className="text-body-sm font-mono">{viban.reference}</span>,
-                    },
-                    {
-                      key: 'customerName',
-                      header: 'Customer',
-                      render: (_, viban) => (
-                        <span className="body-strong">{viban.customerName || '—'}</span>
-                      ),
-                    },
-                    {
-                      key: 'expectedAmount',
-                      header: 'Expected',
-                      align: 'right',
-                      render: (_, viban) => <span className="text-body-sm">{formatCurrency(viban.expectedAmount, viban.currency)}</span>,
-                    },
-                    {
-                      key: 'receivedAmount',
-                      header: 'Received',
-                      align: 'right',
-                      render: (_, viban) => (
-                        <span className="text-body-sm font-semibold text-success-600 dark:text-success-300">
-                          {formatCurrency(viban.receivedAmount, viban.currency)}
-                        </span>
-                      ),
-                    },
-                    {
-                      key: 'status',
-                      header: 'Status',
-                      align: 'center',
-                      render: (_, viban) => (
-                        <Badge
-                          variant={viban.status === 'PAID' ? 'success' : viban.status === 'ACTIVE' ? 'info' : 'neutral'}
-                          size="sm"
-                        >
-                          {viban.status}
-                        </Badge>
-                      ),
-                    },
-                    {
-                      key: 'expiresAt',
-                      header: 'Expires',
-                      render: (_, viban) => (
-                        <span className="text-body-sm">
-                          {viban.expiresAt ? formatDate(viban.expiresAt) : <span className="text-neutral-400">No expiry</span>}
-                        </span>
-                      ),
                     },
                   ]}
                 />
@@ -1351,111 +1176,6 @@ const EnhancedReceivablesPage: React.FC = () => {
               {activeTab === 'mandates' && <MandatesTab corporateId={selectedCorporateId} />}
               {activeTab === 'outbox' && <OutboxTab corporateId={selectedCorporateId} />}
 
-              {/* COBO History Tab: read-only, by subsidiary and currency; apply a bank credit for money outside the VIBAN */}
-              {activeTab === 'cobo-history' && (
-                <DataTable
-                  data={coboHistoryInvoices}
-                  keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<ArrowDownLeft className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-                  emptyTitle="No COBO collections found"
-                  emptyDescription="Enrol a subsidiary under In-House Bank, Collections on behalf; its new invoices are collected by treasury"
-                  columns={[
-                    {
-                      key: 'invoiceNumber',
-                      header: 'Invoice',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                          <span className="caption">{invoice.coboTransactionRef || '-'}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'customerName',
-                      header: 'Customer',
-                      render: (_, invoice) => (
-                        <span className="body-strong">{invoice.customerName}</span>
-                      ),
-                    },
-                    {
-                      key: 'invoiceAmount',
-                      header: 'Amount',
-                      align: 'right',
-                      render: (_, invoice) => (
-                        <span className="body-strong font-semibold">{formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}</span>
-                      ),
-                    },
-                    {
-                      key: 'coboCollectorEntityCode',
-                      header: 'Collector',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <span className="text-body-sm">{invoice.coboCollectorEntityCode || '-'}</span>
-                          <span className="caption">{invoice.coboCollectorEntityName || ''}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'owningEntityCode',
-                      header: 'On Behalf',
-                      render: (_, invoice) => (
-                        <div className="flex flex-col">
-                          <span className="text-body-sm">{invoice.owningEntityCode || '-'}</span>
-                          <span className="caption">{invoice.owningEntityName || ''}</span>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'currencyCode',
-                      header: 'Currency',
-                      minWidth: 90,
-                    },
-                    {
-                      key: 'coboRequestStatus',
-                      header: 'Status',
-                      align: 'center',
-                      render: (_, invoice) => invoice.coboRequestStatus === 'COLLECTED' || (invoice.isCobo && invoice.outstandingAmount <= 0)
-                        ? <Badge variant="success" size="sm">Collected</Badge>
-                        : invoice.coboRequestStatus === 'APPROVED'
-                          ? <Badge variant="info" size="sm">{invoice.paidAmount > 0 ? 'Part collected' : 'Outstanding'}</Badge>
-                          : getCoboStatusBadge(invoice.coboRequestStatus),
-                    },
-                    {
-                      key: 'outstandingAmount',
-                      header: 'Outstanding',
-                      align: 'right',
-                      render: (_, invoice) => formatCurrency(invoice.outstandingAmount, invoice.currencyCode),
-                    },
-                    {
-                      key: 'actions',
-                      header: 'Actions',
-                      render: (_, invoice) => (
-                        <div className="flex items-center gap-1">
-                          {invoice.coboRequestStatus === 'APPROVED' && invoice.outstandingAmount > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCreditInvoice(invoice)}
-                              leftIcon={<Play className="w-4 h-4" />}
-                              title="Money arrived outside the invoice's VIBAN: apply that bank credit"
-                            >
-                              Apply credit
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewInvoice(invoice)}
-                            title="View Details"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              )}
             </>
           )}
         </div>
@@ -1527,22 +1247,45 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <p className="text-neutral-500 dark:text-neutral-400">Owning Entity</p>
                 <p className="font-medium">{viewInvoice.owningEntityName || viewInvoice.owningEntityCode || '—'}</p>
               </div>
-              {viewInvoice.assignedViban && (
+              {viewInvoice.assignedViban && (() => {
+                // Payment-VIBAN status and expiry, which only the old VIBANs tab showed
+                const pv = vibans.find((v) => v.invoiceId === viewInvoice.id);
+                return (
+                  <div>
+                    <p className="text-neutral-500 dark:text-neutral-400">VIBAN</p>
+                    <p className="font-mono font-medium">{viewInvoice.assignedViban}</p>
+                    {pv && (
+                      <p className="caption">
+                        {pv.status}{pv.expiresAt ? ` · expires ${formatDate(pv.expiresAt)}` : ' · no expiry'}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+              {viewInvoice.isIntercompany && (
                 <div>
-                  <p className="text-neutral-500 dark:text-neutral-400">VIBAN</p>
-                  <p className="font-mono font-medium">{viewInvoice.assignedViban}</p>
+                  <p className="text-neutral-500 dark:text-neutral-400">Intercompany with</p>
+                  <p className="font-medium">{viewInvoice.intercompanyEntityName || viewInvoice.intercompanyEntityCode || '—'}</p>
                 </div>
               )}
-              {viewInvoice.isCobo && (
+              {isCoboInvoice(viewInvoice) && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">COBO Status</p>
-                  <div>{getCoboStatusBadge(viewInvoice.coboRequestStatus)}</div>
+                  <div>{getCoboProgressBadge(viewInvoice)}</div>
+                </div>
+              )}
+              {isCoboInvoice(viewInvoice) && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">Collected by</p>
+                  <p className="font-medium">{viewInvoice.coboCollectorEntityName || viewInvoice.coboCollectorEntityCode || '—'}</p>
+                  {viewInvoice.coboTransactionRef && <p className="caption font-mono">{viewInvoice.coboTransactionRef}</p>}
                 </div>
               )}
               {viewInvoice.nettingEligible && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">Netting Status</p>
                   <div>{getNettingStatusBadge(viewInvoice.nettingStatus)}</div>
+                  {viewInvoice.nettingCycleRef && <p className="caption font-mono">{viewInvoice.nettingCycleRef}</p>}
                 </div>
               )}
             </div>

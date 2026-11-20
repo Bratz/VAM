@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Wallet, Plus, Search, CreditCard, ArrowUpRight, ArrowDownRight, Users, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Settings, Loader2, CheckCircle, Building2, Shield, Upload, UserCheck, XCircle, LayoutDashboard, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, X, Pencil, ChevronRight } from 'lucide-react';
+import { Wallet, Plus, Search, CreditCard, ArrowUpRight, ArrowDownRight, Users, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Loader2, CheckCircle, Building2, Shield, Upload, UserCheck, XCircle, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, X, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
-import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
+import { Modal, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { Page } from '../components/layout/Page';
+import { useNavigation } from '../hooks/useNavigation';
 
 // ============================================================================
 // API Service - Enhanced with Party and Hierarchy support
@@ -405,13 +406,6 @@ const walletStatusConfig: Record<string, { label: string; color: string; icon: R
   BLOCKED: { label: 'Blocked', color: 'error', icon: <Ban className="w-3 h-3" /> },
 };
 
-const programStatusConfig: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: 'Active', color: 'success' },
-  SUSPENDED: { label: 'Suspended', color: 'warning' },
-  CLOSED: { label: 'Closed', color: 'error' },
-  PENDING_APPROVAL: { label: 'Pending', color: 'info' },
-};
-
 const kycStatusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   VERIFIED: { label: 'Verified', color: 'success', icon: <CheckCircle className="w-3 h-3" /> },
   PENDING: { label: 'Pending', color: 'warning', icon: <Clock className="w-3 h-3" /> },
@@ -667,62 +661,6 @@ const PartyPicker: React.FC<{
 };
 
 // ============================================================================
-// PROGRAM CARD COMPONENT (Read-only - links to Programs page for editing)
-// ============================================================================
-
-const ProgramCard: React.FC<{
-  program: WalletProgram;
-  onClick: () => void;
-}> = ({ program, onClick }) => {
-  const statusConfig = programStatusConfig[program.status] || programStatusConfig.ACTIVE;
-  
-  return (
-    <Card hover className="cursor-pointer" onClick={onClick}>
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <StatusIconBadge tone="primary" icon={Wallet} size="lg" />
-          <div>
-            <h3 className="section-title">{program.programName}</h3>
-            <p className="body-sm">{program.programCode}</p>
-          </div>
-        </div>
-        <Badge variant={statusConfig.color as any}>{statusConfig.label}</Badge>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <p className="caption">Active Wallets</p>
-          <p className="section-title">{program.activeWallets.toLocaleString()}</p>
-        </div>
-        <div>
-          <p className="caption">Total Balance</p>
-          <p className="section-title">{formatCurrency(program.totalBalance)}</p>
-        </div>
-        <div>
-          <p className="caption">Daily Limit</p>
-          {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-semibold`;
-              muted ink kept for the secondary figure. */}
-          <p className="stat-value-xs text-neutral-700 dark:text-neutral-200">{formatCurrency(program.dailySpendLimit)}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-4 border-t border-edge">
-        <div className="flex items-center gap-2 body-sm">
-          <Building2 className="w-4 h-4" />
-          <span>{program.operatorName ?? '-'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="caption">
-            {program.currency} • Since {new Date(program.launchDate).toLocaleDateString()}
-          </span>
-          <ChevronRight className="w-4 h-4 text-neutral-400" />
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// ============================================================================
 // WALLET ROW COMPONENT - Enhanced with Party info display
 // ============================================================================
 
@@ -824,8 +762,8 @@ const WalletMobileCard: React.FC<{
 // ============================================================================
 
 const WalletPage: React.FC = () => {
+  const { navigate } = useNavigation();
   // View state
-  const [activeTab, setActiveTab] = useState<'overview' | 'programs' | 'wallets'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [kycFilter, setKycFilter] = useState<string>('');
@@ -883,13 +821,6 @@ const WalletPage: React.FC = () => {
   const [blockForm, setBlockForm] = useState({ reason: '', permanent: false });
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Tabs
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'programs', label: 'Programs', icon: <Settings className="w-4 h-4" />, badge: programs.length },
-    { id: 'wallets', label: 'Wallets', icon: <CreditCard className="w-4 h-4" />, badge: totalWallets || wallets.length },
-  ];
-
   // Data Fetching
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -943,10 +874,9 @@ const WalletPage: React.FC = () => {
   const showSuccess = (message: string) => { setActionSuccess(message); setTimeout(() => setActionSuccess(null), 3000); };
   const showError = (message: string) => { setError(message); };
 
-  // Navigate to Programs page (for wallet program management)
-  const navigateToProgramsPage = () => {
-    window.location.href = '/programs?type=WALLET';
-  };
+  // Wallet programs are managed on the Programs page. (Was window.location.href = '/programs?type=WALLET',
+  // a full reload to a path the app doesn't route — it landed on the dashboard.)
+  const navigateToProgramsPage = () => navigate('programs');
 
   // ENHANCED: Issue Wallet Handler with Party linkage
   const handleIssueWallet = async () => {
@@ -1163,35 +1093,15 @@ const WalletPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Tabs */}
-      <div className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <Tabs tabs={tabs} activeTab={activeTab} onChange={(id) => setActiveTab(id as typeof activeTab)} variant="pills" />
-      </div>
-
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          <div className="grid gap-4 grid-cols-4">
+      {/* Tiles above the table — the Overview and Programs tabs were dropped (round 3); programs live on the Programs page */}
+      <div className="grid gap-4 grid-cols-4">
             <StatCard label="Total balance" value={formatCurrency(stats?.totalBalance ?? 0)} subValue={`Available: ${formatCurrency(stats?.totalAvailableBalance ?? stats?.totalBalance ?? 0)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
             <StatCard label="Active Wallets" value={stats?.activeWallets?.toLocaleString() || '0'} subValue={`${stats?.suspendedWallets || 0} suspended`} icon={<CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />} iconBg="bg-success-50 dark:bg-success-500/10" loading={loading} delay="0.25s" />
             <StatCard label="Daily Volume" value={formatCurrency(stats?.dailyVolume || 0)} subValue={`${stats?.todayTransactions?.toLocaleString() || 0} transactions`} icon={<Activity className="w-5 h-5 text-info-600 dark:text-info-300" />} iconBg="bg-info-50 dark:bg-info-500/10" loading={loading} delay="0.3s" />
             <StatCard label="KYC Rate" value={`${Math.round(((stats?.kycVerifiedCount ?? 0) / ((stats?.kycVerifiedCount ?? 0) + (stats?.kycPendingCount ?? 0) || 1)) * 100)}%`} subValue={`${stats?.kycPendingCount ?? 0} pending verification`} icon={<Shield className="w-5 h-5 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-50 dark:bg-warning-500/10" loading={loading} delay="0.35s" />
-          </div>
-        </div>
-      )}
+      </div>
 
-      {/* Programs Tab */}
-      {activeTab === 'programs' && (
-        <div className="space-y-4">
-          <div className="grid gap-6 grid-cols-2">
-            {programs.map(p => <ProgramCard key={p.id} program={p} onClick={() => { setSelectedPartnerId(p.corporateId ?? ''); setCurrentPage(0); setActiveTab('wallets'); }} />)}
-            {!programs.length && <div className="col-span-2"><EmptyState icon={<Settings className="w-8 h-8" />} title="No programs" description="Set them up from Programs, above." /></div>}
-          </div>
-        </div>
-      )}
-
-      {/* Wallets Tab */}
-      {activeTab === 'wallets' && (
+      {/* Wallets */}
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           {/* Filters */}
           <div className="p-4 border-b border-edge-subtle">
@@ -1341,7 +1251,6 @@ const WalletPage: React.FC = () => {
           )}
 
         </Card>
-      )}
 
       {/* ================================================================== */}
       {/* ISSUE WALLET MODAL - Enhanced with PartyPicker & Hierarchy */}

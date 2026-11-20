@@ -14,15 +14,12 @@ import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { ByBankView, FilterKey } from '../components/multiBank/ByBankView';
 import { OverviewView } from '../components/multiBank/OverviewView';
-import { ByCurrencyView } from '../components/multiBank/ByCurrencyView';
-import { ByEntityView } from '../components/multiBank/ByEntityView';
-import { ByCountryView } from '../components/multiBank/ByCountryView';
+import { AccountsView } from '../components/multiBank/AccountsView';
 import { TrendView } from '../components/multiBank/TrendView';
 import { ViewSwitcher } from '../components/multiBank/ViewSwitcher';
 import { useReportingRates } from '../hooks/useReportingRates';
-import { ViewKey, parseView } from '../components/multiBank/types';
+import { FilterKey, GroupBy, ViewKey, parseGroupBy, parseView } from '../components/multiBank/types';
 
 // ============================================================================
 // Multi-Bank Liquidity Dashboard — page controller.
@@ -38,7 +35,8 @@ import { ViewKey, parseView } from '../components/multiBank/types';
 // treasurer can see at a glance which liquidity is available to the pool
 // vs which sits at an external bank awaiting a sweep.
 //
-// Renders Overview (default) / By Bank / By Currency. The corporate
+// Renders Overview (default) / Accounts (grouped by bank, currency, entity
+// or country) / Trend. The corporate
 // ScopeSelector and the ViewSwitcher (content pivot) live in the page body
 // near the content they control; the header toolbar holds only true actions
 // (Refresh stale / Reload view). The summary is fetched scoped to the
@@ -85,12 +83,16 @@ const MultiBankLiquidityPage: React.FC = () => {
   const [filter, setFilter] = useState<FilterKey>(() =>
     parseFilter(new URLSearchParams(window.location.search).get('filter'))
   );
-  // Active view (Overview / By Bank / By Currency) — defaults to Overview and
-  // survives reload via ?view=… alongside ?filter=… Old bookmarks without
-  // ?view= land on Overview (the new default).
+  // Active view (Overview / Accounts / Trend) — defaults to Overview and
+  // survives reload via ?view=… alongside ?filter=… and ?group=… An old
+  // ?view=by-bank (etc.) opens Accounts grouped that way.
   const [view, setView] = useState<ViewKey>(() =>
     parseView(new URLSearchParams(window.location.search).get('view'))
   );
+  const [groupBy, setGroupBy] = useState<GroupBy>(() => {
+    const q = new URLSearchParams(window.location.search);
+    return parseGroupBy(q.get('view'), q.get('group'));
+  });
   // Corporate scope. Empty string = all corporates (portfolio-wide). The
   // multi-bank summary API filters server-side via ?corporateId=, so the
   // views need no change — they re-render off the re-fetched, scoped summary.
@@ -99,7 +101,7 @@ const MultiBankLiquidityPage: React.FC = () => {
   const [loadingCorporates, setLoadingCorporates] = useState(false);
 
   // Reporting currency + rate map — owned here (not inside OverviewView) so
-  // Overview and By Country's map agree on "the selected currency" and share
+  // Overview and the Accounts country map agree on "the selected currency" and share
   // one fetch instead of each picking/fetching it separately.
   const { profile } = useMarket();
   const [reportingCurrency, setReportingCurrency] = useState(profile.defaultCurrency || 'AED');
@@ -121,8 +123,10 @@ const MultiBankLiquidityPage: React.FC = () => {
     const u = new URL(window.location.href);
     if (view === 'overview') u.searchParams.delete('view');
     else u.searchParams.set('view', view);
+    if (view !== 'accounts' || groupBy === 'bank') u.searchParams.delete('group');
+    else u.searchParams.set('group', groupBy);
     window.history.replaceState(null, '', u);
-  }, [view]);
+  }, [view, groupBy]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -327,7 +331,16 @@ const MultiBankLiquidityPage: React.FC = () => {
           pivots (just above the per-view filter chips), not in the app
           chrome beside the page title. The header keeps only true actions
           (Refresh stale / Reload view). */}
-      <ViewSwitcher value={view} onChange={setView} />
+      <ViewSwitcher
+        label="View"
+        value={view}
+        onChange={setView}
+        options={[
+          { key: 'overview', label: 'Overview' },
+          { key: 'accounts', label: 'Accounts' },
+          { key: 'trend',    label: 'Trend' },
+        ]}
+      />
 
       {view === 'overview' && (
         <OverviewView
@@ -342,41 +355,13 @@ const MultiBankLiquidityPage: React.FC = () => {
           rateState={rateState}
         />
       )}
-      {view === 'by-bank' && (
-        <ByBankView
+      {view === 'accounts' && (
+        <AccountsView
           summary={summary}
           filter={filter}
           setFilter={setFilter}
-          refreshingIds={refreshingIds}
-          refresh={refresh}
-          failedCount={failedCount}
-        />
-      )}
-      {view === 'by-currency' && (
-        <ByCurrencyView
-          summary={summary}
-          filter={filter}
-          setFilter={setFilter}
-          refreshingIds={refreshingIds}
-          refresh={refresh}
-          failedCount={failedCount}
-        />
-      )}
-      {view === 'by-entity' && (
-        <ByEntityView
-          summary={summary}
-          filter={filter}
-          setFilter={setFilter}
-          refreshingIds={refreshingIds}
-          refresh={refresh}
-          failedCount={failedCount}
-        />
-      )}
-      {view === 'by-country' && (
-        <ByCountryView
-          summary={summary}
-          filter={filter}
-          setFilter={setFilter}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
           refreshingIds={refreshingIds}
           refresh={refresh}
           failedCount={failedCount}

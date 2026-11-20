@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import type { LucideIcon } from 'lucide-react';
-import { Link2, Plus, Search, Loader2, Shield, Users, Building2, Layers, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle } from 'lucide-react';
+import { Link2, Plus, Search, Loader2, Shield, Users, Building2, Layers, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle, Unlink } from 'lucide-react';
 import { Card, Button, Badge, Input, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -289,11 +290,14 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
 // ENTITY PICKER COMPONENT
 // ============================================================================
 
+// The fields the pickers read, so pages with their own entity type (Bank Accounts) can pass theirs.
+type EntityOption = Pick<LegalEntity, 'id' | 'entityCode' | 'entityName' | 'shortName'> & { entityType?: string; status?: string };
+
 interface LegalEntityPickerProps {
   selectedId: string;
   onSelect: (id: string) => void;
   label: string;
-  entities: LegalEntity[];
+  entities: EntityOption[];
   loading: boolean;
 }
 
@@ -351,6 +355,189 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
 };
 
 // ============================================================================
+// CREATE LINK MODAL — the one form that links an account to a legal entity.
+// Used here ("New link") and by Bank Accounts ("Assign to legal entity", with the
+// bank account's shadow fixed as the account). Mount it only while open: it takes
+// its starting values from `defaults` once.
+// ============================================================================
+
+interface CreateLinkModalProps {
+  onClose: () => void;
+  /** Called after a link is created or removed, so the caller can reload. */
+  onSaved: () => void;
+  entities: EntityOption[];
+  entitiesLoading?: boolean;
+  defaults?: Partial<CreateAttachmentForm>;
+  /** Fixes the account (e.g. a bank account's shadow) instead of offering the picker. */
+  account?: { id: string; label: React.ReactNode };
+}
+
+export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({ onClose, onSaved, entities, entitiesLoading = false, defaults, account }) => {
+  const [createForm, setCreateForm] = useState<CreateAttachmentForm>(() => ({ ...INITIAL_FORM, ...defaults, ...(account ? { virtualAccountId: account.id } : {}) }));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // The selected account's current links: shown so they can be removed, and to stop duplicates.
+  const [existing, setExisting] = useState<AccountAttachment[]>([]);
+
+  const loadExisting = useCallback(async (vaId: string) => {
+    if (!vaId) { setExisting([]); return; }
+    try {
+      const res = await accountAttachmentApi.getByVirtualAccount(vaId);
+      setExisting(res.data || []);
+    } catch {
+      setExisting([]);
+    }
+  }, []);
+  useEffect(() => { loadExisting(createForm.virtualAccountId); }, [createForm.virtualAccountId, loadExisting]);
+
+  const handleCreate = async () => {
+    if (!createForm.virtualAccountId || !createForm.legalEntityId) {
+      setError('Please select both a Virtual Account/Node and a Legal Entity');
+      return;
+    }
+    if (existing.some(a => a.legalEntityId === createForm.legalEntityId && a.relationshipType === createForm.relationshipType)) {
+      setError(`This entity already has a ${RELATIONSHIP_CONFIG[createForm.relationshipType].label} link to this account`);
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const payload: any = {
+        virtualAccountId: createForm.virtualAccountId,
+        legalEntityId: createForm.legalEntityId,
+        relationshipType: createForm.relationshipType,
+        isPrimary: createForm.isPrimary,
+        description: createForm.description || undefined,
+        effectiveFrom: createForm.effectiveFrom || undefined,
+        effectiveTo: createForm.effectiveTo || undefined,
+        requiresApproval: createForm.relationshipType !== 'OWNER',
+      };
+      if (createForm.relationshipType === 'AUTHORIZED') {
+        if (createForm.maxTransactionAmount) payload.maxTransactionAmount = parseFloat(createForm.maxTransactionAmount);
+        if (createForm.dailyLimit) payload.dailyLimit = parseFloat(createForm.dailyLimit);
+        payload.requiresDualAuth = createForm.requiresDualAuth;
+      }
+      if (createForm.relationshipType === 'COLLATERAL') {
+        if (createForm.collateralPercent) payload.collateralPercent = parseFloat(createForm.collateralPercent);
+        payload.securedFacilityId = createForm.securedFacilityId || undefined;
+      }
+      await accountAttachmentApi.create(payload);
+      const entity = entities.find(e => e.id === createForm.legalEntityId);
+      toast.success(`Linked to ${entity?.shortName || entity?.entityName || 'entity'}`);
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to create link');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemove = async (att: AccountAttachment) => {
+    if (!window.confirm(`Remove ${RELATIONSHIP_CONFIG[att.relationshipType as RelationshipType]?.label ?? att.relationshipType} link with ${att.entityName || 'this entity'}?`)) return;
+    try {
+      await accountAttachmentApi.terminate(att.id);
+      toast.success('Link removed');
+      await loadExisting(createForm.virtualAccountId);
+      onSaved();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to remove link');
+    }
+  };
+
+  return (
+    <Modal isOpen onClose={onClose} title={account ? 'Assign to legal entity' : 'New link'} size="lg">
+      <div className="p-4 space-y-4">
+        {error && (
+          <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300">
+            <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" /><span className="text-body-sm">{error}</span>
+          </div>
+        )}
+        {account ? (
+          <div><label className="field-label block mb-1">Account</label>{account.label}</div>
+        ) : (
+          <AccountNodePicker selectedId={createForm.virtualAccountId} onSelect={(id) => setCreateForm(p => ({ ...p, virtualAccountId: id }))} label="Virtual Account / Aggregation Node *" />
+        )}
+
+        {existing.length > 0 && (
+          <div>
+            <label className="field-label block mb-2">Current links</label>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {existing.map((att) => {
+                const cfg = RELATIONSHIP_CONFIG[att.relationshipType as RelationshipType];
+                return (
+                  <div key={att.id} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <StatusIconBadge tone={cfg?.tone ?? 'neutral'} icon={cfg?.icon || Link2} size="sm" subtle />
+                      <span className="text-body-sm font-medium">{att.entityName || att.legalEntityId}</span>
+                      <Badge variant={att.isPrimary ? 'info' : 'neutral'} size="sm">{cfg?.label ?? att.relationshipType}</Badge>
+                    </div>
+                    <button type="button" onClick={() => handleRemove(att)} className="text-neutral-400 hover:text-error-500 dark:hover:text-error-300 p-1" title="Remove link" aria-label="Remove link">
+                      <Unlink className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <LegalEntityPicker selectedId={createForm.legalEntityId} onSelect={(id) => setCreateForm(p => ({ ...p, legalEntityId: id }))} label="Legal Entity *" entities={entities} loading={entitiesLoading} />
+
+        <div>
+          <label className="field-label block mb-2">Relationship Type</label>
+          <div className="grid grid-cols-5 gap-2">
+            {Object.entries(RELATIONSHIP_CONFIG).map(([key, config]) => {
+              const Icon = config.icon;
+              const isSelected = createForm.relationshipType === key;
+              return (
+                <button key={key} type="button" title={config.description} onClick={() => setCreateForm(p => ({ ...p, relationshipType: key as RelationshipType }))} className={cn("flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all", isSelected ? `${config.bgColor} ${config.color} border-current` : 'bg-surface-card border-edge hover:border-neutral-300 dark:hover:border-primary-700')}>
+                  <Icon className="w-5 h-5" /><span className="text-caption font-medium">{config.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <Checkbox size="sm" label="Set as Primary" checked={createForm.isPrimary} onChange={(checked) => setCreateForm(p => ({ ...p, isPrimary: checked }))} />
+
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="field-label block mb-1">Effective From</label><Input type="date" value={createForm.effectiveFrom} onChange={(e) => setCreateForm(p => ({ ...p, effectiveFrom: e.target.value }))} /></div>
+          <div><label className="field-label block mb-1">Effective To (Optional)</label><Input type="date" value={createForm.effectiveTo} onChange={(e) => setCreateForm(p => ({ ...p, effectiveTo: e.target.value }))} /></div>
+        </div>
+
+        {createForm.relationshipType === 'AUTHORIZED' && (
+          <div className="p-4 bg-cat-2-soft rounded-lg space-y-4 dark:bg-cat-2/15">
+            <h4 className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
+              <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
+            </div>
+            <Checkbox size="sm" label="Require Dual Authorization" checked={createForm.requiresDualAuth} onChange={(checked) => setCreateForm(p => ({ ...p, requiresDualAuth: checked }))} />
+          </div>
+        )}
+
+        {createForm.relationshipType === 'COLLATERAL' && (
+          <div className="p-4 bg-error-50 rounded-lg space-y-4 dark:bg-error-500/10">
+            <h4 className="text-body-sm font-medium text-error-700 flex items-center gap-2 dark:text-error-300"><Lock className="w-4 h-4" />Collateral Details</h4>
+            <div><label className="field-label block mb-1">Collateral Percentage (%)</label><Input type="number" placeholder="e.g., 100" min="0" max="100" value={createForm.collateralPercent} onChange={(e) => setCreateForm(p => ({ ...p, collateralPercent: e.target.value }))} /></div>
+          </div>
+        )}
+
+        <div><label className="field-label block mb-1">Description (Optional)</label><textarea className="w-full border border-edge-strong rounded-lg px-3 py-2 resize-none" rows={2} placeholder="Add notes..." value={createForm.description} onChange={(e) => setCreateForm(p => ({ ...p, description: e.target.value }))} /></div>
+
+        <div className="flex gap-3 pt-4 border-t">
+          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button className="flex-1" onClick={handleCreate} disabled={!createForm.virtualAccountId || !createForm.legalEntityId || submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}Create link
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -370,7 +557,6 @@ const AccountAttachmentsPage: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<AccountAttachment | null>(null);
-  const [createForm, setCreateForm] = useState<CreateAttachmentForm>(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [transferForm, setTransferForm] = useState({ newOwnerId: '', transferReason: '' });
 
@@ -452,43 +638,6 @@ const AccountAttachmentsPage: React.FC = () => {
     }
   };
 
-  const handleCreate = async () => {
-    if (!createForm.virtualAccountId || !createForm.legalEntityId) {
-      setError('Please select both a Virtual Account/Node and a Legal Entity');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const payload: any = {
-        virtualAccountId: createForm.virtualAccountId,
-        legalEntityId: createForm.legalEntityId,
-        relationshipType: createForm.relationshipType,
-        isPrimary: createForm.isPrimary,
-        description: createForm.description || undefined,
-        effectiveFrom: createForm.effectiveFrom || undefined,
-        effectiveTo: createForm.effectiveTo || undefined,
-        requiresApproval: createForm.relationshipType !== 'OWNER',
-      };
-      if (createForm.relationshipType === 'AUTHORIZED') {
-        if (createForm.maxTransactionAmount) payload.maxTransactionAmount = parseFloat(createForm.maxTransactionAmount);
-        if (createForm.dailyLimit) payload.dailyLimit = parseFloat(createForm.dailyLimit);
-        payload.requiresDualAuth = createForm.requiresDualAuth;
-      }
-      if (createForm.relationshipType === 'COLLATERAL') {
-        if (createForm.collateralPercent) payload.collateralPercent = parseFloat(createForm.collateralPercent);
-        payload.securedFacilityId = createForm.securedFacilityId || undefined;
-      }
-      await accountAttachmentApi.create(payload);
-      setShowCreateModal(false);
-      setCreateForm(INITIAL_FORM);
-      await loadAttachments();
-    } catch (err) {
-      setError('Failed to create attachment');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleTransferOwnership = async () => {
     if (!selectedAttachment || !transferForm.newOwnerId) return;
     setSubmitting(true);
@@ -527,7 +676,7 @@ const AccountAttachmentsPage: React.FC = () => {
         <Button variant="outline" size="sm" onClick={() => loadAttachments()} disabled={loading}>
           <RefreshCw className={cn("w-4 h-4 mr-1", loading && "animate-spin")} />Refresh
         </Button>
-        <Button size="sm" onClick={() => { setCreateForm({ ...INITIAL_FORM, legalEntityId: selectedEntityId }); setShowCreateModal(true); }}>
+        <Button size="sm" onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-1" />New link
         </Button>
       </>
@@ -727,62 +876,10 @@ const AccountAttachmentsPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New link" size="lg">
-        <div className="p-4 space-y-4">
-          <AccountNodePicker selectedId={createForm.virtualAccountId} onSelect={(id) => setCreateForm(p => ({ ...p, virtualAccountId: id }))} label="Virtual Account / Aggregation Node *" />
-          <LegalEntityPicker selectedId={createForm.legalEntityId} onSelect={(id) => setCreateForm(p => ({ ...p, legalEntityId: id }))} label="Legal Entity *" entities={entities} loading={entitiesLoading} />
-          
-          <div>
-            <label className="field-label block mb-2">Relationship Type</label>
-            <div className="grid grid-cols-5 gap-2">
-              {Object.entries(RELATIONSHIP_CONFIG).map(([key, config]) => {
-                const Icon = config.icon;
-                const isSelected = createForm.relationshipType === key;
-                return (
-                  <button key={key} type="button" onClick={() => setCreateForm(p => ({ ...p, relationshipType: key as RelationshipType }))} className={cn("flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all", isSelected ? `${config.bgColor} ${config.color} border-current` : 'bg-surface-card border-edge hover:border-neutral-300 dark:hover:border-primary-700')}>
-                    <Icon className="w-5 h-5" /><span className="text-caption font-medium">{config.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <Checkbox size="sm" label="Set as Primary" checked={createForm.isPrimary} onChange={(checked) => setCreateForm(p => ({ ...p, isPrimary: checked }))} />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label block mb-1">Effective From</label><Input type="date" value={createForm.effectiveFrom} onChange={(e) => setCreateForm(p => ({ ...p, effectiveFrom: e.target.value }))} /></div>
-            <div><label className="field-label block mb-1">Effective To (Optional)</label><Input type="date" value={createForm.effectiveTo} onChange={(e) => setCreateForm(p => ({ ...p, effectiveTo: e.target.value }))} /></div>
-          </div>
-
-          {createForm.relationshipType === 'AUTHORIZED' && (
-            <div className="p-4 bg-cat-2-soft rounded-lg space-y-4 dark:bg-cat-2/15">
-              <h4 className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
-                <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
-              </div>
-              <Checkbox size="sm" label="Require Dual Authorization" checked={createForm.requiresDualAuth} onChange={(checked) => setCreateForm(p => ({ ...p, requiresDualAuth: checked }))} />
-            </div>
-          )}
-
-          {createForm.relationshipType === 'COLLATERAL' && (
-            <div className="p-4 bg-error-50 rounded-lg space-y-4 dark:bg-error-500/10">
-              <h4 className="text-body-sm font-medium text-error-700 flex items-center gap-2 dark:text-error-300"><Lock className="w-4 h-4" />Collateral Details</h4>
-              <div><label className="field-label block mb-1">Collateral Percentage (%)</label><Input type="number" placeholder="e.g., 100" min="0" max="100" value={createForm.collateralPercent} onChange={(e) => setCreateForm(p => ({ ...p, collateralPercent: e.target.value }))} /></div>
-            </div>
-          )}
-
-          <div><label className="field-label block mb-1">Description (Optional)</label><textarea className="w-full border border-edge-strong rounded-lg px-3 py-2 resize-none" rows={2} placeholder="Add notes..." value={createForm.description} onChange={(e) => setCreateForm(p => ({ ...p, description: e.target.value }))} /></div>
-
-          <div className="flex gap-3 pt-4 border-t">
-            <Button variant="outline" className="flex-1" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-            <Button className="flex-1" onClick={handleCreate} disabled={!createForm.virtualAccountId || !createForm.legalEntityId || submitting}>
-              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}Create link
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {showCreateModal && (
+        <CreateLinkModal onClose={() => setShowCreateModal(false)} onSaved={loadAttachments}
+          entities={entities} entitiesLoading={entitiesLoading} defaults={{ legalEntityId: selectedEntityId }} />
+      )}
 
       {/* Transfer Modal */}
       <Modal isOpen={showTransferModal} onClose={() => setShowTransferModal(false)} title="Transfer Ownership">

@@ -57,7 +57,7 @@ interface OverviewViewProps {
   /** Scopes the hero's trend fetch. Optional in `compact` mode (no fetch runs there). */
   corporateId?: string;
   /**
-   * Reporting currency + rate map, owned by the page so By Country's map
+   * Reporting currency + rate map, owned by the page so the Accounts country map
    * shares the same fetch. Optional in `compact` mode, which never reads
    * them (no hero, no rate-derived figures in the inline strip).
    */
@@ -225,7 +225,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
   // Currency chip row — used in compact mode's inline strip and, in expanded
   // mode, as the slim body of the "Liquidity by currency" card below (the
-  // By Currency tab is where the detailed bank-by-bank breakdown lives now).
+  // Accounts tab, grouped by currency, is where the account-level breakdown lives).
   const currencyChipRow = currencies.length > 0 ? (
     <div className="flex flex-wrap gap-1.5">
       {currencies.map((c) => (
@@ -450,7 +450,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           label="Stale"
           value={summary.staleCount.toString()}
           sub="Exceeds threshold"
-          onClick={compact ? undefined : () => { setFilter('stale'); setView?.('by-bank'); }}
+          onClick={compact ? undefined : () => { setFilter('stale'); setView?.('accounts'); }}
           active={!compact && filter === 'stale'}
         />
         <MetricCard
@@ -459,7 +459,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           label="Failed"
           value={failedCount.toString()}
           sub="Refresh errored"
-          onClick={compact ? undefined : () => { setFilter('failed'); setView?.('by-bank'); }}
+          onClick={compact ? undefined : () => { setFilter('failed'); setView?.('accounts'); }}
           active={!compact && filter === 'failed'}
         />
         <MetricCard
@@ -468,7 +468,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           label="Never Refreshed"
           value={summary.neverRefreshedCount.toString()}
           sub="No fetch attempted"
-          onClick={compact ? undefined : () => { setFilter('never'); setView?.('by-bank'); }}
+          onClick={compact ? undefined : () => { setFilter('never'); setView?.('accounts'); }}
           active={!compact && filter === 'never'}
         />
       </StatStrip>

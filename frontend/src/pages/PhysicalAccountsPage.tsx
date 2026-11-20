@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Plus, Search, RefreshCw, Download, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Wifi, Server, Banknote, ChevronRight, GitBranch, Unlink, AlertTriangle, Loader2, Check, UserPlus, Database, User, XCircle } from 'lucide-react';
-import { Card, Button, Badge, StatusIconBadge, DataTable, Input } from '../components/ui';
+import { Plus, Search, RefreshCw, Download, CheckCircle, Clock, Layers, X, Building2, Globe, Link2, Wifi, Server, Banknote, ChevronRight, GitBranch, AlertTriangle, Loader2, Check, UserPlus, Database, XCircle } from 'lucide-react';
+import { Card, Button, Badge, StatusIconBadge, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -16,11 +16,9 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import {
   shadowAccountApi as sharedShadowAccountApi,
-  accountAttachmentApi,
   type ShadowAccount,
-  type AccountAttachment,
 } from '../services/api';
-import { RELATIONSHIP_CONFIG } from './AccountAttachmentsPage';
+import { CreateLinkModal } from './AccountAttachmentsPage';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8053/api/v1';
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -337,16 +335,6 @@ const getCategoryColor = (category: string) => {
   }
 };
 
-const getEntityTypeIcon = (type?: string) => {
-  switch (type) {
-    case 'HOLDING': return <Building2 className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
-    case 'TREASURY_CENTER': return <Banknote className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
-    case 'SUBSIDIARY': return <Building2 className="w-4 h-4 text-info-600 dark:text-info-300" />;
-    case 'BRANCH': return <GitBranch className="w-4 h-4 text-success-600 dark:text-success-300" />;
-    default: return <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
-  }
-};
-
 const DEFAULT_ACCOUNT_HINT = 'Opened by the application with a made-up opening balance; not from the bank\'s books';
 
 const SHADOW_DATA_SOURCE_LABELS: Record<string, string> = {
@@ -658,246 +646,6 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
 };
 
 // ============================================================================
-// ATTACH SHADOW TO ENTITY MODAL
-// ============================================================================
-// Ported from the standalone Shadow Accounts page (merged into Bank Accounts).
-// Reuses this page's already-loaded `legalEntities` list instead of fetching
-// its own — the two pages previously duplicated this exact fetch.
-
-interface AttachToEntityModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  shadow: ShadowAccount | null;
-  entities: LegalEntity[];
-}
-
-const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClose, onSuccess, shadow, entities }) => {
-  const [existingAttachments, setExistingAttachments] = useState<AccountAttachment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingAttachments, setLoadingAttachments] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const [formData, setFormData] = useState({
-    legalEntityId: '',
-    relationshipType: 'OWNER' as 'OWNER' | 'BENEFICIARY' | 'AUTHORIZED' | 'GUARANTOR' | 'COLLATERAL',
-    isPrimary: true,
-    effectiveFrom: new Date().toISOString().split('T')[0],
-    maxTransactionAmount: '',
-    dailyLimit: '',
-  });
-
-  useEffect(() => {
-    const load = async () => {
-      if (!isOpen || !shadow) return;
-      setLoadingAttachments(true);
-      setError(null);
-      try {
-        const res = await accountAttachmentApi.getByVirtualAccount(shadow.id);
-        setExistingAttachments(res.data || []);
-      } catch (e) {
-        setExistingAttachments([]);
-      } finally {
-        setLoadingAttachments(false);
-      }
-    };
-    load();
-  }, [isOpen, shadow]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setFormData({ legalEntityId: '', relationshipType: 'OWNER', isPrimary: true, effectiveFrom: new Date().toISOString().split('T')[0], maxTransactionAmount: '', dailyLimit: '' });
-      setSearchTerm('');
-      setError(null);
-    }
-  }, [isOpen]);
-
-  const handleSubmit = async () => {
-    if (!formData.legalEntityId || !shadow) { setError('Please select a legal entity'); return; }
-    if (existingAttachments.some(a => a.legalEntityId === formData.legalEntityId && a.relationshipType === formData.relationshipType)) {
-      setError(`This entity already has a ${formData.relationshipType} relationship with this account`);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      await accountAttachmentApi.create({
-        virtualAccountId: shadow.id,
-        legalEntityId: formData.legalEntityId,
-        relationshipType: formData.relationshipType,
-        isPrimary: formData.isPrimary,
-        effectiveFrom: formData.effectiveFrom,
-        maxTransactionAmount: formData.maxTransactionAmount ? parseFloat(formData.maxTransactionAmount) : undefined,
-        dailyLimit: formData.dailyLimit ? parseFloat(formData.dailyLimit) : undefined,
-      });
-      const selectedEntity = entities.find(e => e.id === formData.legalEntityId);
-      toast.success(`Attached to ${selectedEntity?.shortName || selectedEntity?.entityName}`, { duration: 4000, icon: <Link2 className="w-5 h-5 text-primary-600" /> });
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to create attachment';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveAttachment = async (attachment: AccountAttachment) => {
-    if (!window.confirm(`Remove ${attachment.relationshipType} relationship with ${attachment.entityName || 'this entity'}?`)) return;
-    try {
-      await accountAttachmentApi.terminate(attachment.id);
-      toast.success('Attachment removed');
-      if (shadow) {
-        const res = await accountAttachmentApi.getByVirtualAccount(shadow.id);
-        setExistingAttachments(res.data || []);
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to remove attachment');
-    }
-  };
-
-  const filteredEntities = entities.filter(e =>
-    !searchTerm || e.entityName.toLowerCase().includes(searchTerm.toLowerCase()) || e.entityCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const showLimitsFields = formData.relationshipType === 'AUTHORIZED';
-
-  if (!shadow) return null;
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Assign to legal entity" size="lg">
-      <div className="space-y-5">
-        {error && (
-          <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-body-sm">{error}</span>
-          </div>
-        )}
-
-        <div className="p-3 bg-surface-page border border-edge rounded-lg">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="info" icon={Layers} rounded="lg" />
-            <div className="flex-1">
-              <p className="font-medium text-primary-900 dark:text-neutral-50">{shadow.vaName}</p>
-              <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{shadow.vaNumber}</p>
-            </div>
-            <div className="text-right">
-              <p className="caption">{shadow.currencyCode}</p>
-              <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(shadow.bankBalance, shadow.currencyCode)}</p>
-            </div>
-          </div>
-        </div>
-
-        {loadingAttachments ? (
-          <div className="flex items-center gap-2 body-sm"><Loader2 className="w-4 h-4 animate-spin" />Loading attachments...</div>
-        ) : existingAttachments.length > 0 && (
-          <div>
-            <label className="field-label block mb-2">Current Attachments</label>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {existingAttachments.map((att) => {
-                const typeConfig = RELATIONSHIP_CONFIG[att.relationshipType];
-                const TypeIcon = typeConfig?.icon || User;
-                return (
-                  <div key={att.id} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} size="sm" subtle />
-                      <div>
-                        <span className="text-body-sm font-medium">{att.entityName || att.legalEntityId}</span>
-                        <Badge variant={att.isPrimary ? 'info' : 'neutral'} size="sm" className="ml-2">{att.relationshipType}</Badge>
-                      </div>
-                    </div>
-                    <button onClick={() => handleRemoveAttachment(att)} className="text-neutral-400 hover:text-error-500 dark:hover:text-error-300 p-1" title="Remove attachment">
-                      <Unlink className="w-4 h-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label className="field-label block mb-2">Relationship Type <span className="text-error-500 dark:text-error-300">*</span></label>
-          <div className="grid gap-2 grid-cols-3">
-            {Object.entries(RELATIONSHIP_CONFIG).map(([type, config]) => {
-              const TypeIcon = config.icon;
-              const isSelected = formData.relationshipType === type;
-              return (
-                <button key={type} onClick={() => setFormData(prev => ({ ...prev, relationshipType: type as any }))}
-                  className={cn("p-3 rounded-lg border-2 text-left transition-all",
-                    isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700" : "border-edge hover:border-neutral-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50")}>
-                  <div className="flex items-center gap-2">
-                    <StatusIconBadge tone={config.tone} icon={TypeIcon} size="sm" subtle />
-                    <p className="text-body-sm font-medium">{config.label}</p>
-                  </div>
-                  {isSelected && <p className="caption mt-2">{config.description}</p>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <label className="field-label block mb-2">Legal Entity <span className="text-error-500 dark:text-error-300">*</span></label>
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <Input placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
-          </div>
-          {filteredEntities.length === 0 ? (
-            <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg text-body-sm text-warning-700 dark:text-warning-300">
-              No entities found for this corporate.
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
-              {filteredEntities.map((entity) => {
-                const isSelected = formData.legalEntityId === entity.id;
-                const isAlreadyAttached = existingAttachments.some(a => a.legalEntityId === entity.id && a.relationshipType === formData.relationshipType);
-                return (
-                  <div key={entity.id} onClick={() => !isAlreadyAttached && setFormData(prev => ({ ...prev, legalEntityId: entity.id }))}
-                    className={cn("p-3 rounded-lg border-2 transition-all",
-                      isAlreadyAttached ? "border-edge bg-surface-page opacity-50 cursor-not-allowed" :
-                      isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700 cursor-pointer" :
-                      "border-transparent hover:border-neutral-200 dark:hover:border-primary-800 hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer")}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-muted">{getEntityTypeIcon(entity.entityType)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.shortName || entity.entityName}</span>
-                          {entity.entityType && <Badge variant="neutral" size="sm">{entity.entityType}</Badge>}
-                        </div>
-                        <div className="flex items-center gap-2 caption">
-                          <span className="font-mono">{entity.entityCode}</span><span>•</span><span>{entity.functionalCurrency}</span>
-                        </div>
-                      </div>
-                      {isAlreadyAttached && <Badge variant="success" size="sm">Already Attached</Badge>}
-                      {isSelected && !isAlreadyAttached && <Check className="w-5 h-5 text-primary-600 dark:text-primary-200" />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {showLimitsFields && (
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 100000" value={formData.maxTransactionAmount} onChange={(e) => setFormData(prev => ({ ...prev, maxTransactionAmount: e.target.value }))} /></div>
-            <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 500000" value={formData.dailyLimit} onChange={(e) => setFormData(prev => ({ ...prev, dailyLimit: e.target.value }))} /></div>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading || !formData.legalEntityId} leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}>
-            {loading ? 'Assigning...' : 'Assign to entity'}
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-// ============================================================================
 // CREATE ACCOUNT MODAL
 // ============================================================================
 
@@ -1079,7 +827,6 @@ const PhysicalAccountsPage: React.FC = () => {
   // field on PhysicalAccount that seed data can leave stale/out of sync —
   // see the shadow-linkage discrepancy this merge fixes).
   const [shadowsByPhysicalId, setShadowsByPhysicalId] = useState<Record<string, ShadowAccount>>({});
-  const [showAttachModal, setShowAttachModal] = useState(false);
   const [attachTargetShadow, setAttachTargetShadow] = useState<ShadowAccount | null>(null);
 
   useEffect(() => {
@@ -1201,7 +948,6 @@ const PhysicalAccountsPage: React.FC = () => {
     const shadow = shadowFor(account);
     if (!shadow) return;
     setAttachTargetShadow(shadow);
-    setShowAttachModal(true);
   };
 
   // NEW: Handle Link to Hierarchy
@@ -1673,14 +1419,28 @@ const PhysicalAccountsPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Attach Shadow to Entity Modal — merged in from Shadow Accounts */}
-      <AttachToEntityModal
-        isOpen={showAttachModal}
-        onClose={() => { setShowAttachModal(false); setAttachTargetShadow(null); }}
-        onSuccess={() => { loadShadows(); }}
-        shadow={attachTargetShadow}
-        entities={legalEntities}
-      />
+      {/* Assign to legal entity — Account Linking's one link form, with this bank account's shadow fixed. */}
+      {attachTargetShadow && (
+        <CreateLinkModal
+          onClose={() => setAttachTargetShadow(null)}
+          onSaved={loadShadows}
+          entities={legalEntities}
+          defaults={{ isPrimary: true }}
+          account={{
+            id: attachTargetShadow.id,
+            label: (
+              <div className="p-3 bg-surface-page border border-edge rounded-lg flex items-center gap-3">
+                <StatusIconBadge tone="info" icon={Layers} rounded="lg" />
+                <div className="flex-1">
+                  <p className="font-medium text-primary-900 dark:text-neutral-50">{attachTargetShadow.vaName}</p>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{attachTargetShadow.vaNumber}</p>
+                </div>
+                <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(attachTargetShadow.bankBalance, attachTargetShadow.currencyCode)}</p>
+              </div>
+            ),
+          }}
+        />
+      )}
 
       {/* Create Account Modals */}
       <CreateAccountModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSuccess={() => { loadData(); loadAccounts(); }} isExternal={false} corporateId={selectedCorporateId} entities={legalEntities} />

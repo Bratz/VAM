@@ -15,7 +15,7 @@ import { Card } from '../ui';
 //
 // Unlike the other views, this one owns its own fetch: the page's load()
 // only fetches the summary, and fetching 90 days of trend data on every
-// summary reload (including while the user is on Overview/By Bank/etc.)
+// summary reload (including while the user is on Overview/Accounts)
 // would be wasted work. Trend data is fetched here, on demand, only while
 // this tab is mounted.
 // ============================================================================

@@ -18,15 +18,10 @@ import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDo
 import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
-import {
-  StatementDownloadPanel,
-  VAHierarchyViewer,
-  StatementPreviewModal,
-} from '../components/statements';
+import { VAHierarchyViewer } from '../components/statements';
 import { formatCurrency, formatDate, formatDateTime, cn, copyToClipboard } from '../utils';
 import { isCredit, isDebit, getMovementBgClass } from '../utils/transactionUtils';
 import type {
-  StatementSummary,
   VAHierarchyNode,
   ISO20022StatementFormat,
   StatementBalanceType,
@@ -1048,6 +1043,18 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon }) => {
 // MAIN PAGE COMPONENT
 // ============================================================================
 
+/** Hands a blob to the browser as a file download. */
+function saveBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
 const StatementsPage: React.FC = () => {
   // State
   const [accounts, setAccounts] = useState<VirtualAccount[]>([]);
@@ -1071,10 +1078,7 @@ const StatementsPage: React.FC = () => {
   const [includeChildren, setIncludeChildren] = useState(true);
   const [showHierarchy, setShowHierarchy] = useState(false);
 
-  // Enhanced UI state for new components
-  const [showEnhancedDownloadPanel, setShowEnhancedDownloadPanel] = useState(false);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [, setPreviewSummary] = useState<StatementSummary | null>(null);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
   const [historyFormatFilter, setHistoryFormatFilter] = useState<ISO20022StatementFormat | ''>('');
 
@@ -1130,9 +1134,10 @@ const StatementsPage: React.FC = () => {
     }
   }, [selectedAccount, isAggregationAccount, fetchHierarchy]);
 
-  // Fetch statement based on mode
-  const fetchStatement = async () => {
-    if (!selectedAccount) return;
+  // Fetch statement based on mode. History "View" passes its own account and
+  // dates (its state updates haven't landed yet when it calls this).
+  const fetchStatement = async (accountId = selectedAccount, from = fromDate, to = toDate) => {
+    if (!accountId) return;
     try {
       setGenerating(true);
       setError(null);
@@ -1140,18 +1145,18 @@ const StatementsPage: React.FC = () => {
       let res;
       switch (statementMode) {
         case 'camt053':
-          res = await statementsApi.getCamt053Statement(selectedAccount, fromDate, toDate);
+          res = await statementsApi.getCamt053Statement(accountId, from, to);
           break;
         case 'camt054':
-          res = await statementsApi.getCamt054Notifications(selectedAccount, fromDate, toDate);
+          res = await statementsApi.getCamt054Notifications(accountId, from, to);
           break;
         case 'aggregated':
           res = await statementsApi.getAggregatedCamt053Statement(
-            selectedAccount, fromDate, toDate, includeChildren
+            accountId, from, to, includeChildren
           );
           break;
         default:
-          res = await statementsApi.getAccountStatement(selectedAccount, fromDate, toDate);
+          res = await statementsApi.getAccountStatement(accountId, from, to);
       }
 
       if (res.success) setStatement(res.data);
@@ -1170,19 +1175,7 @@ const StatementsPage: React.FC = () => {
       setError(null);
 
       const blob = await statementsApi.downloadCamt053Xml(selectedAccount, fromDate, toDate);
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-
-      const accountNum = selectedAccountDetails?.vaNumber || selectedAccount;
-      link.download = `camt053_${accountNum}_${fromDate}_${toDate}.xml`;
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      saveBlob(blob, `camt053_${selectedAccountDetails?.vaNumber || selectedAccount}_${fromDate}_${toDate}.xml`);
     } catch (err: any) {
       setError(`Failed to download XML: ${err.message}`);
     } finally {
@@ -1190,34 +1183,17 @@ const StatementsPage: React.FC = () => {
     }
   };
 
-  // Generate statement in various formats
-  const generateStatement = async (format: string) => {
-    if (!selectedAccount) return;
-    try {
-      setGenerating(true);
-      const res = await statementsApi.generate(selectedAccount, format, fromDate, toDate);
-      if (res.success) {
-        toast.success(`Statement generated: ${res.data.statementReference}`);
-        fetchInitialData();
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err.message);
-    } finally {
-      setGenerating(false);
-    }
-  };
 
-  // Handler for enhanced download panel
-  const handleStatementGenerated = (reference: string, format: ISO20022StatementFormat) => {
-    toast.success(`${format} statement generated: ${reference}`);
-    fetchInitialData();
-  };
-
-  // Handler for preview summary
-  const handlePreview = (summary: StatementSummary) => {
-    setPreviewSummary(summary);
-    setShowPreviewModal(true);
-  };
+  // One Download menu on the statement header (density audit, round 3): only the files the backend can
+  // produce -- camt.053 XML, and the statement on screen as JSON. PDF/CSV/MT940 were offered but
+  // /statements/generate answers "Not available" for every format, so they are not offered.
+  const downloadOptions: { label: string; run: () => void }[] = [
+    { label: 'XML (camt.053)', run: downloadXmlStatement },
+    { label: 'JSON', run: () => statement && saveBlob(
+      new Blob([JSON.stringify(statement, null, 2)], { type: 'application/json' }),
+      `statement_${selectedAccountDetails?.vaNumber || selectedAccount}_${fromDate}_${toDate}.json`,
+    ) },
+  ];
 
   // Handler for hierarchy account selection
   const handleHierarchyAccountSelect = (node: VAHierarchyNode) => {
@@ -1272,7 +1248,7 @@ const StatementsPage: React.FC = () => {
   const statementCurrency = statement?.account?.currency || statement?.currencyCode || selectedAccountDetails?.currencyCode || 'AED';
 
   // Lift Quick Actions into the Aperture Layout header (Phase 7). The
-  // refresh button + Show Hierarchy / Download Panel toggles all live in
+  // refresh button + Show Hierarchy toggle live in
   // the shell header; the in-body identity is rendered by `<PageHeader>`
   // below with contextual ISO20022 + Aggregation Account badges. Stays in
   // sync via the dependency array — when the account selection or panel
@@ -1280,16 +1256,6 @@ const StatementsPage: React.FC = () => {
   usePageHeaderActions(
     () => (
       <div className="flex items-center gap-2">
-        {selectedAccount && (
-          <Button
-            variant={showEnhancedDownloadPanel ? 'secondary' : 'outline'}
-            size="sm"
-            leftIcon={<Download className="w-4 h-4" />}
-            onClick={() => setShowEnhancedDownloadPanel(!showEnhancedDownloadPanel)}
-          >
-            <span className="inline">{showEnhancedDownloadPanel ? 'Hide' : 'Show'} Download Panel</span>
-          </Button>
-        )}
         {isAggregationAccount && (
           <Button
             variant="outline"
@@ -1310,7 +1276,7 @@ const StatementsPage: React.FC = () => {
         </Button>
       </div>
     ),
-    [selectedAccount, showEnhancedDownloadPanel, isAggregationAccount, showHierarchy, loading, fetchInitialData],
+    [isAggregationAccount, showHierarchy, loading, fetchInitialData],
   );
 
   // Loading State
@@ -1367,6 +1333,7 @@ const StatementsPage: React.FC = () => {
           <Badge variant="warning" size="sm">
             <Layers className="w-3 h-3 mr-1" />
             Aggregation account
+            {aggregatedBalance?.childAccountCount != null && ` · ${aggregatedBalance.childAccountCount} child accounts`}
           </Badge>
         </div>
       )}
@@ -1418,20 +1385,6 @@ const StatementsPage: React.FC = () => {
             }}
           />
         </div>
-      )}
-
-      {/* Enhanced Statement Download Panel (when account is selected) */}
-      {selectedAccount && selectedAccountDetails && showEnhancedDownloadPanel && (
-        <StatementDownloadPanel
-          accountId={selectedAccount}
-          vaNumber={selectedAccountDetails.vaNumber}
-          accountName={selectedAccountDetails.vaName}
-          currencyCode={selectedAccountDetails.currencyCode || 'AED'}
-          isAggregationAccount={isAggregationAccount}
-          childAccountCount={aggregatedBalance?.childAccountCount}
-          onStatementGenerated={handleStatementGenerated}
-          onPreview={handlePreview}
-        />
       )}
 
       {/* Statement Generator Card */}
@@ -1500,7 +1453,7 @@ const StatementsPage: React.FC = () => {
             <div className="flex items-end gap-2">
               <Button
                 fullWidth
-                onClick={fetchStatement}
+                onClick={() => fetchStatement()}
                 disabled={!selectedAccount || generating}
                 leftIcon={generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               >
@@ -1545,7 +1498,7 @@ const StatementsPage: React.FC = () => {
             </div>
             <Button
               fullWidth
-              onClick={fetchStatement}
+              onClick={() => fetchStatement()}
               disabled={!selectedAccount || generating}
               leftIcon={generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
             >
@@ -1604,40 +1557,37 @@ const StatementsPage: React.FC = () => {
                   {statement.account?.iban || statement.viban || ''}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="relative">
                 <Button
                   variant="outline"
                   size="sm"
-                  leftIcon={downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  onClick={downloadXmlStatement}
-                  disabled={downloading}
+                  leftIcon={downloading || generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  rightIcon={<ChevronDown className="w-4 h-4" />}
+                  onClick={() => setDownloadMenuOpen((o) => !o)}
+                  disabled={downloading || generating}
+                  aria-haspopup="menu"
+                  aria-expanded={downloadMenuOpen}
                 >
-                  XML
+                  Download
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Download className="w-4 h-4" />}
-                  onClick={() => generateStatement('PDF')}
-                >
-                  PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Download className="w-4 h-4" />}
-                  onClick={() => generateStatement('CSV')}
-                >
-                  CSV
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Download className="w-4 h-4" />}
-                  onClick={() => generateStatement('MT940')}
-                >
-                  MT940
-                </Button>
+                {downloadMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setDownloadMenuOpen(false)} />
+                    <div role="menu" className="absolute right-0 top-full mt-1 z-20 w-44 bg-surface-card rounded-lg shadow-lg border border-edge py-1 animate-fade-in">
+                      {downloadOptions.map((o) => (
+                        <button
+                          key={o.label}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => { setDownloadMenuOpen(false); o.run(); }}
+                          className="w-full px-4 py-2.5 text-left text-body-sm text-primary-900 hover:bg-neutral-50 dark:text-neutral-50 dark:hover:bg-primary-800/50"
+                        >
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -2004,10 +1954,12 @@ const StatementsPage: React.FC = () => {
                         variant="ghost"
                         leftIcon={<Eye className="w-4 h-4" />}
                         onClick={() => {
-                          setSelectedAccount(stmt.accountId || stmt.vaId);
+                          const accountId = stmt.accountId || stmt.vaId;
+                          setSelectedAccount(accountId);
                           setFromDate(stmt.fromDate);
                           setToDate(stmt.toDate);
-                          setShowPreviewModal(true);
+                          fetchStatement(accountId, stmt.fromDate, stmt.toDate);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                       >
                         View
@@ -2044,21 +1996,6 @@ const StatementsPage: React.FC = () => {
         )}
       </Card>
 
-      {/* Statement Preview Modal */}
-      {showPreviewModal && selectedAccount && selectedAccountDetails && (
-        <StatementPreviewModal
-          isOpen={showPreviewModal}
-          onClose={() => setShowPreviewModal(false)}
-          accountId={selectedAccount}
-          vaNumber={selectedAccountDetails.vaNumber}
-          accountName={selectedAccountDetails.vaName}
-          currency={selectedAccountDetails.currencyCode || 'AED'}
-          fromDate={fromDate}
-          toDate={toDate}
-          includeChildAccounts={includeChildren}
-          statementType={statementMode === 'camt054' ? 'camt054' : 'camt053'}
-        />
-      )}
     </Page>
   );
 };

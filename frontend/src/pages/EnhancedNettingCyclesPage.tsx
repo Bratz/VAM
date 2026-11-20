@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { GitMerge, Plus, Calculator, CheckCircle, Loader2, RefreshCw, DollarSign, TrendingUp, Users, ArrowRight, Building2, Download, BarChart3, Layers, Send, XCircle, AlertTriangle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
+import { GitMerge, Plus, Calculator, CheckCircle, Loader2, RefreshCw, DollarSign, TrendingUp, ArrowRight, Download, Layers, XCircle, AlertTriangle } from 'lucide-react';
+import { Card, Button, Badge, Input , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -34,18 +34,6 @@ interface NettingEntry {
   sourceReference?: string;
   dueDate?: string;
   status: string;
-}
-
-interface NettingPosition {
-  entityId: string;
-  entityCode: string;
-  entityName: string;
-  grossPayables: number;
-  grossReceivables: number;
-  netPosition: number;
-  netDirection: 'PAY' | 'RECEIVE' | 'ZERO';
-  entryCount: number;
-  currency: string;
 }
 
 // ============================================================================
@@ -243,6 +231,39 @@ const SettlementLegs: React.FC<{ legs: NettingSettlementLeg[] }> = ({ legs }) =>
 
 const NET_LABEL: Record<string, string> = { PAY: 'Pays', RECEIVE: 'Receives', NEUTRAL: 'Nets to zero' };
 
+/** Each participant's payables, receivables and net: shown by the Settle modal and the cycle's Settlement tab. */
+const EntityNets: React.FC<{ preview: NettingSettlementPreview }> = ({ preview }) => (
+  <div>
+    <h4 className="label mb-2">Per entity ({preview.currency})</h4>
+    <DataTable
+      hairline
+      data={preview.settlements}
+      keyExtractor={(s) => s.id}
+      columns={[
+        { key: 'entityCode', header: 'Entity', minWidth: 160, render: (_v, s) => {
+          const n = (s.payableEntryCount || 0) + (s.receivableEntryCount || 0);
+          return (
+            <div className="flex flex-col">
+              <span className="body-strong">{s.entityCode}</span>
+              <span className="caption">{s.entityName}{n ? ` · ${n} entries` : ''}</span>
+            </div>
+          );
+        } },
+        { key: 'grossPayables', header: 'Payables', align: 'right', minWidth: 130, dropOrder: 2, render: (_v, s) => formatCurrency(s.grossPayables || s.totalPayable || 0, preview.currency) },
+        { key: 'grossReceivables', header: 'Receivables', align: 'right', minWidth: 130, dropOrder: 1, render: (_v, s) => formatCurrency(s.grossReceivables || s.totalReceivable || 0, preview.currency) },
+        { key: 'settlementDirection', header: 'Position', minWidth: 120, render: (_v, s) => (
+          <Badge variant={s.settlementDirection === 'PAY' ? 'error' : s.settlementDirection === 'RECEIVE' ? 'success' : 'neutral'} size="sm">
+            {NET_LABEL[s.settlementDirection] ?? s.settlementDirection}
+          </Badge>
+        ) },
+        { key: 'netPosition', header: 'Net', align: 'right', minWidth: 140, render: (_v, s) => (
+          <span className="body-strong">{formatCurrency(Math.abs(s.netPosition), preview.currency)}</span>
+        ) },
+      ]}
+    />
+  </div>
+);
+
 const SettlementPreviewModal: React.FC<{
   cycle: NettingCycle | null; canSettle: boolean; onClose: () => void; onDone: () => void;
 }> = ({ cycle, canSettle, onClose, onDone }) => {
@@ -286,24 +307,7 @@ const SettlementPreviewModal: React.FC<{
         )}
         {preview && (
           <>
-            <div>
-              <h4 className="label mb-2">Per entity ({preview.currency})</h4>
-              <DataTable
-                data={preview.settlements}
-                keyExtractor={(s) => s.id}
-                columns={[
-                  { key: 'entityCode', header: 'Entity', minWidth: 160, render: (_v, s) => <span className="body-strong">{s.entityCode}</span> },
-                  { key: 'settlementDirection', header: 'Position', minWidth: 120, render: (_v, s) => (
-                    <Badge variant={s.settlementDirection === 'PAY' ? 'error' : s.settlementDirection === 'RECEIVE' ? 'success' : 'neutral'} size="sm">
-                      {NET_LABEL[s.settlementDirection] ?? s.settlementDirection}
-                    </Badge>
-                  ) },
-                  { key: 'netPosition', header: 'Net', align: 'right', minWidth: 140, render: (_v, s) => (
-                    <span className="body-strong">{formatCurrency(Math.abs(s.netPosition), preview.currency)}</span>
-                  ) },
-                ]}
-              />
-            </div>
+            <EntityNets preview={preview} />
             <div>
               <h4 className="label mb-2">Legs</h4>
               <SettlementLegs legs={preview.legs} />
@@ -344,11 +348,11 @@ interface CycleDetailModalProps {
 }
 
 const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cycle, onPopulate, isProcessing }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'entries' | 'positions' | 'settlement'>('overview');
+  const [activeTab, setActiveTab] = useState('entries');
   const [, setLoading] = useState(false);
   const [entries, setEntries] = useState<NettingEntry[]>([]);
-  const [positions, setPositions] = useState<NettingPosition[]>([]);
-  const [legs, setLegs] = useState<NettingSettlementLeg[]>([]);
+  // Per-entity nets and legs, from the same computation the Settle modal shows and settling posts.
+  const [preview, setPreview] = useState<NettingSettlementPreview | null>(null);
 
   useEffect(() => {
     if (cycle && isOpen) {
@@ -382,27 +386,8 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
               setEntries([]);
             }
 
-            // Map settlements to positions from API response
-            if (cycleData.settlements && cycleData.settlements.length > 0) {
-              setPositions(cycleData.settlements.map(s => ({
-                entityId: s.entityId,
-                entityCode: s.entityCode,
-                entityName: s.entityName,
-                grossPayables: s.grossPayables || s.totalPayable,
-                grossReceivables: s.grossReceivables || s.totalReceivable,
-                netPosition: Math.abs(s.netPosition),
-                netDirection: s.settlementDirection === 'PAY' ? 'PAY' : s.settlementDirection === 'RECEIVE' ? 'RECEIVE' : 'ZERO',
-                entryCount: (s.payableEntryCount || 0) + (s.receivableEntryCount || 0),
-                currency: cycle.baseCurrency || 'AED',
-              })));
-
-              // The legs settling posts (or posted), from the same computation as the settlement itself.
-              const preview = await nettingApi.previewSettlement(cycle.id);
-              setLegs(preview.data?.legs ?? []);
-            } else {
-              setPositions([]);
-              setLegs([]);
-            }
+            // Only a calculated cycle has positions to settle.
+            setPreview(cycleData.settlements?.length ? (await nettingApi.previewSettlement(cycle.id)).data ?? null : null);
           }
         } catch (err) {
           console.error('Failed to fetch cycle details:', err);
@@ -418,113 +403,21 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
   if (!cycle) return null;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'entries', label: 'Entries', icon: Layers, count: entries.length },
-    { id: 'positions', label: 'Positions', icon: Users, count: positions.length },
-    { id: 'settlement', label: 'Settlement', icon: Send, count: legs.length },
+    { id: 'entries', label: 'Entries', badge: entries.length },
+    { id: 'settlement', label: 'Settlement', badge: preview?.legs.length ?? 0 },
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={cycle.cycleName} size="xl">
-      {/* Premium Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-edge">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
-              activeTab === tab.id
-                ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
-                : 'border-transparent text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
-            )}
-          >
-            <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-primary-600 dark:text-primary-200' : '')} />
-            {tab.label}
-            {tab.count !== undefined && (
-              <span className={cn(
-                'px-1.5 py-0.5 text-caption rounded-full font-medium',
-                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
-              )}>{tab.count}</span>
-            )}
-          </button>
-        ))}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={cycle.cycleName}
+      subtitle={`${cycle.cycleReference} · ${humanise(cycle.status)} · ${cycle.periodStart?.slice(0, 10)} – ${cycle.periodEnd?.slice(0, 10)}`}
+      size="xl"
+    >
+      <div className="mb-6">
+        <Tabs variant="underline" size="sm" tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
       </div>
-
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Status Banner */}
-          <div className={cn(
-            'p-4 rounded-lg flex items-center justify-between',
-            cycle.status === 'SETTLED' ? 'bg-success-50 dark:bg-success-500/10' : 
-            cycle.status === 'APPROVED' ? 'bg-info-50 dark:bg-info-500/10' :
-            cycle.status === 'PENDING_APPROVAL' ? 'bg-warning-50 dark:bg-warning-500/10' : 'bg-surface-page'
-          )}>
-            <div className="flex items-center gap-3">
-              <GitMerge className="w-6 h-6 text-primary-600 dark:text-primary-200" />
-              <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{cycle.cycleReference}</p>
-                <p className="body-sm">
-                  {cycle.periodStart?.slice(0, 10)} - {cycle.periodEnd?.slice(0, 10)}
-                </p>
-              </div>
-            </div>
-            <Badge variant={cycle.status === 'SETTLED' ? 'success' : 'warning'}>
-              {humanise(cycle.status)}
-            </Badge>
-          </div>
-
-          {/* Key Metrics — Phase 12 Task E: hand-rolled tinted tiles replaced
-              by the shared <StatTile> (components/ui/StatTile); tone drives
-              the .stat-value-* headline colour. */}
-          <div className="grid grid-cols-4 gap-4">
-            <StatTile
-              tone="neutral"
-              label="Gross Volume"
-              value={<TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />}
-            />
-            <StatTile
-              tone="primary"
-              label="Net Volume"
-              value={<TileAmount value={cycle.totalNet || 0} currency={cycle.baseCurrency} />}
-            />
-            <StatTile
-              tone="success"
-              label="Savings"
-              value={<TileAmount value={cycle.savingsAmount || 0} currency={cycle.baseCurrency} />}
-            />
-            <StatTile
-              tone="info"
-              label="Efficiency"
-              value={`${cycle.savingsPercent?.toFixed(1) || 0}%`}
-            />
-          </div>
-
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-4">
-            <Card>
-              <div className="p-4">
-                <h4 className="label mb-3">Cycle Details</h4>
-                <dl className="space-y-2">
-                  <div className="flex justify-between">
-                    <dt className="body-sm">Entries</dt>
-                    <dd className="text-body-sm font-medium">{cycle.entryCount || 0}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="body-sm">Participants</dt>
-                    <dd className="text-body-sm font-medium">{cycle.participantCount || 0}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="body-sm">Base Currency</dt>
-                    <dd className="text-body-sm font-medium">{cycle.baseCurrency}</dd>
-                  </div>
-                </dl>
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
 
       {/* Entries Tab */}
       {activeTab === 'entries' && (
@@ -594,73 +487,23 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
         </div>
       )}
 
-      {/* Positions Tab */}
-      {activeTab === 'positions' && (
-        <div className="space-y-4">
-          <p className="body-sm">Net positions for {positions.length} participating entities</p>
-
-          <div className="space-y-3">
-            {positions.map(pos => (
-              <Card key={pos.entityId} hover>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="primary" icon={Building2} />
-                      <div>
-                        <p className="font-medium text-primary-900 dark:text-neutral-50">{pos.entityName}</p>
-                        <p className="body-sm">{pos.entityCode} • {pos.entryCount} entries</p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={pos.netDirection === 'RECEIVE' ? 'success' : pos.netDirection === 'PAY' ? 'error' : 'info'}
-                    >
-                      {pos.netDirection === 'RECEIVE' ? 'Net Receiver' : pos.netDirection === 'PAY' ? 'Net Payer' : 'Balanced'}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-error-50 rounded-lg border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
-                      <p className="label">Payables</p>
-                      <p className="text-body-lg font-semibold text-error-700 mt-1 dark:text-error-300">
-                        <TileAmount value={pos.grossPayables} currency={pos.currency} />
-                      </p>
-                    </div>
-                    <div className="text-center p-3 bg-success-50 rounded-lg border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
-                      <p className="label">Receivables</p>
-                      <p className="text-body-lg font-semibold text-success-700 mt-1 dark:text-success-300">
-                        <TileAmount value={pos.grossReceivables} currency={pos.currency} />
-                      </p>
-                    </div>
-                    <div className={cn(
-                      'text-center p-3 rounded-lg border',
-                      pos.netDirection === 'RECEIVE' ? 'bg-success-100 border-success-200 dark:bg-success-500/20 dark:border-success-500/30' : 'bg-error-100 border-error-200 dark:bg-error-500/20 dark:border-error-500/30'
-                    )}>
-                      <p className="label">Net Position</p>
-                      <p className={cn(
-                        'text-body-lg font-bold mt-1',
-                        pos.netDirection === 'RECEIVE' ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'
-                      )}>
-                        {pos.netDirection === 'PAY' ? '-' : '+'}
-                        <TileAmount value={pos.netPosition} currency={pos.currency} />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Settlement Tab */}
       {activeTab === 'settlement' && (
         <div className="space-y-4">
           {cycle.settlementIssue && (
             <p className="body-sm text-error-600 dark:text-error-300">Last settlement attempt: {cycle.settlementIssue}</p>
           )}
-          {positions.length === 0
+          {!preview
             ? <p className="body-sm">Calculate the cycle to see how it settles.</p>
-            : <SettlementLegs legs={legs} />}
+            : (
+              <>
+                <EntityNets preview={preview} />
+                <div>
+                  <h4 className="label mb-2">Legs</h4>
+                  <SettlementLegs legs={preview.legs} />
+                </div>
+              </>
+            )}
         </div>
       )}
     </Modal>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, Layers, Save, Copy, Pencil, CheckCircle, X } from 'lucide-react';
-import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
+import { Plus, Search, Loader2, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calculator, Save, Copy, Pencil, CheckCircle, X } from 'lucide-react';
+import { Card, Button, Badge, StatusIconBadge, DataTable, RowActions } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
-import { cn, formatDate } from '../utils';
+import { formatDate } from '../utils';
 import { interestConfigurationApi, programsApi, InterestConfiguration } from '../services/api';
 import { useUser } from '../context/useUser';
 import { usePageHeaderActions } from '../context/usePageHeader';
@@ -132,92 +132,7 @@ const formatRate = (rate?: number | string): string => {
   return `${num.toFixed(3)}%`;
 };
 
-// ============================================================================
-// SUB-COMPONENTS
-// ============================================================================
-
-const ConfigCard: React.FC<{
-  config: InterestConfiguration;
-  onView: () => void;
-  onEdit: () => void;
-  onDuplicate: () => void;
-}> = ({ config, onView, onEdit, onDuplicate }) => (
-  <Card hover className="p-4">
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center",
-          config.configType === 'EXTERNAL' ? 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300' : 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300'
-        )}>
-          {config.configType === 'EXTERNAL' ? <Building2 className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
-        </div>
-        <div>
-          <h4 className="font-semibold text-primary-900 dark:text-neutral-50">{config.configName || 'Unnamed Config'}</h4>
-          <p className="caption">{config.currencyCode} • {labelOf(TARGET_TYPES, config.targetType || 'CORPORATE')}</p>
-          {config.systemDefault && <span title="Created by the application with a built-in rate where none was given (credit 2.50, debit 5.00, penalty 7.00): not the bank's agreed terms"><Badge variant="warning" size="sm">Created with default rates</Badge></span>}
-        </div>
-      </div>
-      <Badge variant={getStatusVariant(config.status as ConfigStatus)} size="sm">
-        {labelOf(CONFIG_STATUSES, config.status)}
-      </Badge>
-    </div>
-
-    <div className="grid grid-cols-2 gap-3 mb-3">
-      <div className="bg-success-50 rounded-lg p-3 dark:bg-success-500/10">
-        <p className="text-caption text-success-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-success-300">
-          <TrendingUp className="w-3 h-3" /> Credit
-        </p>
-        <p className="font-bold text-success-700 text-body-lg dark:text-success-300">{formatRate(config.effectiveCreditRate)}</p>
-        {config.creditBaseRateType && (
-          <p className="caption-success mt-1">
-            {config.creditBaseRateType}
-            {config.creditSpread !== undefined && config.creditSpread !== null && (
-              <span className="ml-1">
-                {Number(config.creditSpread) >= 0 ? '+' : ''}{formatRate(config.creditSpread)}
-              </span>
-            )}
-          </p>
-        )}
-      </div>
-      <div className="bg-error-50 rounded-lg p-3 dark:bg-error-500/10">
-        <p className="text-caption text-error-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-error-300">
-          <TrendingDown className="w-3 h-3" /> Debit
-        </p>
-        <p className="font-bold text-error-700 text-body-lg dark:text-error-300">{formatRate(config.effectiveDebitRate)}</p>
-        {config.debitBaseRateType && (
-          <p className="caption-error mt-1">
-            {config.debitBaseRateType}
-            {config.debitSpread !== undefined && config.debitSpread !== null && (
-              <span className="ml-1">
-                {Number(config.debitSpread) >= 0 ? '+' : ''}{formatRate(config.debitSpread)}
-              </span>
-            )}
-          </p>
-        )}
-      </div>
-    </div>
-
-    <div className="flex items-center justify-between caption border-t pt-3">
-      <div className="flex items-center gap-1">
-        <Calendar className="w-3 h-3" />
-        <span>{config.effectiveFrom ? formatDate(config.effectiveFrom) : '-'}</span>
-      </div>
-      <div className="font-medium">{config.dayCountConvention || 'ACT/360'}</div>
-    </div>
-
-    <div className="flex gap-2 mt-3 pt-3 border-t">
-      <Button variant="ghost" size="sm" className="flex-1" onClick={(e) => { e.stopPropagation(); onView(); }}>
-        <Eye className="w-4 h-4 mr-1" /> View
-      </Button>
-      <Button variant="ghost" size="sm" className="flex-1" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-        <Pencil className="w-4 h-4 mr-1" /> Edit
-      </Button>
-      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
-        <Copy className="w-4 h-4" />
-      </Button>
-    </div>
-  </Card>
-);
+const PAGE_SIZE = 20;
 
 // ============================================================================
 // MAIN COMPONENT
@@ -347,6 +262,10 @@ const InterestConfigurationPage: React.FC = () => {
     if (filterStatus !== 'ALL' && config.status !== filterStatus) return false;
     return true;
   });
+
+  // Back to the first page whenever the filtered set changes.
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [configs, searchTerm, filterType, filterStatus]);
 
   // Handlers
   const handleView = (config: InterestConfiguration) => {
@@ -570,13 +489,6 @@ const InterestConfigurationPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Loading / Error */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
-        </div>
-      )}
-
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
@@ -589,29 +501,52 @@ const InterestConfigurationPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Configurations Grid */}
-      {!loading && (
-        <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.25s' }}>
-          {filteredConfigs.map((config, index) => (
-            <div key={config.id} className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.03}s` }}>
-              <ConfigCard
-                config={config}
-                onView={() => handleView(config)}
-                onEdit={() => handleEdit(config)}
-                onDuplicate={() => handleDuplicate(config)}
-              />
-            </div>
-          ))}
-          {filteredConfigs.length === 0 && !error && (
-            <div className="col-span-full text-center py-12">
-              <StatusIconBadge tone="neutral" icon={Settings} size="xl" className="mx-auto mb-4" />
-              <p className="text-neutral-500 font-medium dark:text-neutral-400">No interest configurations found</p>
-              <Button variant="outline" className="mt-4" onClick={handleCreate} disabled={!selectedCorporateId}>
-                <Plus className="w-4 h-4 mr-2" /> Create First Configuration
+      {/* Configurations: one row each; the row opens the detail modal. */}
+      {!error && (
+        <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <DataTable<InterestConfiguration>
+            hairline
+            data={filteredConfigs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
+            keyExtractor={(c) => c.id}
+            onRowClick={handleView}
+            loading={loading}
+            pagination={filteredConfigs.length > PAGE_SIZE}
+            pageSize={PAGE_SIZE}
+            currentPage={page}
+            totalCount={filteredConfigs.length}
+            onPageChange={setPage}
+            emptyIcon={<Settings className="w-10 h-10" />}
+            emptyTitle="No interest configurations found"
+            emptyAction={
+              <Button variant="outline" size="sm" onClick={handleCreate} disabled={!selectedCorporateId} leftIcon={<Plus className="w-4 h-4" />}>
+                Create First Configuration
               </Button>
-            </div>
-          )}
-        </div>
+            }
+            columns={[
+              { key: 'configName', header: 'Name', minWidth: 200, render: (_v, c) => (
+                <div className="min-w-0">
+                  <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{c.configName || 'Unnamed Config'}</p>
+                  {c.systemDefault && <span title="Created by the application with a built-in rate where none was given (credit 2.50, debit 5.00, penalty 7.00): not the bank's agreed terms"><Badge variant="warning" size="sm">Created with default rates</Badge></span>}
+                </div>
+              ) },
+              { key: 'configType', header: 'Type', dropOrder: 2, render: (_v, c) => labelOf(CONFIG_TYPES, c.configType) },
+              { key: 'targetType', header: 'Target', dropOrder: 3, render: (_v, c) => labelOf(TARGET_TYPES, c.targetType || 'CORPORATE') },
+              { key: 'currencyCode', header: 'Currency' },
+              { key: 'effectiveCreditRate', header: 'Credit %', align: 'right', render: (_v, c) => <span className="font-mono tabular-nums">{formatRate(c.effectiveCreditRate)}</span> },
+              { key: 'effectiveDebitRate', header: 'Debit %', align: 'right', render: (_v, c) => <span className="font-mono tabular-nums">{formatRate(c.effectiveDebitRate)}</span> },
+              { key: 'status', header: 'Status', render: (_v, c) => (
+                <Badge variant={getStatusVariant(c.status as ConfigStatus)} size="sm">{labelOf(CONFIG_STATUSES, c.status)}</Badge>
+              ) },
+              { key: 'effectiveFrom', header: 'Effective from', dropOrder: 1, render: (_v, c) => (c.effectiveFrom ? formatDate(c.effectiveFrom) : '-') },
+              { key: 'actions', header: '', width: '3rem', render: (_v, c) => (
+                <RowActions label={`${c.configName} actions`} actions={[
+                  { label: 'Edit', icon: <Pencil className="w-4 h-4" />, onClick: () => handleEdit(c) },
+                  { label: 'Copy', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicate(c) },
+                ]} />
+              ) },
+            ]}
+          />
+        </Card>
       )}
 
       {/* Detail Modal */}

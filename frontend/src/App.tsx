@@ -40,7 +40,6 @@ import WalletPage from './pages/WalletPage';
 // ============================================================================
 import BaaSCashOperationsPage from './pages/BaaSCashOperationsPage';
 import EcommerceDashboardPage from './pages/EcommerceDashboardPage';
-import EcommerceCollectionsPage from './pages/EcommerceCollectionsPage';
 import MerchantOnboardingPage from './pages/MerchantOnboardingPage';
 import SellerCollectionsPage from './pages/SellerCollectionsPage';
 
@@ -75,7 +74,6 @@ import FxDealsPage from './pages/fx/FxDealsPage';
 import FxRfqPage from './pages/fx/FxRfqPage';
 import FxSettlementPage from './pages/fx/FxSettlementPage';
 import FxReportsPage from './pages/fx/FxReportsPage';
-import EntityBalanceTreePage from './pages/EntityBalanceTreePage';
 
 // ============================================================================
 // UNIFIED VAM DESIGN PAGES - Legal Entity & Account Attachments
@@ -577,7 +575,7 @@ const App: React.FC = () => {
       case 'simulator':
         return <SimulatorPage />;
       case 'netting-enhanced': return <EnhancedNettingCyclesPage />;  // Phase 7 Enhanced
-      case 'hierarchy': return <TreasuryHierarchyPage onNavigate={handleNavigate} />;
+      case 'hierarchy': return <TreasuryHierarchyPage key="hierarchy" onNavigate={handleNavigate} />;
       case 'forecasting': return <ForecastingPage />;
       
       // ====================================================================
@@ -596,7 +594,8 @@ const App: React.FC = () => {
       case 'fx-rfq': return <FxRfqPage />;
       case 'fx-settlement': return <FxSettlementPage />;
       case 'fx-reports': return <FxReportsPage />;
-      case 'entity-balance-tree': return <EntityBalanceTreePage />;
+      // Entity Balance Tree is Balance Hierarchy's legal-entity view now (UI audit round 3).
+      case 'entity-balance-tree': return <TreasuryHierarchyPage key="entity-balance-tree" onNavigate={handleNavigate} initialGroupBy="entity" />;
       
       // ====================================================================
       // Unified VAM Design - Legal Entity & Account Attachments
@@ -630,7 +629,8 @@ const App: React.FC = () => {
       // E-commerce
       // ====================================================================
       case 'ecommerce-dashboard': return <EcommerceDashboardPage />;
-      case 'ecommerce-collections': return <EcommerceCollectionsPage />;
+      // E-Commerce and Seller Collections are one Collections page (UI audit round 3).
+      case 'ecommerce-collections': return <SellerCollectionsPage />;
       case 'merchant-onboarding': return <MerchantOnboardingPage />;
       case 'seller-collections': return <SellerCollectionsPage />;
  

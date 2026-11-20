@@ -5,9 +5,8 @@ import { FilterKey } from './types';
 // ============================================================================
 // Multi-Bank Liquidity — shared sticky filter-chip row.
 //
-// Identical markup used to live copy-pasted in ByBankView and ByCurrencyView;
-// extracted once a third and fourth view (By Entity, By Country) needed the
-// same row rather than a third/fourth copy.
+// Filter row above the Accounts table (the Overview's Stale/Failed/Never
+// tiles set the same filter and open Accounts).
 // ============================================================================
 
 interface FilterChipsProps {

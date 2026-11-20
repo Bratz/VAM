@@ -7,8 +7,8 @@ import { ShadowSummary } from '../../services/api';
 // Multi-Bank Liquidity — freshness pill.
 //
 // Tiny presentational helper that renders one of {Stale, Fresh, Failed, Never}
-// for a given shadow row. Lifted out so ByBankView and ByCurrencyView render
-// the freshness column from the same code path.
+// for a given shadow row. Shared by the Accounts table and the Dashboard's
+// needs-attention list.
 //
 // Outcome icons, not network icons: this is "what happened to the last
 // fetch", not "what is the data source". Under it, the source and as-of

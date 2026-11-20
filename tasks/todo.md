@@ -397,6 +397,17 @@ UI:
         a clearer name is still open ("Balance after holds" would be wrong).
       - Forecast 12-month category breakdown (one column per week) and the chart's two unlabelled axes.
       - In-House Bank 8 hand-rolled tabs (shared Tabs would wrap); Transactions eye buttons stay (rows not keyboard-reachable).
+      Round 3 (page/tab merges) done 20 Nov. Found, not fixed:
+      - Statements: only camt.053 XML (and the on-screen JSON) can be downloaded; /statements/generate answers
+        "Not available" for PDF/CSV/MT940 and /statements/history is always empty. services/api.ts statementsApi still
+        has getISO20022Statement, generateISO20022Statement, previewStatement, getISO20022History, downloadStatement for
+        endpoints that do not exist.
+      - Transfers "Transfer history" opens All Transactions unfiltered (Transactions takes no nav params and one
+        movement type at a time).
+      - Receivables no longer lists payment vIBANs that are not linked to any invoice (legacy /receivables/vibans).
+      - Balance Hierarchy "Legal entity" view has no Unassigned bucket for accounts without an owning entity.
+      - EcommerceDashboardPage (not in the nav) has two cards that now open the same Collections page.
+      - Docs still describe Entity Balance Tree: FEATURE_CAPABILITY_MAP.md, USER_MANUAL.md, docs/manual/*.
 - [ ] In-House Bank: Movements calls a sweep reversal and "Deposit to IHB current account" "Other"; Position lists every
       funding currency even with no IHB accounts in it; the stat strip says "1 lenders".
 - [ ] Cash Concentration tiles and Execution History ignore the Corporate filter; Create Rule defaults currency to AED,

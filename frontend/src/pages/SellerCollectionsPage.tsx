@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Loader2, RefreshCw, Eye, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, StatusIconBadge, StatTile, DataTable } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
 import { formatCurrency } from '../utils';
 import { Page } from '../components/layout/Page';
 
+// One page for the `seller-collections` and `ecommerce-collections` routes: both used to load the
+// same ecommerceApi.getCollections() with different detail modals (round-3 merge).
 const SellerCollectionsPage: React.FC = () => {
   const [collections, setCollections] = useState<any[]>([]);
   const [settlements, setSettlements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
   const [activeTab, setActiveTab] = useState<'collections' | 'settlements'>('collections');
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const fetchData = async () => {
@@ -35,10 +37,13 @@ const SellerCollectionsPage: React.FC = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  const q = searchQuery.toLowerCase();
   const filteredCollections = collections.filter(c =>
-    searchQuery === '' ||
-    c.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (c.remitterName?.toLowerCase().includes(searchQuery.toLowerCase()) || c.vaName?.toLowerCase().includes(searchQuery.toLowerCase()) || c.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
+    (q === '' ||
+      c.reference?.toLowerCase().includes(q) ||
+      c.remitterName?.toLowerCase().includes(q) ||
+      c.vaName?.toLowerCase().includes(q)) &&
+    (filterStatus === 'ALL' || c.status === filterStatus)
   );
 
   const getStatusBadge = (status: string) => {
@@ -79,29 +84,34 @@ const SellerCollectionsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-edge animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <button
-          className={`px-4 py-2 text-body-sm font-medium transition-colors ${activeTab === 'collections' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
-          onClick={() => setActiveTab('collections')}
-        >
-          Collections ({collections.length})
-        </button>
-        <button
-          className={`px-4 py-2 text-body-sm font-medium transition-colors ${activeTab === 'settlements' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
-          onClick={() => setActiveTab('settlements')}
-        >
-          Settlements ({settlements.length})
-        </button>
+      {/* Collections / Settlements */}
+      <div className="flex animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <Tabs
+          size="sm"
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as typeof activeTab)}
+          tabs={[
+            { id: 'collections', label: 'Collections', badge: collections.length },
+            { id: 'settlements', label: 'Settlements', badge: settlements.length },
+          ]}
+        />
       </div>
 
-      {/* Collections Tab */}
+      {/* Collections */}
       {activeTab === 'collections' && (
         <>
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="p-4 relative">
-              <Search className="w-4 h-4 absolute left-7 top-1/2 -translate-y-1/2 text-neutral-400" />
-              <Input className="pl-9" placeholder="Search by reference, payer or account..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <div className="p-4 flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                <Input className="pl-9" placeholder="Search by reference, payer or account..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              </div>
+              <select className="border border-edge rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <option value="ALL">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
             </div>
           </Card>
 
@@ -122,7 +132,16 @@ const SellerCollectionsPage: React.FC = () => {
                     </div>
                   ),
                 },
-                { key: 'vaName', header: 'Collected into', render: (_, c) => <span className="body-strong">{c.vaName}</span> },
+                {
+                  key: 'vaName',
+                  header: 'Collected into',
+                  render: (_, c) => (
+                    <>
+                      <p className="body-strong">{c.vaName}</p>
+                      <p className="caption">{[c.vaNumber, c.programName].filter(Boolean).join(' · ')}</p>
+                    </>
+                  ),
+                },
                 { key: 'remitterName', header: 'Paid by', render: (_, c) => <span className="body-sm">{c.remitterName || '—'}</span> },
                 { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
                 { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
@@ -132,7 +151,7 @@ const SellerCollectionsPage: React.FC = () => {
                   header: 'Actions',
                   align: 'right',
                   render: (_, c) => (
-                    <Button size="sm" variant="ghost" onClick={() => { setSelectedItem(c); setShowDetailModal(true); }}>
+                    <Button size="sm" variant="ghost" aria-label="View details" onClick={() => setSelectedItem(c)}>
                       <Eye className="w-4 h-4" />
                     </Button>
                   ),
@@ -143,59 +162,75 @@ const SellerCollectionsPage: React.FC = () => {
         </>
       )}
 
-      {/* Settlements Tab */}
+      {/* Settlements */}
       {activeTab === 'settlements' && (
-        <>
-          <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-            <DataTable
-              data={settlements}
-              keyExtractor={(s) => s.id}
-              emptyTitle="No settlements found"
-              emptyDescription="Settlement runs appear as sweeps move collected money off these accounts."
-              columns={[
-                { key: 'settlementDate', header: 'Run date', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementDate}</span> },
-                { key: 'currencyCode', header: 'Currency', render: (_, s) => <span className="body-strong">{s.currencyCode}</span> },
-                { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount)}</span> },
-                { key: 'fees', header: 'Fees', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">{s.fees > 0 ? `-${formatCurrency(s.fees)}` : '—'}</span> },
-                { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount)}</span> },
-                { key: 'accountsSwept', header: 'Accounts', align: 'right', render: (_, s) => <span className="body-sm">{s.accountsSwept}</span> },
-                { key: 'transactionCount', header: 'Sweeps', align: 'right', render: (_, s) => <span className="body-sm">{s.transactionCount}</span> },
-              ]}
-            />
-          </Card>
-        </>
+        <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
+          <DataTable
+            data={settlements}
+            keyExtractor={(s) => s.id}
+            emptyTitle="No settlements found"
+            emptyDescription="Settlement runs appear as sweeps move collected money off these accounts."
+            columns={[
+              { key: 'settlementDate', header: 'Run date', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementDate}</span> },
+              { key: 'currencyCode', header: 'Currency', render: (_, s) => <span className="body-strong">{s.currencyCode}</span> },
+              { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount)}</span> },
+              { key: 'fees', header: 'Fees', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">{s.fees > 0 ? `-${formatCurrency(s.fees)}` : '—'}</span> },
+              { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount)}</span> },
+              { key: 'accountsSwept', header: 'Accounts', align: 'right', render: (_, s) => <span className="body-sm">{s.accountsSwept}</span> },
+              { key: 'transactionCount', header: 'Sweeps', align: 'right', render: (_, s) => <span className="body-sm">{s.transactionCount}</span> },
+            ]}
+          />
+        </Card>
       )}
 
-      {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Collection Details">
+      {/* Detail Modal — the list row is the same CollectionResponse that /collections/{id} returns */}
+      <Modal isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} title="Collection Details" size="lg">
         {selectedItem && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="label mb-1">Reference</p>
-                <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.reference}</p>
-              </div>
-              <div>
-                <p className="label mb-1">Collected into</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.vaName}</p>
-              </div>
-              <div>
-                <p className="label mb-1">Amount</p>
-                {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-bold` hand-roll (same 20px scale). */}
-                <p className="stat-value-xs">{formatCurrency(selectedItem.amount, selectedItem.currencyCode || 'AED')}</p>
-              </div>
-              <div>
-                <p className="label mb-1">Status</p>
-                {getStatusBadge(selectedItem.status)}
-              </div>
-              <div>
-                <p className="label mb-1">Channel</p>
-                <Badge variant="neutral">{selectedItem.channel || "—"}</Badge>
-              </div>
-              <div>
-                <p className="label mb-1">Date</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{new Date(selectedItem.transactionDate).toLocaleString()}</p>
-              </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="label mb-1">Reference</p>
+              <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.reference}</p>
+            </div>
+            <div>
+              <p className="label mb-1">Collected into</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.vaName}</p>
+              {selectedItem.vaNumber && <p className="caption font-mono">{selectedItem.vaNumber}</p>}
+            </div>
+            <div>
+              <p className="label mb-1">Amount</p>
+              <p className="stat-value-xs">{formatCurrency(selectedItem.amount, selectedItem.currencyCode || 'AED')}</p>
+            </div>
+            <div>
+              <p className="label mb-1">Status</p>
+              {getStatusBadge(selectedItem.status)}
+            </div>
+            <div>
+              <p className="label mb-1">Paid by</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.remitterName || '—'}</p>
+            </div>
+            <div>
+              <p className="label mb-1">Channel</p>
+              <Badge variant="neutral">{selectedItem.channel || '—'}</Badge>
+            </div>
+            <div>
+              <p className="label mb-1">Card Type</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.cardType || '—'}</p>
+            </div>
+            <div>
+              <p className="label mb-1">Auth Code</p>
+              <p className="font-mono text-neutral-900 dark:text-neutral-50">{selectedItem.authCode || '—'}</p>
+            </div>
+            <div>
+              <p className="label mb-1">RRN</p>
+              <p className="font-mono text-neutral-900 dark:text-neutral-50">{selectedItem.rrn || '—'}</p>
+            </div>
+            <div>
+              <p className="label mb-1">Settlement Status</p>
+              <Badge variant="neutral">{selectedItem.settlementStatus || 'PENDING'}</Badge>
+            </div>
+            <div>
+              <p className="label mb-1">Date</p>
+              <p className="font-medium text-neutral-900 dark:text-neutral-50">{new Date(selectedItem.transactionDate).toLocaleString()}</p>
             </div>
           </div>
         )}

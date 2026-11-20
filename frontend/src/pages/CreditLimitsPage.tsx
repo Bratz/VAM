@@ -12,7 +12,7 @@ import { Page } from '../components/layout/Page';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Building2, Plus, RefreshCw, Search, Loader2, AlertTriangle, Lock, Unlock, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Layers, CreditCard, Pencil } from 'lucide-react';
 import { StatusIconBadge, RadioGroup, RowActions } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs } from '../components/ui/enhanced';
 import {
   EntityAllocationModal,
   EntityLimitAllocationData,
@@ -953,6 +953,7 @@ const CreditLimitsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'credit' | 'fx'>('credit');
 
   // Modals
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -1118,6 +1119,18 @@ const CreditLimitsPage: React.FC = () => {
       {/* Content Area */}
       {selectedCorporateId ? (
         <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Two separate sets of limits that both list entities; one tab each, each saying what it is. */}
+          <div>
+            <Tabs variant="underline" size="sm" activeTab={activeTab} onChange={(id) => setActiveTab(id as 'credit' | 'fx')}
+              tabs={[{ id: 'credit', label: 'Credit limits' }, { id: 'fx', label: 'FX line' }]} />
+            <p className="caption mt-2">
+              {activeTab === 'credit'
+                ? "Limits allocated from the group's credit to entities and accounts"
+                : "The bank's FX dealing line and each entity's share of it"}
+            </p>
+          </div>
+
+          {activeTab === 'fx' ? <FxLineCard corporateId={selectedCorporateId} /> : <>
           <MultiCurrencyGroupLimitsCard groupLimits={groupLimits} onEdit={handleEditGroupLimit} onAddCurrency={handleAddGroupCurrency} />
 
           {groupLimits.length > 0 && (
@@ -1175,8 +1188,7 @@ const CreditLimitsPage: React.FC = () => {
               <p className="text-neutral-600 dark:text-neutral-300">Create a Group Limit first to allocate to entities</p>
             </div>
           )}
-
-          <FxLineCard corporateId={selectedCorporateId} />
+          </>}
         </div>
       ) : (
         <div className="bg-surface-card rounded-lg border border-edge-subtle p-12 text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>

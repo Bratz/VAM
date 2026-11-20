@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Wallet, RefreshCw, Plus, Loader2, X, XCircle, ChevronRight } from 'lucide-react';
+import { Building2, Wallet, Plus, Loader2, X, XCircle, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Card, Button, Badge, Input, Select, EmptyState, StatusIconBadge, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, Checkbox, DataTable, RowActions } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
-import { Modal } from '../components/ui/enhanced';
-import { formatCurrency, formatDate, cn } from '../utils';
+import { Modal, Tabs } from '../components/ui/enhanced';
+import { formatCurrency, formatDate } from '../utils';
 import { corporatesApi } from '../services/api';
 import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
@@ -198,68 +198,27 @@ const ihbUnifiedApi = {
 // SUB-COMPONENTS
 // ============================================================================
 
+/** One row of the Set-up tab: an entity and one of its IHB current accounts (or none yet). */
+interface SetupRow {
+  key: string;
+  entity?: IhbEntity;
+  account?: IhbCurrentAccount;
+}
+
+const roleLabel = (e?: IhbEntity) =>
+  !e ? '-' : e.canLend && !e.canBorrow ? 'Treasury centre' : e.canLend && e.canBorrow ? 'Lender and borrower' : e.canBorrow ? 'Borrower' : 'Lender';
+
 /**
- * An entity's in-house bank set-up: its role and credit limit. Balances, use of the limit and interest are on the
- * Position tab; spreads are not shown because the interest run does not apply them (spec D10).
+ * Entities and their IHB current accounts in one list, set-up facts only. Balances, limits and interest are on the
+ * Position and Interest tabs; spreads are not shown because the interest run does not apply them (spec D10).
  */
-const EntityCard: React.FC<{
-  entity: IhbEntity;
-  onCreateCurrentAccount?: () => void;
-}> = ({ entity, onCreateCurrentAccount }) => {
-  const currency = entity.ihbCurrency || 'AED';
-  const isTreasuryCenter = entity.canLend && !entity.canBorrow;
-  const isDualRole = entity.canLend && entity.canBorrow;
-
-  return (
-    <Card hover className={cn(
-      isTreasuryCenter && 'ring-2 ring-warning-200 bg-gradient-to-br from-warning-50/50 to-white'
-    )}>
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone={isTreasuryCenter ? 'warning' : 'primary'} icon={Building2} />
-            <div>
-              <p className="body-strong font-semibold tracking-tight">{entity.entityName}</p>
-              <p className="caption">{entity.entityCode} • {entity.entityType.charAt(0) + entity.entityType.slice(1).toLowerCase().replace('_', ' ')}</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            {isTreasuryCenter && (
-              <Badge variant="warning" size="sm" className="bg-warning-100 text-warning-700 border-warning-200 dark:bg-warning-500/20 dark:text-warning-300 dark:border-warning-500/30">
-                Treasury Center
-              </Badge>
-            )}
-            {isDualRole && (
-              <>
-                <Badge variant="success" size="sm">Lender</Badge>
-                <Badge variant="info" size="sm">Borrower</Badge>
-              </>
-            )}
-            {!isTreasuryCenter && !isDualRole && entity.canBorrow && (
-              <Badge variant="info" size="sm">Borrower</Badge>
-            )}
-          </div>
-        </div>
-
-        {isTreasuryCenter ? (
-          <p className="body-sm">Runs the in-house bank: holds the group&apos;s current accounts and funds them from its bank accounts.</p>
-        ) : (
-          <div className="flex justify-between text-body-sm">
-            <span className="text-neutral-500 dark:text-neutral-400">Credit limit</span>
-            <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(entity.creditLimit ?? 0, currency)}</span>
-          </div>
-        )}
-
-        {entity.canBorrow && onCreateCurrentAccount && !entity.settlementVaId && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-edge">
-            <Button variant="ghost" size="sm" className="flex-1 text-cat-2 dark:text-cat-2-fg hover:bg-cat-2-soft dark:hover:bg-cat-2/15" onClick={onCreateCurrentAccount}>
-              <Wallet className="w-4 h-4 mr-1" /> Open Account
-            </Button>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
+const setupRows = (entities: IhbEntity[], accounts: IhbCurrentAccount[]): SetupRow[] => {
+  const rows: SetupRow[] = entities.flatMap((entity) => {
+    const own = accounts.filter((a) => a.participantEntityId === entity.id);
+    return own.length ? own.map((account) => ({ key: account.accountId, entity, account })) : [{ key: entity.id, entity }];
+  });
+  const known = new Set(entities.map((e) => e.id));
+  return rows.concat(accounts.filter((a) => !known.has(a.participantEntityId)).map((account) => ({ key: account.accountId, account })));
 };
 
 // ============================================================================
@@ -268,7 +227,7 @@ const EntityCard: React.FC<{
 
 const InHouseBankPage: React.FC = () => {
   // State
-  const [activeTab, setActiveTab] = useState<'position' | 'movements' | 'interest' | 'changes' | 'entities' | 'current-accounts' | 'cobo' | 'pobo'>('position');
+  const [activeTab, setActiveTab] = useState<string>('position');
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
   const [entities, setEntities] = useState<IhbEntity[]>([]);
@@ -426,8 +385,7 @@ const InHouseBankPage: React.FC = () => {
     { id: 'movements', label: 'Movements' },
     { id: 'interest', label: 'Interest' },
     { id: 'changes', label: 'Limit and rate changes' },
-    { id: 'entities', label: 'Entities', count: entities.length },
-    { id: 'current-accounts', label: 'Current Accounts', count: currentAccounts.length },
+    { id: 'setup', label: 'Set-up' },
     { id: 'cobo', label: 'Collections on behalf (COBO)' },
     { id: 'pobo', label: 'Payments on behalf (POBO)' },
   ];
@@ -482,31 +440,8 @@ const InHouseBankPage: React.FC = () => {
         <>
       {/* Tabs */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-        <div className="border-b border-edge-subtle">
-          <div className="flex gap-1 p-2 overflow-x-auto">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={cn(
-                  'px-4 py-2 rounded-lg text-body-sm font-medium transition-all whitespace-nowrap',
-                  activeTab === tab.id
-                    ? 'bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-neutral-50'
-                    : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
-                )}
-              >
-                {tab.label}
-                {tab.count !== undefined && (
-                  <span className={cn(
-                    'ml-2 px-2 py-0.5 rounded-full text-caption',
-                    activeTab === tab.id ? 'bg-primary-200 dark:bg-primary-700 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
-                  )}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        <div className="p-2 border-b border-edge-subtle overflow-x-auto whitespace-nowrap">
+          <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} size="sm" />
         </div>
 
         <div className="p-6">
@@ -515,24 +450,48 @@ const InHouseBankPage: React.FC = () => {
           {activeTab === 'interest' && <IhbInterestPanel corporateId={selectedCorporateId} accounts={currentAccounts} />}
           {activeTab === 'changes' && <IhbChangesPanel corporateId={selectedCorporateId} />}
 
-          {/* Entities Tab */}
-          {activeTab === 'entities' && (
-            <div className="grid gap-4 grid-cols-3">
-              {entities.map(entity => (
-                <EntityCard
-                  key={entity.id}
-                  entity={entity}
-                  onCreateCurrentAccount={() => handleQuickCurrentAccount(entity)}
-                />
-              ))}
-              {entities.length === 0 && !loading && (
-                <div className="col-span-full text-center py-12">
-                  <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
-                  <p className="text-neutral-500 dark:text-neutral-400">No IHB-enabled entities</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Enable the in-house bank on an entity under Legal Entities</p>
-                </div>
-              )}
-            </div>
+          {activeTab === 'setup' && (
+            <DataTable
+              hairline
+              className="p-0"
+              data={setupRows(entities, currentAccounts)}
+              loading={loading}
+              keyExtractor={(r) => r.key}
+              emptyIcon={<Building2 className="w-12 h-12" />}
+              emptyTitle="No in-house bank entities"
+              emptyDescription="Enable the in-house bank on an entity under Legal Entities, then open a current account for it."
+              emptyAction={<Button onClick={() => setShowCurrentAccountModal(true)} leftIcon={<Plus className="w-4 h-4" />}>New Current Account</Button>}
+              columns={[
+                { key: 'entity', header: 'Entity', render: (_, r) => (
+                  <div className="flex flex-col">
+                    <span className="body-strong">{r.entity?.entityName ?? r.account?.participantEntityName ?? r.account?.accountName}</span>
+                    <span className="caption">
+                      {r.entity ? `${r.entity.entityCode} · ${r.entity.entityType.charAt(0) + r.entity.entityType.slice(1).toLowerCase().replace('_', ' ')}` : r.account?.participantEntityCode}
+                    </span>
+                  </div>
+                ) },
+                { key: 'role', header: 'Role', render: (_, r) => <Badge variant={r.entity?.canLend && !r.entity.canBorrow ? 'warning' : 'neutral'} size="sm">{roleLabel(r.entity)}</Badge> },
+                { key: 'currency', header: 'Currency', render: (_, r) => r.account?.currencyCode ?? r.entity?.ihbCurrency ?? '-' },
+                { key: 'account', header: 'Current account', render: (_, r) => r.account ? (
+                  <div className="flex flex-col">
+                    <span className="font-mono text-body-sm">{r.account.accountNumber}</span>
+                    {r.account.accountName && <span className="caption">{r.account.accountName}</span>}
+                  </div>
+                ) : <span className="caption">None</span> },
+                { key: 'sweep', header: 'Sweep to treasury', render: (_, r) => !r.account?.ihbSweepEnabled ? <span className="caption">Off</span> : (
+                  <span className="text-body-sm">
+                    {(r.account.ihbSweepFrequency || 'DAILY').charAt(0) + (r.account.ihbSweepFrequency || 'DAILY').slice(1).toLowerCase().replace('_', '-')}
+                    {r.account.targetCashBalance ? `, keep ${formatCurrency(r.account.targetCashBalance, r.account.currencyCode)}` : ', sweep all'}
+                  </span>
+                ) },
+                { key: 'opened', header: 'Opened', render: (_, r) => r.account?.ihbEnabledAt ? formatDate(r.account.ihbEnabledAt) : '-' },
+                { key: 'actions', header: '', width: '4rem', minWidth: 64, render: (_, r) => r.entity && (
+                  <RowActions label={`${r.entity.entityName} actions`} actions={[
+                    { label: 'Open current account', icon: <Wallet className="w-4 h-4" />, onClick: () => handleQuickCurrentAccount(r.entity!), hidden: !r.entity.canBorrow || !!r.entity.settlementVaId },
+                  ]} />
+                ) },
+              ]}
+            />
           )}
 
           {activeTab === 'cobo' && (
@@ -543,153 +502,6 @@ const InHouseBankPage: React.FC = () => {
             <PoboEnrolmentsPanel corporateId={selectedCorporateId} currentAccounts={currentAccounts} />
           )}
 
-          {/* Current Accounts Tab */}
-          {activeTab === 'current-accounts' && (
-            <div className="space-y-4">
-              {currentAccounts.length > 0 ? (
-                <div className="grid gap-4 grid-cols-3">
-                  {currentAccounts.map(account => (
-                    <Card key={account.accountId} hover className="border-cat-2/10 dark:border-cat-2/30">
-                      <div className="p-4">
-                        {/* Account Header */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <StatusIconBadge
-                              tone={account.positionType === 'CREDIT' ? 'success' : account.positionType === 'DEBIT' ? 'error' : 'neutral'}
-                              icon={Wallet}
-                            />
-                            <div>
-                              <p className="body-strong font-semibold">{account.participantEntityName || account.accountName}</p>
-                              <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{account.accountNumber}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge
-                              variant={account.positionType === 'CREDIT' ? 'success' : account.positionType === 'DEBIT' ? 'error' : 'neutral'}
-                              size="sm"
-                            >
-                              {account.positionType === 'CREDIT' ? 'In credit' : account.positionType === 'DEBIT' ? 'Overdrawn' : 'Zero'}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {account.ihbSweepEnabled && (
-                          <div className="flex gap-2 mb-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-caption font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
-                              <RefreshCw className="w-3 h-3 mr-1" />
-                              Swept {(account.ihbSweepFrequency || 'DAILY').toLowerCase().replace('_', '-')}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Balance Section */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-baseline">
-                            <span className="caption">Current Balance</span>
-                            <span className={cn(
-                              'text-body-lg font-bold',
-                              account.currentBalance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
-                            )}>
-                              {formatCurrency(account.currentBalance, account.currencyCode)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-body-sm">
-                            <span className="text-neutral-500 dark:text-neutral-400">Available</span>
-                            <span className="font-medium text-primary-900 dark:text-neutral-50">
-                              {formatCurrency(account.availableBalance, account.currencyCode)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-body-sm">
-                            <span className="text-neutral-500 dark:text-neutral-400">Credit Limit</span>
-                            <span className="font-medium text-neutral-700 dark:text-neutral-200">
-                              {formatCurrency(account.creditLimit, account.currencyCode)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Accrued Interest */}
-                        {(account.accruedCreditInterest > 0 || account.accruedDebitInterest > 0) && (
-                          <div className="mt-3 pt-3 border-t border-edge">
-                            <p className="label mb-2 dark:text-neutral-400">Accrued Interest</p>
-                            <div className="grid grid-cols-2 gap-2 text-body-sm">
-                              <div className="flex justify-between">
-                                <span className="text-success-600 dark:text-success-300">Credit</span>
-                                <span className="font-medium text-success-700 dark:text-success-300">
-                                  {formatCurrency(account.accruedCreditInterest, account.currencyCode)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-error-600 dark:text-error-300">Debit</span>
-                                <span className="font-medium text-error-700 dark:text-error-300">
-                                  {formatCurrency(account.accruedDebitInterest, account.currencyCode)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex justify-between text-body-sm mt-1">
-                              <span className="text-neutral-500 dark:text-neutral-400">Net</span>
-                              <span className={cn(
-                                'font-semibold',
-                                account.netAccruedInterest >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
-                              )}>
-                                {formatCurrency(account.netAccruedInterest, account.currencyCode)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* The rates the interest run charges (spec D10) */}
-                        <div className="mt-3 pt-3 border-t border-edge">
-                          <div className="grid grid-cols-2 gap-2 text-caption">
-                            <div className="flex justify-between">
-                              <span className="text-neutral-500 dark:text-neutral-400">Credit rate</span>
-                              <span className="font-medium text-success-600 dark:text-success-300">{account.creditRate?.toFixed(2) ?? '-'}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-neutral-500 dark:text-neutral-400">Debit rate</span>
-                              <span className="font-medium text-error-600 dark:text-error-300">{account.debitRate?.toFixed(2) ?? '-'}%</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* IHB Configuration Details */}
-                        {(account.ihbSweepEnabled || account.targetCashBalance) && (
-                          <div className="mt-3 pt-3 border-t border-edge">
-                            <p className="label mb-2 dark:text-neutral-400">Sweep</p>
-                            <div className="grid grid-cols-2 gap-2 text-caption">
-                              {account.targetCashBalance !== undefined && account.targetCashBalance !== null && (
-                                <div className="flex justify-between">
-                                  <span className="text-neutral-500 dark:text-neutral-400">Target Balance</span>
-                                  <span className="font-medium text-neutral-700 dark:text-neutral-200">
-                                    {account.targetCashBalance === 0 ? 'Sweep All' : formatCurrency(account.targetCashBalance, account.currencyCode)}
-                                  </span>
-                                </div>
-                              )}
-                              {account.ihbEnabledAt && (
-                                <div className="flex justify-between">
-                                  <span className="text-neutral-500 dark:text-neutral-400">Opened</span>
-                                  <span className="font-medium text-neutral-700 dark:text-neutral-200">
-                                    {formatDate(account.ihbEnabledAt)}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : !loading && (
-                <EmptyState
-                  icon={<Wallet className="w-12 h-12" />}
-                  title="No IHB Current Accounts"
-                  description="Open a current account at the in-house bank for each entity that takes part"
-                  action={<Button onClick={() => setShowCurrentAccountModal(true)} leftIcon={<Plus className="w-4 h-4" />}>New Current Account</Button>}
-                />
-              )}
-            </div>
-          )}
         </div>
       </Card>
         </>

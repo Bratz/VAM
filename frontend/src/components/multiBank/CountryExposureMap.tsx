@@ -6,7 +6,7 @@ import { useTheme } from '../../design-system/useTheme';
 import { formatCurrency } from '../../utils';
 
 // ============================================================================
-// Multi-Bank Liquidity — By Country world map.
+// Multi-Bank Liquidity — world map (Accounts grouped by country).
 //
 // Two layers on the same shared geography as the Dashboard's GeoExposureMap
 // (see components/dashboard/worldGeo.ts): a choropleth base (country shaded

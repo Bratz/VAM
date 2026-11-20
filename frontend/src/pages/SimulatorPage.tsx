@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, FlaskConical, Loader2, Archive, AlertTriangle, Building2, XCircle } from 'lucide-react';
+import { Plus, FlaskConical, Loader2, AlertTriangle, XCircle } from 'lucide-react';
 import { Card, Button, Select } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -999,7 +999,8 @@ const SimulatorPage: React.FC = () => {
         .filter((s) => s.status !== 'ARCHIVED')
         .map((s) => ({
           value: s.id,
-          label: `${s.scenarioName} · ${s.scenarioReference}`,
+          // Reference first: the name is edited beside the picker, so the picker identifies by reference.
+          label: `${s.scenarioReference} · ${s.scenarioName}`,
         })),
     ],
     [scenarios],
@@ -1010,6 +1011,7 @@ const SimulatorPage: React.FC = () => {
 
   const lastSavedLabel = timeAgo(currentScenario?.updatedAt);
   const issues = validation?.issues ?? [];
+  const scenarioReady = !loadingScenarios && !loadingScenario && !!currentScenario && !!workingScenario;
 
   return (
     <Page>
@@ -1034,21 +1036,15 @@ const SimulatorPage: React.FC = () => {
         loading={loadingCorporates}
       />
 
-      {/* Scenario toolbar. This lived in the app header until it crowded the
-          page title out and left the empty state below duplicating its own
-          "New scenario". Scenario choice and lifecycle are page content, so
-          they sit with the scope row that selects the corporate. */}
+      {/* Scenario toolbar: one row for picking, naming and acting on a scenario. It lived in the app header until it
+          crowded the page title out; scenario choice and lifecycle are page content, so it sits under the scope row. */}
       {selectedCorporateId && (
         <Card padding="sm">
           <div className="flex flex-wrap items-center gap-3">
-            <label htmlFor="simulator-scenario" className="label shrink-0">
-              Scenario
-            </label>
             {/* Sized on a wrapper, not via Select's className: that prop lands
                 on the inner <select>, while the component's own wrapper stays
-                full-width and would take the whole flex line to itself,
-                pushing the label and the buttons onto rows of their own. */}
-            <div className="flex-1 min-w-[18rem] max-w-[30rem]">
+                full-width and would take the whole flex line to itself. */}
+            <div className="w-[16rem] shrink-0">
               <Select
                 id="simulator-scenario"
                 value={selectedScenarioId}
@@ -1061,36 +1057,38 @@ const SimulatorPage: React.FC = () => {
                 aria-label="Scenario"
               />
             </div>
-            <div className="flex items-center gap-2 ml-auto">
-              {currentScenario && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Archive className="w-4 h-4" />}
-                  onClick={handleArchive}
-                >
-                  Archive
-                </Button>
-              )}
-              {currentScenario && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<Building2 className="w-4 h-4" />}
-                  onClick={() => setInventoryDrawerOpen(true)}
-                >
-                  Inventory
-                </Button>
-              )}
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={handleCreate}
-              >
-                New scenario
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={handleCreate}
+            >
+              New scenario
+            </Button>
+            {scenarioReady && currentScenario && (
+              <ScenarioHeader
+                scenario={currentScenario}
+                draftName={draftName}
+                dirty={dirty}
+                saving={saving}
+                canSave={canSave}
+                lastSavedLabel={lastSavedLabel}
+                onRename={setDraftName}
+                onSave={handleSave}
+                onDiscard={handleDiscard}
+                onFork={handleFork}
+                onInventory={() => {
+                  // The inventory drawer belongs to the structure view.
+                  setView('structure');
+                  setInventoryDrawerOpen(true);
+                }}
+                onArchive={handleArchive}
+                view={view}
+                onViewChange={setView}
+                proposeReady={!!proposeReady}
+                onPropose={handlePropose}
+              />
+            )}
           </div>
         </Card>
       )}
@@ -1117,30 +1115,13 @@ const SimulatorPage: React.FC = () => {
               <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-1">
                 {scenarios.filter((s) => s.status !== 'ARCHIVED').length === 0
                   ? 'This corporate has no scenarios yet — start one above.'
-                  : 'Pick a scenario from the toolbar above, or start a new one.'}
+                  : 'Pick a scenario above, or start a new one.'}
               </p>
             </div>
           </div>
         </Card>
       ) : (
         <>
-          <ScenarioHeader
-            scenario={currentScenario}
-            draftName={draftName}
-            dirty={dirty}
-            saving={saving}
-            canSave={canSave}
-            lastSavedLabel={lastSavedLabel}
-            onRename={setDraftName}
-            onSave={handleSave}
-            onDiscard={handleDiscard}
-            onFork={handleFork}
-            view={view}
-            onViewChange={setView}
-            proposeReady={!!proposeReady}
-            onPropose={handlePropose}
-          />
-
           {view === 'structure' ? (
             <>
               {issues.length > 0 && (
