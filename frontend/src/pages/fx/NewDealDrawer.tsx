@@ -19,7 +19,7 @@ import { Alert } from '../../components/ui/enhanced';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
 import { fxMarketApi } from '../../services/fxMarketApi';
-import { fxDealApi, CreditLimit, Instrument, Quote, ResolvedAccount, Side, StreamLeg, StreamPrice } from '../../services/fxDealApi';
+import { fxDealApi, CreditLimit, HedgeLinkRequest, Instrument, Quote, ResolvedAccount, Side, StreamLeg, StreamPrice } from '../../services/fxDealApi';
 import { QUOTE_BADGE } from '../fxDealBadges';
 import { errorText, fmt, fmtRate } from './fxFormat';
 
@@ -36,6 +36,8 @@ export interface TicketPrefill {
   exposureRef?: string;
   /** The legal entity the deal is for; defaults to the entity chosen in the header. */
   entityId?: string;
+  /** Invoices the deal hedges, linked as it is booked (all or nothing); booking then goes through a firm price. */
+  hedgeLinks?: HedgeLinkRequest[];
 }
 
 const INSTRUMENTS: { value: Instrument; label: string }[] = [
@@ -70,6 +72,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
   const [windowStart, setWindowStart] = useState('');
   const [purpose, setPurpose] = useState('');
   const [exposureRef, setExposureRef] = useState('');
+  const hedgeLinks = prefill?.hedgeLinks;
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [prices, setPrices] = useState<number[]>([]);
@@ -149,7 +152,8 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
   const [dealing, setDealing] = useState<Side | null>(null);
   useEffect(() => {
     const n = Number(amount);
-    if (!isOpen || !corporateId || !entityId || !(n > 0) || (instrument !== 'SPOT' && !valueDate) || quote || bookedRef) {
+    // A streamed deal books without hedge links, so a ticket that links invoices asks for a firm price instead.
+    if (!isOpen || !corporateId || !entityId || !(n > 0) || (instrument !== 'SPOT' && !valueDate) || quote || bookedRef || hedgeLinks?.length) {
       setStream(null);
       return;
     }
@@ -162,7 +166,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     load();
     const id = setInterval(load, 2000);
     return () => { current = false; clearInterval(id); };
-  }, [isOpen, corporateId, entityId, pair, amount, instrument, valueDate, purpose, exposureRef, quote, bookedRef]);
+  }, [isOpen, corporateId, entityId, pair, amount, instrument, valueDate, purpose, exposureRef, quote, bookedRef, hedgeLinks]);
   const streaming = !!stream?.streamable;
 
   const onStreamDeal = async (s: Side) => {
@@ -259,7 +263,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     setAccepting(true);
     setQuoteError(null);
     try {
-      const deal = await fxDealApi.accept(quote.id);
+      const deal = await fxDealApi.accept(quote.id, hedgeLinks);
       setBookedRef(deal.dealRef);
       setQuote(await fxDealApi.getQuote(quote.id));
       onChanged();
@@ -349,6 +353,11 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
           )}
           <Input label="Purpose (optional)" value={purpose} onChange={(e) => setPurpose(e.target.value)} disabled={firm} />
           {exposureRef && <p className="text-caption text-neutral-500 dark:text-neutral-400">Hedging exposure {exposureRef.replace('|', ' ')}.</p>}
+          {!!hedgeLinks?.length && (
+            <p className="text-caption text-neutral-500 dark:text-neutral-400">
+              Booking links the deal to the {hedgeLinks.length === 1 ? 'invoice' : `${hedgeLinks.length} invoices`} you selected. If one cannot be linked, nothing is booked.
+            </p>
+          )}
           {formError && <p className="text-body-sm text-error-700 dark:text-error-300">{formError}</p>}
           {streaming && stream?.buy && stream.sell && !bookedRef && (
             <div className="space-y-2">

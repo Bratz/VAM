@@ -2,22 +2,24 @@
 // FxDealDrawer — one deal after it is booked: the bank's confirmation (read it, download the PDF,
 // then confirm or dispute it), what it is worth now, and what can be done with it: draw down a
 // window, close out early, roll, or change the accounts it settles through. Settlement posts both legs to those
-// home-bank accounts: the sold currency debited, the bought one credited.
+// home-bank accounts: the sold currency debited, the bought one credited. It also shows the invoices the deal hedges
+// (fx-hedge-links R7): what each still hedges, what of the deal no invoice backs, and link / unlink.
 // Prices for close-out and roll are not held firm: the preview shows today's cost and the action
 // prices again when it runs, so the result can differ slightly from the preview.
 // ============================================================================
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Download, Check, X, FileText, AlertTriangle } from 'lucide-react';
-import { Badge, Button, Drawer, Input, Select } from '../components/ui';
+import { Badge, Button, Checkbox, Drawer, Input, Select } from '../components/ui';
 import { Alert } from '../components/ui/enhanced';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { cn } from '../utils';
 import {
-  fxDealApi, CloseOutQuote, Deal, DealEvent, RollQuote, Settlement, SettlementAccount,
+  fxDealApi, CloseOutQuote, Deal, DealEvent, DealHedges, HedgeKind, RollQuote, Settlement, SettlementAccount,
 } from '../services/fxDealApi';
-import { DEAL_BADGE, confirmationBadge } from './fxDealBadges';
-import { dealRules, DealAction } from './fx/fxDealRules';
+import { payablesApiPhase2, receivablesApi } from '../services/api';
+import { DEAL_BADGE, confirmationBadge, hedgeShortfall } from './fxDealBadges';
+import { dealRules, DealAction, OPEN_STATUSES } from './fx/fxDealRules';
 
 const fmt = (n: number, dp = 2) => n.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 const fmtSigned = (n: number, dp = 2) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${fmt(Math.abs(n), dp)}`;
@@ -28,6 +30,16 @@ const toneFor = (n: number) =>
 const errorText = (err: unknown): string => {
   const e = err as { response?: { data?: { message?: string } }; message?: string };
   return e?.response?.data?.message || e?.message || 'Request failed';
+};
+
+/** An open invoice the deal could hedge. */
+type Candidate = { kind: HedgeKind; id: string; ref: string; counterparty?: string; dueDate?: string; currency: string; outstanding: number };
+
+// ponytail: the server's ExposureSources.PAYABLE_NOT_OPEN / RECEIVABLE_NOT_OPEN, only to trim the picker; linking
+// re-checks every rule and refuses with the reason.
+const NOT_OPEN: Record<HedgeKind, string[]> = {
+  PAYABLE: ['PAID', 'CANCELLED', 'NETTED', 'REJECTED', 'DRAFT'],
+  RECEIVABLE: ['PAID', 'CANCELLED', 'NETTED', 'WRITTEN_OFF', 'DRAFT', 'COBO_REJECTED'],
 };
 
 const Section: React.FC<{ title: string; id?: string; children: React.ReactNode }> = ({ title, id, children }) => (
@@ -57,11 +69,18 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
   const [choices, setChoices] = useState<{ buy: SettlementAccount[]; sell: SettlementAccount[] } | null>(null);
   const [buyAccount, setBuyAccount] = useState('');
   const [sellAccount, setSellAccount] = useState('');
+  const [hedges, setHedges] = useState<DealHedges | null>(null);
+  /** Open invoices offered for linking, once the corporate asks; picks: invoice id to the amount to link. */
+  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
+  const [picks, setPicks] = useState<Record<string, string>>({});
+  const [unlinking, setUnlinking] = useState<string | null>(null);
 
   const id = deal?.id;
+  const corporateId = deal?.corporateId;
   const version = `${deal?.status}|${deal?.confirmationStatus}|${deal?.remainingAmount}`;
 
-  const load = useCallback(async (dealId: string) => {
+  const load = useCallback(async (dealId: string, corp: string) => {
+    fxDealApi.hedges(dealId, corp).then(setHedges).catch(() => setHedges(null));
     try {
       const [c, e, s] = await Promise.all([fxDealApi.confirmation(dealId), fxDealApi.events(dealId), fxDealApi.settlements(dealId)]);
       setText(c.text);
@@ -83,8 +102,11 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
     setCloseQuote(null);
     setRollQuote(null);
     setChoices(null);
-    load(id);
-  }, [id, version, load]);
+    setHedges(null);
+    setCandidates(null);
+    setUnlinking(null);
+    if (corporateId) load(id, corporateId);
+  }, [id, corporateId, version, load]);
 
   useEffect(() => {
     if (!id || !action) return;
@@ -143,6 +165,51 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
       setError(errorText(err));
     }
   }, []);
+
+  /** The open invoices this deal can hedge: payables in the currency it buys, receivables in the one it sells. */
+  const startLink = async (d: Deal) => {
+    setError(null);
+    const home = d.mtmHomeCurrency; // a home-currency invoice is no FX exposure, so not offered
+    try {
+      const [pay, rec] = await Promise.all([
+        d.buyCurrency === home ? [] : payablesApiPhase2.search({ corporateId: d.corporateId, size: 1000 }).then((r) => r.payables ?? []),
+        d.sellCurrency === home ? [] : receivablesApi.getInvoices(d.corporateId).then((r) => r.data ?? []),
+      ]);
+      const linked = new Set(hedges?.links.map((l) => l.invoiceId));
+      const open = (kind: HedgeKind, ccy: string, x: { id: string; status: string; currencyCode: string; isIntercompany?: boolean; outstandingAmount?: number }) =>
+        x.currencyCode === ccy && !x.isIntercompany && !NOT_OPEN[kind].includes(x.status) && !linked.has(x.id) && (x.outstandingAmount ?? 0) > 0;
+      setCandidates([
+        ...pay.filter((x) => open('PAYABLE', d.buyCurrency, x)).map((x): Candidate => ({
+          kind: 'PAYABLE', id: x.id, ref: x.invoiceNumber || x.payableNumber, counterparty: x.vendorName, dueDate: x.dueDate,
+          currency: x.currencyCode, outstanding: x.outstandingAmount,
+        })),
+        ...rec.filter((x) => open('RECEIVABLE', d.sellCurrency, x)).map((x): Candidate => ({
+          kind: 'RECEIVABLE', id: x.id, ref: x.invoiceNumber || x.receivableNumber || '-', counterparty: x.customerName, dueDate: x.dueDate,
+          currency: x.currencyCode, outstanding: x.outstandingAmount,
+        })),
+      ].sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')));
+      setPicks({});
+    } catch (err) {
+      setError(errorText(err));
+    }
+  };
+
+  /** What of the deal in a currency no invoice backs yet, less what is already picked: the most a new pick defaults to. */
+  const free = (d: Deal, ccy: string, except?: string) => {
+    const cover = hedges?.currencies.find((c) => c.currency === ccy);
+    const left = cover ? cover.unbacked
+      : d.baseAmount ? (ccy === d.buyCurrency ? d.buyAmount : d.sellAmount) * d.remainingAmount / d.baseAmount : 0;
+    const picked = (candidates ?? []).filter((c) => c.currency === ccy && c.id !== except && c.id in picks)
+      .reduce((t, c) => t + (Number(picks[c.id]) || 0), 0);
+    return Math.max(0, left - picked);
+  };
+
+  const pick = (d: Deal, c: Candidate, on: boolean) => setPicks((p) => {
+    const next = { ...p };
+    if (on) next[c.id] = String(Math.round(Math.min(c.outstanding, free(d, c.currency, c.id)) * 100) / 100);
+    else delete next[c.id];
+    return next;
+  });
 
   // Opened from the row menu's "Change settlement accounts": show the choices straight away.
   useEffect(() => {
@@ -207,7 +274,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
             )}
           </dl>
 
-          {error && <Alert variant="error">{error}</Alert>}
+          {error && !candidates && <Alert variant="error">{error}</Alert>}
 
           <Section title="Settlement accounts" id="fx-deal-settlement">
             <dl className="grid grid-cols-2 gap-3 text-body-sm">
@@ -321,6 +388,112 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                   </div>
                 )}
               </div>
+            </Section>
+          )}
+
+          {(!!hedges?.links.length || (OPEN_STATUSES.includes(deal.status) && !!hedges)) && (
+            <Section title="Invoices this deal hedges" id="fx-deal-hedges">
+              {hedges?.released && (
+                <Alert variant="warning" title="Now hedging more than your invoices">
+                  Invoices this deal hedged were paid, reduced or cancelled, so part of it no longer backs an invoice.
+                  Roll it, close it out, or link other invoices.
+                </Alert>
+              )}
+              {hedges?.links.length === 0 && (
+                <p className="text-caption text-neutral-500 dark:text-neutral-400">Not linked to any invoice. Link the payables or receivables it hedges to see them covered.</p>
+              )}
+              <ul className="space-y-2">
+                {hedges?.links.map((l) => {
+                  const short = hedgeShortfall(l);
+                  return (
+                    <li key={l.id} className="text-body-sm border border-edge-subtle rounded-md p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">{l.kind === 'PAYABLE' ? 'Payable' : 'Receivable'} {l.invoiceRef ?? '-'}</span>
+                        {unlinking === l.id ? (
+                          <span className="inline-flex gap-1">
+                            <Button size="sm" variant="danger" loading={busy}
+                              onClick={() => run(async () => { setHedges(await fxDealApi.unlink(deal.id, deal.corporateId, l.id)); setUnlinking(null); })}>Unlink</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setUnlinking(null)}>Keep</Button>
+                          </span>
+                        ) : (
+                          <Button size="sm" variant="ghost" onClick={() => setUnlinking(l.id)}>Unlink</Button>
+                        )}
+                      </div>
+                      {(l.counterparty || l.dueDate) && (
+                        <p className="text-caption text-neutral-600 dark:text-neutral-300">{[l.counterparty, l.dueDate && `due ${l.dueDate}`].filter(Boolean).join(' · ')}</p>
+                      )}
+                      <p className="font-mono text-caption tabular-nums mt-1">
+                        Linked {l.currency} {fmt(l.linked)}{l.effective < l.linked ? `, still hedging ${fmt(l.effective)}` : ''}
+                      </p>
+                      {short && <p className="text-caption text-warning-700 dark:text-warning-300">{short}{l.effective === 0 ? ': this link no longer hedges anything.' : '.'}</p>}
+                      {l.warning && (
+                        <p className="text-caption text-neutral-500 dark:text-neutral-400">
+                          The deal settles on {deal.valueDate}, well away from the invoice&apos;s due date{l.dueDate ? ` (${l.dueDate})` : ''}.
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {hedges?.currencies.filter((c) => c.unbacked > 0).map((c) => (
+                <p key={c.currency} className="text-body-sm">
+                  <span className="font-mono tabular-nums">{c.currency} {fmt(c.unbacked)}</span> of the deal is not backed by an invoice.
+                </p>
+              ))}
+
+              {OPEN_STATUSES.includes(deal.status) && !candidates && (
+                <Button variant="outline" size="sm" onClick={() => startLink(deal)}>Link invoices</Button>
+              )}
+              {candidates && (() => {
+                const chosen = candidates.filter((c) => c.id in picks);
+                const valid = chosen.length > 0 && chosen.every((c) => Number(picks[c.id]) > 0);
+                return (
+                  <div className="space-y-2">
+                    <p className="text-caption text-neutral-500 dark:text-neutral-400">
+                      {[
+                        deal.buyCurrency !== deal.mtmHomeCurrency && `payables in ${deal.buyCurrency} (paid with what the deal buys)`,
+                        deal.sellCurrency !== deal.mtmHomeCurrency && `receivables in ${deal.sellCurrency} (sold by the deal)`,
+                      ].filter(Boolean).join(' and ').replace(/^./, (c) => `Open ${c}`)}. Each amount starts at what the invoice
+                      still owes, up to what the deal has left.
+                    </p>
+                    {candidates.length === 0 ? (
+                      <p className="text-body-sm">No open invoices to link.</p>
+                    ) : (
+                      <ul className="space-y-1.5 max-h-80 overflow-y-auto">
+                        {candidates.map((c) => (
+                          <li key={c.id} className="flex items-center gap-2 text-body-sm">
+                            <Checkbox size="sm" aria-label={`Link ${c.ref}`} checked={c.id in picks} onChange={(on) => pick(deal, c, on)} />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate"><span className="font-medium">{c.ref}</span>{c.counterparty ? ` · ${c.counterparty}` : ''}</p>
+                              <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono tabular-nums">
+                                {c.kind === 'PAYABLE' ? 'Payable' : 'Receivable'}{c.dueDate ? `, due ${c.dueDate}` : ''}, {c.currency} {fmt(c.outstanding)} open
+                              </p>
+                            </div>
+                            {c.id in picks && (
+                              <div className="w-32 shrink-0">
+                                <Input aria-label={`Amount of ${c.ref} to link`} inputMode="decimal" value={picks[c.id]}
+                                  onChange={(e) => setPicks((p) => ({ ...p, [c.id]: e.target.value }))} />
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {error && <Alert variant="error">{error}</Alert>}
+                    <div className="flex gap-2">
+                      <Button size="sm" loading={busy} disabled={!valid}
+                        onClick={() => run(async () => {
+                          setHedges(await fxDealApi.link(deal.id, deal.corporateId,
+                            chosen.map((c) => ({ kind: c.kind, invoiceId: c.id, amount: Number(picks[c.id]) }))));
+                          setCandidates(null);
+                        })}>
+                        {chosen.length > 1 ? `Link ${chosen.length} invoices` : 'Link invoice'}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setCandidates(null); setError(null); }}>Cancel</Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </Section>
           )}
 

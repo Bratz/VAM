@@ -157,7 +157,7 @@ export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entity
                   <Checkbox key={d.dealId} variant="card" size="sm" checked={on} onChange={() => toggle(d.dealId)}
                     label={<><span className="font-mono">{d.dealRef}</span>{' '}
                       <span className="font-normal text-neutral-500 dark:text-neutral-400">{what(d.instrument, d.valueDate)} at <span className="font-mono tabular-nums">{d.rate}</span></span>
-                      {d.linked != null && <span className="font-normal text-primary-700 dark:text-primary-300"> · hedges {currency} {fmt(d.linked)} of this payable</span>}</>}
+                      {d.linked != null && <span className="font-normal text-primary-700 dark:text-primary-300"> Â· hedges {currency} {fmt(d.linked)} of this payable</span>}</>}
                     description={<span className="tabular-nums">{d.covers > 0
                       ? `Covers ${currency} ${fmt(d.covers)} of the ${fmt(d.available)} left; debits ${accountCurrency} ${fmt(d.debit)}`
                       : `${currency} ${fmt(d.available)} left`}</span>} />

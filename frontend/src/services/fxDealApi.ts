@@ -213,6 +213,50 @@ export interface PaymentPlan {
   notes: string[];
 }
 
+export type HedgeKind = 'PAYABLE' | 'RECEIVABLE';
+
+/** One invoice to hedge: amount in the invoice's currency. */
+export interface HedgeLinkRequest {
+  kind: HedgeKind;
+  invoiceId: string;
+  amount: number;
+}
+
+/** Why a link hedges less than was linked (spec R3). */
+export type HedgeReason = 'PAID' | 'CANCELLED' | 'NETTED' | 'WRITTEN_OFF' | 'NOT_OPEN' | 'REDUCED' | 'DEAL_ENDED';
+
+/**
+ * An invoice a deal hedges, as it stands: effective is what still hedges (0 once the invoice is closed or the deal
+ * ended), reason why it is below linked; warning when the deal settles in another exposure bucket than the invoice.
+ */
+export interface HedgeLink {
+  id: string;
+  dealId: string;
+  dealRef?: string;
+  kind: HedgeKind;
+  invoiceId: string;
+  invoiceRef?: string;
+  counterparty?: string;
+  dueDate?: string;
+  currency: string;
+  linked: number;
+  effective: number;
+  reason?: HedgeReason;
+  warning?: string;
+  linkedBy?: string;
+  linkedAt?: string;
+}
+
+/** A deal's links; per currency, unbacked = what remains of the deal that no invoice backs. */
+export interface DealHedges {
+  dealId: string;
+  dealRef: string;
+  links: HedgeLink[];
+  currencies: { currency: string; remaining: number; linked: number; effective: number; unbacked: number }[];
+  /** Links shrank or lapsed and left part of the live deal unbacked: roll, close out or relink. */
+  released: boolean;
+}
+
 /** One side of a streamed price: the client buying (buy) or selling (sell) the base currency. */
 export interface StreamLeg {
   rate: number;
@@ -429,9 +473,9 @@ export const fxDealApi = {
   getQuote: (id: string) =>
     apiClient.get<ApiResponse<Quote>>(`/fx/quotes/${id}`).then(r => r.data.data),
 
-  /** Accepting a quote twice returns the same deal. */
-  accept: (id: string) =>
-    apiClient.post<ApiResponse<Deal>>(`/fx/quotes/${id}/accept`).then(r => r.data.data),
+  /** Accepting a quote twice returns the same deal. hedgeLinks: the invoices it hedges, linked as it books (all or nothing). */
+  accept: (id: string, hedgeLinks?: HedgeLinkRequest[]) =>
+    apiClient.post<ApiResponse<Deal>>(`/fx/quotes/${id}/accept`, hedgeLinks?.length ? { hedgeLinks } : undefined).then(r => r.data.data),
 
   cancel: (id: string) =>
     apiClient.post<ApiResponse<Quote>>(`/fx/quotes/${id}/cancel`).then(r => r.data.data),
@@ -538,4 +582,19 @@ export const fxDealApi = {
   /** What needs attention across deals: unconfirmed, disputed, failed to settle, or short of cash. */
   attention: (corporateId?: string) =>
     apiClient.get<ApiResponse<DealAttention[]>>('/fx/deals/attention', { params: corporateId ? { corporateId } : {} }).then(r => r.data.data),
+
+  /** The invoices a deal hedges. A refused link answers 400 naming the invoice. */
+  hedges: (dealId: string, corporateId: string) =>
+    apiClient.get<ApiResponse<DealHedges>>(`/fx/deals/${dealId}/hedge-links`, { params: { corporateId } }).then(r => r.data.data),
+
+  link: (dealId: string, corporateId: string, links: HedgeLinkRequest[]) =>
+    apiClient.post<ApiResponse<DealHedges>>(`/fx/deals/${dealId}/hedge-links`, { links }, { params: { corporateId } }).then(r => r.data.data),
+
+  unlink: (dealId: string, corporateId: string, linkId: string) =>
+    apiClient.delete<ApiResponse<DealHedges>>(`/fx/deals/${dealId}/hedge-links/${linkId}`, { params: { corporateId } }).then(r => r.data.data),
+
+  /** The links of these invoices, by invoice id; invoices without links are left out. */
+  invoiceHedges: (corporateId: string, kind: HedgeKind, invoiceIds: string[]) =>
+    apiClient.get<ApiResponse<Record<string, HedgeLink[]>>>('/fx/hedge-links', { params: { corporateId, kind, invoiceIds: invoiceIds.join(',') } })
+      .then(r => r.data.data ?? {}),
 };

@@ -22,6 +22,7 @@ import {
   fxExposureApi, ExposureBucket, ExposureBucketItems, ExposureEntry, ExposureItem, ExposureItemKind, ExposureLadder,
   HedgeStatus, PolicyBreach,
 } from '../../services/fxMarketApi';
+import { fxDealApi, HedgeKind, HedgeLink } from '../../services/fxDealApi';
 import NewDealDrawer, { TicketPrefill } from './NewDealDrawer';
 import { errorText, fmt } from './fxFormat';
 
@@ -75,58 +76,118 @@ const ITEM_SECTIONS: { kind: ExposureItemKind; title: string; page?: 'receivable
   { kind: 'HEDGE', title: 'Hedges' },
 ];
 
+/** What of an invoice no deal hedges yet: its amount less the effective links, to the cent. */
+const unhedgedOf = (i: ExposureItem, links?: HedgeLink[]) =>
+  Math.max(0, Math.round((Math.abs(i.amount) - (links ?? []).reduce((t, l) => t + l.effective, 0)) * 100) / 100);
+
 /**
  * What a bucket's net exposure and hedge are made of: the invoices, forecast lines, cash, declared entries and hedges
- * the ladder counted there. The server places them by the ladder's own rules, so they add up to the row.
+ * the ladder counted there. The server places them by the ladder's own rules, so they add up to the row. Invoices
+ * show the deals that hedge them; ticking unhedged ones of one kind books a hedge linked to them (fx-hedge-links D2).
  */
 const BucketItemsDrawer: React.FC<{
   open: { currency: string; bucket: ExposureBucket } | null; data: ExposureBucketItems | null; error: string | null;
+  links: Record<string, HedgeLink[]>;
   onClose: () => void; onOpenPage: (page: 'receivables' | 'payables' | 'forecasting') => void;
-}> = ({ open, data, error, onClose, onOpenPage }) => (
-  <Drawer
-    isOpen={!!open}
-    onClose={onClose}
-    size="lg"
-    title={open ? `${open.currency} · ${open.bucket.label}` : ''}
-    subtitle={data ? `Net exposure ${fmtSigned(data.exposure)} · hedged ${data.hedged ? fmtSigned(data.hedged) : '-'}` : undefined}
-  >
-    <div className="p-6">
-    {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
-    {!data && !error && <p className="caption">Loading…</p>}
-    {data && (
-      <div className="space-y-5">
-        {ITEM_SECTIONS.map(({ kind, title, page }) => {
-          const rows = data.items.filter((i) => i.kind === kind);
-          if (rows.length === 0) return null;
-          const total = rows.reduce((t, i) => t + i.amount, 0);
-          return (
-            <section key={kind}>
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="label">{title} · {fmtSigned(total)}</p>
-                {page && <Button size="sm" variant="ghost" onClick={() => onOpenPage(page)}>Open {title}</Button>}
-              </div>
-              <div className="divide-y divide-edge-subtle">
-                {rows.map((i: ExposureItem, n) => (
-                  <div key={i.id ?? `${kind}-${n}`} className="py-1.5 flex items-center justify-between gap-3 body-sm">
-                    <div className="min-w-0">
-                      <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{i.reference ?? '-'}</p>
-                      <p className="caption truncate">
-                        {[i.counterparty, i.date ? `due ${i.date}` : kind === 'CASH' ? 'on hand' : 'undated: due now'].filter(Boolean).join(' · ')}
-                      </p>
-                    </div>
-                    <span className="font-mono tabular-nums shrink-0">{fmtSigned(i.amount)}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-        {data.items.length === 0 && <p className="caption">Nothing is counted in this bucket.</p>}
+  onHedge: (kind: HedgeKind, picked: { item: ExposureItem; amount: number }[]) => void;
+}> = ({ open, data, error, links, onClose, onOpenPage, onHedge }) => {
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  useEffect(() => setPicked(new Set()), [data]);
+  const rows = (data?.items ?? []).filter((i) => i.id && picked.has(i.id));
+  // Receivables are hedged by selling the currency and payables by buying it, so one deal takes one kind.
+  const pickedKind = rows[0]?.kind as HedgeKind | undefined;
+  const pickedTotal = rows.reduce((t, i) => t + unhedgedOf(i, links[i.id as string]), 0);
+  const toggle = (id: string, on: boolean) => setPicked((p) => {
+    const next = new Set(p);
+    if (on) next.add(id); else next.delete(id);
+    return next;
+  });
+
+  return (
+    <Drawer
+      isOpen={!!open}
+      onClose={onClose}
+      size="lg"
+      title={open ? `${open.currency} · ${open.bucket.label}` : ''}
+      subtitle={data ? `Net exposure ${fmtSigned(data.exposure)} · hedged ${data.hedged ? fmtSigned(data.hedged) : '-'}` : undefined}
+      footer={pickedKind ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+          <span className="body-sm">
+            {rows.length} {pickedKind === 'RECEIVABLE' ? 'receivable' : 'payable'}{rows.length === 1 ? '' : 's'}:{' '}
+            {pickedKind === 'RECEIVABLE' ? 'sell' : 'buy'} <span className="font-mono tabular-nums">{fmt(pickedTotal)} {open?.currency}</span> forward
+          </span>
+          <span className="inline-flex gap-2">
+            <Button variant="ghost" onClick={() => setPicked(new Set())}>Clear</Button>
+            <Button leftIcon={<Send className="w-4 h-4" />}
+              onClick={() => onHedge(pickedKind, rows.map((item) => ({ item, amount: unhedgedOf(item, links[item.id as string]) })))}>
+              Hedge selected
+            </Button>
+          </span>
+        </div>
+      ) : undefined}
+    >
+      <div className="p-6">
+      {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
+      {!data && !error && <p className="caption">Loading…</p>}
+      {data && (
+        <div className="space-y-5">
+          {ITEM_SECTIONS.map(({ kind, title, page }) => {
+            const items = data.items.filter((i) => i.kind === kind);
+            if (items.length === 0) return null;
+            const total = items.reduce((t, i) => t + i.amount, 0);
+            const invoices = kind === 'RECEIVABLE' || kind === 'PAYABLE';
+            const otherKind = invoices && !!pickedKind && pickedKind !== kind;
+            return (
+              <section key={kind}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="label">{title} · {fmtSigned(total)}</p>
+                  {page && <Button size="sm" variant="ghost" onClick={() => onOpenPage(page)}>Open {title}</Button>}
+                </div>
+                {otherKind && (
+                  <p className="caption mb-1">
+                    Receivables are hedged by selling {data.currency} and payables by buying it, so hedge them in separate deals.
+                  </p>
+                )}
+                <div className="divide-y divide-edge-subtle">
+                  {items.map((i: ExposureItem, n) => {
+                    const id = i.id ?? undefined;
+                    const hedging = (id ? links[id] ?? [] : []).filter((l) => l.effective > 0);
+                    const left = unhedgedOf(i, id ? links[id] : undefined);
+                    return (
+                      <div key={id ?? `${kind}-${n}`} className="py-1.5 flex items-center justify-between gap-3 body-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {invoices && id && (
+                            <Checkbox size="sm" aria-label={`Hedge ${i.reference ?? 'invoice'}`}
+                              checked={picked.has(id)} onChange={(on) => toggle(id, on)}
+                              disabled={otherKind || left <= 0} />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{i.reference ?? '-'}</p>
+                            <p className="caption truncate">
+                              {[i.counterparty, i.date ? `due ${i.date}` : kind === 'CASH' ? 'on hand' : 'undated: due now'].filter(Boolean).join(' · ')}
+                            </p>
+                            {hedging.length > 0 && (
+                              <p className="caption text-success-700 dark:text-success-300 truncate">
+                                {left > 0 ? `${fmt(Math.abs(i.amount) - left)} hedged` : 'Hedged'} by {[...new Set(hedging.map((l) => l.dealRef))].join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-mono tabular-nums shrink-0">{fmtSigned(i.amount)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+          {data.items.length === 0 && <p className="caption">Nothing is counted in this bucket.</p>}
+        </div>
+      )}
       </div>
-    )}
-    </div>
-  </Drawer>
-);
+    </Drawer>
+  );
+};
 
 // Buckets count days from today; tenors count from the spot date two business days later. These are
 // the standard tenors whose value date lands inside each bucket (about 11, 34, 67, 96 and 186 days
@@ -155,13 +216,23 @@ const FxExposurePage: React.FC = () => {
   const [drill, setDrill] = useState<{ currency: string; bucket: ExposureBucket } | null>(null);
   const [drillData, setDrillData] = useState<ExposureBucketItems | null>(null);
   const [drillError, setDrillError] = useState<string | null>(null);
+  const [drillLinks, setDrillLinks] = useState<Record<string, HedgeLink[]>>({});
 
   const openItems = (currency: string, bucket: ExposureBucket) => {
     setDrill({ currency, bucket });
     setDrillData(null);
     setDrillError(null);
+    setDrillLinks({});
     fxExposureApi.items(corporateId, currency, bucket.bucket)
-      .then(setDrillData)
+      .then(async (data) => {
+        // The deals hedging these invoices; if that read fails the items still show, just unmarked.
+        const ids = (kind: HedgeKind) => data.items.filter((i) => i.kind === kind && i.id).map((i) => i.id as string);
+        const found = await Promise.all((['RECEIVABLE', 'PAYABLE'] as HedgeKind[]).map((k) => (ids(k).length
+          ? fxDealApi.invoiceHedges(corporateId, k, ids(k)).catch(() => ({}))
+          : Promise.resolve({}))));
+        setDrillLinks(Object.assign({}, ...found));
+        setDrillData(data);
+      })
       .catch((err) => setDrillError(errorText(err)));
   };
 
@@ -227,6 +298,26 @@ const FxExposurePage: React.FC = () => {
         instrument: 'FORWARD',
         exposureRef: `${ccy}|${b.bucket}`,
         purpose: `Hedge ${ccy} ${b.label}`,
+      },
+    });
+  };
+
+  /** Hedge the invoices ticked in a bucket: one forward dated in the bucket, linked to each for what is unhedged. */
+  const hedgeInvoices = (kind: HedgeKind, picked: { item: ExposureItem; amount: number }[]) => {
+    if (!ladder || !drill) return;
+    const { currency, bucket } = drill;
+    const refs = picked.map((p) => p.item.reference).filter(Boolean);
+    setDrill(null);
+    setTicket({
+      prefill: {
+        pair: `${currency}/${ladder.baseCurrency}`,
+        side: kind === 'RECEIVABLE' ? 'SELL' : 'BUY',
+        amount: Math.round(picked.reduce((t, p) => t + p.amount, 0) * 100) / 100,
+        tenor: BUCKET_TENOR[bucket.bucket] ?? '1M',
+        instrument: 'FORWARD',
+        exposureRef: `${currency}|${bucket.bucket}`,
+        purpose: `Hedge ${refs.length > 3 ? `${refs.slice(0, 3).join(', ')} and ${refs.length - 3} more` : refs.join(', ')}`,
+        hedgeLinks: picked.map((p) => ({ kind, invoiceId: p.item.id as string, amount: p.amount })),
       },
     });
   };
@@ -407,8 +498,10 @@ const FxExposurePage: React.FC = () => {
         open={drill}
         data={drillData}
         error={drillError}
+        links={drillLinks}
         onClose={() => setDrill(null)}
         onOpenPage={(page) => { setDrill(null); navigate(page); }}
+        onHedge={hedgeInvoices}
       />
 
       <NewDealDrawer

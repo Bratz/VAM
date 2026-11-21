@@ -1,6 +1,6 @@
 // Badge labels and tones for deal and confirmation status, shared by the Deal tab and its drawer.
 
-import type { ConfirmationStatus, Deal, DealStatus, QuoteStatus } from '../services/fxDealApi';
+import type { ConfirmationStatus, Deal, DealStatus, HedgeLink, QuoteStatus } from '../services/fxDealApi';
 
 export const DEAL_BADGE: Record<DealStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' | 'info' }> = {
   BOOKED: { label: 'Booked', variant: 'neutral' },
@@ -29,4 +29,18 @@ export const QUOTE_BADGE: Record<QuoteStatus, { label: string; variant: 'success
   EXPIRED: { label: 'Expired', variant: 'warning' },
   REJECTED: { label: 'Declined', variant: 'error' },
   CANCELLED: { label: 'Withdrawn', variant: 'neutral' },
+};
+
+/** Why a hedge link covers less than was linked, in plain words; null when it still covers all of it. */
+export const hedgeShortfall = (l: HedgeLink): string | null => {
+  switch (l.reason) {
+    case 'PAID': return 'Invoice paid';
+    case 'CANCELLED': return 'Invoice cancelled';
+    case 'NETTED': return 'Invoice settled by netting';
+    case 'WRITTEN_OFF': return 'Invoice written off';
+    case 'NOT_OPEN': return 'Invoice no longer open';
+    case 'DEAL_ENDED': return 'Deal ended';
+    case 'REDUCED': return `Invoice reduced to ${l.currency} ${l.effective.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    default: return null;
+  }
 };

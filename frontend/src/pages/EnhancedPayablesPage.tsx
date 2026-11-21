@@ -20,6 +20,8 @@ import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { PaymentFxPanel, PaymentFx } from '../components/payments/PaymentFxPanel';
+import { HedgedMarker, InvoiceHedgeList } from '../components/payments/InvoiceHedges';
+import { useInvoiceHedges } from '../hooks/useInvoiceHedges';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { useNavigation } from '../hooks/useNavigation';
@@ -609,6 +611,7 @@ const EnhancedPayablesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [viewPayable, setViewPayable] = useState<PayablePhase2 | null>(null);
+  const hedges = useInvoiceHedges(selectedCorporateId, 'PAYABLE', payables);
 
   // Netting Cycle Picker Modal state
   const [showNettingPicker, setShowNettingPicker] = useState(false);
@@ -1108,6 +1111,7 @@ const EnhancedPayablesPage: React.FC = () => {
                   {getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus)}
                   {getPoboStatusBadge(payable.poboRequestStatus)}
                   {payable.fxStatus === 'AWAITING_FX' && <Badge variant="warning" size="sm">Awaiting FX (treasury)</Badge>}
+                  <HedgedMarker links={hedges[payable.id]} />
                 </div>
               ),
             },
@@ -1222,6 +1226,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 </div>
               )}
               <PoboSettlement payable={viewPayable} />
+              <InvoiceHedgeList links={hedges[viewPayable.id]} />
               {viewPayable.paymentRouteNote && (
                 <div className="col-span-2">
                   <p className="text-neutral-500 dark:text-neutral-400">Payment route</p>

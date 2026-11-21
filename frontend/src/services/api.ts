@@ -1847,6 +1847,9 @@ export const receivablesApi = {
   getAll: (page = 0, size = 20, corporateId?: string, status?: string) =>
     apiClient.get<ApiResponse<any[]>>('/receivables', { params: { page, size, corporateId, status } }).then(r => r.data),
   getById: (id: string) => apiClient.get<ApiResponse<any>>(`/receivables/${id}`).then(r => r.data),
+  /** The corporate's invoices across all its entities (X-No-Entity-Scope: not narrowed to a cached entity). */
+  getInvoices: (corporateId: string) =>
+    apiClient.get<ApiResponse<any[]>>('/receivables/invoices', { headers: { 'X-Corporate-Id': corporateId, 'X-No-Entity-Scope': '1' } }).then(r => r.data),
   create: (data: any, corporateId?: string) => {
     const headers: Record<string, string> = {};
     if (corporateId) {

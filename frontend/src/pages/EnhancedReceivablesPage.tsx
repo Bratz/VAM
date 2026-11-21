@@ -21,6 +21,8 @@ import { MandatesTab } from '../components/collections/MandatesTab';
 import { CollectionRunsTab } from '../components/collections/CollectionRunsTab';
 import { OutboxTab } from '../components/collections/OutboxTab';
 import { CollectionPlanModal } from '../components/collections/CollectionPlanModal';
+import { HedgedMarker, InvoiceHedgeList } from '../components/payments/InvoiceHedges';
+import { useInvoiceHedges } from '../hooks/useInvoiceHedges';
 
 /** Invoices that can still be collected (by COBO or a collection run): open, partly paid or overdue. */
 const COLLECTABLE = ['OPEN', 'PARTIAL', 'OVERDUE'];
@@ -382,6 +384,7 @@ const EnhancedReceivablesPage: React.FC = () => {
   // Apply Bank Credit (COBO) modal state
   const [creditInvoice, setCreditInvoice] = useState<InvoicePhase3 | null>(null);
   const [viewInvoice, setViewInvoice] = useState<InvoicePhase3 | null>(null);
+  const hedges = useInvoiceHedges(selectedCorporateId, 'RECEIVABLE', invoices);
   const [creditLoading, setCreditLoading] = useState(false);
 
   // Fetch initial data
@@ -1086,6 +1089,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                             {isCoboInvoice(invoice) && (
                               <span className="inline-flex items-center gap-1 text-caption">COBO {getCoboProgressBadge(invoice)}</span>
                             )}
+                            <HedgedMarker links={hedges[invoice.id]} />
                           </div>
                         </div>
                       ),
@@ -1281,6 +1285,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                   {viewInvoice.coboTransactionRef && <p className="caption font-mono">{viewInvoice.coboTransactionRef}</p>}
                 </div>
               )}
+              <InvoiceHedgeList links={hedges[viewInvoice.id]} />
               {viewInvoice.nettingEligible && (
                 <div>
                   <p className="text-neutral-500 dark:text-neutral-400">Netting Status</p>

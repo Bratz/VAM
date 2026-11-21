@@ -371,10 +371,37 @@ backend not started; one new derived query `FxHedgeLinkRepository.findByDealIdIn
   deal drawer (3.1) and the Exposure drill-down (3.2).
 
 ### Phase 3 — screens (R7)
-- [ ] 3.1 Deal drawer: linked invoices (linked, effective, reason), unbacked amount, Link invoices / Unlink.
-- [ ] 3.2 Exposure drill-down: hedged marker per invoice; select invoices → book a hedge linked to them.
-- [ ] 3.3 Payables / Receivables: "Hedged" marker with the deal reference(s); Pay Now shows the linked deal ticked.
-- [ ] 3.4 tsc + lint.
+- [x] 3.1 Deal drawer: linked invoices (linked, effective, reason), unbacked amount, Link invoices / Unlink.
+- [x] 3.2 Exposure drill-down: hedged marker per invoice; select invoices → book a hedge linked to them.
+- [x] 3.3 Payables / Receivables: "Hedged" marker with the deal reference(s); Pay Now shows the linked deal ticked.
+- [x] 3.4 tsc + lint.
+
+Phase 3 done (21 Nov, uncommitted; `npx tsc --noEmit` and `npm run lint` clean; no backend change; nothing started):
+- API: `fxDealApi.hedges / link / unlink / invoiceHedges`, `accept(id, hedgeLinks?)` (types `HedgeLink`, `DealHedges`,
+  `HedgeLinkRequest`); `receivablesApi.getInvoices(corporateId)` (the list the Receivables page reads inline).
+  Plain-language reasons in `fxDealBadges.hedgeShortfall` (paid, cancelled, settled by netting, written off, no longer
+  open, deal ended, reduced to X).
+- Deal drawer (`FxDealDrawer`): "Invoices this deal hedges" for a live deal or one with links: each link (invoice,
+  counterparty, due, linked / still hedging, the reason, the bucket warning as "settles on X, well away from the due
+  date"), "X of the deal is not backed by an invoice" per currency, the `released` warning (roll, close out or relink).
+  Link invoices: open, non-intercompany payables in the buy currency and receivables in the sell currency (the side in
+  the home currency is skipped when the deal's mark names it, `mtmHomeCurrency`), amount defaults to min(outstanding,
+  what the deal has unbacked less other picks); the server's refusal shows under the picker. Unlink asks to confirm.
+- Exposure drill-down: invoices show "Hedged by FXD-…" / "N hedged by …" (one `GET /fx/hedge-links` per kind);
+  unhedged parts can be ticked, one kind at a time (the other kind is disabled with the reason); "Hedge selected"
+  opens the ticket prefilled (pair ccy/base, SELL receivables / BUY payables, the unhedged total, the bucket's tenor,
+  exposureRef) with `hedgeLinks` = each invoice's unhedged part. `TicketPrefill.hedgeLinks` goes to `accept`; such a
+  ticket skips the streamed price (a stream deal books without links) and asks for a firm one.
+- Payables / Receivables: `useInvoiceHedges` reads the links of the loaded rows (non-intercompany, 100 ids per call);
+  `HedgedMarker` (badge + deal refs) in Route (payables) / Status (receivables); `InvoiceHedgeList` in the detail
+  modals. The home currency is not known on those pages, so every non-intercompany row is asked about (the server
+  answers only linked ones). Pay Now: `payableId` reaches `PaymentFxPanel` (Phase 2); fixed its "· hedges … of this
+  payable" label, which was a lone Latin-1 byte (rendered as "�").
+- Phase 4 (live run) should exercise: link from the deal drawer (a refusal: amount over outstanding, wrong side);
+  pay one linked payable early and reduce another, then see the drawer reasons, the unbacked line and the released
+  warning, and the marker drop off the payable; unlink; book from an Exposure bucket with 2 receivables ticked (deal
+  and links together, markers then show in the drawer and on Receivables); a refused booking (e.g. tick, then change
+  the ticket side to BUY) books nothing; Pay Now on a linked payable shows its deal first and ticked.
 
 ### Phase 4 — verification
 - [ ] 4.1 Acceptance 1-5 as tests; full suite.
