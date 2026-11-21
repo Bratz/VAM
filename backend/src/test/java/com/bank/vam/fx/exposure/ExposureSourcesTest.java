@@ -17,6 +17,15 @@ class ExposureSourcesTest {
         assertThat(ExposureSources.projectsInvoice("receivable:3f2c1a9e-0000-0000-0000-000000000002")).isTrue(); // aging
     }
 
+    /** The queries read the shared "not open" lists (hedge links use them too) as the literals they always had. */
+    @Test
+    void notOpenStatusesAreTheQueriesLiterals() {
+        assertThat(ExposureSources.literals(ExposureSources.PAYABLE_NOT_OPEN))
+                .isEqualTo("('PAID','CANCELLED','NETTED','REJECTED','DRAFT')");
+        assertThat(ExposureSources.literals(ExposureSources.RECEIVABLE_NOT_OPEN))
+                .isEqualTo("('PAID','CANCELLED','NETTED','WRITTEN_OFF','DRAFT','COBO_REJECTED')");
+    }
+
     @Test
     void linesNoInvoiceCarriesStay() {
         assertThat(ExposureSources.projectsInvoice("adjustment:3f2c1a9e-0000-0000-0000-000000000003")).isFalse(); // manual

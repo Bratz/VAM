@@ -4,6 +4,8 @@ import com.bank.vam.config.FxDealProperties;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.fx.ForwardPricer;
 import com.bank.vam.fx.deal.SimulatedDealer.Price;
+import com.bank.vam.fx.hedge.FxHedgeLink;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
 import com.bank.vam.repository.CorporateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,8 +45,9 @@ class FxQuoteServiceTest {
     private final FxDealProperties props = new FxDealProperties();
     private final FxEvents events = mock(FxEvents.class);
     private final FxSettlementAccounts settlementAccounts = mock(FxSettlementAccounts.class);
+    private final FxHedgeLinkService hedges = mock(FxHedgeLinkService.class);
     private final FxQuoteService service = new FxQuoteService(
-            quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards, settlementAccounts);
+            quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards, settlementAccounts, hedges);
 
     private static final UUID ENTITY = UUID.randomUUID();
     private static final FxLimitService.Usage ROOM = new FxLimitService.Usage(new BigDecimal("1000000"), BigDecimal.ZERO, new BigDecimal("1000000"));
@@ -176,6 +180,46 @@ class FxQuoteServiceTest {
 
         verify(limitService).requireLocked(CORP, ENTITY, bd("1000.00"));
         verify(dealService).book(any(), eq(bd("1000.00")), eq("AED"));
+    }
+
+    /** R5: links ride on the booking; one refused link refuses the booking before anything is booked. */
+    @Test
+    void bookingWithARefusedHedgeLinkBooksNothing() {
+        FxQuoteRequest q = firmQuote();
+        List<FxHedgeLinkService.LinkRequest> links = List.of(
+                new FxHedgeLinkService.LinkRequest(FxHedgeLink.Kind.PAYABLE, UUID.randomUUID(), bd("5000")));
+        when(hedges.check(any(), eq(links))).thenThrow(new BusinessException("FX_HEDGE_LINK_REFUSED", "INV-1 is PAID"));
+
+        assertThatThrownBy(() -> service.accept(q.getId(), links)).hasMessageContaining("INV-1 is PAID");
+
+        verify(limitService, never()).requireLocked(any(), any(), any());
+        verify(dealService, never()).book(any(), any(), anyString());
+        verify(hedges, never()).save(any(), any());
+        assertThat(q.getStatus()).isEqualTo(QuoteStatus.QUOTED);
+    }
+
+    @Test
+    void bookingWithHedgeLinksChecksThemAgainstTheDealToBeBookedThenSavesThemOnTheBookedDeal() {
+        FxQuoteRequest q = firmQuote();
+        List<FxHedgeLinkService.LinkRequest> links = List.of(
+                new FxHedgeLinkService.LinkRequest(FxHedgeLink.Kind.PAYABLE, UUID.randomUUID(), bd("5000")));
+        List<FxHedgeLinkService.Prepared> prepared = List.of(new FxHedgeLinkService.Prepared(new FxHedgeLink(), "INV-1"));
+        org.mockito.ArgumentCaptor<FxDeal> draft = org.mockito.ArgumentCaptor.forClass(FxDeal.class);
+        when(hedges.check(draft.capture(), eq(links))).thenReturn(prepared);
+
+        FxDeal booked = service.accept(q.getId(), links);
+
+        // The draft is the deal the quote books: buying EUR/USD 100,000 buys EUR and sells USD.
+        assertThat(draft.getValue().getId()).isNull();
+        assertThat(draft.getValue().getCorporateId()).isEqualTo(CORP);
+        assertThat(draft.getValue().getBuyCurrency()).isEqualTo("EUR");
+        assertThat(draft.getValue().getBuyAmount()).isEqualByComparingTo("100000");
+        assertThat(draft.getValue().getSellCurrency()).isEqualTo("USD");
+        assertThat(draft.getValue().getSellAmount()).isEqualByComparingTo("110030.00");
+        org.mockito.InOrder order = org.mockito.Mockito.inOrder(hedges, dealService);
+        order.verify(hedges).check(any(), eq(links));
+        order.verify(dealService).book(any(), any(), anyString());
+        order.verify(hedges).save(booked, prepared);
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.bank.vam.fx.deal.FxDealModels.RfqLog;
 import com.bank.vam.fx.deal.FxDealModels.RfqRow;
 import com.bank.vam.fx.deal.FxDealModels.RfqSummary;
 import com.bank.vam.fx.deal.SimulatedDealer.Price;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
 import com.bank.vam.repository.CorporateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,6 +64,7 @@ public class FxQuoteService {
     private final FxDealProperties props;
     private final ForwardPricer forwards;
     private final FxSettlementAccounts settlementAccounts;
+    private final FxHedgeLinkService hedges;
 
     @Transactional
     public FxQuoteRequest request(Command c) {
@@ -205,12 +207,27 @@ public class FxQuoteService {
 
     @Transactional(noRollbackFor = BusinessException.class)
     public FxDeal accept(UUID id) {
-        return accept(id, false);
+        return accept(id, false, List.of());
+    }
+
+    /**
+     * Books the quote and links the deal to the invoices it hedges (spec fx-hedge-links R5), all or nothing: the links
+     * are checked against the deal the quote would book before anything is booked, because this transaction keeps
+     * what it did when it refuses (noRollbackFor, for the expiry above), so a link refused after booking would leave
+     * the deal booked without it.
+     */
+    @Transactional(noRollbackFor = BusinessException.class)
+    public FxDeal accept(UUID id, List<FxHedgeLinkService.LinkRequest> hedgeLinks) {
+        return accept(id, false, hedgeLinks == null ? List.of() : hedgeLinks);
     }
 
     /** {@code forPayment}: accepted by submitting the payment it converts; the only way such a price is used. */
     @Transactional(noRollbackFor = BusinessException.class)
     FxDeal accept(UUID id, boolean forPayment) {
+        return accept(id, forPayment, List.of());
+    }
+
+    private FxDeal accept(UUID id, boolean forPayment, List<FxHedgeLinkService.LinkRequest> hedgeLinks) {
         FxQuoteRequest q = quotes.lockById(id).orElseThrow(() -> notFound(id));
         expireIfLapsed(q);
         if (Boolean.TRUE.equals(q.getForPayment()) && !forPayment) {
@@ -225,6 +242,9 @@ public class FxQuoteService {
                     "This quote can no longer be accepted: it is " + q.getStatus()
                             + (q.getStatusReason() == null ? "" : " (" + q.getStatusReason() + ")"));
         }
+        // Refuses before anything is booked (see accept(id, hedgeLinks)).
+        List<FxHedgeLinkService.Prepared> links = hedgeLinks.isEmpty() ? List.of()
+                : hedges.check(FxDealService.draft(q), hedgeLinks);
 
         // The line and the entity's sub-limit are checked again now, under locks: another deal may have used the
         // headroom since the price, or the facility may have been suspended.
@@ -234,6 +254,7 @@ public class FxQuoteService {
         limitService.requireLocked(q.getCorporateId(), q.getEntityId(), charge);
 
         FxDeal deal = dealService.book(q, charge, line.currency());
+        hedges.save(deal, links);
         q.setStatus(QuoteStatus.ACCEPTED);
         q.setAcceptedAt(LocalDateTime.now());
         q.setDealId(deal.getId());

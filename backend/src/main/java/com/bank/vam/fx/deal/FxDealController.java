@@ -7,6 +7,7 @@ import com.bank.vam.fx.deal.FxDealModels.EventView;
 import com.bank.vam.fx.deal.FxDealModels.LimitView;
 import com.bank.vam.fx.deal.FxDealModels.QuoteView;
 import com.bank.vam.fx.deal.FxDealModels.RfqLog;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,10 @@ public class FxDealController {
     public record QuoteBody(@NotNull UUID corporateId, @NotNull UUID entityId, @NotNull String pair, @NotNull Side side,
                             @NotNull Instrument instrument, @NotNull BigDecimal amount, LocalDate valueDate,
                             LocalDate windowStart, String purpose, String exposureRef, Boolean forPayment) {
+    }
+
+    /** Optional on accept: the invoices the deal hedges, linked as it is booked; one refused link refuses the booking. */
+    public record AcceptBody(List<FxHedgeLinkService.LinkRequest> hedgeLinks) {
     }
 
     /** Ask the desk for a better price; with no {@code targetRate} it is "your best price". */
@@ -78,10 +83,10 @@ public class FxDealController {
         return ApiResponse.success(QuoteView.of(quotes.get(id)));
     }
 
-    /** Accepting a quote twice returns the same deal. */
+    /** Accepting a quote twice returns the same deal (and links nothing the second time). */
     @PostMapping("/quotes/{id}/accept")
-    public ApiResponse<DealView> accept(@PathVariable UUID id) {
-        return ApiResponse.success(views.view(quotes.accept(id)));
+    public ApiResponse<DealView> accept(@PathVariable UUID id, @RequestBody(required = false) AcceptBody b) {
+        return ApiResponse.success(views.view(quotes.accept(id, b == null ? null : b.hedgeLinks())));
     }
 
     @PostMapping("/quotes/{id}/counter")

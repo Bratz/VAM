@@ -25,7 +25,15 @@ import java.util.UUID;
  * to them.
  */
 @Component
-class ExposureSources {
+public class ExposureSources {
+
+    /**
+     * Statuses of an invoice that is not open: no exposure, and a hedge link on it lapses (FxHedgeLinkService). One
+     * list for both, so "open" means the same thing to the ladder and to the links.
+     */
+    public static final List<String> PAYABLE_NOT_OPEN = List.of("PAID", "CANCELLED", "NETTED", "REJECTED", "DRAFT");
+    public static final List<String> RECEIVABLE_NOT_OPEN =
+            List.of("PAID", "CANCELLED", "NETTED", "WRITTEN_OFF", "DRAFT", "COBO_REJECTED");
 
     @PersistenceContext
     private EntityManager em;
@@ -35,7 +43,7 @@ class ExposureSources {
                 + "COALESCE(p.invoiceNumber, p.payableNumber), p.vendorName FROM Payable p "
                 + "WHERE p.corporateId = :c AND p.currencyCode <> :base "
                 + "AND (p.isIntercompany IS NULL OR p.isIntercompany = false) "
-                + "AND p.status NOT IN ('PAID','CANCELLED','NETTED','REJECTED','DRAFT')", corporateId, base);
+                + "AND p.status NOT IN " + literals(PAYABLE_NOT_OPEN), corporateId, base);
     }
 
     List<Flow> receivables(UUID corporateId, String base) {
@@ -43,7 +51,7 @@ class ExposureSources {
                 + "r.receivableNumber, r.customerName FROM Receivable r "
                 + "WHERE r.corporateId = :c AND r.currencyCode <> :base "
                 + "AND (r.isIntercompany IS NULL OR r.isIntercompany = false) "
-                + "AND r.status NOT IN ('PAID','CANCELLED','NETTED','WRITTEN_OFF','DRAFT','COBO_REJECTED')", corporateId, base);
+                + "AND r.status NOT IN " + literals(RECEIVABLE_NOT_OPEN), corporateId, base);
     }
 
     /**
@@ -116,6 +124,11 @@ class ExposureSources {
                         new ExposureCalculator.Ref((UUID) r[5], (String) r[6], r[7] == null ? null : r[7].toString())))
                 .toList();
         return Optional.of(new ForecastFlows((OffsetDateTime) run.get(0)[1], flows));
+    }
+
+    /** {@code ('PAID','CANCELLED')}: the statuses as JPQL literals, the form the queries always had. */
+    static String literals(List<String> statuses) {
+        return "('" + String.join("','", statuses) + "')";
     }
 
     private List<Flow> flows(String jpql, UUID corporateId, String base) {

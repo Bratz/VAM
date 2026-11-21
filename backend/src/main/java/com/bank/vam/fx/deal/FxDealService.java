@@ -29,6 +29,27 @@ public class FxDealService {
 
     /** Books the deal for an accepted quote, issues its confirmation, and leaves it ACTIVE (forward) or awaiting settlement (spot). */
     FxDeal book(FxQuoteRequest q, BigDecimal limitCharge, String limitCurrency) {
+        FxDeal d = draft(q);
+        d.setLimitCharge(limitCharge);
+        d.setLimitCurrency(limitCurrency);
+        d = deals.save(d);
+
+        log.deal(d, null, DealStatus.BOOKED, "Booked from quote at " + d.getRate());
+        // The bank's back office sends the confirmation; the deal is live meanwhile, and cannot settle until the client affirms it.
+        d.setConfirmationStatus(ConfirmationStatus.ISSUED);
+        d.setConfirmationIssuedAt(LocalDateTime.now());
+        log.note(d, "CONFIRMATION_SENT", "Back office issued the trade confirmation to the client, to check and confirm");
+        transition(d, d.getInstrument() == Instrument.SPOT ? DealStatus.PENDING_SETTLEMENT : DealStatus.ACTIVE,
+                d.getInstrument() == Instrument.SPOT ? "Awaiting settlement on " + d.getValueDate()
+                        : "Live until " + d.getValueDate());
+        return deals.save(d);
+    }
+
+    /**
+     * The deal a quote would book, unsaved and without its credit-limit charge: what accepting it with hedge links
+     * checks them against before anything is booked (FxHedgeLinkService).
+     */
+    static FxDeal draft(FxQuoteRequest q) {
         boolean buyBase = q.getSide() == Side.BUY;
         FxDeal d = new FxDeal();
         d.setDealRef("FXD-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-"
@@ -55,21 +76,9 @@ public class FxDealService {
         d.setTradeDate(LocalDate.now());
         d.setValueDate(q.getValueDate());
         d.setWindowStart(q.getWindowStart());
-        d.setLimitCharge(limitCharge);
-        d.setLimitCurrency(limitCurrency);
         d.setPurpose(q.getPurpose());
         d.setExposureRef(q.getExposureRef());
-        d = deals.save(d);
-
-        log.deal(d, null, DealStatus.BOOKED, "Booked from quote at " + d.getRate());
-        // The bank's back office sends the confirmation; the deal is live meanwhile, and cannot settle until the client affirms it.
-        d.setConfirmationStatus(ConfirmationStatus.ISSUED);
-        d.setConfirmationIssuedAt(LocalDateTime.now());
-        log.note(d, "CONFIRMATION_SENT", "Back office issued the trade confirmation to the client, to check and confirm");
-        transition(d, d.getInstrument() == Instrument.SPOT ? DealStatus.PENDING_SETTLEMENT : DealStatus.ACTIVE,
-                d.getInstrument() == Instrument.SPOT ? "Awaiting settlement on " + d.getValueDate()
-                        : "Live until " + d.getValueDate());
-        return deals.save(d);
+        return d;
     }
 
     /** The only way a deal changes status, so an illegal move cannot happen by accident. */

@@ -293,6 +293,62 @@ tsc + lint clean; not run live: starting the backend applies V57–V65 to the lo
       movements; TestMNC's statement / movement / interest as Helios 404. Netting run on vam-five not done (needs the
       user's go-ahead).
 
+## Planned: FX hedge links (spec docs/specs/fx-hedge-links.md, decided 2026-11-21)
+
+### Phase 1 — links: data, rules, API (R1-R5, R8)
+- [x] 1.1 `FxHedgeLink` entity (deal, kind PAYABLE/RECEIVABLE, invoice id, currency, amount, linked by/at; ddl-auto).
+- [x] 1.2 Rules (R2) and effective amount / reason computed on read (R3); a deal's unbacked amount (R4).
+- [x] 1.3 API: list / link / unlink on a deal; links for a set of invoices (for the invoice lists); booking carries
+      links, created with the deal in one transaction (R5). Audit link / unlink (R8).
+- [x] 1.4 Tests: each refusal in R2; effective amount after pay / cancel / reduce / net; booking with links atomic.
+
+Phase 1 done (21 Nov, uncommitted; `mvn test` 908/0 (884 + 21 in FxHedgeLinkServiceTest + 2 in FxQuoteServiceTest + 1 in
+ExposureSourcesTest); backend not started, derived queries only):
+- Data: `fx_hedge_link` (ddl-auto, no migration) in new package `fx/hedge`: corporate_id, deal_id, kind PAYABLE |
+  RECEIVABLE, invoice_id, currency, amount (invoice currency, 2dp), linked_by, linked_at. Unlink deletes the row.
+  A new Kind value later needs the CHECK-widening migration (lessons, V46).
+- Endpoints (all take `corporateId`; a deal of another corporate is 404):
+  `GET /fx/deals/{id}/hedge-links`, `POST` same with `{links: [{kind, invoiceId, amount}]}`,
+  `DELETE /fx/deals/{id}/hedge-links/{linkId}` all answer `DealLinks {dealId, dealRef, links[LinkView],
+  currencies[{currency, remaining, linked, effective, unbacked}], released}`;
+  `GET /fx/hedge-links?kind=PAYABLE&invoiceIds=a,b` answers `{invoiceId: [LinkView]}` (unlinked invoices left out).
+  `LinkView {id, dealId, dealRef, kind, invoiceId, invoiceRef, counterparty, dueDate, currency, linked, effective,
+  reason, warning, linkedBy, linkedAt}`.
+- Rules (`FxHedgeLinkService.check`, all or nothing, 400 `FX_HEDGE_LINK_REFUSED` naming the invoice): deal live
+  (`DealStatus.OPEN`); invoice the deal's corporate's, open, not intercompany, not in `HomeCurrency`, in a currency the
+  deal trades; payable needs the deal to buy its currency, receivable to sell it; per invoice, links of live deals +
+  new <= outstanding; per deal and currency, effective links + new <= remaining. "Open" is one list shared with
+  exposure (`ExposureSources.PAYABLE_NOT_OPEN` / `RECEIVABLE_NOT_OPEN`, the queries' literals unchanged).
+- Read-side (R3/R4): remaining in a currency = the deal's open hedge position in it (`FxDeal.hedgePositions`: undrawn
+  share of that leg), 0 once the deal has ended. effective = min(linked, outstanding) while the invoice is open and
+  the deal live, else 0; reason PAID / CANCELLED / NETTED / WRITTEN_OFF / NOT_OPEN (other closed statuses, missing) /
+  DEAL_ENDED / REDUCED. unbacked = max(0, remaining - effective) per linked currency; `released` = live deal where a
+  link shrank or lapsed and left part unbacked (under-linking from the start is not flagged). Value date in another
+  exposure bucket than the due date: `warning` on the view, not a refusal.
+- Booking (R5): `POST /fx/quotes/{id}/accept` takes an optional `{hedgeLinks: [...]}`. Accept keeps what it did on a
+  refusal (noRollbackFor, for expiry), so the links are checked against the deal the quote would book
+  (`FxDealService.draft`) before the limit lock and booking, then saved on the booked deal. A second accept links nothing.
+- Audit: `FX_HEDGE_LINKED` / `FX_HEDGE_UNLINKED` on entity FX_DEAL (deal ref, invoice ref, currency, amount).
+- Deferred: a roll does not move links to the replacement deal (they become DEAL_ENDED; relink by hand); no
+  attention item for `released` yet (FxDealAttentionService); per-invoice cap is not locked against two concurrent
+  linkers. Phase 2 reads `forInvoices(PAYABLE, ...)` effective amounts per deal; Phase 3 consumes the shapes above.
+
+### Phase 2 — paying draws on the linked deal (R6)
+- [ ] 2.1 Payment plan takes the payable: its linked deals first, up to the effective link; unattended payments too.
+- [ ] 2.2 Tests: plan order and amounts; a payment of a linked payable settles part of its deal.
+
+### Phase 3 — screens (R7)
+- [ ] 3.1 Deal drawer: linked invoices (linked, effective, reason), unbacked amount, Link invoices / Unlink.
+- [ ] 3.2 Exposure drill-down: hedged marker per invoice; select invoices → book a hedge linked to them.
+- [ ] 3.3 Payables / Receivables: "Hedged" marker with the deal reference(s); Pay Now shows the linked deal ticked.
+- [ ] 3.4 tsc + lint.
+
+### Phase 4 — verification
+- [ ] 4.1 Acceptance 1-5 as tests; full suite.
+- [ ] 4.2 Localhost live run: link, pay early, see the unbacked flag; book from Exposure with invoices; pay a linked
+      payable through its deal.
+- [ ] 4.3 vam-five after deploy: read-only checks; any booking or payment there only with the user's go-ahead.
+
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
 - [x] FX exposure double-counted open payables (21 Nov): the pattern engine projects open salary/tax/utility/other
