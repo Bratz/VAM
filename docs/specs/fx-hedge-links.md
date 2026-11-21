@@ -1,6 +1,6 @@
 # FX deals linked to the invoices they hedge
 
-Status: **decided, planned** (2026-11-21). Plan: `tasks/todo.md` ("Planned: FX hedge links").
+Status: **built and verified** (2026-11-21; phases 1-4). Plan: `tasks/todo.md` ("Planned: FX hedge links").
 
 ## 1. Why
 A deal records what it hedges only as free text (`FxDeal.exposureRef`). Exposure & Hedging matches hedges to

@@ -404,13 +404,37 @@ Phase 3 done (21 Nov, uncommitted; `npx tsc --noEmit` and `npm run lint` clean; 
   the ticket side to BUY) books nothing; Pay Now on a linked payable shows its deal first and ticked.
 
 ### Phase 4 — verification
-- [ ] 4.1 Acceptance 1-5 as tests; full suite.
-- [ ] 4.2 Localhost live run: link, pay early, see the unbacked flag; book from Exposure with invoices; pay a linked
+- [x] 4.1 Acceptance 1-5 as tests; full suite.
+- [x] 4.2 Localhost live run: link, pay early, see the unbacked flag; book from Exposure with invoices; pay a linked
       payable through its deal.
-- [ ] 4.3 vam-five after deploy: read-only checks; any booking or payment there only with the user's go-ahead.
+- [x] 4.3 vam-five after deploy: read-only checks; any booking or payment there only with the user's go-ahead.
+
+Phase 4 done (21 Nov; `mvn test` 914/0; CI green on 2e4b860):
+- 4.1 Acceptance already covered by the Phase 1-2 tests, no new ones needed: (1) FxHedgeLinkServiceTest refuses*;
+  (2) aPaidCancelledOrNetted…, aReducedInvoiceShrinks…, aWrittenOffReceivable…; (3) FxQuoteServiceTest
+  bookingWithHedgeLinks…, bookingWithARefusedHedgeLinkBooksNothing; (4) FxPaymentServiceTest payingAHedgedPayable…,
+  anUnattendedPaymentOfAHedgedPayableDrawsItsDealFirstAndSettlesPartOfIt (settles at the deal); (5) the list endpoint,
+  invoiceListsGetEachInvoicesLinksWithTheirDeals (the markers themselves: no frontend test runner).
+- 4.2 Live, UAE profile: Exposure GBP 0-30 with 2 receivables ticked booked a Sell GBP 121,011 deal and both links
+  together; the same ticket switched to Buy was refused ("…hedged by a deal that sells GBP, and the deal buys it") and
+  booked nothing; Receivables then showed both "Hedged" markers. A Buy GBP 200,000 deal: API refused over-outstanding
+  and wrong-side links; the drawer linked INV-02 79,000 + INV-03 106,000 (15,000 unbacked). Pay Now on INV-02 listed
+  the deal first, ticked, "hedges GBP 79,000.00 of this payable", 94,000 left (106,000 reserved for INV-03), AED at
+  the deal rate. Reducing INV-02 to 1,500 showed REDUCED and the plan dropped to 1,500; paid → "Invoice paid: this
+  link no longer hedges anything", the "Now hedging more than your invoices" warning, 94,000 unbacked; Unlink cleared
+  the warning and the marker; audit rows written. Not executed: the payment itself (local seed data: the mirror
+  account's funds check reads the unfunded corporate root, the settle account has no IBAN), so INV-02 was marked
+  paid in the DB; the draw on the deal is the unit test above. Test deals/links removed, seed data restored.
+- 4.3 vam-five (read-only): the deal drawer shows "Invoices this deal hedges"; /fx/hedge-links and
+  /fx/exposure/items answer 200. No booking or payment made there.
+- Seen in passing, not fixed: Pay Now is offered on a payable with no supplier bank account (`canBePaid` ignores it)
+  and then refuses "has no supplier bank account" (debt ledger).
 
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
+- [ ] Pay Now is offered on a payable that has no supplier bank account (21 Nov): `canBePaid` checks status and a
+      source account only; executing then refuses "Not available: … has no supplier bank account"
+      (PayablesService.supplier). Fold the supplier check into `canBePaid` so the button is not shown.
 - [x] FX exposure double-counted open payables (21 Nov): the pattern engine projects open salary/tax/utility/other
       payables ("payable:{id}") and Exposure left out only AGING lines. Now every forecast line that projects an
       invoice is left out (ExposureSources.projectsInvoice). No figure on vam-five changed (no foreign-currency
