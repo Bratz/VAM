@@ -128,6 +128,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        // A request the caller got wrong is not a server fault. Without this, a missing required header or parameter
+        // (e.g. GET /forecasts/latest without X-Corporate-Id), a malformed UUID, an unreadable body or a wrong HTTP
+        // method all reached this catch-all as 500 "An unexpected error occurred" and went to Sentry as defects.
+        // Spring's own MVC exceptions say their status (ErrorResponse); the two common ones that do not are mapped here.
+        ResponseEntity<ApiResponse<Void>> clientError = clientError(ex);
+        if (clientError != null) {
+            log.warn("Bad request: {}", ex.getMessage());
+            return clientError;
+        }
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         // This @RestControllerAdvice handles the exception, so Spring MVC never reaches Sentry's
         // own automatic resolver (it only sees exceptions that stay unhandled) — forward explicitly
@@ -137,5 +146,22 @@ public class GlobalExceptionHandler {
         io.sentry.Sentry.captureException(ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred", "INTERNAL_ERROR"));
+    }
+
+    /** The 4xx response for a request the caller got wrong, or null when {@code ex} is a genuine server fault. */
+    static ResponseEntity<ApiResponse<Void>> clientError(Exception ex) {
+        if (ex instanceof org.springframework.web.ErrorResponse er && er.getStatusCode().is4xxClientError()) {
+            String detail = er.getBody().getDetail();
+            return ResponseEntity.status(er.getStatusCode())
+                    .body(ApiResponse.error(detail != null ? detail : ex.getMessage(), "BAD_REQUEST"));
+        }
+        if (ex instanceof org.springframework.web.method.annotation.MethodArgumentTypeMismatchException mm) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid value for '" + mm.getName() + "': " + mm.getValue(), "BAD_REQUEST"));
+        }
+        if (ex instanceof org.springframework.http.converter.HttpMessageNotReadableException) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("The request body could not be read", "BAD_REQUEST"));
+        }
+        return null;
     }
 }

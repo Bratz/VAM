@@ -303,8 +303,10 @@ Money / correctness first:
       forecast lines behind them (forecast lines already carry sourceRef); FX deals should link to the invoices
       they hedge (exposureRef is free text) and the hedge should show on the invoice; forecast-to-actual matching
       once the pattern engine forecasts from history.
-- [ ] GET /forecasts/latest?corporateId={TestMNC} returns 500 on vam-five (21 Nov); the page call without
-      corporateId works.
+- [x] "Forecast latest 500 for TestMNC" (21 Nov): the endpoint takes the corporate from the X-Corporate-Id header;
+      without it Spring's MissingRequestHeaderException reached the catch-all as 500 (TestMNC is fine with the
+      header). GlobalExceptionHandler now answers 4xx for every client error (missing header/parameter, malformed
+      id, unreadable body, wrong method) instead of 500 + Sentry.
 - [ ] Outbound payment fee debited and credited on the payer's own account (5.2: SETTLE-AED-3953 "FEE DEBIT" 22.50 and
       "FEE CREDIT" 22.50): the fee income account resolves to the payer, so no fee is collected. Check the fee account
       resolution for outward payments.
