@@ -299,10 +299,13 @@ Money / correctness first:
       payables ("payable:{id}") and Exposure left out only AGING lines. Now every forecast line that projects an
       invoice is left out (ExposureSources.projectsInvoice). No figure on vam-five changed (no foreign-currency
       pattern lines there today).
-- [ ] Payables/receivables links (domain review 21 Nov): Exposure buckets should drill down to the invoices and
-      forecast lines behind them (forecast lines already carry sourceRef); FX deals should link to the invoices
-      they hedge (exposureRef is free text) and the hedge should show on the invoice; forecast-to-actual matching
-      once the pattern engine forecasts from history.
+- [x] Exposure bucket drill-down (21 Nov): GET /fx/exposure/items?corporateId&currency&bucket lists the invoices,
+      forecast lines, cash accounts, declared entries and hedges behind a bucket, placed by the ladder's own rules
+      (ExposureItemsTest: they add up to the bucket); Exposure & Hedging opens them in a drawer.
+- [ ] Still open from the domain review: FX deals should link to the invoices they hedge (exposureRef is free
+      text) and the hedge should show on the invoice; forecast-to-actual matching once the pattern engine
+      forecasts from history; the drawer links to the Receivables/Payables pages, not to the single invoice
+      (those pages take no invoice deep link).
 - [x] "Forecast latest 500 for TestMNC" (21 Nov): the endpoint takes the corporate from the X-Corporate-Id header;
       without it Spring's MissingRequestHeaderException reached the catch-all as 500 (TestMNC is fine with the
       header). GlobalExceptionHandler now answers 4xx for every client error (missing header/parameter, malformed

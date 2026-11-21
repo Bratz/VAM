@@ -93,4 +93,20 @@ public final class FxExposureModels {
 
     public record UploadResult(int imported, int replaced) {
     }
+    /** What an item behind a bucket is: an invoice, a Cash Forecast line, cash at a bank, an uploaded entry or a hedge. */
+    public enum ItemKind { RECEIVABLE, PAYABLE, FORECAST, CASH, DECLARED, HEDGE }
+
+    /**
+     * One item behind a bucket, signed as it counts towards the exposure (receivables, cash, inflows positive;
+     * payables, outflows negative; entries and hedges as stored). {@code id} is the invoice, forecast line, account or
+     * entry; {@code reference} the invoice / account / deal number or forecast category; {@code counterparty} the
+     * customer, vendor or bank (for a forecast line its source engine; for a hedge where it came from).
+     */
+    public record Item(ItemKind kind, UUID id, String reference, String counterparty, LocalDate date, BigDecimal amount) {
+    }
+
+    /** The items behind one currency in one bucket, with the two totals they add up to (as on the ladder). */
+    public record BucketItems(String currency, ExposureBucket bucket, String label, BigDecimal exposure, BigDecimal hedged,
+                              List<Item> items) {
+    }
 }

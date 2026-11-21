@@ -9,9 +9,12 @@ import com.bank.vam.fx.deal.FxDeal;
 import com.bank.vam.fx.deal.FxDealRepository;
 import com.bank.vam.fx.exposure.FxExposureModels.Breach;
 import com.bank.vam.fx.exposure.FxExposureModels.Bucket;
+import com.bank.vam.fx.exposure.FxExposureModels.BucketItems;
 import com.bank.vam.fx.exposure.FxExposureModels.CurrencyRow;
 import com.bank.vam.fx.exposure.FxExposureModels.EntryView;
 import com.bank.vam.fx.exposure.FxExposureModels.HedgeStatus;
+import com.bank.vam.fx.exposure.FxExposureModels.Item;
+import com.bank.vam.fx.exposure.FxExposureModels.ItemKind;
 import com.bank.vam.fx.exposure.FxExposureModels.Ladder;
 import com.bank.vam.fx.exposure.FxExposureModels.UploadResult;
 import com.bank.vam.repository.CorporateRepository;
@@ -66,16 +69,14 @@ public class FxExposureService {
     public Ladder ladder(UUID corporateId) {
         Corporate corporate = corporates.findById(corporateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Corporate not found: " + corporateId));
-        String base = homeCurrency.of(corporateId);
         LocalDate today = LocalDate.now();
-        java.util.Optional<ExposureSources.ForecastFlows> forecast = sources.forecast(corporateId, base, today);
+        Inputs in = inputs(corporateId, today);
+        String base = in.base();
         List<FxPolicyBand> bands = policy.bandsFor(corporateId);
-        List<CurrencyRow> rows = ExposureCalculator.build(base, today,
-                sources.payables(corporateId, base), sources.receivables(corporateId, base),
-                forecast.map(ExposureSources.ForecastFlows::flows).orElse(List.of()),
-                sources.balances(corporateId, base), declaredAndDealt(corporateId),
+        List<CurrencyRow> rows = ExposureCalculator.build(base, today, in.payables(), in.receivables(),
+                in.forecastFlows(), ExposureSources.balances(in.accounts()), in.entries(),
                 bands, ccy -> rateToBase(ccy, base), materialityBase);
-        java.time.OffsetDateTime runAt = forecast.map(ExposureSources.ForecastFlows::runAt).orElse(null);
+        java.time.OffsetDateTime runAt = in.forecast().map(ExposureSources.ForecastFlows::runAt).orElse(null);
         boolean stale = runAt != null && runAt.toLocalDate().isBefore(today.minusDays(forecastStaleDays));
         return new Ladder(corporateId, corporate.getLegalName(), base, today, rows, runAt, stale,
                 bands.stream().anyMatch(FxPolicyBand::isSystemDefault));
@@ -103,6 +104,41 @@ public class FxExposureService {
             }
         }
         return out;
+    }
+
+    /** What the ladder is built from, read once so the ladder and a bucket's drill-down see the same items. */
+    private record Inputs(String base, List<ExposureCalculator.Flow> payables, List<ExposureCalculator.Flow> receivables,
+                          java.util.Optional<ExposureSources.ForecastFlows> forecast, List<ExposureCalculator.Flow> accounts,
+                          List<FxExposureEntry> entries) {
+        List<ExposureCalculator.Flow> forecastFlows() {
+            return forecast.map(ExposureSources.ForecastFlows::flows).orElse(List.of());
+        }
+    }
+
+    private Inputs inputs(UUID corporateId, LocalDate today) {
+        String base = homeCurrency.of(corporateId);
+        return new Inputs(base, sources.payables(corporateId, base), sources.receivables(corporateId, base),
+                sources.forecast(corporateId, base, today), sources.accounts(corporateId, base), declaredAndDealt(corporateId));
+    }
+
+    /**
+     * The invoices, forecast lines, cash, entries and hedges behind one currency in one bucket of the ladder; their
+     * exposure items add up to the bucket's exposure and the hedges to its hedged amount.
+     */
+    public BucketItems items(UUID corporateId, String currency, ExposureBucket bucket) {
+        if (!corporates.existsById(corporateId)) {
+            throw new ResourceNotFoundException("Corporate not found: " + corporateId);
+        }
+        LocalDate today = LocalDate.now();
+        Inputs in = inputs(corporateId, today);
+        String ccy = currency.trim().toUpperCase();
+        List<Item> items = ExposureCalculator.items(in.base(), today, ccy, bucket, in.payables(), in.receivables(),
+                in.forecastFlows(), in.accounts(), in.entries());
+        BigDecimal exposure = items.stream().filter(i -> i.kind() != ItemKind.HEDGE).map(Item::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal hedged = items.stream().filter(i -> i.kind() == ItemKind.HEDGE).map(Item::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return new BucketItems(ccy, bucket, bucket.label(), exposure, hedged, items);
     }
 
     /** Hedges the corporate declared by upload, plus the open deals it has done with the bank. */

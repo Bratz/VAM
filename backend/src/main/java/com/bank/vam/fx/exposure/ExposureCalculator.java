@@ -3,6 +3,8 @@ package com.bank.vam.fx.exposure;
 import com.bank.vam.fx.exposure.FxExposureModels.Bucket;
 import com.bank.vam.fx.exposure.FxExposureModels.CurrencyRow;
 import com.bank.vam.fx.exposure.FxExposureModels.HedgeStatus;
+import com.bank.vam.fx.exposure.FxExposureModels.Item;
+import com.bank.vam.fx.exposure.FxExposureModels.ItemKind;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -17,8 +19,18 @@ import java.util.function.Function;
 /** The ladder arithmetic, kept free of Spring and the database so it can be checked on its own. */
 final class ExposureCalculator {
 
-    /** A dated amount in a currency. Amounts are positive; the caller says which side they are on. */
-    record Flow(String currency, LocalDate date, BigDecimal amount) {
+    /**
+     * A dated amount in a currency. Amounts are positive; the caller says which side they are on. {@code ref} says what
+     * the amount is (an invoice, a forecast line, an account), for the drill-down; null where nobody asks.
+     */
+    record Flow(String currency, LocalDate date, BigDecimal amount, Ref ref) {
+        Flow(String currency, LocalDate date, BigDecimal amount) {
+            this(currency, date, amount, null);
+        }
+    }
+
+    /** What a flow is: its source id (an invoice, a forecast line, an account), reference and counterparty. */
+    record Ref(java.util.UUID id, String reference, String counterparty) {
     }
 
     private ExposureCalculator() {
@@ -84,6 +96,42 @@ final class ExposureCalculator {
             rows.add(new CurrencyRow(ccy, rate, buckets));
         });
         return rows;
+    }
+
+    /**
+     * The items behind one currency in one bucket, placed by the same rules as {@link #build}: so the non-hedge items add
+     * up to that bucket's {@code exposure} and the hedges to its {@code hedged}. Signed as they count: receivables, cash
+     * and inflows positive, payables and outflows negative, entries and hedges as stored.
+     */
+    static List<Item> items(String base, LocalDate today, String currency, ExposureBucket bucket,
+                            List<Flow> payables, List<Flow> receivables, List<Flow> forecast, List<Flow> accounts,
+                            List<FxExposureEntry> entries) {
+        List<Item> out = new ArrayList<>();
+        java.util.function.Predicate<Flow> here = f -> f.currency().equals(currency)
+                && ExposureBucket.forDate(f.date(), today) == bucket;
+        receivables.stream().filter(here).forEach(f -> out.add(item(ItemKind.RECEIVABLE, f, f.amount())));
+        payables.stream().filter(here).forEach(f -> out.add(item(ItemKind.PAYABLE, f, f.amount().negate())));
+        forecast.stream().filter(here).forEach(f -> out.add(item(ItemKind.FORECAST, f, f.amount())));
+        if (bucket == ExposureBucket.ON_HAND) {
+            accounts.stream().filter(f -> f.currency().equals(currency))
+                    .forEach(f -> out.add(item(ItemKind.CASH, f, f.amount())));
+        }
+        for (FxExposureEntry e : entries) {
+            // As in build: entries in the base currency are no exposure (flows come base-free from ExposureSources).
+            if (!e.getCurrency().equals(base) && e.getCurrency().equals(currency)
+                    && ExposureBucket.forDate(e.getValueDate(), today) == bucket) {
+                boolean hedge = e.getKind() == FxExposureEntry.Kind.HEDGE;
+                out.add(new Item(hedge ? ItemKind.HEDGE : ItemKind.DECLARED, e.getId(), e.getReference(),
+                        hedge ? e.getSource() : e.getDescription(), e.getValueDate(), e.getAmount()));
+            }
+        }
+        return out;
+    }
+
+    private static Item item(ItemKind kind, Flow f, BigDecimal signed) {
+        Ref r = f.ref();
+        return new Item(kind, r == null ? null : r.id(), r == null ? null : r.reference(),
+                r == null ? null : r.counterparty(), f.date(), signed);
     }
 
     private static Bucket bucket(ExposureBucket b, Cell c, FxPolicyBand band, BigDecimal threshold) {

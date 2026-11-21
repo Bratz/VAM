@@ -40,6 +40,13 @@ public class FxExposureController {
         return ApiResponse.success(service.breaches(corporateId));
     }
 
+    /** The items behind one currency in one bucket of the ladder (the drill-down). */
+    @GetMapping("/items")
+    public ApiResponse<FxExposureModels.BucketItems> items(@RequestParam UUID corporateId, @RequestParam String currency,
+                                                          @RequestParam ExposureBucket bucket) {
+        return ApiResponse.success(service.items(corporateId, currency, bucket));
+    }
+
     @GetMapping("/entries")
     public ApiResponse<List<EntryView>> entries(@RequestParam UUID corporateId) {
         return ApiResponse.success(service.entriesFor(corporateId));

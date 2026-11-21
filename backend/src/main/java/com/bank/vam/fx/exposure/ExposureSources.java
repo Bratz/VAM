@@ -31,33 +31,40 @@ class ExposureSources {
     private EntityManager em;
 
     List<Flow> payables(UUID corporateId, String base) {
-        return flows("SELECT p.currencyCode, p.dueDate, COALESCE(p.outstandingAmount, p.netAmount) FROM Payable p "
+        return flows("SELECT p.currencyCode, p.dueDate, COALESCE(p.outstandingAmount, p.netAmount), p.id, "
+                + "COALESCE(p.invoiceNumber, p.payableNumber), p.vendorName FROM Payable p "
                 + "WHERE p.corporateId = :c AND p.currencyCode <> :base "
                 + "AND (p.isIntercompany IS NULL OR p.isIntercompany = false) "
                 + "AND p.status NOT IN ('PAID','CANCELLED','NETTED','REJECTED','DRAFT')", corporateId, base);
     }
 
     List<Flow> receivables(UUID corporateId, String base) {
-        return flows("SELECT r.currencyCode, r.dueDate, COALESCE(r.outstandingAmount, r.netAmount) FROM Receivable r "
+        return flows("SELECT r.currencyCode, r.dueDate, COALESCE(r.outstandingAmount, r.netAmount), r.id, "
+                + "r.receivableNumber, r.customerName FROM Receivable r "
                 + "WHERE r.corporateId = :c AND r.currencyCode <> :base "
                 + "AND (r.isIntercompany IS NULL OR r.isIntercompany = false) "
                 + "AND r.status NOT IN ('PAID','CANCELLED','NETTED','WRITTEN_OFF','DRAFT','COBO_REJECTED')", corporateId, base);
     }
 
-    /** Cash held at banks, taken from the shadows of the physical accounts so mirrors are not counted twice. */
-    Map<String, BigDecimal> balances(UUID corporateId, String base) {
-        List<Object[]> rows = em.createQuery(
-                        "SELECT v.currencyCode, SUM(v.bankBalance) FROM VirtualAccount v "
-                                + "WHERE v.corporateId = :c AND v.currencyCode <> :base "
-                                + "AND v.accountCategory = 'PHYSICAL_MIRROR' AND v.status = 'ACTIVE' "
-                                + "GROUP BY v.currencyCode", Object[].class)
-                .setParameter("c", corporateId).setParameter("base", base).getResultList();
+    /**
+     * Cash held at banks, one flow per account, taken from the shadows of the physical accounts so mirrors are not
+     * counted twice. Undated: cash is on hand.
+     */
+    List<Flow> accounts(UUID corporateId, String base) {
+        return em.createQuery("SELECT v.currencyCode, v.bankBalance, v.id, v.vaNumber, v.bankName, v.vaName "
+                        + "FROM VirtualAccount v WHERE v.corporateId = :c AND v.currencyCode <> :base "
+                        + "AND v.accountCategory = 'PHYSICAL_MIRROR' AND v.status = 'ACTIVE'", Object[].class)
+                .setParameter("c", corporateId).setParameter("base", base).getResultList().stream()
+                .filter(r -> r[1] != null)
+                .map(r -> new Flow((String) r[0], null, (BigDecimal) r[1],
+                        new ExposureCalculator.Ref((UUID) r[2], (String) r[3], r[4] != null ? (String) r[4] : (String) r[5])))
+                .toList();
+    }
+
+    /** {@link #accounts} summed per currency, as the ladder's On hand cell counts it. */
+    static Map<String, BigDecimal> balances(List<Flow> accounts) {
         Map<String, BigDecimal> out = new HashMap<>();
-        for (Object[] r : rows) {
-            if (r[1] != null) {
-                out.put((String) r[0], (BigDecimal) r[1]);
-            }
-        }
+        accounts.forEach(f -> out.merge(f.currency(), f.amount(), BigDecimal::add));
         return out;
     }
 
@@ -96,8 +103,8 @@ class ExposureSources {
         if (run.isEmpty()) {
             return Optional.empty();
         }
-        List<Flow> flows = em.createQuery("SELECT l.currency, l.valueDate, l.amountMid, c.direction, l.sourceRef "
-                        + "FROM ForecastLine l JOIN l.category c WHERE l.run.id = :run AND l.currency <> :base "
+        List<Flow> flows = em.createQuery("SELECT l.currency, l.valueDate, l.amountMid, c.direction, l.sourceRef, "
+                        + "l.id, c.label, l.source FROM ForecastLine l JOIN l.category c WHERE l.run.id = :run AND l.currency <> :base "
                         + "AND l.valueDate >= :today AND l.source <> :aging AND c.code NOT IN :excluded", Object[].class)
                 .setParameter("run", run.get(0)[0]).setParameter("base", base).setParameter("today", today)
                 .setParameter("aging", ForecastSource.AGING).setParameter("excluded", NOT_EXPOSURE)
@@ -105,7 +112,8 @@ class ExposureSources {
                 .filter(r -> !projectsInvoice((String) r[4]))
                 .filter(r -> r[2] != null && ((BigDecimal) r[2]).signum() != 0)
                 .map(r -> new Flow(((String) r[0]).trim(), (LocalDate) r[1],
-                        r[3] == ForecastDirection.OUT ? ((BigDecimal) r[2]).abs().negate() : ((BigDecimal) r[2]).abs()))
+                        r[3] == ForecastDirection.OUT ? ((BigDecimal) r[2]).abs().negate() : ((BigDecimal) r[2]).abs(),
+                        new ExposureCalculator.Ref((UUID) r[5], (String) r[6], r[7] == null ? null : r[7].toString())))
                 .toList();
         return Optional.of(new ForecastFlows((OffsetDateTime) run.get(0)[1], flows));
     }
@@ -114,7 +122,8 @@ class ExposureSources {
         return em.createQuery(jpql, Object[].class)
                 .setParameter("c", corporateId).setParameter("base", base).getResultList().stream()
                 .filter(r -> r[2] != null && ((BigDecimal) r[2]).signum() > 0)
-                .map(r -> new Flow((String) r[0], (LocalDate) r[1], (BigDecimal) r[2]))
+                .map(r -> new Flow((String) r[0], (LocalDate) r[1], (BigDecimal) r[2],
+                        new ExposureCalculator.Ref((UUID) r[3], (String) r[4], (String) r[5])))
                 .toList();
     }
 }

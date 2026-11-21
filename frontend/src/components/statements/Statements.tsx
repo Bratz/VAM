@@ -127,7 +127,7 @@ export const StatementIntakeLog: React.FC = () => {
         subtitle={open ? `${open.file.channel === 'INBOX' ? 'Delivery folder' : 'System feed'} · ${formatDateTime(open.file.receivedAt)}` : undefined}
       >
         {open && (
-          <div className="space-y-2">
+          <div className="p-6 space-y-2">
             {open.file.error && <p className="caption-error">{open.file.error}</p>}
             {open.statements.length === 0 && !open.file.error && <p className="caption">No statements in this file.</p>}
             {open.statements.map((s) => (

@@ -152,9 +152,41 @@ export interface ExposureEntry {
   source: string;
 }
 
+/** What an item behind a bucket is. */
+export type ExposureItemKind = 'RECEIVABLE' | 'PAYABLE' | 'FORECAST' | 'CASH' | 'DECLARED' | 'HEDGE';
+
+/**
+ * One item behind a bucket, signed as it counts (receivables, cash, inflows positive; payables, outflows negative).
+ * reference: invoice / account / deal number or forecast category; counterparty: customer, vendor or bank (forecast:
+ * its source engine; hedge: where it came from).
+ */
+export interface ExposureItem {
+  kind: ExposureItemKind;
+  id?: string | null;
+  reference?: string | null;
+  counterparty?: string | null;
+  date?: string | null;
+  amount: number;
+}
+
+/** The items behind one currency in one bucket; exposure and hedged are what they add up to (as on the ladder). */
+export interface ExposureBucketItems {
+  currency: string;
+  bucket: ExposureBucketId;
+  label: string;
+  exposure: number;
+  hedged: number;
+  items: ExposureItem[];
+}
+
 export const fxExposureApi = {
   ladder: (corporateId: string) =>
     apiClient.get<ApiResponse<ExposureLadder>>('/fx/exposure', { params: { corporateId } }).then(r => r.data.data),
+
+  /** The invoices, forecast lines, cash, entries and hedges behind one bucket of the ladder. */
+  items: (corporateId: string, currency: string, bucket: ExposureBucketId) =>
+    apiClient.get<ApiResponse<ExposureBucketItems>>('/fx/exposure/items', { params: { corporateId, currency, bucket } })
+      .then(r => r.data.data),
 
   /** Omit corporateId for every corporate (what the cockpit reads). */
   breaches: (corporateId?: string) =>

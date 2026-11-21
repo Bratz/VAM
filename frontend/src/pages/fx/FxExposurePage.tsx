@@ -7,18 +7,20 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Download, Coins, ShieldAlert, Send, Filter, X, TrendingUp } from 'lucide-react';
+import { Upload, Download, Coins, ShieldAlert, Send, Filter, X, TrendingUp, ListTree } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { StatStrip } from '../../components/layout/StatStrip';
-import { Badge, Button, Card, CardHeader, DataTable, RowActions, StatTile } from '../../components/ui';
+import { Badge, Button, Card, CardHeader, DataTable, Drawer, RowActions, StatTile } from '../../components/ui';
+import { useNavigation } from '../../hooks/useNavigation';
 import { Alert, Modal } from '../../components/ui/enhanced';
 import { Checkbox } from '../../components/ui/Checkbox';
 import type { Column } from '../../components/ui/DataTable';
 import { useUser } from '../../context/useUser';
 import {
-  fxExposureApi, ExposureBucket, ExposureEntry, ExposureLadder, HedgeStatus, PolicyBreach,
+  fxExposureApi, ExposureBucket, ExposureBucketItems, ExposureEntry, ExposureItem, ExposureItemKind, ExposureLadder,
+  HedgeStatus, PolicyBreach,
 } from '../../services/fxMarketApi';
 import NewDealDrawer, { TicketPrefill } from './NewDealDrawer';
 import { errorText, fmt } from './fxFormat';
@@ -63,6 +65,69 @@ const RatioBar: React.FC<{ ratio?: number | null; min?: number | null; max?: num
   );
 };
 
+/** The drawer's sections, in reading order: what makes up the exposure, then the hedges against it. */
+const ITEM_SECTIONS: { kind: ExposureItemKind; title: string; page?: 'receivables' | 'payables' | 'forecasting' }[] = [
+  { kind: 'RECEIVABLE', title: 'Receivables', page: 'receivables' },
+  { kind: 'PAYABLE', title: 'Payables', page: 'payables' },
+  { kind: 'FORECAST', title: 'Cash Forecast', page: 'forecasting' },
+  { kind: 'CASH', title: 'Cash at banks' },
+  { kind: 'DECLARED', title: 'Declared exposures' },
+  { kind: 'HEDGE', title: 'Hedges' },
+];
+
+/**
+ * What a bucket's net exposure and hedge are made of: the invoices, forecast lines, cash, declared entries and hedges
+ * the ladder counted there. The server places them by the ladder's own rules, so they add up to the row.
+ */
+const BucketItemsDrawer: React.FC<{
+  open: { currency: string; bucket: ExposureBucket } | null; data: ExposureBucketItems | null; error: string | null;
+  onClose: () => void; onOpenPage: (page: 'receivables' | 'payables' | 'forecasting') => void;
+}> = ({ open, data, error, onClose, onOpenPage }) => (
+  <Drawer
+    isOpen={!!open}
+    onClose={onClose}
+    size="lg"
+    title={open ? `${open.currency} · ${open.bucket.label}` : ''}
+    subtitle={data ? `Net exposure ${fmtSigned(data.exposure)} · hedged ${data.hedged ? fmtSigned(data.hedged) : '-'}` : undefined}
+  >
+    <div className="p-6">
+    {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
+    {!data && !error && <p className="caption">Loading…</p>}
+    {data && (
+      <div className="space-y-5">
+        {ITEM_SECTIONS.map(({ kind, title, page }) => {
+          const rows = data.items.filter((i) => i.kind === kind);
+          if (rows.length === 0) return null;
+          const total = rows.reduce((t, i) => t + i.amount, 0);
+          return (
+            <section key={kind}>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="label">{title} · {fmtSigned(total)}</p>
+                {page && <Button size="sm" variant="ghost" onClick={() => onOpenPage(page)}>Open {title}</Button>}
+              </div>
+              <div className="divide-y divide-edge-subtle">
+                {rows.map((i: ExposureItem, n) => (
+                  <div key={i.id ?? `${kind}-${n}`} className="py-1.5 flex items-center justify-between gap-3 body-sm">
+                    <div className="min-w-0">
+                      <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{i.reference ?? '-'}</p>
+                      <p className="caption truncate">
+                        {[i.counterparty, i.date ? `due ${i.date}` : kind === 'CASH' ? 'on hand' : 'undated: due now'].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <span className="font-mono tabular-nums shrink-0">{fmtSigned(i.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+        {data.items.length === 0 && <p className="caption">Nothing is counted in this bucket.</p>}
+      </div>
+    )}
+    </div>
+  </Drawer>
+);
+
 // Buckets count days from today; tenors count from the spot date two business days later. These are
 // the standard tenors whose value date lands inside each bucket (about 11, 34, 67, 96 and 186 days
 // out), so a hedge suggested for a bucket is dated where the ladder will count it.
@@ -86,6 +151,19 @@ const FxExposurePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const { navigate } = useNavigation();
+  const [drill, setDrill] = useState<{ currency: string; bucket: ExposureBucket } | null>(null);
+  const [drillData, setDrillData] = useState<ExposureBucketItems | null>(null);
+  const [drillError, setDrillError] = useState<string | null>(null);
+
+  const openItems = (currency: string, bucket: ExposureBucket) => {
+    setDrill({ currency, bucket });
+    setDrillData(null);
+    setDrillError(null);
+    fxExposureApi.items(corporateId, currency, bucket.bucket)
+      .then(setDrillData)
+      .catch((err) => setDrillError(errorText(err)));
+  };
 
   const load = useCallback(async (id: string, isCurrent: () => boolean) => {
     setLoading(true);
@@ -198,6 +276,7 @@ const FxExposurePage: React.FC = () => {
       key: 'actions', header: 'Actions', width: '4rem', minWidth: 64,
       render: (_, b) => (
         <RowActions actions={[
+          { label: "What's behind it", icon: <ListTree className="w-4 h-4" />, onClick: () => openItems(ccy, b) },
           { label: 'Hedge to policy', icon: <Send className="w-4 h-4" />, onClick: () => hedgeBucket(ccy, b), hidden: b.adjustToBand == null },
           { label: `View ${ccy} declared entries`, icon: <Filter className="w-4 h-4" />, onClick: () => setEntryCurrency(ccy) },
         ]} />
@@ -271,6 +350,7 @@ const FxExposurePage: React.FC = () => {
             data={row.buckets.filter((b) => b.exposure !== 0 || b.hedged !== 0)}
             columns={columns(row.currency)}
             keyExtractor={(b) => b.bucket}
+            onRowClick={(b) => openItems(row.currency, b)}
             compact
             hairline
           />
@@ -322,6 +402,14 @@ const FxExposurePage: React.FC = () => {
           {uploadError && <p className="text-body-sm text-error-700 dark:text-error-300">{uploadError}</p>}
         </div>
       </Modal>
+
+      <BucketItemsDrawer
+        open={drill}
+        data={drillData}
+        error={drillError}
+        onClose={() => setDrill(null)}
+        onOpenPage={(page) => { setDrill(null); navigate(page); }}
+      />
 
       <NewDealDrawer
         isOpen={!!ticket}
