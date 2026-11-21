@@ -432,9 +432,12 @@ Phase 4 done (21 Nov; `mvn test` 914/0; CI green on 2e4b860):
 
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
-- [ ] Pay Now is offered on a payable that has no supplier bank account (21 Nov): `canBePaid` checks status and a
+- [x] Pay Now is offered on a payable that has no supplier bank account (21 Nov): `canBePaid` checks status and a
       source account only; executing then refuses "Not available: … has no supplier bank account"
-      (PayablesService.supplier). Fold the supplier check into `canBePaid` so the button is not shown.
+      (PayablesService.supplier). Fixed 21 Nov: the DTO's `canBePaid` and the Dashboard "act now" queries also
+      require `Payable.hasSupplierAccount()` (a chosen party account, or account + name on the payable); the
+      entity's status-only `canBePaid()` is unchanged (scheduling and the FX flag use it). Verified live: INV-02
+      with a source account but no supplier has no Pay Now and is off the Dashboard; with one, both come back.
 - [x] FX exposure double-counted open payables (21 Nov): the pattern engine projects open salary/tax/utility/other
       payables ("payable:{id}") and Exposure left out only AGING lines. Now every forecast line that projects an
       invoice is left out (ExposureSources.projectsInvoice). No figure on vam-five changed (no foreign-currency

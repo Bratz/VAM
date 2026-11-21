@@ -46,4 +46,14 @@ class PayableTest {
         payable.setOwningEntityId(null);
         assertFalse(payable.canAddToNetting());
     }
+
+    /** Pay Now is not offered on a payable the payment would refuse for want of a supplier account. */
+    @Test
+    void aSupplierAccountIsAChosenPartyAccountOrAnAccountAndNameOnThePayable() {
+        assertFalse(Payable.builder().build().hasSupplierAccount());
+        assertTrue(Payable.builder().partyBankAccountId(UUID.randomUUID()).build().hasSupplierAccount());
+        assertTrue(Payable.builder().vendorAccount("GB29NWBK60161331926819").vendorName("Acme Ltd").build().hasSupplierAccount());
+        assertFalse(Payable.builder().vendorAccount("GB29NWBK60161331926819").build().hasSupplierAccount()); // no name
+        assertFalse(Payable.builder().vendorAccount(" ").vendorName("Acme Ltd").build().hasSupplierAccount());
+    }
 }

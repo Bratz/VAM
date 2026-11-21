@@ -677,6 +677,17 @@ public class Payable extends BaseEntity {
             || status == PayableStatus.POBO_APPROVED;
     }
 
+    /**
+     * A supplier account to pay into is recorded: the chosen party bank account, else the account and name on the
+     * payable (a file row's creditor). Without one, executing a payment refuses before any money moves.
+     * ponytail: a chosen party account is trusted here without loading it; one with no number or holder name is
+     * still refused at execution (PayablesService.supplier).
+     */
+    public boolean hasSupplierAccount() {
+        return partyBankAccountId != null
+            || (vendorAccount != null && !vendorAccount.isBlank() && vendorName != null && !vendorName.isBlank());
+    }
+
     public boolean needsApproval() {
         return Boolean.TRUE.equals(approvalRequired) 
             && status == PayableStatus.PENDING_APPROVAL;

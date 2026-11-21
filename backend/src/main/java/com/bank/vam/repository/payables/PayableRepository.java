@@ -32,14 +32,16 @@ import java.util.UUID;
 public interface PayableRepository extends JpaRepository<Payable, UUID> {
 
     // Dashboard "Payments" block: payables the user can act on right now -- awaiting approval,
-    // or approved/scheduled with a source VA (Payable.canBePaid + VA required by executePayment).
-    @Query("SELECT p FROM Payable p WHERE p.corporateId = :corporateId AND (p.status = :approval " +
-           "OR (p.status IN :payable AND p.virtualAccountId IS NOT NULL))")
+    // or approved/scheduled with a source VA and a supplier account (Payable.canBePaid + the VA and
+    // Payable.hasSupplierAccount, both required by executePayment).
+    String PAYABLE_NOW = "(p.status IN :payable AND p.virtualAccountId IS NOT NULL AND (p.partyBankAccountId IS NOT NULL "
+        + "OR (TRIM(p.vendorAccount) <> '' AND TRIM(p.vendorName) <> '')))";
+
+    @Query("SELECT p FROM Payable p WHERE p.corporateId = :corporateId AND (p.status = :approval OR " + PAYABLE_NOW + ")")
     Page<Payable> findDashboardActionableByCorporate(@Param("corporateId") UUID corporateId,
             @Param("approval") PayableStatus approval, @Param("payable") List<PayableStatus> payable, Pageable pageable);
 
-    @Query("SELECT p FROM Payable p WHERE p.status = :approval " +
-           "OR (p.status IN :payable AND p.virtualAccountId IS NOT NULL)")
+    @Query("SELECT p FROM Payable p WHERE p.status = :approval OR " + PAYABLE_NOW)
     Page<Payable> findDashboardActionable(@Param("approval") PayableStatus approval,
             @Param("payable") List<PayableStatus> payable, Pageable pageable);
 

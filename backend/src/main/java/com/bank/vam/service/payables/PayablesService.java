@@ -1570,10 +1570,10 @@ public class PayablesService {
             .createdAt(p.getCreatedAt())
             .updatedBy(p.getUpdatedBy())
             .updatedAt(p.getUpdatedAt())
-            // Computed flags. canBePaid also requires a source VA -- the status check alone
+            // Computed flags. canBePaid also requires a source VA and a supplier account -- the status check alone
             // (Payable.canBePaid()) isn't enough to actually execute a payment; see
-            // PayablesService.executePayment()'s own guard for the same requirement.
-            .canBePaid(p.canBePaid() && p.getVirtualAccountId() != null)
+            // PayablesService.executePayment()'s own guards (source VA, supplier(...)) for the same requirements.
+            .canBePaid(p.canBePaid() && p.getVirtualAccountId() != null && p.hasSupplierAccount())
             .canAddToNetting(p.canAddToNetting())
             .build();
     }
