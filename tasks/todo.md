@@ -334,8 +334,41 @@ ExposureSourcesTest); backend not started, derived queries only):
   linkers. Phase 2 reads `forInvoices(PAYABLE, ...)` effective amounts per deal; Phase 3 consumes the shapes above.
 
 ### Phase 2 — paying draws on the linked deal (R6)
-- [ ] 2.1 Payment plan takes the payable: its linked deals first, up to the effective link; unattended payments too.
-- [ ] 2.2 Tests: plan order and amounts; a payment of a linked payable settles part of its deal.
+- [x] 2.1 Payment plan takes the payable: its linked deals first, up to the effective link; unattended payments too.
+- [x] 2.2 Tests: plan order and amounts; a payment of a linked payable settles part of its deal.
+
+Phase 2 done (21 Nov, uncommitted; `mvn test` 914/0 (908 + 5 in FxPaymentServiceTest + 1 in FxHedgeLinkServiceTest;
+PayablesPoboByEnrolmentTest mocks now expect the payable on the instruction and on needsQuote); tsc + eslint clean;
+backend not started; one new derived query `FxHedgeLinkRepository.findByDealIdIn`):
+- `FxPaymentService.plan(source, currency, amount, use, payableId)` (the 4-arg form passes null, output unchanged):
+  the payable's effective links (`FxHedgeLinkService.forInvoices(PAYABLE, ...)`, effective > 0, summed per deal) put
+  those deals first, each covering up to its link; then the usual soonest-first order covers the rest, a hedging
+  deal's remainder only up to what is not reserved (below). Unticking still works through `use`. A hedging deal that does not
+  fit is left out and `Plan.notes` says why ("Hedges this payable, not used: " + the reason `check` would give, now
+  `whyNot`). `Fit.linked` = the effective link honoured (null when the deal hedges none of it).
+- Reserved part (every payment, linked or not): a deal never gives what its effective links to OTHER invoices hold
+  (`FxHedgeLinkService.reserved(deals, currency, exceptPayable)`, one grouped read: deal remaining is cut by the sum
+  of effective links, the payable being paid left out). E.g. a deal of 1,000 hedging INV-A 200 and INV-B 800: paying
+  INV-A 1,000 takes 200; an unrelated payment takes 0. Applied in `plan` (`Fit.available` is the free part, a deal
+  with none is not listed, a note "FXD-1: EUR 800.00 reserved for other invoices it hedges" when the reservation
+  holds a chosen deal back, ticked or not), in `convert` / `preview` for named draws (refused "has 200.00 EUR left
+  after the 800 reserved for other invoices it hedges"), in `prepareBatch` (files) and in `needsQuote` (BUY side;
+  overload with the payable, used by POBO Pay Now). To spend a reserved part on another invoice, unlink first.
+  Collections (SELL deals, `convertIncoming`) ignore links: out of scope (spec section 5).
+- `Instruction` gained `payableId` (4-arg constructor kept; `forPayable(id)`); `draws()` passes it to the plan, so
+  every unattended draw for a payable (at market; POBO `cover` with nothing chosen keeps it) takes the hedge first.
+  `PayablesService.executePayment` and the POBO preview attach the payable.
+- `GET /fx/payments/plan` takes optional `payableId`; Pay Now (`PaymentFxPanel`, `payableId` prop from
+  `EnhancedPayablesPage`) passes it: the hedging deal is listed first and ticked, marked "hedges EUR x of this
+  payable", notes shown under the deals.
+- Settling: unchanged. `settle` -> `paidByPayment` lowers the deal's remaining; Pay Now pays the net amount so the
+  payable is PAID and the link's effective amount reads 0 (reason PAID) with no extra step.
+- Not covered: file-ingest payables (`IngestFx`/`prepareBatch`) create a new payable per row, which has no links, so
+  nothing to draw; `executeBatchPayment` sends no FX, and a direct cross-currency payable there is still refused
+  "lock a rate" as before (POBO ones go at market and do draw the hedge).
+- Phase 3 needs: `PaymentFit.linked` / `PaymentPlan.notes` are already on the Pay Now panel (3.3 "linked deal
+  ticked" is done there); still to do the "Hedged" marker on the lists (`GET /fx/hedge-links?kind&invoiceIds`), the
+  deal drawer (3.1) and the Exposure drill-down (3.2).
 
 ### Phase 3 — screens (R7)
 - [ ] 3.1 Deal drawer: linked invoices (linked, effective, reason), unbacked amount, Link invoices / Unlink.

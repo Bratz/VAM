@@ -89,6 +89,8 @@ class FxHedgeLinkServiceTest {
         when(linkRepo.findByKindAndInvoiceIdIn(any(), any())).thenAnswer(inv -> stored.stream()
                 .filter(l -> l.getKind() == inv.getArgument(0) && ((Collection<UUID>) inv.getArgument(1)).contains(l.getInvoiceId()))
                 .toList());
+        when(linkRepo.findByDealIdIn(any())).thenAnswer(inv -> stored.stream()
+                .filter(l -> ((Collection<UUID>) inv.getArgument(0)).contains(l.getDealId())).toList());
         when(linkRepo.findById(any())).thenAnswer(inv ->
                 stored.stream().filter(l -> l.getId().equals(inv.getArgument(0))).findFirst());
         org.mockito.Mockito.doAnswer(inv -> stored.remove(inv.<FxHedgeLink>getArgument(0))).when(linkRepo).delete(any());
@@ -343,6 +345,21 @@ class FxHedgeLinkServiceTest {
         r.setStatus(ReceivableStatus.WRITTEN_OFF);
 
         assertThat(service.forDeal(CORP, deal.getId()).links().get(0).reason()).isEqualTo("WRITTEN_OFF");
+    }
+
+    @Test
+    void whatIsReservedOfADealIsItsEffectiveLinksToInvoicesOtherThanTheOneBeingPaid() {
+        Payable a = payable("EUR", "20000.00", PayableStatus.APPROVED);
+        Payable b = payable("EUR", "80000.00", PayableStatus.APPROVED);
+        link(deal, pay(a, "20000"), pay(b, "80000"));
+
+        assertThat(service.reserved(List.of(deal), "EUR", a.getId()).get(deal.getId())).isEqualByComparingTo("80000");
+        assertThat(service.reserved(List.of(deal), "EUR", b.getId()).get(deal.getId())).isEqualByComparingTo("20000");
+        assertThat(service.reserved(List.of(deal), "EUR", null).get(deal.getId())).as("an unrelated payment").isEqualByComparingTo("100000");
+        assertThat(service.reserved(List.of(deal), "USD", null)).as("another currency").isEmpty();
+
+        b.setStatus(PayableStatus.PAID); // a lapsed link reserves nothing
+        assertThat(service.reserved(List.of(deal), "EUR", a.getId())).isEmpty();
     }
 
     @Test

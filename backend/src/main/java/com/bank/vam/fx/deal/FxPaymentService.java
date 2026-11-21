@@ -4,6 +4,8 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.fx.hedge.FxHedgeLink;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +17,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
-
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * FX in payments. A payment in a currency other than its account's is converted by the corporate's outstanding deals
@@ -50,13 +54,25 @@ public class FxPaymentService {
     public record Draw(UUID dealId, BigDecimal amount) {
     }
 
-    /** How to convert: deals to draw on, then for the rest at most one of the ids, or {@code atMarket}. */
-    public record Instruction(UUID priceId, UUID quoteId, List<Draw> draws, boolean atMarket) {
+    /**
+     * How to convert: deals to draw on, then for the rest at most one of the ids, or {@code atMarket}. {@code payableId}:
+     * the payable being paid, whose hedging deals an unattended plan draws first (fx-hedge-links R6).
+     */
+    public record Instruction(UUID priceId, UUID quoteId, List<Draw> draws, boolean atMarket, UUID payableId) {
 
         public static final Instruction AT_MARKET = new Instruction(null, null, List.of(), true);
 
         public Instruction {
             draws = draws == null ? List.of() : List.copyOf(draws);
+        }
+
+        public Instruction(UUID priceId, UUID quoteId, List<Draw> draws, boolean atMarket) {
+            this(priceId, quoteId, draws, atMarket, null);
+        }
+
+        /** The same instruction, paying the payable {@code id}. */
+        public Instruction forPayable(UUID id) {
+            return new Instruction(priceId, quoteId, draws, atMarket, id);
         }
 
         /** From the request fields of a payment channel; {@code dealId} is shorthand for one deal taking what it can. */
@@ -104,13 +120,20 @@ public class FxPaymentService {
         }
     }
 
-    /** A deal that fits a payment, what it can still deliver in the payment's currency, and what it would cover. */
+    /**
+     * A deal that fits a payment, what it can still deliver in the payment's currency, and what it would cover.
+     * {@code linked}: what it still hedges of the payable being paid (its effective link), null when it hedges none.
+     */
     public record Fit(UUID dealId, String dealRef, Instrument instrument, LocalDate valueDate, String pair, BigDecimal rate,
-                      BigDecimal available, BigDecimal covers, BigDecimal debit) {
+                      BigDecimal available, BigDecimal covers, BigDecimal debit, BigDecimal linked) {
     }
 
-    /** The deals that fit, in the order they are used, and what is left for a rate or a firm price. */
-    public record Plan(String currency, String accountCurrency, BigDecimal amount, List<Fit> deals, BigDecimal rest) {
+    /**
+     * The deals that fit, in the order they are used, and what is left for a rate or a firm price. {@code notes}: why a
+     * deal hedging the payable is not used, and which deals hold part back for other invoices they hedge.
+     */
+    public record Plan(String currency, String accountCurrency, BigDecimal amount, List<Fit> deals, BigDecimal rest,
+                       List<String> notes) {
     }
 
     /** One line of a batch: the paying account and what it pays. */
@@ -128,6 +151,7 @@ public class FxPaymentService {
     private final FxConfirmationService confirmations;
     private final FxSettlementService settlement;
     private final FxDealRepository deals;
+    private final FxHedgeLinkService hedgeLinks;
 
     /**
      * The deals that fit a payment, soonest value date first, each covering what it can until the amount is met.
@@ -135,21 +159,92 @@ public class FxPaymentService {
      */
     @Transactional(readOnly = true)
     public Plan plan(VirtualAccount source, String currency, BigDecimal amount, Collection<UUID> use) {
+        return plan(source, currency, amount, use, null);
+    }
+
+    /**
+     * As {@link #plan(VirtualAccount, String, BigDecimal, Collection)} for paying the payable {@code payableId}
+     * (fx-hedge-links R6): the deals hedging it come first, each covering up to its effective link, then the usual
+     * order covers the rest (a hedging deal's remainder included, as for any payment). A hedging deal that cannot pay
+     * this payment is left out with the reason in {@code notes}. With or without a payable, no deal gives the part of it
+     * reserved for other invoices it hedges ({@link FxHedgeLinkService#reserved}): {@code available} is what is left
+     * after that, a deal with nothing left is not listed, and a deal the reservation holds back gets a note.
+     */
+    @Transactional(readOnly = true)
+    public Plan plan(VirtualAccount source, String currency, BigDecimal amount, Collection<UUID> use, UUID payableId) {
         String accountCcy = source.getCurrencyCode();
         String ccy = currencyOf(source, currency);
         List<Fit> fits = new ArrayList<>();
+        List<String> notes = new ArrayList<>();
         BigDecimal left = amount;
         if (!ccy.equals(accountCcy)) {
-            for (FxDeal d : fitting(source, ccy)) {
-                BigDecimal available = available(d, ccy);
-                boolean chosen = use == null || use.contains(d.getId());
-                BigDecimal covers = chosen ? available.min(left) : BigDecimal.ZERO;
-                BigDecimal debit = covers.signum() > 0 ? settlement.legsFor(d, toBase(d, ccy, covers))[1] : BigDecimal.ZERO;
-                fits.add(new Fit(d.getId(), d.getDealRef(), d.getInstrument(), d.getValueDate(), d.getPair(), d.getRate(), available, covers, debit));
-                left = left.subtract(covers);
+            List<FxDeal> fitting = fitting(source, ccy);
+            Map<UUID, BigDecimal> linked = hedging(payableId, source, ccy, fitting, notes);
+            Map<UUID, BigDecimal> reserved = hedgeLinks.reserved(fitting, ccy, payableId);
+            Map<UUID, BigDecimal> covers = new HashMap<>();
+            for (FxDeal d : fitting) {
+                if (linked.containsKey(d.getId()) && (use == null || use.contains(d.getId()))) {
+                    BigDecimal c = free(d, ccy, reserved).min(linked.get(d.getId())).min(left);
+                    covers.put(d.getId(), c);
+                    left = left.subtract(c);
+                }
+            }
+            for (FxDeal d : fitting) {
+                if (use == null || use.contains(d.getId())) {
+                    BigDecimal had = covers.getOrDefault(d.getId(), BigDecimal.ZERO);
+                    BigDecimal c = free(d, ccy, reserved).subtract(had).min(left);
+                    if (c.compareTo(available(d, ccy).subtract(had).min(left)) < 0) {
+                        notes.add(d.getDealRef() + ": " + ccy + " " + reserved.get(d.getId()).setScale(2, RoundingMode.HALF_UP).toPlainString()
+                                + " reserved for other invoices it hedges");
+                    }
+                    covers.merge(d.getId(), c, BigDecimal::add);
+                    left = left.subtract(c);
+                }
+            }
+            List<FxDeal> ordered = new ArrayList<>(fitting.stream().filter(d -> linked.containsKey(d.getId())).toList());
+            fitting.stream().filter(d -> !linked.containsKey(d.getId())).forEach(ordered::add);
+            for (FxDeal d : ordered) {
+                BigDecimal free = free(d, ccy, reserved);
+                if (free.signum() == 0) {
+                    continue;
+                }
+                BigDecimal c = covers.getOrDefault(d.getId(), BigDecimal.ZERO);
+                BigDecimal debit = c.signum() > 0 ? settlement.legsFor(d, toBase(d, ccy, c))[1] : BigDecimal.ZERO;
+                fits.add(new Fit(d.getId(), d.getDealRef(), d.getInstrument(), d.getValueDate(), d.getPair(), d.getRate(),
+                        free, c, debit, linked.get(d.getId())));
             }
         }
-        return new Plan(ccy, accountCcy, amount, fits, ccy.equals(accountCcy) ? BigDecimal.ZERO : left);
+        return new Plan(ccy, accountCcy, amount, fits, ccy.equals(accountCcy) ? BigDecimal.ZERO : left, List.copyOf(notes));
+    }
+
+    /**
+     * What each deal still hedges of the payable (its effective links, R3), for the deals among {@code fitting}; a
+     * hedging deal that cannot pay this payment gets a note saying why instead.
+     */
+    private Map<UUID, BigDecimal> hedging(UUID payableId, VirtualAccount source, String ccy, List<FxDeal> fitting,
+                                          List<String> notes) {
+        if (payableId == null) {
+            return Map.of();
+        }
+        Map<UUID, BigDecimal> out = new LinkedHashMap<>();
+        hedgeLinks.forInvoices(source.getCorporateId(), FxHedgeLink.Kind.PAYABLE, List.of(payableId))
+                .getOrDefault(payableId, List.of()).stream().filter(l -> l.effective().signum() > 0)
+                .forEach(l -> out.merge(l.dealId(), l.effective(), BigDecimal::add));
+        Set<UUID> fit = fitting.stream().map(FxDeal::getId).collect(Collectors.toSet());
+        out.keySet().removeIf(id -> {
+            if (fit.contains(id)) {
+                return false;
+            }
+            FxDeal d = deals.findById(id).orElse(null);
+            String why = d == null ? null : whyNot(d, source, ccy);
+            if (why == null) {
+                why = source.getOwningEntityId() == null ? label(source) + " belongs to no legal entity, and an FX deal is booked for one"
+                        : (d == null ? "the deal" : d.getDealRef()) + " has nothing left to deliver";
+            }
+            notes.add("Hedges this payable, not used: " + why);
+            return true;
+        });
+        return out;
     }
 
     /**
@@ -175,18 +270,23 @@ public class FxPaymentService {
                     + accountCcy + ": lock a rate or use a booked FX deal to convert it");
         }
         List<Draw> draws = draws(source, ccy, amount, fx);
+        Map<UUID, FxDeal> drawn = drawn(draws);
+        Map<UUID, BigDecimal> reserved = hedgeLinks.reserved(drawn.values(), ccy, fx.payableId());
         List<Part> parts = new ArrayList<>();
         BigDecimal left = amount;
         for (Draw draw : draws) {
             if (left.signum() == 0) {
                 break;
             }
-            FxDeal d = deals.findById(draw.dealId()).orElseThrow(() -> new ResourceNotFoundException("FX deal not found: " + draw.dealId()));
+            FxDeal d = drawn.get(draw.dealId());
             check(d, source, ccy);
-            BigDecimal paid = draw.amount() == null ? left.min(available(d, ccy)) : draw.amount().min(left);
-            if (paid.compareTo(available(d, ccy)) > 0) {
-                throw invalid(d.getDealRef() + " has " + available(d, ccy).toPlainString() + " " + ccy + " left, less than the "
-                        + paid.toPlainString() + " asked of it");
+            BigDecimal free = free(d, ccy, reserved);
+            BigDecimal paid = draw.amount() == null ? left.min(free) : draw.amount().min(left);
+            if (paid.compareTo(free) > 0) {
+                BigDecimal held = reserved.getOrDefault(d.getId(), BigDecimal.ZERO);
+                throw invalid(d.getDealRef() + " has " + free.toPlainString() + " " + ccy + " left"
+                        + (held.signum() > 0 ? " after the " + held.toPlainString() + " reserved for other invoices it hedges" : "")
+                        + ", less than the " + paid.toPlainString() + " asked of it");
             }
             BigDecimal base = toBase(d, ccy, paid);
             parts.add(new Part(Source.DEAL, d, base, paid, settlement.legsFor(d, base)[1], d.getRate()));
@@ -218,10 +318,13 @@ public class FxPaymentService {
         }
         List<Part> parts = new ArrayList<>();
         BigDecimal left = amount;
-        for (Draw draw : fx == null ? List.<Draw>of() : draws(source, ccy, amount, fx)) {
-            FxDeal d = deals.findById(draw.dealId()).orElseThrow(() -> new ResourceNotFoundException("FX deal not found: " + draw.dealId()));
+        List<Draw> draws = fx == null ? List.of() : draws(source, ccy, amount, fx);
+        Map<UUID, FxDeal> drawn = drawn(draws);
+        Map<UUID, BigDecimal> reserved = hedgeLinks.reserved(drawn.values(), ccy, fx == null ? null : fx.payableId());
+        for (Draw draw : draws) {
+            FxDeal d = drawn.get(draw.dealId());
             check(d, source, ccy);
-            BigDecimal paid = (draw.amount() == null ? left : draw.amount().min(left)).min(available(d, ccy));
+            BigDecimal paid = (draw.amount() == null ? left : draw.amount().min(left)).min(free(d, ccy, reserved));
             if (paid.signum() > 0) {
                 BigDecimal base = toBase(d, ccy, paid);
                 parts.add(new Part(Source.DEAL, d, base, paid, settlement.legsFor(d, base)[1], d.getRate()));
@@ -246,10 +349,19 @@ public class FxPaymentService {
     /** The deals named, or for "at market" with none named the ones that fit, as {@link #convert} draws them. */
     private List<Draw> draws(VirtualAccount source, String ccy, BigDecimal amount, Instruction fx) {
         if (fx.draws().isEmpty() && fx.atMarket() && fx.priceId() == null && fx.quoteId() == null) {
-            return plan(source, ccy, amount, null).deals().stream()
+            return plan(source, ccy, amount, null, fx.payableId()).deals().stream()
                     .filter(f -> f.covers().signum() > 0).map(f -> new Draw(f.dealId(), f.covers())).toList();
         }
         return fx.draws();
+    }
+
+    /** The deals named by {@code draws}, by id; an unknown one is not found. */
+    private Map<UUID, FxDeal> drawn(List<Draw> draws) {
+        Map<UUID, FxDeal> out = new LinkedHashMap<>();
+        for (Draw draw : draws) {
+            out.computeIfAbsent(draw.dealId(), id -> deals.findById(id).orElseThrow(() -> new ResourceNotFoundException("FX deal not found: " + id)));
+        }
+        return out;
     }
 
     /** After the payment's ledger legs: settles each deal's part by the payment and notes the FX on it. */
@@ -409,13 +521,21 @@ public class FxPaymentService {
      * transactional, so asking never dooms the caller's transaction.
      */
     public String needsQuote(VirtualAccount account, String currency, BigDecimal amount, Side side) {
+        return needsQuote(account, currency, amount, side, null);
+    }
+
+    /** As {@link #needsQuote(VirtualAccount, String, BigDecimal, Side)}, paying the payable {@code payableId}. */
+    public String needsQuote(VirtualAccount account, String currency, BigDecimal amount, Side side, UUID payableId) {
         String ccy = currencyOf(account, currency);
         if (ccy.equals(account.getCurrencyCode()) || account.getOwningEntityId() == null) {
             return null;
         }
         BigDecimal left = amount;
-        for (FxDeal d : side == Side.BUY ? fitting(account, ccy) : fittingIncoming(account, ccy)) {
-            left = left.subtract(available(d, ccy).min(left));
+        List<FxDeal> usable = side == Side.BUY ? fitting(account, ccy) : fittingIncoming(account, ccy);
+        // ponytail: collections ignore links (a collection drawing on a sell deal is out of scope, spec section 5).
+        Map<UUID, BigDecimal> reserved = side == Side.BUY ? hedgeLinks.reserved(usable, ccy, payableId) : Map.of();
+        for (FxDeal d : usable) {
+            left = left.subtract(free(d, ccy, reserved).min(left));
         }
         if (left.signum() <= 0) {
             return null;
@@ -484,11 +604,17 @@ public class FxPaymentService {
 
             Map<UUID, BigDecimal> pool = new LinkedHashMap<>();
             BigDecimal covered = BigDecimal.ZERO;
-            for (FxDeal d : fitting(first, ccy)) {
+            List<FxDeal> usable = fitting(first, ccy);
+            // A batch pays no linked payable (a file's payables are new), so every reservation holds.
+            Map<UUID, BigDecimal> reserved = hedgeLinks.reserved(usable, ccy, null);
+            for (FxDeal d : usable) {
                 if (covered.compareTo(total) >= 0) {
                     break;
                 }
-                BigDecimal a = available(d, ccy);
+                BigDecimal a = free(d, ccy, reserved);
+                if (a.signum() == 0) {
+                    continue;
+                }
                 pool.put(d.getId(), a);
                 covered = covered.add(a);
             }
@@ -545,29 +671,34 @@ public class FxPaymentService {
                 .toList();
     }
 
-    /** Why a deal named for this payment cannot pay it. */
+    /** Refuses a deal named for this payment that cannot pay it, saying why. */
     private void check(FxDeal d, VirtualAccount source, String ccy) {
-        String accountCcy = source.getCurrencyCode();
-        if (!source.getCorporateId().equals(d.getCorporateId())) {
-            throw invalid(d.getDealRef() + " is not a deal of this corporate");
-        }
-        if (d.getEntityId() != null && source.getOwningEntityId() != null && !d.getEntityId().equals(source.getOwningEntityId())) {
-            throw invalid(d.getDealRef() + " is booked for another entity than the one paying");
-        }
-        if (!d.getBuyCurrency().equals(ccy) || !d.getSellCurrency().equals(accountCcy)) {
-            throw invalid(d.getDealRef() + " buys " + d.getBuyCurrency() + " and sells " + d.getSellCurrency()
-                    + "; this payment needs " + ccy + " bought with " + accountCcy);
-        }
-        if (!DRAWABLE.contains(d.getStatus())) {
-            throw invalid(d.getDealRef() + " is " + d.getStatus().name().toLowerCase(Locale.ROOT).replace('_', ' ') + " and cannot pay");
-        }
-        if (d.getConfirmationStatus() != ConfirmationStatus.AFFIRMED) {
-            throw invalid("Confirm " + d.getDealRef() + " before paying with it");
-        }
-        String why = notToday(d);
+        String why = whyNot(d, source, ccy);
         if (why != null) {
             throw invalid(why);
         }
+    }
+
+    /** Why a deal cannot pay this payment, or null when it can. */
+    private static String whyNot(FxDeal d, VirtualAccount source, String ccy) {
+        String accountCcy = source.getCurrencyCode();
+        if (!source.getCorporateId().equals(d.getCorporateId())) {
+            return d.getDealRef() + " is not a deal of this corporate";
+        }
+        if (d.getEntityId() != null && source.getOwningEntityId() != null && !d.getEntityId().equals(source.getOwningEntityId())) {
+            return d.getDealRef() + " is booked for another entity than the one paying";
+        }
+        if (!d.getBuyCurrency().equals(ccy) || !d.getSellCurrency().equals(accountCcy)) {
+            return d.getDealRef() + " buys " + d.getBuyCurrency() + " and sells " + d.getSellCurrency()
+                    + "; this payment needs " + ccy + " bought with " + accountCcy;
+        }
+        if (!DRAWABLE.contains(d.getStatus())) {
+            return d.getDealRef() + " is " + d.getStatus().name().toLowerCase(Locale.ROOT).replace('_', ' ') + " and cannot pay";
+        }
+        if (d.getConfirmationStatus() != ConfirmationStatus.AFFIRMED) {
+            return "Confirm " + d.getDealRef() + " before paying with it";
+        }
+        return notToday(d);
     }
 
     /** Null when the deal can deliver today: a window open today, a forward due today or later, a spot not yet settled. */
@@ -585,6 +716,11 @@ public class FxPaymentService {
     private static BigDecimal available(FxDeal d, String ccy) {
         BigDecimal rem = d.remainingBase();
         return d.baseCurrency().equals(ccy) ? rem : rem.multiply(d.getRate()).setScale(2, RoundingMode.DOWN);
+    }
+
+    /** What the deal can deliver to this payment: {@link #available} less what it holds for other invoices. */
+    private static BigDecimal free(FxDeal d, String ccy, Map<UUID, BigDecimal> reserved) {
+        return available(d, ccy).subtract(reserved.getOrDefault(d.getId(), BigDecimal.ZERO)).max(BigDecimal.ZERO);
     }
 
     /**

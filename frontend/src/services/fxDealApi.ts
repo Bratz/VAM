@@ -195,15 +195,22 @@ export interface PaymentFit {
   available: number;
   covers: number;
   debit: number;
+  /** What it still hedges of the payable being paid (its effective link); null when it hedges none. */
+  linked?: number | null;
 }
 
-/** The deals that fit a payment, soonest value date first, and what is left for a rate. */
+/**
+ * The deals that fit a payment, soonest value date first (for a payable, the deals hedging it first), and what is
+ * left for a rate. notes: why a deal hedging the payable is not used, and which deals hold part back for other
+ * invoices they hedge (available is what is left after that).
+ */
 export interface PaymentPlan {
   currency: string;
   accountCurrency: string;
   amount: number;
   deals: PaymentFit[];
   rest: number;
+  notes: string[];
 }
 
 /** One side of a streamed price: the client buying (buy) or selling (sell) the base currency. */
@@ -385,11 +392,15 @@ export interface IndicativeFx {
 }
 
 export const fxDealApi = {
-  /** The deals that fit a payment; {@code use} limits them to the ones the payer kept ticked. */
-  paymentPlan: (accountId: string, currency: string, amount: number, use?: string[]) =>
+  /**
+   * The deals that fit a payment; {@code use} limits them to the ones the payer kept ticked. {@code payableId}: the
+   * payable being paid, whose hedging deals come first.
+   */
+  paymentPlan: (accountId: string, currency: string, amount: number, use?: string[], payableId?: string) =>
     apiClient.get<ApiResponse<PaymentPlan>>('/fx/payments/plan', {
       // an empty list is "none": sent as an id no deal has, since an empty parameter would read as all
-      params: { accountId, currency, amount, ...(use ? { use: (use.length ? use : ['00000000-0000-0000-0000-000000000000']).join(',') } : {}) },
+      params: { accountId, currency, amount, ...(use ? { use: (use.length ? use : ['00000000-0000-0000-0000-000000000000']).join(',') } : {}),
+        ...(payableId ? { payableId } : {}) },
     }).then(r => r.data.data),
 
   /**

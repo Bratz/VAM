@@ -87,7 +87,8 @@ public class PoboEnrolmentService {
          */
         public FxPaymentService.Conversion cover(FxPaymentService fx, BigDecimal amount, FxPaymentService.Instruction requested) {
             if (!crossCurrency()) return null;
-            FxPaymentService.Instruction how = requested == null || requested.none() ? FxPaymentService.Instruction.AT_MARKET : requested;
+            FxPaymentService.Instruction how = requested == null ? FxPaymentService.Instruction.AT_MARKET
+                : requested.none() ? FxPaymentService.Instruction.AT_MARKET.forPayable(requested.payableId()) : requested;
             String ccy = enrolment.getCurrency();
             String refusal = refusal(fx.preview(paymentVa, ccy, amount, how).debitAmount());
             if (refusal != null) throw new BusinessException(refusal + " (" + ccy + " " + amount.toPlainString() + " at the indicative rate)");

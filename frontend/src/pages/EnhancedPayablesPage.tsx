@@ -466,6 +466,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
             accountCurrency={account.currencyCode}
             currency={payable.currencyCode}
             amount={payable.netAmount}
+            payableId={payable.id}
             onChange={setFx}
           />
         )}

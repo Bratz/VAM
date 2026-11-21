@@ -11,4 +11,6 @@ public interface FxHedgeLinkRepository extends JpaRepository<FxHedgeLink, UUID> 
     List<FxHedgeLink> findByDealIdOrderByLinkedAtAsc(UUID dealId);
 
     List<FxHedgeLink> findByKindAndInvoiceIdIn(FxHedgeLink.Kind kind, Collection<UUID> invoiceIds);
+
+    List<FxHedgeLink> findByDealIdIn(Collection<UUID> dealIds);
 }

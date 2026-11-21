@@ -327,7 +327,7 @@ public class PayablesService {
             String needsQuote = null;
             try {
                 settle = !route.crossCurrency() ? p.getNetAmount() : fxPayments.preview(route.paymentVa(),
-                    p.getCurrencyCode(), p.getNetAmount(), FxPaymentService.Instruction.AT_MARKET).debitAmount();
+                    p.getCurrencyCode(), p.getNetAmount(), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId())).debitAmount();
                 refusal = route.refusal(settle);
             } catch (BusinessException e) {
                 // Above the live-price limit is not a refusal: paying hands it to treasury to negotiate (ihb-fx D7).
@@ -425,14 +425,17 @@ public class PayablesService {
         // the IHB account's currency needs none; cross-currency POBO is covered by the treasury on its payment account
         // (ihb-fx D3), the IHB headroom checked on the settle-currency amount first (R9). All before anything is
         // marked or recorded, so a refusal leaves the payable APPROVED (D6).
+        // Unattended (at market, or POBO with nothing chosen), the deals hedging this payable are drawn first (R6).
         FxPaymentService.Instruction requestedFx = FxPaymentService.Instruction.of(request.getFxPriceId(),
-            request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket());
+            request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket())
+            .forPayable(payable.getId());
         // ihb-fx D7: nothing chosen and what T's deals leave is above the live-price limit -> treasury negotiates.
         // Asked before converting (needsQuote books and dooms nothing); the flag commits with the refusal
         // (noRollbackFor), the payable stays APPROVED, and treasury's accept pays it here with its quote id.
         if (pobo != null && pobo.crossCurrency() && requestedFx.quoteId() == null && requestedFx.priceId() == null
                 && requestedFx.draws().isEmpty()) {
-            String why = fxPayments.needsQuote(pobo.paymentVa(), payable.getCurrencyCode(), payable.getNetAmount(), Side.BUY);
+            String why = fxPayments.needsQuote(pobo.paymentVa(), payable.getCurrencyCode(), payable.getNetAmount(), Side.BUY,
+                payable.getId());
             if (why != null) {
                 payable.setFxStatus(Payable.AWAITING_FX);
                 payable.setFxStatusReason(why);

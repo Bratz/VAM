@@ -3,6 +3,8 @@ package com.bank.vam.fx.deal;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.hedge.FxHedgeLink;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
 import com.bank.vam.fx.deal.SimulatedDealer.Price;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,7 +36,8 @@ class FxPaymentServiceTest {
     private final FxConfirmationService confirmations = mock(FxConfirmationService.class);
     private final FxSettlementService settlement = mock(FxSettlementService.class);
     private final FxDealRepository deals = mock(FxDealRepository.class);
-    private final FxPaymentService payments = new FxPaymentService(stream, quotes, confirmations, settlement, deals);
+    private final FxHedgeLinkService hedgeLinks = mock(FxHedgeLinkService.class);
+    private final FxPaymentService payments = new FxPaymentService(stream, quotes, confirmations, settlement, deals, hedgeLinks);
 
     /** A USD account of the fixture entity. */
     private static VirtualAccount usdAccount() {
@@ -199,6 +203,152 @@ class FxPaymentServiceTest {
         FxPaymentService.Plan unticked = payments.plan(usdAccount(), "EUR", bd("1000"), List.of(fit.get(1).getId()));
         assertThat(unticked.deals().get(0).covers()).isEqualByComparingTo("0");
         assertThat(unticked.rest()).isEqualByComparingTo("400");
+        assertThat(plan.notes()).isEmpty();
+        assertThat(plan.deals()).allSatisfy(f -> assertThat(f.linked()).isNull());
+        verify(hedgeLinks, never()).forInvoices(any(), any(), any());
+    }
+
+    // ---- fx-hedge-links R6: paying a payable draws on the deals hedging it first ------------------------------------
+
+    private static final UUID PAYABLE = UUID.randomUUID();
+
+    /** The payable's links: each deal hedging {@code effective} EUR of it. */
+    private void hedgedBy(Object... dealAndEffective) {
+        List<FxHedgeLinkService.LinkView> views = new java.util.ArrayList<>();
+        for (int i = 0; i < dealAndEffective.length; i += 2) {
+            FxDeal d = (FxDeal) dealAndEffective[i];
+            BigDecimal effective = bd((String) dealAndEffective[i + 1]);
+            views.add(new FxHedgeLinkService.LinkView(UUID.randomUUID(), d.getId(), d.getDealRef(), FxHedgeLink.Kind.PAYABLE,
+                    PAYABLE, "INV-1", "Supplier", LocalDate.now().plusDays(10), "EUR", bd("500"), effective,
+                    effective.signum() == 0 ? "PAID" : null, null, "tester", null));
+        }
+        when(hedgeLinks.forInvoices(CORP, FxHedgeLink.Kind.PAYABLE, List.of(PAYABLE))).thenReturn(Map.of(PAYABLE, views));
+    }
+
+    @Test
+    void payingAHedgedPayablePutsItsDealFirstUpToTheEffectiveLinkThenTheUsualOrder() {
+        List<FxDeal> fit = book(); // forward EUR 300 (soonest), window EUR 600
+        FxDeal window = fit.get(1);
+        hedgedBy(window, "200");
+
+        FxPaymentService.Plan plan = payments.plan(usdAccount(), "EUR", bd("400"), null, PAYABLE);
+
+        assertThat(plan.deals()).extracting(FxPaymentService.Fit::dealId).containsExactly(window.getId(), fit.get(0).getId());
+        assertThat(plan.deals()).extracting(FxPaymentService.Fit::covers).usingElementComparator(BigDecimal::compareTo)
+                .as("the window its link, the forward the rest").containsExactly(bd("200"), bd("200"));
+        assertThat(plan.deals().get(0).linked()).isEqualByComparingTo("200");
+        assertThat(plan.deals().get(1).linked()).isNull();
+        assertThat(plan.rest()).isEqualByComparingTo("0");
+        assertThat(plan.notes()).isEmpty();
+        // Without the payable, the same payment takes the soonest deal first.
+        assertThat(payments.plan(usdAccount(), "EUR", bd("400"), null).deals()).extracting(FxPaymentService.Fit::covers)
+                .usingElementComparator(BigDecimal::compareTo).containsExactly(bd("300"), bd("100"));
+
+        // The payer can untick the hedge: the usual order covers what it can.
+        FxPaymentService.Plan unticked = payments.plan(usdAccount(), "EUR", bd("400"), List.of(fit.get(0).getId()), PAYABLE);
+        assertThat(unticked.deals().get(0).dealId()).isEqualTo(window.getId());
+        assertThat(unticked.deals().get(0).covers()).isEqualByComparingTo("0");
+        assertThat(unticked.deals().get(1).covers()).isEqualByComparingTo("300");
+        assertThat(unticked.rest()).isEqualByComparingTo("100");
+
+        // A payment larger than the link also draws on the hedging deal's remainder, as any payment would.
+        FxPaymentService.Plan larger = payments.plan(usdAccount(), "EUR", bd("1000"), null, PAYABLE);
+        assertThat(larger.deals()).extracting(FxPaymentService.Fit::covers).usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(bd("600"), bd("300"));
+        assertThat(larger.rest()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void aHedgingDealThatCannotPayThisPaymentIsExplainedNotUsedAndALapsedLinkIsIgnored() {
+        List<FxDeal> fit = book();
+        List<FxDeal> all = deals.findByCorporateIdAndStatusIn(CORP, List.of());
+        FxDeal otherEntity = all.get(1);
+        FxDeal unconfirmed = all.get(3);
+        hedgedBy(otherEntity, "500", unconfirmed, "100", fit.get(1), "0");
+
+        FxPaymentService.Plan plan = payments.plan(usdAccount(), "EUR", bd("400"), null, PAYABLE);
+
+        assertThat(plan.deals()).extracting(FxPaymentService.Fit::dealId).containsExactly(fit.get(0).getId(), fit.get(1).getId());
+        assertThat(plan.deals()).allSatisfy(f -> assertThat(f.linked()).isNull());
+        assertThat(plan.notes()).containsExactlyInAnyOrder(
+                "Hedges this payable, not used: " + otherEntity.getDealRef() + " is booked for another entity than the one paying",
+                "Hedges this payable, not used: Confirm " + unconfirmed.getDealRef() + " before paying with it");
+    }
+
+    /** One forward for EUR {@code eur}, the only deal that fits. */
+    private FxDeal only(String eur) {
+        FxDeal d = small(Instrument.FORWARD, LocalDate.now().plusDays(5), eur);
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(d));
+        when(deals.findById(d.getId())).thenReturn(Optional.of(d));
+        when(settlement.legsFor(any(), any())).thenAnswer(inv -> {
+            BigDecimal base = inv.getArgument(1);
+            return new BigDecimal[] {base, base.multiply(bd("1.10")).setScale(2)};
+        });
+        return d;
+    }
+
+    @Test
+    void payingAnInvoiceTakesItsOwnLinkButNotThePartOfTheDealReservedForAnotherInvoice() {
+        // The deal (EUR 1,000 left) hedges INV-A (this payable) 200 and INV-B 800.
+        FxDeal d = only("1000.00");
+        hedgedBy(d, "200");
+        when(hedgeLinks.reserved(any(), eq("EUR"), eq(PAYABLE))).thenReturn(Map.of(d.getId(), bd("800")));
+
+        FxPaymentService.Plan plan = payments.plan(usdAccount(), "EUR", bd("1000"), null, PAYABLE);
+
+        assertThat(plan.deals()).singleElement().satisfies(f -> {
+            assertThat(f.covers()).isEqualByComparingTo("200");
+            assertThat(f.available()).as("what is not reserved for INV-B").isEqualByComparingTo("200");
+            assertThat(f.linked()).isEqualByComparingTo("200");
+        });
+        assertThat(plan.rest()).isEqualByComparingTo("800");
+        assertThat(plan.notes()).containsExactly(d.getDealRef() + ": EUR 800.00 reserved for other invoices it hedges");
+
+        // The same cap when the deal is named (a screen, a file): INV-B's part cannot be spent on INV-A.
+        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(null, null,
+                List.of(new FxPaymentService.Draw(d.getId(), bd("1000"))), false).forPayable(PAYABLE)))
+                .hasMessage(d.getDealRef() + " has 200.00 EUR left after the 800 reserved for other invoices it hedges, less than the 1000 asked of it");
+    }
+
+    @Test
+    void anUnrelatedPaymentOnlyUsesTheUnreservedPartEvenWhenTheDealIsTicked() {
+        FxDeal d = only("1500.00");
+        when(hedgeLinks.reserved(any(), eq("EUR"), org.mockito.ArgumentMatchers.isNull())).thenReturn(Map.of(d.getId(), bd("1000")));
+
+        FxPaymentService.Plan plan = payments.plan(usdAccount(), "EUR", bd("800"), List.of(d.getId()));
+
+        assertThat(plan.deals().get(0).covers()).isEqualByComparingTo("500");
+        assertThat(plan.rest()).isEqualByComparingTo("300");
+        assertThat(plan.notes()).containsExactly(d.getDealRef() + ": EUR 1000.00 reserved for other invoices it hedges");
+
+        // A small payment the unreserved part covers needs no note.
+        assertThat(payments.plan(usdAccount(), "EUR", bd("400"), null).notes()).isEmpty();
+
+        // Fully reserved, the deal is not offered at all.
+        when(hedgeLinks.reserved(any(), eq("EUR"), org.mockito.ArgumentMatchers.isNull())).thenReturn(Map.of(d.getId(), bd("1500")));
+        FxPaymentService.Plan none = payments.plan(usdAccount(), "EUR", bd("800"), null);
+        assertThat(none.deals()).isEmpty();
+        assertThat(none.rest()).isEqualByComparingTo("800");
+    }
+
+    @Test
+    void anUnattendedPaymentOfAHedgedPayableDrawsItsDealFirstAndSettlesPartOfIt() {
+        List<FxDeal> fit = book();
+        FxDeal window = fit.get(1);
+        hedgedBy(window, "200");
+
+        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("400"),
+                FxPaymentService.Instruction.AT_MARKET.forPayable(PAYABLE));
+
+        assertThat(cv.parts()).extracting(FxPaymentService.Part::deal).containsExactly(window, fit.get(0));
+        assertThat(cv.parts()).extracting(FxPaymentService.Part::paid).usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(bd("200"), bd("200"));
+        verify(stream, never()).take(any()); // the deals cover it: nothing booked at the live price
+
+        Transaction t = new Transaction();
+        t.setReferenceNumber("PAY-H");
+        payments.settle(cv, t, usdAccount());
+        verify(settlement).paidByPayment(window, bd("200"), "PAY-H", null, "VA-USD-1");
     }
 
     @Test

@@ -358,9 +358,9 @@ class PayablesPoboByEnrolmentTest {
         conversion = new FxPaymentService.Conversion(new BigDecimal("1000"), "EUR", new BigDecimal("4012.30"), "AED",
             new BigDecimal("4.0123"), "EUR/AED", List.of(new FxPaymentService.Part(FxPaymentService.Source.LIVE, deal,
                 new BigDecimal("1000"), new BigDecimal("1000"), new BigDecimal("4012.30"), new BigDecimal("4.0123"))));
-        when(fx.preview(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(conversion);
-        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET)).thenReturn(conversion);
         Payable p = approved(false);
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId()))).thenReturn(conversion);
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId()))).thenReturn(conversion);
         p.setCurrencyCode("EUR");
         p.setNetAmount(new BigDecimal("1000"));
         return p;
@@ -373,7 +373,7 @@ class PayablesPoboByEnrolmentTest {
         String xml = service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).executedBy("tester").build())
             .getPain001Xml();
 
-        verify(fx).convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET);
+        verify(fx).convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId()));
         verify(fx, never()).convert(eq(ihbCurrent), any(), any(), any());
         ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
         verify(transactions).makeIhb6LegPoboPayment(req.capture());
@@ -394,7 +394,7 @@ class PayablesPoboByEnrolmentTest {
     void crossCurrencyPayNowPassesTheRequestsFxThroughForAFirmQuote() {
         Payable p = crossCurrency("10000");
         UUID quote = UUID.randomUUID();
-        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null).forPayable(p.getId());
         when(fx.preview(paymentAccount, "EUR", new BigDecimal("1000"), firm)).thenReturn(conversion);
         when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), firm)).thenReturn(conversion);
 
@@ -419,7 +419,7 @@ class PayablesPoboByEnrolmentTest {
     @Test
     void whenTheTreasuryCannotCoverItNothingMovesAndThePayableStaysApproved() {
         Payable p = crossCurrency("10000");
-        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET))
+        when(fx.convert(paymentAccount, "EUR", new BigDecimal("1000"), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId())))
             .thenThrow(new BusinessException("FX_PAYMENT_DECLINED", "No FX sub-limit is allocated to TC-1 LLC"));
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(
@@ -461,7 +461,7 @@ class PayablesPoboByEnrolmentTest {
         Payable p = crossCurrency("10000000");
         p.setNetAmount(new BigDecimal("300000"));
         p.setCorporateId(corp);
-        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY)).thenReturn(ABOVE);
+        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY, p.getId())).thenReturn(ABOVE);
         return p;
     }
 
@@ -503,7 +503,7 @@ class PayablesPoboByEnrolmentTest {
     @Test
     void thePreviewOfAnAmountAboveTheLiveLimitDoesNotBlockPayNowButSaysTreasuryNegotiates() {
         Payable p = aboveTheLimit();
-        when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), FxPaymentService.Instruction.AT_MARKET))
+        when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId())))
             .thenThrow(new BusinessException("FX_PAYMENT_NEEDS_QUOTE", ABOVE + ": ask for a price for this payment"));
 
         var preview = service.getPoboPreview(PoboPreviewRequest.builder().payableIds(List.of(p.getId())).build()).get(0);
@@ -518,7 +518,7 @@ class PayablesPoboByEnrolmentTest {
         p.setFxStatus(Payable.AWAITING_FX);
         p.setFxStatusReason(ABOVE);
         UUID quote = UUID.randomUUID();
-        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null).forPayable(p.getId());
         FxPaymentService.Conversion atQuote = new FxPaymentService.Conversion(new BigDecimal("300000"), "EUR",
             new BigDecimal("1203690.00"), "AED", new BigDecimal("4.0123"), "EUR/AED", conversion.parts());
         when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), firm)).thenReturn(atQuote);
@@ -526,9 +526,9 @@ class PayablesPoboByEnrolmentTest {
 
         service.executePayment(PaymentExecutionRequest.builder().payableId(p.getId()).fxQuoteId(quote).executedBy("treasury").build());
 
-        verify(fx, never()).needsQuote(any(), any(), any(), any());
+        verify(fx, never()).needsQuote(any(), any(), any(), any(), any());
         verify(fx).convert(paymentAccount, "EUR", new BigDecimal("300000"), firm);
-        verify(fx, never()).convert(any(), any(), any(), eq(FxPaymentService.Instruction.AT_MARKET));
+        verify(fx, never()).convert(any(), any(), any(), eq(FxPaymentService.Instruction.AT_MARKET.forPayable(p.getId())));
         ArgumentCaptor<TransactionDto.PoboPaymentRequest> req = ArgumentCaptor.forClass(TransactionDto.PoboPaymentRequest.class);
         verify(transactions).makeIhb6LegPoboPayment(req.capture());
         assertThat(req.getValue().getAmount()).as("the quote's AED").isEqualByComparingTo("1203690.00");
@@ -543,7 +543,7 @@ class PayablesPoboByEnrolmentTest {
         Payable p = aboveTheLimit();
         p.setFxStatus(Payable.AWAITING_FX);
         UUID quote = UUID.randomUUID();
-        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null);
+        FxPaymentService.Instruction firm = FxPaymentService.Instruction.of(null, quote, null, null, null).forPayable(p.getId());
         when(fx.preview(paymentAccount, "EUR", new BigDecimal("300000"), firm)).thenReturn(conversion);
         when(fx.convert(paymentAccount, "EUR", new BigDecimal("300000"), firm))
             .thenThrow(new BusinessException("FX_PAYMENT_DECLINED", "The price is no longer available (EXPIRED); get a new one"));
@@ -559,7 +559,7 @@ class PayablesPoboByEnrolmentTest {
     @Test
     void withoutAnFxSubLimitAboveTheLiveLimitIsRefusedNotQueued() {
         Payable p = aboveTheLimit();
-        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY))
+        when(fx.needsQuote(paymentAccount, "EUR", new BigDecimal("300000"), com.bank.vam.fx.deal.Side.BUY, p.getId()))
             .thenThrow(new BusinessException("FX_LINE_REFUSED", "No FX sub-limit is allocated to TC-1 LLC"));
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.executePayment(

@@ -23,12 +23,16 @@ public class FxPaymentController {
     private final FxPaymentService payments;
     private final VirtualAccountRepository accounts;
 
-    /** {@code use}: only these deals (the ones the payer kept ticked); all that fit when absent. */
+    /**
+     * {@code use}: only these deals (the ones the payer kept ticked); all that fit when absent. {@code payableId}: the
+     * payable being paid, whose hedging deals come first (fx-hedge-links R6).
+     */
     @GetMapping("/plan")
     public ApiResponse<FxPaymentService.Plan> plan(@RequestParam UUID accountId, @RequestParam String currency,
-                                                   @RequestParam BigDecimal amount, @RequestParam(required = false) List<UUID> use) {
+                                                   @RequestParam BigDecimal amount, @RequestParam(required = false) List<UUID> use,
+                                                   @RequestParam(required = false) UUID payableId) {
         VirtualAccount account = accounts.findById(accountId).orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
-        return ApiResponse.success(payments.plan(account, currency, amount, use));
+        return ApiResponse.success(payments.plan(account, currency, amount, use, payableId));
     }
 
     /**

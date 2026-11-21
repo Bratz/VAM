@@ -176,6 +176,30 @@ public class FxHedgeLinkService {
     }
 
     /**
+     * What of each deal is reserved in {@code currency} for the invoices it hedges: its links' effective amounts (R3),
+     * leaving out the links to the payable {@code except} (the one being paid, null for none). A payment of anything
+     * else must not spend it (R6). Deals without such links are left out. One read for all the deals.
+     */
+    public Map<UUID, BigDecimal> reserved(Collection<FxDeal> forDeals, String currency, UUID except) {
+        if (forDeals.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, FxDeal> byId = forDeals.stream().collect(Collectors.toMap(FxDeal::getId, Function.identity(), (a, b) -> a));
+        List<FxHedgeLink> found = links.findByDealIdIn(byId.keySet()).stream()
+                .filter(l -> l.getCurrency().equals(currency))
+                .filter(l -> !(l.getKind() == Kind.PAYABLE && l.getInvoiceId().equals(except))).toList();
+        Map<UUID, Invoice> invs = invoices(found);
+        Map<UUID, BigDecimal> out = new HashMap<>();
+        found.forEach(l -> {
+            BigDecimal e = cover(l, byId.get(l.getDealId()), invs.get(l.getInvoiceId())).effective();
+            if (e.signum() > 0) {
+                out.merge(l.getDealId(), e, BigDecimal::add);
+            }
+        });
+        return out;
+    }
+
+    /**
      * The rules of R2 for linking {@code deal} to the requested invoices; the first line that breaks one refuses the
      * whole request, naming the invoice. Writes nothing. {@code deal} may be a draft not booked yet (no id), which is
      * how booking with links refuses before anything is booked.

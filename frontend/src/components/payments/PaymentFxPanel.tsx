@@ -2,7 +2,8 @@
 // corporate's outstanding deals that fit come first, soonest value date first, each covering what it can: a window
 // open today, a forward due today or later (taken early at its rate), a spot not yet settled. The payer can untick
 // any. Whatever the ticked deals leave is converted at the live price (within the pair's streaming limits; it locks
-// when the payment is submitted) or at a firm price from the desk above them. The panel reports what it would submit
+// when the payment is submitted) or at a firm price from the desk above them. Paying a payable, the deals hedging it
+// come first, each up to what it still hedges, ticked like the others. The panel reports what it would submit
 // (or null while something is missing) through onChange; the server re-checks everything.
 
 import React, { useEffect, useState } from 'react';
@@ -27,6 +28,8 @@ interface Props {
   accountCurrency?: string;
   currency?: string;
   amount: number;
+  /** The payable being paid: the deals hedging it come first. */
+  payableId?: string;
   onChange: (fx: PaymentFx | null) => void;
 }
 
@@ -34,7 +37,7 @@ const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2,
 const what = (instrument: string, valueDate: string) =>
   instrument === 'WINDOW' ? `window to ${valueDate}` : instrument === 'SPOT' ? `spot, value ${valueDate}` : `forward, value ${valueDate}`;
 
-export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entityId, accountCurrency, currency, amount, onChange }) => {
+export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entityId, accountCurrency, currency, amount, payableId, onChange }) => {
   const needed = !!currency && !!accountCurrency && currency !== accountCurrency && amount > 0;
   const pair = `${currency}/${accountCurrency}`;
   // null: every deal that fits, in the plan's order; otherwise the ids the payer kept ticked
@@ -47,7 +50,7 @@ export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entity
   const [error, setError] = useState<string | null>(null);
 
   // A different payment starts again from every deal that fits.
-  useEffect(() => { setUse(null); }, [accountId, currency, amount]);
+  useEffect(() => { setUse(null); }, [accountId, currency, amount, payableId]);
 
   // The deals that fit and what each covers; debounced, as the amount is typed.
   useEffect(() => {
@@ -55,12 +58,12 @@ export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entity
     if (!needed || !accountId || !entityId || !currency) return;
     let current = true;
     const id = setTimeout(() => {
-      fxDealApi.paymentPlan(accountId, currency, amount, use ?? undefined)
+      fxDealApi.paymentPlan(accountId, currency, amount, use ?? undefined, payableId)
         .then((p) => { if (current) setPlan(p); })
         .catch((e) => { if (current) setError(e?.response?.data?.message ?? 'Could not read the deals that fit this payment'); });
     }, 300);
     return () => { current = false; clearTimeout(id); };
-  }, [needed, accountId, entityId, currency, amount, use]);
+  }, [needed, accountId, entityId, currency, amount, use, payableId]);
 
   const rest = plan ? plan.rest : 0;
 
@@ -153,7 +156,8 @@ export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entity
                 return (
                   <Checkbox key={d.dealId} variant="card" size="sm" checked={on} onChange={() => toggle(d.dealId)}
                     label={<><span className="font-mono">{d.dealRef}</span>{' '}
-                      <span className="font-normal text-neutral-500 dark:text-neutral-400">{what(d.instrument, d.valueDate)} at <span className="font-mono tabular-nums">{d.rate}</span></span></>}
+                      <span className="font-normal text-neutral-500 dark:text-neutral-400">{what(d.instrument, d.valueDate)} at <span className="font-mono tabular-nums">{d.rate}</span></span>
+                      {d.linked != null && <span className="font-normal text-primary-700 dark:text-primary-300"> · hedges {currency} {fmt(d.linked)} of this payable</span>}</>}
                     description={<span className="tabular-nums">{d.covers > 0
                       ? `Covers ${currency} ${fmt(d.covers)} of the ${fmt(d.available)} left; debits ${accountCurrency} ${fmt(d.debit)}`
                       : `${currency} ${fmt(d.available)} left`}</span>} />
@@ -163,6 +167,7 @@ export const PaymentFxPanel: React.FC<Props> = ({ accountId, corporateId, entity
           ) : (
             <p className="text-caption text-neutral-500 dark:text-neutral-400">No outstanding deal buying {currency} with {accountCurrency} can pay this today.</p>
           )}
+          {plan.notes?.map((n) => <p key={n} className="text-caption text-warning-700 dark:text-warning-300">{n}</p>)}
 
           {rest > 0 && (
             <div className="space-y-2">
