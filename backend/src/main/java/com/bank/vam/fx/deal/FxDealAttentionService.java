@@ -1,6 +1,8 @@
 package com.bank.vam.fx.deal;
 
 import com.bank.vam.entity.Corporate;
+import com.bank.vam.fx.hedge.FxHedgeLinkService;
+import com.bank.vam.fx.hedge.FxHedgeLinkService.CurrencyCover;
 import com.bank.vam.repository.CorporateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FxDealAttentionService {
 
-    public enum Type { CONFIRMATION_PENDING, CONFIRMATION_DISPUTED, SETTLEMENT_FAILED, FUNDING_NEEDED, LIMIT_WARNING }
+    /** HEDGE_RELEASED: invoices the deal hedges were paid, reduced or cancelled, so part of it backs no invoice (fx-hedge-links R4). */
+    public enum Type { CONFIRMATION_PENDING, CONFIRMATION_DISPUTED, SETTLEMENT_FAILED, FUNDING_NEEDED, LIMIT_WARNING, HEDGE_RELEASED }
 
     public record Item(Type type, String severity, UUID corporateId, String corporateName, UUID dealId,
                        String dealRef, String headline, String detail, LocalDate dueDate) {
@@ -31,6 +34,7 @@ public class FxDealAttentionService {
     private final HeldCash cash;
     private final FxLimitService limits;
     private final FxSettlementRepository settlements;
+    private final FxHedgeLinkService hedges;
 
     /** @param corporateId one corporate, or null for all */
     public List<Item> items(UUID corporateId) {
@@ -41,8 +45,19 @@ public class FxDealAttentionService {
         Function<FxDeal, String> name = d -> names.getOrDefault(d.getCorporateId(), "Corporate");
 
         LocalDate today = LocalDate.now();
+        Map<UUID, List<CurrencyCover>> released = hedges.released(open);
         List<Item> out = new ArrayList<>();
         for (FxDeal d : open) {
+            List<CurrencyCover> unbacked = released.get(d.getId());
+            if (unbacked != null) {
+                out.add(new Item(Type.HEDGE_RELEASED, "medium", d.getCorporateId(), name.apply(d), d.getId(), d.getDealRef(),
+                        "FX deal hedges more than its invoices · " + d.getDealRef() + " · " + name.apply(d),
+                        unbacked.stream().map(c -> c.currency() + " " + c.unbacked().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString())
+                                .collect(Collectors.joining(" and "))
+                                + " of it no longer backs an invoice: invoices it hedged were paid, reduced or cancelled. "
+                                + "Roll it, close it out, or link other invoices.",
+                        d.getValueDate()));
+            }
             if (d.getConfirmationStatus() == ConfirmationStatus.ISSUED) {
                 boolean late = confirmations.overdue(d);
                 out.add(new Item(Type.CONFIRMATION_PENDING, late ? "high" : "medium", d.getCorporateId(), name.apply(d),

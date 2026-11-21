@@ -417,7 +417,8 @@ function fxDealItem(a: DealAttention): AttentionItem {
   return {
     id: `fx_deal:${a.type}:${a.dealId}`,
     severity: a.severity,
-    category: a.type === 'SETTLEMENT_FAILED' || a.type === 'FUNDING_NEEDED' ? 'funding_shortfall' : 'pending_approval',
+    category: a.type === 'SETTLEMENT_FAILED' || a.type === 'FUNDING_NEEDED' ? 'funding_shortfall'
+      : a.type === 'HEDGE_RELEASED' ? 'fx_exposure' : 'pending_approval',
     headline: a.headline,
     detail: a.detail,
     context: { entityId: a.corporateId, entityName: a.corporateName, reference: a.dealRef },

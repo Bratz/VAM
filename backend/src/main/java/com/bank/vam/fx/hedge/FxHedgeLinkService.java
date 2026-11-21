@@ -319,17 +319,52 @@ public class FxHedgeLinkService {
         List<FxHedgeLink> own = links.findByDealIdOrderByLinkedAtAsc(deal.getId());
         Map<UUID, Invoice> invs = invoices(own);
         List<LinkView> views = own.stream().map(l -> view(l, deal, invs.get(l.getInvoiceId()))).toList();
+        List<CurrencyCover> covers = covers(deal, views);
+        boolean released = live(deal) && covers.stream().anyMatch(FxHedgeLinkService::isReleased);
+        return new DealLinks(deal.getId(), deal.getDealRef(), views, covers, released);
+    }
+
+    /**
+     * The released deals among {@code forDeals} (R4): live deals whose links have shrunk or lapsed and left part of them
+     * unbacked, with the currencies concerned. Deals that are not released are left out. One read for all the deals.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, List<CurrencyCover>> released(Collection<FxDeal> forDeals) {
+        Map<UUID, FxDeal> byId = forDeals.stream().filter(FxHedgeLinkService::live)
+                .collect(Collectors.toMap(FxDeal::getId, Function.identity(), (a, b) -> a));
+        if (byId.isEmpty()) {
+            return Map.of();
+        }
+        List<FxHedgeLink> found = links.findByDealIdIn(byId.keySet());
+        Map<UUID, Invoice> invs = invoices(found);
+        Map<UUID, List<LinkView>> views = new LinkedHashMap<>();
+        found.forEach(l -> views.computeIfAbsent(l.getDealId(), k -> new ArrayList<>())
+                .add(view(l, byId.get(l.getDealId()), invs.get(l.getInvoiceId()))));
+        Map<UUID, List<CurrencyCover>> out = new LinkedHashMap<>();
+        views.forEach((id, vs) -> {
+            List<CurrencyCover> released = covers(byId.get(id), vs).stream().filter(FxHedgeLinkService::isReleased).toList();
+            if (!released.isEmpty()) {
+                out.put(id, released);
+            }
+        });
+        return out;
+    }
+
+    /** Per currency of the links: what remains of the deal, what is linked and still effective, and what no invoice backs. */
+    private static List<CurrencyCover> covers(FxDeal deal, List<LinkView> views) {
         Map<String, List<LinkView>> byCurrency = views.stream()
                 .collect(Collectors.groupingBy(LinkView::currency, LinkedHashMap::new, Collectors.toList()));
-        List<CurrencyCover> covers = byCurrency.entrySet().stream().map(e -> {
+        return byCurrency.entrySet().stream().map(e -> {
             BigDecimal linked = sum(e.getValue(), LinkView::linked);
             BigDecimal effective = sum(e.getValue(), LinkView::effective);
             BigDecimal remaining = remaining(deal, e.getKey());
             return new CurrencyCover(e.getKey(), remaining, linked, effective, remaining.subtract(effective).max(BigDecimal.ZERO));
         }).toList();
-        boolean released = live(deal) && covers.stream()
-                .anyMatch(c -> c.effective().compareTo(c.linked()) < 0 && c.unbacked().signum() > 0);
-        return new DealLinks(deal.getId(), deal.getDealRef(), views, covers, released);
+    }
+
+    /** Links in this currency shrank or lapsed and left part of the deal unbacked. */
+    private static boolean isReleased(CurrencyCover c) {
+        return c.effective().compareTo(c.linked()) < 0 && c.unbacked().signum() > 0;
     }
 
     /**

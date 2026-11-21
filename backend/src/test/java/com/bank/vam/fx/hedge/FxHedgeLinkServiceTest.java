@@ -389,6 +389,32 @@ class FxHedgeLinkServiceTest {
         assertThat(dl.released()).isFalse();
     }
 
+    /** The attention list asks for all open deals at once: only the released ones come back, with what is unbacked. */
+    @Test
+    void releasedDealsAreThoseWhoseLinksShrankOrLapsedLeavingThemUnbacked() {
+        Payable paid = payable("EUR", "60000.00", PayableStatus.APPROVED);
+        link(deal, pay(paid, "60000"));
+        FxDeal intact = deal(Side.BUY, TODAY.plusDays(20));
+        link(intact, pay(payable("EUR", "30000.00", PayableStatus.APPROVED), "30000")); // 70,000 unbacked, never linked
+        FxDeal ended = deal(Side.BUY, TODAY.plusDays(20));
+        Payable endedPaid = payable("EUR", "50000.00", PayableStatus.APPROVED);
+        link(ended, pay(endedPaid, "50000"));
+
+        assertThat(service.released(List.of(deal, intact, ended))).as("nothing paid yet").isEmpty();
+
+        paid.setStatus(PayableStatus.PAID);
+        endedPaid.setStatus(PayableStatus.PAID);
+        ended.setStatus(DealStatus.SETTLED);
+        Map<UUID, List<CurrencyCover>> released = service.released(List.of(deal, intact, ended));
+
+        assertThat(released).containsOnlyKeys(deal.getId());
+        assertThat(released.get(deal.getId())).singleElement().satisfies(c -> {
+            assertThat(c.currency()).isEqualTo("EUR");
+            assertThat(c.unbacked()).isEqualByComparingTo("100000");
+        });
+        assertThat(service.released(List.of())).isEmpty();
+    }
+
     // ---- scope, unlink, invoice lists ----
 
     @Test

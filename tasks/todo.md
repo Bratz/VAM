@@ -329,9 +329,10 @@ ExposureSourcesTest); backend not started, derived queries only):
   refusal (noRollbackFor, for expiry), so the links are checked against the deal the quote would book
   (`FxDealService.draft`) before the limit lock and booking, then saved on the booked deal. A second accept links nothing.
 - Audit: `FX_HEDGE_LINKED` / `FX_HEDGE_UNLINKED` on entity FX_DEAL (deal ref, invoice ref, currency, amount).
-- Deferred: a roll does not move links to the replacement deal (they become DEAL_ENDED; relink by hand); no
-  attention item for `released` yet (FxDealAttentionService); per-invoice cap is not locked against two concurrent
-  linkers. Phase 2 reads `forInvoices(PAYABLE, ...)` effective amounts per deal; Phase 3 consumes the shapes above.
+- Deferred: a roll does not move links to the replacement deal (they become DEAL_ENDED; relink by hand); per-invoice
+  cap is not locked against two concurrent linkers. Done 21 Nov: released deals are on the attention list
+  (FxDealAttentionService HEDGE_RELEASED, medium, value date as due; `FxHedgeLinkService.released(deals)` reads all
+  open deals' links at once); the Dashboard action queue files it under FX exposure and opens FX Deals. Phase 2 reads `forInvoices(PAYABLE, ...)` effective amounts per deal; Phase 3 consumes the shapes above.
 
 ### Phase 2 — paying draws on the linked deal (R6)
 - [x] 2.1 Payment plan takes the payable: its linked deals first, up to the effective link; unattended payments too.

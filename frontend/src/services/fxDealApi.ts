@@ -367,8 +367,11 @@ export interface SettlementRun {
 }
 
 export interface DealAttention {
-  /** LIMIT_WARNING: an FX line or entity sub-limit past 80% (high past 95%); dealId is then the limit's id. */
-  type: 'CONFIRMATION_PENDING' | 'CONFIRMATION_DISPUTED' | 'SETTLEMENT_FAILED' | 'FUNDING_NEEDED' | 'LIMIT_WARNING';
+  /**
+   * LIMIT_WARNING: an FX line or entity sub-limit past 80% (high past 95%); dealId is then the limit's id.
+   * HEDGE_RELEASED: invoices the deal hedges were paid, reduced or cancelled, so part of it backs no invoice.
+   */
+  type: 'CONFIRMATION_PENDING' | 'CONFIRMATION_DISPUTED' | 'SETTLEMENT_FAILED' | 'FUNDING_NEEDED' | 'LIMIT_WARNING' | 'HEDGE_RELEASED';
   severity: 'high' | 'medium';
   corporateId: string;
   corporateName: string;
