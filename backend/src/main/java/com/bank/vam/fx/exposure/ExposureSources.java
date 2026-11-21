@@ -72,10 +72,21 @@ class ExposureSources {
     private static final Set<String> NOT_EXPOSURE = Set.of("INTERCOMPANY_IN", "INTERCOMPANY_OUT", "FX_CONVERSION");
 
     /**
-     * Forecast flows from the corporate's latest completed Cash Forecast run. AGING lines are left out: they project
-     * the same open payables and receivables that {@link #payables} and {@link #receivables} read live, and a run can
-     * be days or weeks old while invoices change daily. What remains is what no invoice carries: recurring flows
-     * (payroll, rent, tax) from the pattern engine, model and driver lines, and manual entries. Past dates are dropped.
+     * Whether a forecast line projects an open invoice: AGING lines and, today, every PATTERN line (the pattern engine
+     * emits one line per open salary / tax / utility / other payable) carry {@code payable:} or {@code receivable:}.
+     * Those invoices are read live by {@link #payables} / {@link #receivables}, so counting the line too would count
+     * the invoice twice. Keyed on the source reference, not the engine, so a future engine that projects invoices is
+     * left out as well.
+     */
+    static boolean projectsInvoice(String sourceRef) {
+        return sourceRef != null && (sourceRef.startsWith("payable:") || sourceRef.startsWith("receivable:"));
+    }
+
+    /**
+     * Forecast flows from the corporate's latest completed Cash Forecast run, without the lines that project an open
+     * invoice ({@link #projectsInvoice}): invoices are read live, and a run can be days or weeks old while invoices
+     * change daily. What remains is what no invoice carries: model and driver lines and manual entries (and recurring
+     * flows once the pattern engine projects them from history rather than from open payables). Past dates are dropped.
      * The forecast's adjustments are not applied, as the Cash Forecast summary does not apply them either.
      */
     Optional<ForecastFlows> forecast(UUID corporateId, String base, LocalDate today) {
@@ -85,12 +96,13 @@ class ExposureSources {
         if (run.isEmpty()) {
             return Optional.empty();
         }
-        List<Flow> flows = em.createQuery("SELECT l.currency, l.valueDate, l.amountMid, c.direction FROM ForecastLine l "
-                        + "JOIN l.category c WHERE l.run.id = :run AND l.currency <> :base AND l.valueDate >= :today "
-                        + "AND l.source <> :aging AND c.code NOT IN :excluded", Object[].class)
+        List<Flow> flows = em.createQuery("SELECT l.currency, l.valueDate, l.amountMid, c.direction, l.sourceRef "
+                        + "FROM ForecastLine l JOIN l.category c WHERE l.run.id = :run AND l.currency <> :base "
+                        + "AND l.valueDate >= :today AND l.source <> :aging AND c.code NOT IN :excluded", Object[].class)
                 .setParameter("run", run.get(0)[0]).setParameter("base", base).setParameter("today", today)
                 .setParameter("aging", ForecastSource.AGING).setParameter("excluded", NOT_EXPOSURE)
                 .getResultList().stream()
+                .filter(r -> !projectsInvoice((String) r[4]))
                 .filter(r -> r[2] != null && ((BigDecimal) r[2]).signum() != 0)
                 .map(r -> new Flow(((String) r[0]).trim(), (LocalDate) r[1],
                         r[3] == ForecastDirection.OUT ? ((BigDecimal) r[2]).abs().negate() : ((BigDecimal) r[2]).abs()))

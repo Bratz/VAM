@@ -241,7 +241,7 @@ const FxExposurePage: React.FC = () => {
           sub={policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'} />
         <StatTile tone={!ladder?.forecastRunAt ? 'neutral' : ladder.forecastStale ? 'warning' : 'success'} icon={<TrendingUp className="w-5 h-5" />}
           label="Cash Forecast" value={ladder?.forecastRunAt ? new Date(ladder.forecastRunAt).toLocaleDateString() : 'No run'}
-          sub={!ladder?.forecastRunAt ? 'invoices and cash only' : ladder.forecastStale ? 'out of date: run it again in Cash Forecast' : 'recurring flows counted in full'} />
+          sub={!ladder?.forecastRunAt ? 'invoices and cash only' : ladder.forecastStale ? 'out of date: run it again in Cash Forecast' : 'flows no invoice covers'} />
       </StatStrip>
 
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}

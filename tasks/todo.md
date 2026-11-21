@@ -295,6 +295,16 @@ tsc + lint clean; not run live: starting the backend applies V57–V65 to the lo
 
 ## Debt ledger (noticed, not fixed — work down, don't re-report; 2026-11-13)
 Money / correctness first:
+- [x] FX exposure double-counted open payables (21 Nov): the pattern engine projects open salary/tax/utility/other
+      payables ("payable:{id}") and Exposure left out only AGING lines. Now every forecast line that projects an
+      invoice is left out (ExposureSources.projectsInvoice). No figure on vam-five changed (no foreign-currency
+      pattern lines there today).
+- [ ] Payables/receivables links (domain review 21 Nov): Exposure buckets should drill down to the invoices and
+      forecast lines behind them (forecast lines already carry sourceRef); FX deals should link to the invoices
+      they hedge (exposureRef is free text) and the hedge should show on the invoice; forecast-to-actual matching
+      once the pattern engine forecasts from history.
+- [ ] GET /forecasts/latest?corporateId={TestMNC} returns 500 on vam-five (21 Nov); the page call without
+      corporateId works.
 - [ ] Outbound payment fee debited and credited on the payer's own account (5.2: SETTLE-AED-3953 "FEE DEBIT" 22.50 and
       "FEE CREDIT" 22.50): the fee income account resolves to the payer, so no fee is collected. Check the fee account
       resolution for outward payments.
